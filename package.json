@@ -1,8 +1,8 @@
 {
-  "name": "electron-forge-react-vite-boilerplate",
-  "productName": "electron-forge-react-vite-boilerplate",
+  "name": "verse-vault",
+  "productName": "Verse Vault",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Verse Vault desktop app built with Electron, React, Vite, TypeScript, and SQLite.",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

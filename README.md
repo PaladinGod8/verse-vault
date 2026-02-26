@@ -1,6 +1,6 @@
 # Verse Vault
 
-Electron desktop app X. 
+Verse Vault is an Electron desktop app for collecting and organizing verses.
 
 Built with Electron Forge, React, Vite, TypeScript, and SQLite.
 
