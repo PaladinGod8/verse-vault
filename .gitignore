@@ -93,6 +93,7 @@ out/
 
 # Documentation
 docs/ 
+.VSCodeCounter/
 
 # Coding Agents
 .claude/
