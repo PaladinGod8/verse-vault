@@ -92,27 +92,64 @@ describe('main process', () => {
   });
 
   it('registers app lifecycle events and IPC handlers', async () => {
-    const selectAllMock = vi.fn(() => [{ id: 1 }]);
-    const insertRunMock = vi.fn(() => ({ lastInsertRowid: 5 }));
-    const updateRunMock = vi.fn();
-    const deleteRunMock = vi.fn();
-    const selectByIdGetMock = vi.fn((id: number) => ({ id }));
+    const versesSelectAllMock = vi.fn(() => [{ id: 1 }]);
+    const versesInsertRunMock = vi.fn(() => ({ lastInsertRowid: 5 }));
+    const versesUpdateRunMock = vi.fn();
+    const versesDeleteRunMock = vi.fn();
+    const versesSelectByIdGetMock = vi.fn((id: number) => ({ id }));
+
+    const worldsSelectAllMock = vi.fn(() => [{ id: 1, name: 'Alpha' }]);
+    const worldsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 6 }));
+    const worldsUpdateRunMock = vi.fn();
+    const worldsDeleteRunMock = vi.fn();
+    const worldsMarkViewedRunMock = vi.fn();
+    const worldsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        name: `World ${id}`,
+        thumbnail: null,
+        short_description: null,
+        last_viewed_at: id === 7 ? '2026-01-01 00:00:00' : null,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
 
     prepareMock.mockImplementation((sql: string) => {
+      if (sql.includes('SELECT * FROM worlds ORDER BY updated_at DESC')) {
+        return { all: worldsSelectAllMock };
+      }
+      if (sql.includes('SELECT * FROM worlds WHERE id = ?')) {
+        return { get: worldsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO worlds')) {
+        return { run: worldsInsertRunMock };
+      }
+      if (sql.includes("UPDATE worlds SET last_viewed_at = datetime('now')")) {
+        return { run: worldsMarkViewedRunMock };
+      }
+      if (sql.includes('UPDATE worlds SET')) {
+        return { run: worldsUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM worlds WHERE id = ?')) {
+        return { run: worldsDeleteRunMock };
+      }
+
       if (sql.includes('SELECT * FROM verses ORDER BY created_at DESC')) {
-        return { all: selectAllMock };
+        return { all: versesSelectAllMock };
       }
       if (sql.includes('INSERT INTO verses')) {
-        return { run: insertRunMock };
+        return { run: versesInsertRunMock };
       }
       if (sql.includes('UPDATE verses SET')) {
-        return { run: updateRunMock };
+        return { run: versesUpdateRunMock };
       }
       if (sql.includes('DELETE FROM verses WHERE id = ?')) {
-        return { run: deleteRunMock };
+        return { run: versesDeleteRunMock };
       }
       if (sql.includes('SELECT * FROM verses WHERE id = ?')) {
-        return { get: selectByIdGetMock };
+        return { get: versesSelectByIdGetMock };
       }
       throw new Error(`Unexpected SQL: ${sql}`);
     });
@@ -145,30 +182,99 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(4);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(10);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
-    expect(selectAllMock).toHaveBeenCalledTimes(1);
+    expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
     expect(getAllResult).toEqual([{ id: 1 }]);
 
     const addResult = registeredIpcHandlers[IPC.VERSES_ADD](
       {},
       { text: 'abc' },
     );
-    expect(insertRunMock).toHaveBeenCalledWith('abc', null, null);
-    expect(selectByIdGetMock).toHaveBeenCalledWith(5);
+    expect(versesInsertRunMock).toHaveBeenCalledWith('abc', null, null);
+    expect(versesSelectByIdGetMock).toHaveBeenCalledWith(5);
     expect(addResult).toEqual({ id: 5 });
 
     const updateResult = registeredIpcHandlers[IPC.VERSES_UPDATE]({}, 9, {
       reference: 'John 3:16',
     });
-    expect(updateRunMock).toHaveBeenCalledWith(null, 'John 3:16', null, 9);
-    expect(selectByIdGetMock).toHaveBeenCalledWith(9);
+    expect(versesUpdateRunMock).toHaveBeenCalledWith(null, 'John 3:16', null, 9);
+    expect(versesSelectByIdGetMock).toHaveBeenCalledWith(9);
     expect(updateResult).toEqual({ id: 9 });
 
     const deleteResult = registeredIpcHandlers[IPC.VERSES_DELETE]({}, 4);
-    expect(deleteRunMock).toHaveBeenCalledWith(4);
+    expect(versesDeleteRunMock).toHaveBeenCalledWith(4);
     expect(deleteResult).toEqual({ id: 4 });
+
+    const worldsGetAllResult = registeredIpcHandlers[IPC.WORLDS_GET_ALL]({});
+    expect(worldsSelectAllMock).toHaveBeenCalledTimes(1);
+    expect(worldsGetAllResult).toEqual([{ id: 1, name: 'Alpha' }]);
+
+    const worldByIdResult = registeredIpcHandlers[IPC.WORLDS_GET_BY_ID]({}, 2);
+    expect(worldsSelectByIdGetMock).toHaveBeenCalledWith(2);
+    expect(worldByIdResult).toMatchObject({ id: 2 });
+
+    const missingWorldResult = registeredIpcHandlers[IPC.WORLDS_GET_BY_ID](
+      {},
+      404,
+    );
+    expect(missingWorldResult).toBeNull();
+
+    const worldAddResult = registeredIpcHandlers[IPC.WORLDS_ADD]({}, {
+      name: '  New World  ',
+    });
+    expect(worldsInsertRunMock).toHaveBeenCalledWith('New World', null, null);
+    expect(worldsSelectByIdGetMock).toHaveBeenCalledWith(6);
+    expect(worldAddResult).toMatchObject({ id: 6 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.WORLDS_ADD]({}, { name: '   ' }),
+    ).toThrowError('World name is required');
+
+    const worldUpdateResult = registeredIpcHandlers[IPC.WORLDS_UPDATE]({}, 9, {
+      thumbnail: 'cover.png',
+    });
+    const partialUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE worlds SET') &&
+        sql.includes('thumbnail = ?'),
+    )?.[0];
+    expect(partialUpdateSql).toContain("updated_at = datetime('now')");
+    expect(partialUpdateSql).not.toContain('name = ?');
+    expect(partialUpdateSql).not.toContain('short_description = ?');
+    expect(worldsUpdateRunMock).toHaveBeenCalledWith('cover.png', 9);
+    expect(worldUpdateResult).toMatchObject({ id: 9 });
+
+    const timestampOnlyUpdateResult = registeredIpcHandlers[IPC.WORLDS_UPDATE](
+      {},
+      10,
+      {},
+    );
+    const timestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql === "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(timestampOnlySql).toBe(
+      "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(worldsUpdateRunMock).toHaveBeenLastCalledWith(10);
+    expect(timestampOnlyUpdateResult).toMatchObject({ id: 10 });
+
+    const worldDeleteResult = registeredIpcHandlers[IPC.WORLDS_DELETE]({}, 12);
+    expect(worldsDeleteRunMock).toHaveBeenCalledWith(12);
+    expect(worldDeleteResult).toEqual({ id: 12 });
+
+    const worldMarkViewedResult = registeredIpcHandlers[IPC.WORLDS_MARK_VIEWED](
+      {},
+      7,
+    );
+    expect(worldsMarkViewedRunMock).toHaveBeenCalledWith(7);
+    expect(worldMarkViewedResult).toMatchObject({
+      id: 7,
+      last_viewed_at: '2026-01-01 00:00:00',
+    });
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);
