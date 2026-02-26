@@ -5,9 +5,9 @@
 
 ## Scope Note
 
-Current channels cover an initial local content-record scaffold (`verses`) and a shared Worlds contract (`worlds`) for upcoming handlers/bridge wiring. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+Current channels cover an initial local content-record scaffold (`verses`) plus Worlds read handlers in main process (`worlds`). This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
-Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer.
+Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with read handlers now registered in `main`.
 
 ## Channels
 
@@ -17,8 +17,8 @@ Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the sha
 | `IPC.VERSES_ADD` | `db:verses:add` | renderer -> main | `{ text: string; reference?: string; tags?: string }` | `Verse` | `src/main.ts:registerIpcHandlers` |
 | `IPC.VERSES_UPDATE` | `db:verses:update` | renderer -> main | `id: number, data: { text?: string; reference?: string; tags?: string }` | `Verse` | `src/main.ts:registerIpcHandlers` |
 | `IPC.VERSES_DELETE` | `db:verses:delete` | renderer -> main | `id: number` | `{ id: number }` | `src/main.ts:registerIpcHandlers` |
-| `IPC.WORLDS_GET_ALL` | `db:worlds:getAll` | renderer -> main | _(none)_ | `World[]` | _(contract-only; handler pending)_ |
-| `IPC.WORLDS_GET_BY_ID` | `db:worlds:getById` | renderer -> main | `id: number` | `World \| null` | _(contract-only; handler pending)_ |
+| `IPC.WORLDS_GET_ALL` | `db:worlds:getAll` | renderer -> main | _(none)_ | `World[]` | `src/main.ts:registerIpcHandlers` |
+| `IPC.WORLDS_GET_BY_ID` | `db:worlds:getById` | renderer -> main | `id: number` | `World \| null` | `src/main.ts:registerIpcHandlers` |
 | `IPC.WORLDS_ADD` | `db:worlds:add` | renderer -> main | `{ name: string; thumbnail?: string \| null; short_description?: string \| null }` | `World` | _(contract-only; handler pending)_ |
 | `IPC.WORLDS_UPDATE` | `db:worlds:update` | renderer -> main | `id: number, data: { name?: string; thumbnail?: string \| null; short_description?: string \| null }` | `World` | _(contract-only; handler pending)_ |
 | `IPC.WORLDS_DELETE` | `db:worlds:delete` | renderer -> main | `id: number` | `{ id: number }` | _(contract-only; handler pending)_ |
@@ -53,5 +53,5 @@ interface World {
 - All channels use `ipcMain.handle` / `ipcRenderer.invoke` (Promise-based).
 - `tags` is stored as a raw string; format is not yet enforced.
 - `VERSES_UPDATE` uses SQL `COALESCE`; passing `undefined`/`null` keeps that field unchanged.
-- Worlds rows above define shared channel/type contract only in this step; main/preload wiring lands in a follow-up step.
+- Worlds read handlers (`WORLDS_GET_ALL`, `WORLDS_GET_BY_ID`) are wired in `main`; preload exposure and worlds write handlers land in follow-up steps.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.
