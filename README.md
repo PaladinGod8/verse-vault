@@ -27,6 +27,12 @@ yarn guard:ipc-docs  # fail if IPC files changed without docs/03_IPC_CONTRACT.md
 yarn hooks:install  # one-time: enforce repo hooks (docs guards on commit)
 ```
 
+When a commit contains only Prettier reformatting (no behavior changes), you can use a one-off hook bypass:
+
+```bash
+git commit --no-verify -m "chore: prettier formatting only"
+```
+
 ## Development loop
 
 ```bash
