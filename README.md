@@ -2,10 +2,6 @@
 
 Verse Vault is a centralized, offline-first Electron desktop platform for managing TTRPG campaigns and creative writing/worldbuilding projects in one local workspace.
 
-Current implementation status:
-- The Electron + React + SQLite foundation is in place.
-- The current persistence/IPC surface is a starter `verses` CRUD scaffold that will be expanded into campaign, world, and manuscript domain entities.
-
 Built with Electron Forge, React, Vite, TypeScript, and SQLite.
 
 ## Product Direction
@@ -44,24 +40,115 @@ yarn verify:all:dev:fresh
 Use VSCodeCounter on major changes.
 
 See [docs/00_INDEX.md](docs/00_INDEX.md) for orientation and architecture.
+See [AGENTS.md](AGENTS.md) for cross-agent working rules (Codex/Copilot/Claude).
+
+## Prompting playbook (Codex / Copilot / Claude)
+
+Use this sequence in chat (VS Code or ChatGPT web). Keep phases separate.
+
+### 0. Session start prompt
+
+```text
+Read and follow AGENTS.md for this repository.
+Use phase-based work only (Code -> Tests -> Docs).
+Before edits, restate scope and acceptance criteria.
+```
+
+### 1. Feature discovery prompt
+
+```text
+Help me define this feature from my description:
+<paste feature idea>
+
+Return:
+1) problem statement
+2) acceptance criteria
+3) non-goals
+4) affected files
+5) whether this should be split into smaller sequential tasks
+```
+
+### 2. Task-splitting prompt (when feature is large)
+
+```text
+Split this feature into the smallest safe sequential implementation prompts.
+Each step must be independently testable and reversible.
+For each step, include: scope, files, risks, and done criteria.
+```
+
+### 3. Phase 1 prompt (code only)
+
+```text
+Phase 1 (Code only):
+Implement step <N> only.
+Do not write tests or docs in this step.
+Follow AGENTS.md architecture and IPC rules.
+At end, return: files changed, behavior changed, risks.
+```
+
+### 4. Phase 2 prompt (tests only)
+
+```text
+Phase 2 (Tests only):
+Based on current git diff, add or update unit/e2e tests for the feature.
+Do not change production code or docs.
+At end, return: test files changed, behaviors covered, gaps.
+```
+
+### 5. Manual pipeline + fix loop prompt
+
+You run local checks manually:
+
+```bash
+yarn verify:all
+```
+
+If it fails, paste failures and use:
+
+```text
+Fix only the reported failures from this output:
+<paste error output>
+Do not make unrelated refactors.
+Return exact files changed and why.
+```
+
+### 6. Phase 3 prompt (docs only)
+
+```text
+Phase 3 (Docs only):
+Update docs for the completed feature.
+Only modify:
+- docs/02_CODEBASE_MAP.md
+- docs/03_IPC_CONTRACT.md
+Do not change code or tests.
+Return exact doc entries updated.
+```
+
+### Should agents generate prompts for you?
+
+Yes, as a draft generator. This is useful, but keep control by requiring:
+- explicit acceptance criteria and non-goals
+- phase boundaries (code vs tests vs docs)
+- file scope limits
+- your manual validation gate (`yarn verify:all` + product checks)
 
 ## Feature workflow
 
 Every feature or refactor follows three explicit phases (do not merge them):
 
-**Phase 1 - Code** (you)
-Write the feature or refactor. Commit nothing yet.
+**Phase 1 - Code** (you or agent)
+Implement the feature/refactor only. Keep scope focused.
 
-**Phase 2 - Tests** (Claude Code: `/test`)
-Claude reads what changed via `git diff`, writes Vitest unit tests and/or Playwright e2e tests, then runs them.
+**Phase 2 - Tests** (agent)
+Agent reads what changed via `git diff`, writes/updates Vitest unit tests and/or Playwright e2e tests.
 
-**Phase 3 - Docs** (Claude Code: `/docs`)
-Claude reads what changed and updates the living docs:
+**Phase 3 - Docs** (agent)
+Agent updates the living docs:
 
 - [`docs/02_CODEBASE_MAP.md`](docs/02_CODEBASE_MAP.md) - feature map entry
 - [`docs/03_IPC_CONTRACT.md`](docs/03_IPC_CONTRACT.md) - IPC channel table
 
-Then commit everything together.
+You run local validation and manual feature verification, then commit everything together.
 
 ## Docs
 
