@@ -7,7 +7,7 @@ export default defineConfig({
   timeout: 60000,
   retries: 0,
   workers: 1,
-  reporter: 'html',
+  reporter: [['html', { open: 'never' }]],
   outputDir: 'test-results/',
   use: {
     trace: 'on-first-retry',
