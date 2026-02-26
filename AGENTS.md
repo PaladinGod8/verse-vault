@@ -33,6 +33,7 @@ Use these docs for orientation before major changes:
 - `docs/01_ARCHITECTURE.md`
 - `docs/02_CODEBASE_MAP.md`
 - `docs/03_IPC_CONTRACT.md`
+- `docs/features/`
 - `docs/CHECKLIST.md`
 
 ## Standard Development Loop (Agent + Human)
@@ -43,6 +44,9 @@ The repository uses a strict 3-phase workflow. Do not merge phases unless the us
 2. Phase 2 - Tests
 3. Phase 3 - Docs
 
+Exception:
+- githook-required living docs updates are part of the same small commit for Phase 1/2 when those files are touched.
+
 Default ownership:
 
 - Agent implements requested phase
@@ -51,7 +55,8 @@ Default ownership:
 ### Phase 1 - Code
 
 - Implement only the requested feature/refactor.
-- Do not also modify docs/tests unless requested.
+- Do not modify tests in this phase.
+- Keep githook-required living docs updated in the same small commit when touched files require it.
 - Keep changes scoped and architecture-compliant.
 - If IPC changes are needed, update in this order:
   1. `src/shared/ipcChannels.ts`
@@ -71,10 +76,10 @@ Default ownership:
 
 ### Phase 3 - Docs
 
-For normal feature updates, only touch:
+For normal feature updates, use this phase for feature-specific documentation:
 
-- `docs/02_CODEBASE_MAP.md`
-- `docs/03_IPC_CONTRACT.md`
+- create or update `docs/features/<feature-slug>.md`
+- do not do broad final reconciliation of living docs in this phase; those updates should already be done in earlier small commits
 
 Add an ADR in `docs/adr/` only for real architecture decisions:
 
@@ -108,6 +113,11 @@ When finishing a task, report:
 - what behavior changed
 - what tests were added/updated (or why none)
 - what commands were run
+- final suggested git commit message for the step
+  - `feat:` for feature behavior
+  - `test:` for test-only changes
+  - `fix:` for refactors/fixes
+  - `chore:` for chores/docs/tooling
 - any remaining risks or follow-ups
 
 ## Anti-Patterns
@@ -115,5 +125,5 @@ When finishing a task, report:
 - Do not hardcode IPC channel strings.
 - Do not invent architecture that is not present in the code.
 - Do not bypass security boundaries to "make it work".
-- Do not create random new docs files for routine feature changes.
+- Do not create random new docs files outside `docs/features/` and `docs/adr/`.
 - Do not silently skip tests when behavior changed.
