@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { getDatabase, closeDatabase } from './database/db';
+import { IPC } from './shared/ipcChannels';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -36,12 +37,12 @@ const createWindow = () => {
 function registerIpcHandlers() {
   const db = getDatabase();
 
-  ipcMain.handle('db:verses:getAll', () => {
+  ipcMain.handle(IPC.VERSES_GET_ALL, () => {
     return db.prepare('SELECT * FROM verses ORDER BY created_at DESC').all();
   });
 
   ipcMain.handle(
-    'db:verses:add',
+    IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {
       const stmt = db.prepare(
         'INSERT INTO verses (text, reference, tags) VALUES (?, ?, ?)',
@@ -58,7 +59,7 @@ function registerIpcHandlers() {
   );
 
   ipcMain.handle(
-    'db:verses:update',
+    IPC.VERSES_UPDATE,
     (
       _event,
       id: number,
@@ -78,7 +79,7 @@ function registerIpcHandlers() {
     },
   );
 
-  ipcMain.handle('db:verses:delete', (_event, id: number) => {
+  ipcMain.handle(IPC.VERSES_DELETE, (_event, id: number) => {
     db.prepare('DELETE FROM verses WHERE id = ?').run(id);
     return { id };
   });
