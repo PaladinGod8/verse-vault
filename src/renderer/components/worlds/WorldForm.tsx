@@ -75,7 +75,7 @@ export default function WorldForm({
           type="text"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           placeholder="Enter world name"
           autoFocus
           disabled={isSubmitting}
@@ -95,7 +95,7 @@ export default function WorldForm({
           type="url"
           value={thumbnail}
           onChange={(event) => setThumbnail(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           placeholder="https://example.com/image.jpg"
           disabled={isSubmitting}
         />
@@ -112,7 +112,7 @@ export default function WorldForm({
           id="world-short-description"
           value={shortDescription}
           onChange={(event) => setShortDescription(event.target.value)}
-          className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           placeholder="A quick summary of this world."
           disabled={isSubmitting}
         />

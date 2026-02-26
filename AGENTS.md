@@ -45,6 +45,7 @@ The repository uses a strict 3-phase workflow. Do not merge phases unless the us
 3. Phase 3 - Docs
 
 Exception:
+
 - githook-required living docs updates are part of the same small commit for Phase 1/2 when those files are touched.
 
 Default ownership:

@@ -20,7 +20,9 @@ test('app launches and shows worlds landing shell', async () => {
   await expect(
     window.getByRole('heading', { name: 'Worlds', exact: true, level: 1 }),
   ).toBeVisible();
-  await expect(window.getByRole('button', { name: 'Create world' })).toBeVisible();
+  await expect(
+    window.getByRole('button', { name: 'Create world' }),
+  ).toBeVisible();
 
   await window.waitForFunction(() => {
     const hasEmptyState = Array.from(document.querySelectorAll('h2')).some(
@@ -33,10 +35,12 @@ test('app launches and shows worlds landing shell', async () => {
     return hasEmptyState || hasWorldCard;
   });
 
-  const emptyStateHeading = window.getByRole('heading', { name: 'No worlds yet' });
-  const firstWorldCard = window.locator(
-    'article[role="button"][aria-label^="Open "]',
-  ).first();
+  const emptyStateHeading = window.getByRole('heading', {
+    name: 'No worlds yet',
+  });
+  const firstWorldCard = window
+    .locator('article[role="button"][aria-label^="Open "]')
+    .first();
 
   if (await emptyStateHeading.isVisible().catch(() => false)) {
     await expect(emptyStateHeading).toBeVisible();

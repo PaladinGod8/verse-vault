@@ -13,25 +13,27 @@ yarn format         # auto-format
 ## Product Direction
 
 Verse Vault is being built as a centralized, offline-first desktop platform for:
+
 - TTRPG campaign management
 - Creative writing workflows
 - Worldbuilding knowledge systems
 
 Core design intent:
+
 - One local workspace for campaign operations, lore, notes, and manuscript drafting
 - Local-first data ownership with no cloud dependency for core workflows
 - Expandable entity model for campaign, world, manuscript, and session domains
 
 ## Where to Start Reading
 
-| Question | File |
-|----------|------|
-| How does the app boot? | [src/main.ts](../src/main.ts) |
-| What APIs does the renderer have? | [src/preload.ts](../src/preload.ts) -> `window.db` |
-| What routes/pages exist? | [src/renderer/App.tsx](../src/renderer/App.tsx) |
-| What's in the database? | [src/database/db.ts](../src/database/db.ts) |
-| What IPC channel names exist? | [src/shared/ipcChannels.ts](../src/shared/ipcChannels.ts) |
-| Global TS types | [forge.env.d.ts](../forge.env.d.ts) (`Verse` scaffold + `DbApi`) |
+| Question                          | File                                                             |
+| --------------------------------- | ---------------------------------------------------------------- |
+| How does the app boot?            | [src/main.ts](../src/main.ts)                                    |
+| What APIs does the renderer have? | [src/preload.ts](../src/preload.ts) -> `window.db`               |
+| What routes/pages exist?          | [src/renderer/App.tsx](../src/renderer/App.tsx)                  |
+| What's in the database?           | [src/database/db.ts](../src/database/db.ts)                      |
+| What IPC channel names exist?     | [src/shared/ipcChannels.ts](../src/shared/ipcChannels.ts)        |
+| Global TS types                   | [forge.env.d.ts](../forge.env.d.ts) (`Verse` scaffold + `DbApi`) |
 
 ## Docs
 
