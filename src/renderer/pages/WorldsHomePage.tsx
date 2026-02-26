@@ -3,10 +3,15 @@ import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
 
 export default function WorldsHomePage() {
+  type WorldInput = Parameters<DbApi['worlds']['add']>[0];
+
   const [worlds, setWorlds] = useState<World[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingWorld, setEditingWorld] = useState<World | null>(null);
+  const [deletingWorldId, setDeletingWorldId] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,16 +40,59 @@ export default function WorldsHomePage() {
     };
   }, []);
 
-  const handleCreateWorld = async (
-    data: Parameters<DbApi['worlds']['add']>[0],
-  ) => {
-    const createdWorld = await window.db.worlds.add(data);
+  const upsertWorld = (nextWorld: World) => {
     setWorlds((previousWorlds) => [
-      createdWorld,
-      ...previousWorlds.filter((world) => world.id !== createdWorld.id),
+      nextWorld,
+      ...previousWorlds.filter((world) => world.id !== nextWorld.id),
     ]);
+  };
+
+  const handleCreateWorld = async (data: WorldInput) => {
+    const createdWorld = await window.db.worlds.add(data);
+    upsertWorld(createdWorld);
     setLoadError(null);
+    setMutationError(null);
     setIsCreateOpen(false);
+  };
+
+  const handleUpdateWorld = async (data: WorldInput) => {
+    if (!editingWorld) {
+      return;
+    }
+
+    const updatedWorld = await window.db.worlds.update(editingWorld.id, data);
+    upsertWorld(updatedWorld);
+    setLoadError(null);
+    setMutationError(null);
+    setEditingWorld(null);
+  };
+
+  const handleDeleteWorld = async (world: World) => {
+    const isConfirmed = window.confirm(
+      `Delete "${world.name}"? This cannot be undone.`,
+    );
+    if (!isConfirmed) {
+      return;
+    }
+
+    setMutationError(null);
+    setDeletingWorldId(world.id);
+
+    try {
+      await window.db.worlds.delete(world.id);
+      setWorlds((previousWorlds) =>
+        previousWorlds.filter((item) => item.id !== world.id),
+      );
+      setLoadError(null);
+      setMutationError(null);
+      setEditingWorld((current) =>
+        current?.id === world.id ? null : current,
+      );
+    } catch {
+      setMutationError('Unable to delete world right now.');
+    } finally {
+      setDeletingWorldId((current) => (current === world.id ? null : current));
+    }
   };
 
   return (
@@ -56,8 +104,7 @@ export default function WorldsHomePage() {
               Worlds
             </h1>
             <p className="text-sm text-slate-600">
-              Create and browse worlds. Editing tools are coming in a later
-              step.
+              Create, edit, and delete your worlds from one place.
             </p>
           </div>
 
@@ -82,6 +129,12 @@ export default function WorldsHomePage() {
           </section>
         ) : null}
 
+        {!isLoading && !loadError && mutationError ? (
+          <section className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm">
+            {mutationError}
+          </section>
+        ) : null}
+
         {!isLoading && !loadError && worlds.length === 0 ? (
           <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
@@ -96,7 +149,18 @@ export default function WorldsHomePage() {
         {!isLoading && !loadError && worlds.length > 0 ? (
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {worlds.map((world) => (
-              <WorldCard key={world.id} world={world} />
+              <WorldCard
+                key={world.id}
+                world={world}
+                onEdit={() => {
+                  setIsCreateOpen(false);
+                  setEditingWorld(world);
+                }}
+                onDelete={() => {
+                  void handleDeleteWorld(world);
+                }}
+                isDeleting={deletingWorldId === world.id}
+              />
             ))}
           </section>
         ) : null}
@@ -117,8 +181,33 @@ export default function WorldsHomePage() {
               Create world
             </h2>
             <WorldForm
-              onCreate={handleCreateWorld}
+              mode="create"
+              onSubmit={handleCreateWorld}
               onCancel={() => setIsCreateOpen(false)}
+            />
+          </section>
+        </div>
+      ) : null}
+
+      {editingWorld ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-world-title"
+            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+          >
+            <h2
+              id="edit-world-title"
+              className="mb-4 text-lg font-semibold text-slate-900"
+            >
+              Edit world
+            </h2>
+            <WorldForm
+              mode="edit"
+              initialValues={editingWorld}
+              onSubmit={handleUpdateWorld}
+              onCancel={() => setEditingWorld(null)}
             />
           </section>
         </div>

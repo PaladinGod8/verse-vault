@@ -27,5 +27,17 @@ contextBridge.exposeInMainWorld('db', {
       thumbnail?: string | null;
       short_description?: string | null;
     }): Promise<World> => ipcRenderer.invoke(IPC.WORLDS_ADD, data),
+    update: (
+      id: number,
+      data: {
+        name?: string;
+        thumbnail?: string | null;
+        short_description?: string | null;
+      },
+    ): Promise<World> => ipcRenderer.invoke(IPC.WORLDS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number }> =>
+      ipcRenderer.invoke(IPC.WORLDS_DELETE, id),
+    markViewed: (id: number): Promise<World> =>
+      ipcRenderer.invoke(IPC.WORLDS_MARK_VIEWED, id),
   },
 });
