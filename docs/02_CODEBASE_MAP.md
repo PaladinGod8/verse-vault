@@ -8,14 +8,14 @@
 | Path                                           | Responsibility                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed) |
-| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create) to renderer          |
+| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed) to renderer |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`), open/close                                  |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                         |
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                  |
 | `src/renderer/App.tsx`                         | Route definitions and app shell                                                                 |
-| `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): list fetch + create modal + loading/empty/error states               |
-| `src/renderer/components/worlds/WorldCard.tsx` | Read-only world card UI (thumbnail fallback + metadata display)                                 |
-| `src/renderer/components/worlds/WorldForm.tsx` | Worlds create form (name required, optional thumbnail and short description)                     |
+| `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states |
+| `src/renderer/components/worlds/WorldCard.tsx` | World card UI (thumbnail fallback + metadata display + edit/delete actions)                     |
+| `src/renderer/components/worlds/WorldForm.tsx` | Reusable worlds form for create/edit (name required, optional thumbnail and short description)  |
 | `src/renderer/index.css`                       | Tailwind v4 import + global styles                                                              |
 | `src/store/`                                   | Zustand stores - one file per feature domain                                                    |
 | `forge.env.d.ts`                               | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants                   |
@@ -125,6 +125,17 @@
 - **IPC**: `IPC.WORLDS_UPDATE`, `IPC.WORLDS_DELETE`, `IPC.WORLDS_MARK_VIEWED`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Storage**: `WORLDS_UPDATE` mutates only provided fields (`name`, `thumbnail`, `short_description`) and sets `updated_at = datetime('now')`; `WORLDS_DELETE` removes by id and returns `{ id }`; `WORLDS_MARK_VIEWED` sets `last_viewed_at = datetime('now')` and returns the updated row or `null` if missing
+
+### Worlds Renderer CRUD Actions (Step 09)
+
+- **Purpose**: expose worlds mutation bridges in preload and complete renderer-side edit/delete actions on the worlds home page
+- **Status**: added on 2026-02-26
+- **UI**: `src/renderer/pages/WorldsHomePage.tsx`, `src/renderer/components/worlds/WorldCard.tsx`, `src/renderer/components/worlds/WorldForm.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.WORLDS_UPDATE`, `IPC.WORLDS_DELETE`, `IPC.WORLDS_MARK_VIEWED` via `window.db.worlds.update/delete/markViewed`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 08)
+- **Preload bridge**: `src/preload.ts` -> `window.db.worlds.update/delete/markViewed`
+- **Storage**: edit flow updates world row and returns refreshed record; delete flow removes row by id; renderer updates local list immediately and requires confirmation before delete
 
 ### App Shell / Routing
 

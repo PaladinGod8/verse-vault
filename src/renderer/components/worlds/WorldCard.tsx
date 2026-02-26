@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type WorldCardProps = {
   world: World;
+  onEdit: () => void;
+  onDelete: () => void;
+  isDeleting?: boolean;
 };
 
 function formatTimestamp(timestamp: string | null, fallback: string): string {
@@ -24,9 +27,18 @@ function formatTimestamp(timestamp: string | null, fallback: string): string {
   }).format(parsed);
 }
 
-export default function WorldCard({ world }: WorldCardProps) {
+export default function WorldCard({
+  world,
+  onEdit,
+  onDelete,
+  isDeleting = false,
+}: WorldCardProps) {
   const thumbnail = world.thumbnail?.trim() ?? '';
   const [showImage, setShowImage] = useState(thumbnail.length > 0);
+
+  useEffect(() => {
+    setShowImage(thumbnail.length > 0);
+  }, [thumbnail]);
 
   const altText = useMemo(() => `${world.name} thumbnail`, [world.name]);
 
@@ -70,6 +82,25 @@ export default function WorldCard({ world }: WorldCardProps) {
             </dd>
           </div>
         </dl>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onEdit}
+            disabled={isDeleting}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
       </div>
     </article>
   );

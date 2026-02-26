@@ -2,17 +2,33 @@ import { FormEvent, useState } from 'react';
 
 type AddWorldInput = Parameters<DbApi['worlds']['add']>[0];
 
+type WorldFormInitialValues = {
+  name: string;
+  thumbnail: string | null;
+  short_description: string | null;
+};
+
 type WorldFormProps = {
-  onCreate: (data: AddWorldInput) => Promise<void>;
+  mode?: 'create' | 'edit';
+  initialValues?: Partial<WorldFormInitialValues>;
+  onSubmit: (data: AddWorldInput) => Promise<void>;
   onCancel: () => void;
 };
 
-export default function WorldForm({ onCreate, onCancel }: WorldFormProps) {
-  const [name, setName] = useState('');
-  const [thumbnail, setThumbnail] = useState('');
-  const [shortDescription, setShortDescription] = useState('');
+export default function WorldForm({
+  mode = 'create',
+  initialValues,
+  onSubmit,
+  onCancel,
+}: WorldFormProps) {
+  const [name, setName] = useState(initialValues?.name ?? '');
+  const [thumbnail, setThumbnail] = useState(initialValues?.thumbnail ?? '');
+  const [shortDescription, setShortDescription] = useState(
+    initialValues?.short_description ?? '',
+  );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = mode === 'edit';
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -27,14 +43,18 @@ export default function WorldForm({ onCreate, onCancel }: WorldFormProps) {
     setSubmitError(null);
 
     try {
-      await onCreate({
+      await onSubmit({
         name: trimmedName,
         thumbnail: thumbnail.trim() || null,
         short_description: shortDescription.trim() || null,
       });
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : 'Failed to create world.',
+        error instanceof Error
+          ? error.message
+          : isEditMode
+            ? 'Failed to save world changes.'
+            : 'Failed to create world.',
       );
     } finally {
       setIsSubmitting(false);
@@ -118,7 +138,13 @@ export default function WorldForm({ onCreate, onCancel }: WorldFormProps) {
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Creating...' : 'Create world'}
+          {isSubmitting
+            ? isEditMode
+              ? 'Saving...'
+              : 'Creating...'
+            : isEditMode
+              ? 'Save changes'
+              : 'Create world'}
         </button>
       </div>
     </form>
