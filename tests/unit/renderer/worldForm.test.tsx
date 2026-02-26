@@ -26,7 +26,9 @@ describe('WorldForm', () => {
 
     expect(await screen.findByText('Save failed')).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Create world' })).toBeEnabled();
+      expect(
+        screen.getByRole('button', { name: 'Create world' }),
+      ).toBeEnabled();
     });
   });
 
@@ -38,7 +40,9 @@ describe('WorldForm', () => {
     await user.type(screen.getByLabelText('Name'), 'Alpha');
     await user.click(screen.getByRole('button', { name: 'Create world' }));
 
-    expect(await screen.findByText('Failed to create world.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Failed to create world.'),
+    ).toBeInTheDocument();
   });
 
   it('shows generic edit failure for non-Error exceptions', async () => {

@@ -102,7 +102,9 @@ describe('WorldPagePlaceholder', () => {
     renderWorldPage('/world/5');
 
     expect(screen.getByText('Loading world...')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Alpha' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Alpha' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('No description yet.')).toBeInTheDocument();
     expect(screen.getByText('Never')).toBeInTheDocument();
     expect(screen.getByText('not-a-timestamp')).toBeInTheDocument();
