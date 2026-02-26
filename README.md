@@ -83,16 +83,22 @@ For each step, include: scope, files, risks, and done criteria.
 Note:
 - convert split steps into copy-pastable prompts in markdown under docs/prompts/
 - can be carried out in sequential order regardless of whether it is in a new chat / context window or not
-- write docs as you go
+- write hook-required living docs as you go in each small commit step
+- require one final commit message line per step using:
+  - `feat:` for feature behavior
+  - `test:` for test-only changes
+  - `fix:` for refactors/fixes
+  - `chore:` for chores/docs/tooling
 
-### 3. Phase 1 prompt (code only)
+### 3. Phase 1 prompt (code + required docs)
 
 ```text
-Phase 1 (Code only):
+Phase 1 (Code + required docs):
 Implement step <N> only.
-Do not write tests or docs in this step.
+Do not write tests in this step.
+If githooks require docs updates for touched files, update only those living docs in this same step.
 Follow AGENTS.md architecture and IPC rules.
-At end, return: files changed, behavior changed, risks, summary git commit.
+At end, return: files changed, behavior changed, risks, final git commit message.
 ```
 
 ### 4. Phase 2 prompt (tests only)
@@ -100,8 +106,9 @@ At end, return: files changed, behavior changed, risks, summary git commit.
 ```text
 Phase 2 (Tests only):
 Based on current git diff, add or update unit/e2e tests for the feature.
-Do not change production code or docs.
-At end, return: test files changed, behaviors covered, gaps.
+Do not change production code.
+If githooks require docs updates for touched files, update only those living docs in this same step.
+At end, return: test files changed, behaviors covered, gaps, final git commit message.
 ```
 
 Notes:
@@ -121,19 +128,18 @@ If it fails, paste failures and use:
 Fix only the reported failures from this output:
 <paste error output>
 Do not make unrelated refactors.
-Return exact files changed and why.
+Return exact files changed, why, and final git commit message.
 ```
 
-### 6. Phase 3 prompt (docs only)
+### 6. Phase 3 prompt (feature docs only)
 
 ```text
-Phase 3 (Docs only):
-Update docs for the completed feature.
-Only modify:
-- docs/02_CODEBASE_MAP.md
-- docs/03_IPC_CONTRACT.md
+Phase 3 (Feature docs only):
+Document the completed feature in docs/features/<feature-slug>.md.
+Create the file if missing, otherwise update it.
+Do not do broad final docs reconciliation in this step.
 Do not change code or tests.
-Return exact doc entries updated.
+Return exact doc entries updated and final git commit message.
 ```
 
 ### Should agents generate prompts for you?
@@ -150,18 +156,23 @@ Yes, as a draft generator. This is useful, but keep control by requiring:
 Every feature or refactor follows three explicit phases (do not merge them):
 
 **Phase 1 - Code** (you or agent)
-Implement the feature/refactor only. Keep scope focused.
+Implement the feature/refactor. Keep scope focused. Keep githook-required living docs in the same small commit.
 
 **Phase 2 - Tests** (agent)
-Agent reads what changed via `git diff`, writes/updates Vitest unit tests and/or Playwright e2e tests.
+Agent reads what changed via `git diff`, writes/updates Vitest unit tests and/or Playwright e2e tests, and keeps githook-required living docs in the same small commit when needed.
 
-**Phase 3 - Docs** (agent)
-Agent updates the living docs:
+**Phase 3 - Feature docs** (agent)
+Agent creates or updates the feature document:
 
-- [`docs/02_CODEBASE_MAP.md`](docs/02_CODEBASE_MAP.md) - feature map entry
-- [`docs/03_IPC_CONTRACT.md`](docs/03_IPC_CONTRACT.md) - IPC channel table
+- [`docs/features/<feature-slug>.md`](docs/features/) - feature intent, scope, and delivered behavior
 
-You run local validation and manual feature verification, then commit everything together.
+Every small step ends with one proposed commit message line:
+- `feat:` feature behavior
+- `test:` test-only changes
+- `fix:` refactors/fixes
+- `chore:` chores/docs/tooling
+
+Run local validation and manual feature verification per step, then commit per step (small batch size).
 
 ## Docs
 
@@ -171,6 +182,7 @@ You run local validation and manual feature verification, then commit everything
 | [docs/01_ARCHITECTURE.md](docs/01_ARCHITECTURE.md)   | Process diagram and engineering rules           |
 | [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md)   | **Living** - where to change feature code       |
 | [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md)   | **Living** - IPC channels and payload contracts |
+| [docs/features/](docs/features/)                     | Feature-level docs, one markdown file per feature |
 | [docs/05_BUILD_RELEASE.md](docs/05_BUILD_RELEASE.md) | Packaging and release                           |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md)               | Feature completion checklist                    |
 | [docs/TODO.md](docs/TODO.md)                         | Product roadmap and backlog                     |
