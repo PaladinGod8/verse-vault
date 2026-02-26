@@ -94,6 +94,7 @@ out/
 # Documentation
 docs/prompts/
 docs/vsnotes/
+docs/logs/
 .VSCodeCounter/
 
 # Coding Agents
