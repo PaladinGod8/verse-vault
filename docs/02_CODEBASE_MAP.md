@@ -14,7 +14,8 @@
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                  |
 | `src/renderer/App.tsx`                         | Route definitions and app shell                                                                 |
 | `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states |
-| `src/renderer/components/worlds/WorldCard.tsx` | World card UI (thumbnail fallback + metadata display + edit/delete actions)                     |
+| `src/renderer/pages/WorldPagePlaceholder.tsx`  | World route placeholder page (`/world/:id`): validates id, marks world viewed on entry, shows basic world context |
+| `src/renderer/components/worlds/WorldCard.tsx` | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions) |
 | `src/renderer/components/worlds/WorldForm.tsx` | Reusable worlds form for create/edit (name required, optional thumbnail and short description)  |
 | `src/renderer/index.css`                       | Tailwind v4 import + global styles                                                              |
 | `src/store/`                                   | Zustand stores - one file per feature domain                                                    |
@@ -136,6 +137,17 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 08)
 - **Preload bridge**: `src/preload.ts` -> `window.db.worlds.update/delete/markViewed`
 - **Storage**: edit flow updates world row and returns refreshed record; delete flow removes row by id; renderer updates local list immediately and requires confirmation before delete
+
+### Worlds Route Placeholder + Mark Viewed (Step 10)
+
+- **Purpose**: enable opening a single world route from card view and update `last_viewed_at` when entering that route
+- **Status**: added on 2026-02-26
+- **UI**: `src/renderer/App.tsx`, `src/renderer/pages/WorldsHomePage.tsx`, `src/renderer/components/worlds/WorldCard.tsx`, `src/renderer/pages/WorldPagePlaceholder.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.WORLDS_GET_BY_ID` and `IPC.WORLDS_MARK_VIEWED` via `window.db.worlds.getById/markViewed`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Steps 03 and 08)
+- **Preload bridge**: `src/preload.ts` -> `window.db.worlds.getById/markViewed` (from Steps 04 and 09)
+- **Storage**: opening `/world/:id` validates param, resolves not-found safely, and persists viewed timestamp through `UPDATE worlds SET last_viewed_at = datetime('now') WHERE id = ?`
 
 ### App Shell / Routing
 
