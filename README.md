@@ -29,6 +29,8 @@ yarn verify:all:fresh
 yarn verify:all:dev:fresh
 ```
 
+Use VSCodeCounter on major changes.
+
 See [docs/00_INDEX.md](docs/00_INDEX.md) for full orientation and architecture.
 
 ## Feature workflow
