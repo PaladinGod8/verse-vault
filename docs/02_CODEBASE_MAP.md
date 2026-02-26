@@ -9,7 +9,7 @@
 |------|----------------|
 | `src/main.ts` | App bootstrap, BrowserWindow creation, IPC handler registration |
 | `src/preload.ts` | contextBridge - exposes `window.db` to renderer |
-| `src/database/db.ts` | SQLite singleton, schema init, open/close |
+| `src/database/db.ts` | SQLite singleton, schema init (`verses`, `worlds`), open/close |
 | `src/shared/ipcChannels.ts` | All IPC channel name constants (single source of truth) |
 | `src/renderer/index.tsx` | React root, HashRouter wrapper |
 | `src/renderer/App.tsx` | Route definitions and app shell |
@@ -50,6 +50,16 @@
 - **IPC**: `IPC.WORLDS_GET_ALL`, `IPC.WORLDS_GET_BY_ID`, `IPC.WORLDS_ADD`, `IPC.WORLDS_UPDATE`, `IPC.WORLDS_DELETE`, `IPC.WORLDS_MARK_VIEWED`
 - **Main handler**: not wired in this step
 - **Storage**: schema/queries not added in this step
+
+### Worlds Schema Bootstrap (Step 02)
+
+- **Purpose**: ensure `worlds` table exists during DB initialization without impacting existing `verses` behavior
+- **Status**: added on 2026-02-26 as migration-safe `CREATE TABLE IF NOT EXISTS`
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: contract exists from Step 01; runtime handlers still not wired in this step
+- **Main handler**: not wired in this step
+- **Storage**: `verse-vault.db` -> `worlds` table (`id`, `name`, `thumbnail`, `short_description`, `last_viewed_at`, `created_at`, `updated_at`)
 
 ### App Shell / Routing
 

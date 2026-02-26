@@ -44,7 +44,7 @@ flowchart LR
 
 4. **Channel names are constants.** All IPC channel strings live in `src/shared/ipcChannels.ts`. No magic strings in `main.ts` or `preload.ts`.
 
-5. **Shared types live in `forge.env.d.ts`.** Current scaffolds are `Verse` and `World`; Step 01 additionally defines `DbApi.worlds` contract shape before main/preload runtime wiring.
+5. **Shared types live in `forge.env.d.ts`.** Current scaffolds are `Verse` and `World`; Step 01 defines `DbApi.worlds` contract shape before main/preload runtime wiring.
 
 6. **Zustand for client state.** DB/server state flows via `window.db`. Transient UI state goes in feature-focused stores under `src/store/`.
 
@@ -57,3 +57,8 @@ flowchart LR
 10. **Fuses are compile-time.** Security fuses in `forge.config.ts` are baked at `yarn make`, not `yarn start`.
 
 11. **Offline-first is a hard requirement.** New domain features must work without network access and persist locally first.
+
+## Current Data Bootstrap Notes
+
+- `src/database/db.ts -> initializeSchema()` currently creates both `verses` and `worlds` via `CREATE TABLE IF NOT EXISTS` for migration-safe startup on existing user databases.
+- `worlds` schema baseline (Step 02, 2026-02-26): `id`, `name`, `thumbnail`, `short_description`, `last_viewed_at`, `created_at`, `updated_at`.
