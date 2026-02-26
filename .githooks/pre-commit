@@ -1,0 +1,31 @@
+#!/bin/sh
+
+echo "[pre-commit] Running staged docs guards..."
+
+if command -v yarn >/dev/null 2>&1; then
+  yarn guard:ipc-docs:staged
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "[pre-commit] Commit blocked by IPC docs guard."
+    exit "$status"
+  fi
+
+  yarn guard:docs:staged
+else
+  node scripts/guard-ipc-docs.cjs --staged
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "[pre-commit] Commit blocked by IPC docs guard."
+    exit "$status"
+  fi
+
+  node scripts/guard-docs.cjs --staged
+fi
+
+status=$?
+if [ "$status" -ne 0 ]; then
+  echo "[pre-commit] Commit blocked by docs guard."
+  exit "$status"
+fi
+
+exit 0
