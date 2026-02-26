@@ -28,6 +28,7 @@ If instructions conflict, follow the highest-priority item and call out the conf
   - schema updates in `src/database/db.ts`
 
 Use these docs for orientation before major changes:
+
 - `docs/00_INDEX.md`
 - `docs/01_ARCHITECTURE.md`
 - `docs/02_CODEBASE_MAP.md`
@@ -43,6 +44,7 @@ The repository uses a strict 3-phase workflow. Do not merge phases unless the us
 3. Phase 3 - Docs
 
 Default ownership:
+
 - Agent implements requested phase
 - Human runs full local validation and product verification manually
 
@@ -52,10 +54,10 @@ Default ownership:
 - Do not also modify docs/tests unless requested.
 - Keep changes scoped and architecture-compliant.
 - If IPC changes are needed, update in this order:
-  1) `src/shared/ipcChannels.ts`
-  2) `src/main.ts` handlers
-  3) `src/preload.ts` bridge
-  4) `forge.env.d.ts` shared types
+  1. `src/shared/ipcChannels.ts`
+  2. `src/main.ts` handlers
+  3. `src/preload.ts` bridge
+  4. `forge.env.d.ts` shared types
 
 ### Phase 2 - Tests
 
@@ -70,10 +72,12 @@ Default ownership:
 ### Phase 3 - Docs
 
 For normal feature updates, only touch:
+
 - `docs/02_CODEBASE_MAP.md`
 - `docs/03_IPC_CONTRACT.md`
 
 Add an ADR in `docs/adr/` only for real architecture decisions:
+
 - storage model change
 - IPC pattern change
 - security boundary change
@@ -82,6 +86,7 @@ Add an ADR in `docs/adr/` only for real architecture decisions:
 ## Commands
 
 Primary local checks:
+
 - `yarn lint`
 - `yarn format:check`
 - `yarn test:unit:run`
@@ -89,6 +94,7 @@ Primary local checks:
 - `yarn test:e2e`
 
 Full pipeline:
+
 - `yarn verify:all`
 - `yarn verify:all:dev`
 
@@ -97,6 +103,7 @@ Unless the user asks otherwise, do not run long/full pipelines repeatedly when t
 ## Output Contract for Agents
 
 When finishing a task, report:
+
 - files changed
 - what behavior changed
 - what tests were added/updated (or why none)
