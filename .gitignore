@@ -92,7 +92,8 @@ typings/
 out/
 
 # Documentation
-docs/ 
+docs/prompts/
+docs/vsnotes/
 .VSCodeCounter/
 
 # Coding Agents
