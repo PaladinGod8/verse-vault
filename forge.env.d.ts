@@ -1,31 +1,60 @@
 export {}; // Make this a module
 
-interface Verse {
-  id: number;
-  text: string;
-  reference: string | null;
-  tags: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface DbApi {
-  verses: {
-    getAll(): Promise<Verse[]>;
-    add(data: {
-      text: string;
-      reference?: string;
-      tags?: string;
-    }): Promise<Verse>;
-    update(
-      id: number,
-      data: { text?: string; reference?: string; tags?: string },
-    ): Promise<Verse>;
-    delete(id: number): Promise<{ id: number }>;
-  };
-}
-
 declare global {
+  interface Verse {
+    id: number;
+    text: string;
+    reference: string | null;
+    tags: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface World {
+    id: number;
+    name: string;
+    thumbnail: string | null;
+    short_description: string | null;
+    last_viewed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface DbApi {
+    verses: {
+      getAll(): Promise<Verse[]>;
+      add(data: {
+        text: string;
+        reference?: string;
+        tags?: string;
+      }): Promise<Verse>;
+      update(
+        id: number,
+        data: { text?: string; reference?: string; tags?: string },
+      ): Promise<Verse>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+    worlds: {
+      getAll(): Promise<World[]>;
+      getById(id: number): Promise<World | null>;
+      add(data: {
+        name: string;
+        thumbnail?: string | null;
+        short_description?: string | null;
+      }): Promise<World>;
+      update(
+        id: number,
+        data: {
+          name?: string;
+          thumbnail?: string | null;
+          short_description?: string | null;
+        },
+      ): Promise<World>;
+      delete(id: number): Promise<{ id: number }>;
+      markViewed(id: number): Promise<World>;
+    };
+  }
+
   interface Window {
     db: DbApi;
   }

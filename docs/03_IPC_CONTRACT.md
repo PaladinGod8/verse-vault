@@ -7,6 +7,8 @@
 
 Current channels cover an initial local content-record scaffold (`verses`) and a shared Worlds contract (`worlds`) for upcoming handlers/bridge wiring. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
+Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer.
+
 ## Channels
 
 | Constant | String Value | Direction | Request Payload | Response | Handler |

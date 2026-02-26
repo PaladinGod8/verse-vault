@@ -44,6 +44,7 @@
 ### Worlds Shared Contract (Step 01)
 
 - **Purpose**: define shared types and IPC constant names for upcoming Worlds CRUD and viewed-state flows
+- **Status**: step-level contract sync updated on 2026-02-26 for hook-required docs parity
 - **UI**: none yet
 - **Store**: none yet (add Zustand store when UI is built)
 - **IPC**: `IPC.WORLDS_GET_ALL`, `IPC.WORLDS_GET_BY_ID`, `IPC.WORLDS_ADD`, `IPC.WORLDS_UPDATE`, `IPC.WORLDS_DELETE`, `IPC.WORLDS_MARK_VIEWED`
