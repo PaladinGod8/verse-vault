@@ -104,6 +104,9 @@ Do not change production code or docs.
 At end, return: test files changed, behaviors covered, gaps.
 ```
 
+Notes:
+- write more tests if pipeline indicates <80% code coverage on pipeline failure
+
 ### 5. Manual pipeline + fix loop prompt
 
 You run local checks manually:
