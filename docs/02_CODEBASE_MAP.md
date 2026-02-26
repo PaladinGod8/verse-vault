@@ -7,7 +7,7 @@
 
 | Path                                           | Responsibility                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create) |
+| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed) |
 | `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create) to renderer          |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`), open/close                                  |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                         |
@@ -115,6 +115,16 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 06)
 - **Preload bridge**: `src/preload.ts` -> `window.db.worlds.add(data)`
 - **Storage**: creates a `worlds` row and prepends returned record into UI state so cards update immediately
+
+### Worlds Main Update/Delete/Mark Viewed (Step 08)
+
+- **Purpose**: add remaining worlds mutation handlers in main process while keeping preload/renderer mutation wiring out of scope for this step
+- **Status**: added on 2026-02-26
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.WORLDS_UPDATE`, `IPC.WORLDS_DELETE`, `IPC.WORLDS_MARK_VIEWED`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Storage**: `WORLDS_UPDATE` mutates only provided fields (`name`, `thumbnail`, `short_description`) and sets `updated_at = datetime('now')`; `WORLDS_DELETE` removes by id and returns `{ id }`; `WORLDS_MARK_VIEWED` sets `last_viewed_at = datetime('now')` and returns the updated row or `null` if missing
 
 ### App Shell / Routing
 

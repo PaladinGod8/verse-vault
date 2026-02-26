@@ -86,6 +86,75 @@ function registerIpcHandlers() {
   );
 
   ipcMain.handle(
+    IPC.WORLDS_UPDATE,
+    (
+      _event,
+      id: number,
+      data: {
+        name?: string;
+        thumbnail?: string | null;
+        short_description?: string | null;
+      },
+    ) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasThumbnail = Object.prototype.hasOwnProperty.call(
+        data,
+        'thumbnail',
+      );
+      const hasShortDescription = Object.prototype.hasOwnProperty.call(
+        data,
+        'short_description',
+      );
+
+      const setClauses: string[] = [];
+      const values: Array<string | null> = [];
+
+      if (hasName) {
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('World name is required');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasThumbnail && data.thumbnail !== undefined) {
+        setClauses.push('thumbnail = ?');
+        values.push(data.thumbnail);
+      }
+
+      if (hasShortDescription && data.short_description !== undefined) {
+        setClauses.push('short_description = ?');
+        values.push(data.short_description);
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE worlds SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const world = db.prepare('SELECT * FROM worlds WHERE id = ?').get(id);
+      if (!world) {
+        throw new Error('World not found');
+      }
+      return world;
+    },
+  );
+
+  ipcMain.handle(IPC.WORLDS_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM worlds WHERE id = ?').run(id);
+    return { id };
+  });
+
+  ipcMain.handle(IPC.WORLDS_MARK_VIEWED, (_event, id: number) => {
+    db.prepare("UPDATE worlds SET last_viewed_at = datetime('now') WHERE id = ?").run(
+      id,
+    );
+    return db.prepare('SELECT * FROM worlds WHERE id = ?').get(id) ?? null;
+  });
+
+  ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {
       const stmt = db.prepare(
