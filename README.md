@@ -91,7 +91,7 @@ Phase 1 (Code only):
 Implement step <N> only.
 Do not write tests or docs in this step.
 Follow AGENTS.md architecture and IPC rules.
-At end, return: files changed, behavior changed, risks.
+At end, return: files changed, behavior changed, risks, summary git commit.
 ```
 
 ### 4. Phase 2 prompt (tests only)
