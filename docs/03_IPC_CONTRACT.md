@@ -7,7 +7,7 @@
 
 Current channels cover an initial local content-record scaffold (`verses`) plus Worlds read handlers in main process (`worlds`). This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
-Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with read handlers now registered in `main`.
+Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with read handlers registered in `main` and read methods exposed in `preload`.
 
 ## Channels
 
@@ -53,5 +53,6 @@ interface World {
 - All channels use `ipcMain.handle` / `ipcRenderer.invoke` (Promise-based).
 - `tags` is stored as a raw string; format is not yet enforced.
 - `VERSES_UPDATE` uses SQL `COALESCE`; passing `undefined`/`null` keeps that field unchanged.
-- Worlds read handlers (`WORLDS_GET_ALL`, `WORLDS_GET_BY_ID`) are wired in `main`; preload exposure and worlds write handlers land in follow-up steps.
+- Worlds read path is wired end-to-end for `WORLDS_GET_ALL` and `WORLDS_GET_BY_ID` (`main` handlers + `window.db.worlds.getAll/getById` in preload).
+- Worlds write channels remain contract-only in this step (`WORLDS_ADD`, `WORLDS_UPDATE`, `WORLDS_DELETE`, `WORLDS_MARK_VIEWED`).
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.
