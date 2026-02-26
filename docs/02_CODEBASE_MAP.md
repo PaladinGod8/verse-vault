@@ -7,7 +7,7 @@
 
 | Path                                           | Responsibility                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read) |
+| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create) |
 | `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read) to renderer                 |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`), open/close                                  |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                         |
@@ -93,6 +93,16 @@
 - **IPC**: uses existing `IPC.WORLDS_GET_ALL` via preload bridge (`window.db.worlds.getAll`)
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 03)
 - **Storage**: reads from `worlds` table; no write behavior added in this step
+
+### Worlds Main Create Handler (Step 06)
+
+- **Purpose**: add world creation in main process with basic name validation while keeping update/delete/viewed flows out of scope
+- **Status**: added on 2026-02-26
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.WORLDS_ADD`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Storage**: inserts into `worlds` (`name`, `thumbnail`, `short_description`), validates `name.trim()` is non-empty, then returns `SELECT * FROM worlds WHERE id = ?`
 
 ### App Shell / Routing
 
