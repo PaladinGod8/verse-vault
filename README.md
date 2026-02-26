@@ -80,6 +80,10 @@ Each step must be independently testable and reversible.
 For each step, include: scope, files, risks, and done criteria.
 ```
 
+Note:
+- convert split steps into copy-pastable prompts in markdown under docs/prompts/
+- can be carried out in sequential order regardless of whether it is in a new chat / context window or not
+
 ### 3. Phase 1 prompt (code only)
 
 ```text
