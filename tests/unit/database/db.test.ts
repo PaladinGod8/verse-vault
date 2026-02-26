@@ -59,10 +59,16 @@ describe('database', () => {
       path.join('C:/fake-user-data', 'verse-vault.db'),
     );
     expect(pragmaMock).toHaveBeenCalledWith('journal_mode = WAL');
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock.mock.calls[0][0]).toContain(
-      'CREATE TABLE IF NOT EXISTS verses',
-    );
+    expect(execMock).toHaveBeenCalledTimes(2);
+
+    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS verses');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
+    expect(schemaSql).toContain('name TEXT NOT NULL');
+    expect(schemaSql).toContain('thumbnail TEXT');
+    expect(schemaSql).toContain('short_description TEXT');
+    expect(schemaSql).toContain('last_viewed_at TEXT');
+    expect(schemaSql).toContain("updated_at TEXT DEFAULT (datetime('now'))");
   });
 
   it('closes and resets the singleton', async () => {
