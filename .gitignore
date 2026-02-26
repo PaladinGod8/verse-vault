@@ -96,3 +96,7 @@ docs/
 
 # Coding Agents
 .claude/
+
+# Playwright
+playwright-report/
+test-results/
