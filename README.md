@@ -1,6 +1,8 @@
 # Verse Vault
 
-Electron desktop app for managing Bible verses. Built with Electron Forge, React, Vite, TypeScript, and SQLite.
+Electron desktop app X. 
+
+Built with Electron Forge, React, Vite, TypeScript, and SQLite.
 
 ## Dev setup
 
