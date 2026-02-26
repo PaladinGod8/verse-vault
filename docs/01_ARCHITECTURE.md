@@ -44,7 +44,7 @@ flowchart LR
 
 4. **Channel names are constants.** All IPC channel strings live in `src/shared/ipcChannels.ts`. No magic strings in `main.ts` or `preload.ts`.
 
-5. **Shared types live in `forge.env.d.ts`.** Current scaffolds are `Verse` and `World`; extend this for campaign/world/manuscript domain models as implementation evolves.
+5. **Shared types live in `forge.env.d.ts`.** Current scaffolds are `Verse` and `World`; Step 01 additionally defines `DbApi.worlds` contract shape before main/preload runtime wiring.
 
 6. **Zustand for client state.** DB/server state flows via `window.db`. Transient UI state goes in feature-focused stores under `src/store/`.
 
