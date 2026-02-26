@@ -8,13 +8,14 @@
 | Path                                           | Responsibility                                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create) |
-| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read) to renderer                 |
+| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create) to renderer          |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`), open/close                                  |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                         |
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                  |
 | `src/renderer/App.tsx`                         | Route definitions and app shell                                                                 |
-| `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): read-only fetch + loading/empty/error states                         |
+| `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): list fetch + create modal + loading/empty/error states               |
 | `src/renderer/components/worlds/WorldCard.tsx` | Read-only world card UI (thumbnail fallback + metadata display)                                 |
+| `src/renderer/components/worlds/WorldForm.tsx` | Worlds create form (name required, optional thumbnail and short description)                     |
 | `src/renderer/index.css`                       | Tailwind v4 import + global styles                                                              |
 | `src/store/`                                   | Zustand stores - one file per feature domain                                                    |
 | `forge.env.d.ts`                               | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants                   |
@@ -103,6 +104,17 @@
 - **IPC**: `IPC.WORLDS_ADD`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Storage**: inserts into `worlds` (`name`, `thumbnail`, `short_description`), validates `name.trim()` is non-empty, then returns `SELECT * FROM worlds WHERE id = ?`
+
+### Worlds Preload Create + UI Form (Step 07)
+
+- **Purpose**: enable world creation from renderer via typed preload bridge and a minimal UI modal form
+- **Status**: added on 2026-02-26
+- **UI**: `src/renderer/pages/WorldsHomePage.tsx`, `src/renderer/components/worlds/WorldForm.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.WORLDS_ADD` via `window.db.worlds.add`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 06)
+- **Preload bridge**: `src/preload.ts` -> `window.db.worlds.add(data)`
+- **Storage**: creates a `worlds` row and prepends returned record into UI state so cards update immediately
 
 ### App Shell / Routing
 
