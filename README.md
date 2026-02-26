@@ -7,6 +7,7 @@ Built with Electron Forge, React, Vite, TypeScript, and SQLite.
 ## Product Direction
 
 Primary goals:
+
 - Centralize campaign management, session prep, lore, and manuscript work.
 - Keep core workflows offline-first with local data ownership.
 - Build reusable linked entities (characters, factions, locations, timelines, assets, plot lines).
@@ -21,6 +22,9 @@ yarn lint      # ESLint
 yarn format    # Prettier
 yarn test      # unit (Vitest) + e2e (Playwright)
 yarn test:unit:coverage  # unit tests + v8 coverage report
+yarn guard:docs  # fail if architecture/map docs are missing for relevant code/config changes
+yarn guard:ipc-docs  # fail if IPC files changed without docs/03_IPC_CONTRACT.md updates
+yarn hooks:install  # one-time: enforce repo hooks (docs guards on commit)
 ```
 
 ## Development loop
@@ -127,6 +131,7 @@ Return exact doc entries updated.
 ### Should agents generate prompts for you?
 
 Yes, as a draft generator. This is useful, but keep control by requiring:
+
 - explicit acceptance criteria and non-goals
 - phase boundaries (code vs tests vs docs)
 - file scope limits
