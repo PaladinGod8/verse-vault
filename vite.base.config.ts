@@ -1,5 +1,4 @@
 import { builtinModules } from 'node:module';
-import type { AddressInfo } from 'node:net';
 import type { ConfigEnv, Plugin, UserConfig } from 'vite';
 import pkg from './package.json';
 
@@ -50,8 +49,8 @@ export function getDefineKeys(names: string[]) {
 export function getBuildDefine(env: ConfigEnv<'build'>) {
   const { command, forgeConfig } = env;
   const names = forgeConfig.renderer
-    .filter(({ name }) => name != null)
-    .map(({ name }) => name!);
+    .map(({ name }) => name)
+    .filter((name): name is string => typeof name === 'string');
   const defineKeys = getDefineKeys(names);
   const define = Object.entries(defineKeys).reduce(
     (acc, [name, keys]) => {
@@ -65,7 +64,7 @@ export function getBuildDefine(env: ConfigEnv<'build'>) {
       };
       return { ...acc, ...def };
     },
-    {} as Record<string, any>,
+    {} as Record<string, string | undefined>,
   );
 
   return define;
@@ -82,10 +81,13 @@ export function pluginExposeRenderer(name: string): Plugin {
       process.viteDevServers[name] = server;
 
       server.httpServer?.once('listening', () => {
-        const addressInfo = server.httpServer!.address() as AddressInfo;
+        const addressInfo = server.httpServer?.address();
+        if (!addressInfo || typeof addressInfo === 'string') {
+          return;
+        }
         // Expose env constant for main process use.
         process.env[VITE_DEV_SERVER_URL] =
-          `http://localhost:${addressInfo?.port}`;
+          `http://localhost:${addressInfo.port}`;
       });
     },
   };
