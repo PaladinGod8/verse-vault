@@ -23,12 +23,12 @@ yarn make      # package + build platform-specific installers -> out/make/
 
 ### Makers (configured in `forge.config.ts`)
 
-| Platform | Maker | Output |
-|----------|-------|--------|
-| Windows | MakerSquirrel | `.exe` installer |
-| macOS | MakerZIP | `.zip` archive |
-| Linux | MakerRpm | `.rpm` package |
-| Linux | MakerDeb | `.deb` package |
+| Platform | Maker         | Output           |
+| -------- | ------------- | ---------------- |
+| Windows  | MakerSquirrel | `.exe` installer |
+| macOS    | MakerZIP      | `.zip` archive   |
+| Linux    | MakerRpm      | `.rpm` package   |
+| Linux    | MakerDeb      | `.deb` package   |
 
 ## Native Module Rebuild
 
@@ -42,13 +42,13 @@ yarn rebuild   # electron-rebuild -f -w better-sqlite3
 
 ## Config File Map
 
-| File | Purpose |
-|------|---------|
-| `forge.config.ts` | Makers, plugins, asar settings, rebuildConfig |
-| `vite.main.config.ts` | Main process build (CJS output, externals) |
-| `vite.preload.config.ts` | Preload build (single bundle, inline dynamic imports) |
-| `vite.renderer.config.ts` | Renderer build (Tailwind, dev server exposure) |
-| `vite.base.config.ts` | Shared config: `external` const, define keys, hot-restart plugin |
+| File                      | Purpose                                                          |
+| ------------------------- | ---------------------------------------------------------------- |
+| `forge.config.ts`         | Makers, plugins, asar settings, rebuildConfig                    |
+| `vite.main.config.ts`     | Main process build (CJS output, externals)                       |
+| `vite.preload.config.ts`  | Preload build (single bundle, inline dynamic imports)            |
+| `vite.renderer.config.ts` | Renderer build (Tailwind, dev server exposure)                   |
+| `vite.base.config.ts`     | Shared config: `external` const, define keys, hot-restart plugin |
 
 **Output directories**: `.vite/` (build cache/artifacts), `out/` (packaged app)
 

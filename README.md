@@ -81,6 +81,7 @@ For each step, include: scope, files, risks, and done criteria.
 ```
 
 Note:
+
 - convert split steps into copy-pastable prompts in markdown under docs/prompts/
 - can be carried out in sequential order regardless of whether it is in a new chat / context window or not
 - write hook-required living docs as you go in each small commit step
@@ -112,6 +113,7 @@ At end, return: test files changed, behaviors covered, gaps, final git commit me
 ```
 
 Notes:
+
 - write more tests if pipeline indicates <80% code coverage on pipeline failure
 
 ### 5. Manual pipeline + fix loop prompt
@@ -167,6 +169,7 @@ Agent creates or updates the feature document:
 - [`docs/features/<feature-slug>.md`](docs/features/) - feature intent, scope, and delivered behavior
 
 Every small step ends with one proposed commit message line:
+
 - `feat:` feature behavior
 - `test:` test-only changes
 - `fix:` refactors/fixes
@@ -176,14 +179,14 @@ Run local validation and manual feature verification per step, then commit per s
 
 ## Docs
 
-| File                                                 | Purpose                                         |
-| ---------------------------------------------------- | ----------------------------------------------- |
-| [docs/00_INDEX.md](docs/00_INDEX.md)                 | Re-entry map, quick start, product direction    |
-| [docs/01_ARCHITECTURE.md](docs/01_ARCHITECTURE.md)   | Process diagram and engineering rules           |
-| [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md)   | **Living** - where to change feature code       |
-| [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md)   | **Living** - IPC channels and payload contracts |
+| File                                                 | Purpose                                           |
+| ---------------------------------------------------- | ------------------------------------------------- |
+| [docs/00_INDEX.md](docs/00_INDEX.md)                 | Re-entry map, quick start, product direction      |
+| [docs/01_ARCHITECTURE.md](docs/01_ARCHITECTURE.md)   | Process diagram and engineering rules             |
+| [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md)   | **Living** - where to change feature code         |
+| [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md)   | **Living** - IPC channels and payload contracts   |
 | [docs/features/](docs/features/)                     | Feature-level docs, one markdown file per feature |
-| [docs/05_BUILD_RELEASE.md](docs/05_BUILD_RELEASE.md) | Packaging and release                           |
-| [docs/CHECKLIST.md](docs/CHECKLIST.md)               | Feature completion checklist                    |
-| [docs/TODO.md](docs/TODO.md)                         | Product roadmap and backlog                     |
-| [docs/adr/](docs/adr/)                               | Architectural decision records                  |
+| [docs/05_BUILD_RELEASE.md](docs/05_BUILD_RELEASE.md) | Packaging and release                             |
+| [docs/CHECKLIST.md](docs/CHECKLIST.md)               | Feature completion checklist                      |
+| [docs/TODO.md](docs/TODO.md)                         | Product roadmap and backlog                       |
+| [docs/adr/](docs/adr/)                               | Architectural decision records                    |

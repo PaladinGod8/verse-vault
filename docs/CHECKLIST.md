@@ -3,12 +3,14 @@
 ## Every Time You Add or Change a Feature
 
 ### 1. Code
+
 - [ ] Implement feature (UI component, Zustand store, IPC handler, DB schema changes)
 - [ ] If new IPC channel: add constant to `src/shared/ipcChannels.ts` first
 - [ ] Run `yarn lint` and fix any errors
 - [ ] Run `yarn format`
 
 ### 2. Docs (mandatory)
+
 - [ ] `docs/02_CODEBASE_MAP.md` - add/update the Feature Map entry:
   - UI file | store file | IPC channels used | main handler | storage location
 - [ ] `docs/03_IPC_CONTRACT.md` - add/update any channels touched:
@@ -19,7 +21,9 @@
   - centralized + offline-first TTRPG campaign management + creative writing/worldbuilding
 
 ### 3. ADR (only if an architectural decision was made)
+
 Write a short ADR in `docs/adr/` if you:
+
 - Added a new storage layer
 - Changed the IPC pattern (for example switched to `send`/`on` for one-way messages)
 - Changed a security rule (for example modified context isolation settings)
@@ -28,6 +32,7 @@ Write a short ADR in `docs/adr/` if you:
 Otherwise, skip the ADR.
 
 ### 4. Never
+
 - Do not create new doc files outside `docs/` or outside the files listed in `docs/00_INDEX.md`
 - Do not hardcode IPC channel strings; always use `src/shared/ipcChannels.ts`
 - Do not import `ipcRenderer` directly in renderer code; use `window.db`

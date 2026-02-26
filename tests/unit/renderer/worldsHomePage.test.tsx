@@ -66,8 +66,12 @@ describe('WorldsHomePage renderer behaviors', () => {
 
     renderWorldsHomePage();
 
-    expect(await screen.findByRole('button', { name: 'Open Alpha' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open Beta' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Open Alpha' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Open Beta' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('First world')).toBeInTheDocument();
     expect(screen.getByText('No description yet.')).toBeInTheDocument();
   });
@@ -99,15 +103,21 @@ describe('WorldsHomePage renderer behaviors', () => {
       within(dialog).getByLabelText('Short description (optional)'),
       'Created in test',
     );
-    await user.click(within(dialog).getByRole('button', { name: 'Create world' }));
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Create world' }),
+    );
 
     expect(worldsAddMock).toHaveBeenCalledWith({
       name: 'New Realm',
       thumbnail: 'https://example.com/new.png',
       short_description: 'Created in test',
     });
-    expect(await screen.findByRole('button', { name: 'Open New Realm' })).toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: 'Create world' })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Open New Realm' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Create world' }),
+    ).not.toBeInTheDocument();
   });
 
   it('updates a world from the edit dialog', async () => {
@@ -136,15 +146,21 @@ describe('WorldsHomePage renderer behaviors', () => {
     await user.type(nameInput, '  Alpha Prime  ');
     await user.clear(descriptionInput);
     await user.type(descriptionInput, '  Updated description  ');
-    await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save changes' }),
+    );
 
     expect(worldsUpdateMock).toHaveBeenCalledWith(1, {
       name: 'Alpha Prime',
       thumbnail: null,
       short_description: 'Updated description',
     });
-    expect(await screen.findByRole('button', { name: 'Open Alpha Prime' })).toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: 'Edit world' })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Open Alpha Prime' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Edit world' }),
+    ).not.toBeInTheDocument();
   });
 
   it('deletes a world when deletion is confirmed', async () => {

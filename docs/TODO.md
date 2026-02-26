@@ -3,6 +3,7 @@
 ## Product Direction
 
 Build Verse Vault as a centralized, offline-first Electron platform for:
+
 - TTRPG campaign management
 - Creative writing
 - Worldbuilding

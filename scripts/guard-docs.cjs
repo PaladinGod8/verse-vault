@@ -70,10 +70,7 @@ function getChangedFiles() {
     process.exit(2);
   }
 
-  return diffResult.stdout
-    .split(/\r?\n/)
-    .map(normalizePath)
-    .filter(Boolean);
+  return diffResult.stdout.split(/\r?\n/).map(normalizePath).filter(Boolean);
 }
 
 function needsCodebaseMapDoc(filePath) {
@@ -120,16 +117,21 @@ function main() {
   if (architectureHits.length > 0 && !changedSet.has(DOCS.ARCHITECTURE)) {
     failures.push({
       doc: DOCS.ARCHITECTURE,
-      reason: 'Architecture-relevant files changed without architecture doc update.',
+      reason:
+        'Architecture-relevant files changed without architecture doc update.',
       files: architectureHits,
     });
   }
 
   if (failures.length === 0) {
     if (codebaseMapHits.length === 0 && architectureHits.length === 0) {
-      console.log('[guard:docs] No architecture/map-relevant file changes detected.');
+      console.log(
+        '[guard:docs] No architecture/map-relevant file changes detected.',
+      );
     } else {
-      console.log('[guard:docs] Required docs updates detected for changed files.');
+      console.log(
+        '[guard:docs] Required docs updates detected for changed files.',
+      );
     }
     return;
   }

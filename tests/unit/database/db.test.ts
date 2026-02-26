@@ -61,7 +61,9 @@ describe('database', () => {
     expect(pragmaMock).toHaveBeenCalledWith('journal_mode = WAL');
     expect(execMock).toHaveBeenCalledTimes(2);
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS verses');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
     expect(schemaSql).toContain('name TEXT NOT NULL');

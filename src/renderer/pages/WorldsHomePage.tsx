@@ -87,9 +87,7 @@ export default function WorldsHomePage() {
       );
       setLoadError(null);
       setMutationError(null);
-      setEditingWorld((current) =>
-        current?.id === world.id ? null : current,
-      );
+      setEditingWorld((current) => (current?.id === world.id ? null : current));
     } catch {
       setMutationError('Unable to delete world right now.');
     } finally {

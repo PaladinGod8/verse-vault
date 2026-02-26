@@ -199,7 +199,12 @@ describe('main process', () => {
     const updateResult = registeredIpcHandlers[IPC.VERSES_UPDATE]({}, 9, {
       reference: 'John 3:16',
     });
-    expect(versesUpdateRunMock).toHaveBeenCalledWith(null, 'John 3:16', null, 9);
+    expect(versesUpdateRunMock).toHaveBeenCalledWith(
+      null,
+      'John 3:16',
+      null,
+      9,
+    );
     expect(versesSelectByIdGetMock).toHaveBeenCalledWith(9);
     expect(updateResult).toEqual({ id: 9 });
 
@@ -221,9 +226,12 @@ describe('main process', () => {
     );
     expect(missingWorldResult).toBeNull();
 
-    const worldAddResult = registeredIpcHandlers[IPC.WORLDS_ADD]({}, {
-      name: '  New World  ',
-    });
+    const worldAddResult = registeredIpcHandlers[IPC.WORLDS_ADD](
+      {},
+      {
+        name: '  New World  ',
+      },
+    );
     expect(worldsInsertRunMock).toHaveBeenCalledWith('New World', null, null);
     expect(worldsSelectByIdGetMock).toHaveBeenCalledWith(6);
     expect(worldAddResult).toMatchObject({ id: 6 });

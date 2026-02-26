@@ -110,7 +110,8 @@ function registerIpcHandlers() {
       const values: Array<string | null> = [];
 
       if (hasName) {
-        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('World name is required');
         }
@@ -148,9 +149,9 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle(IPC.WORLDS_MARK_VIEWED, (_event, id: number) => {
-    db.prepare("UPDATE worlds SET last_viewed_at = datetime('now') WHERE id = ?").run(
-      id,
-    );
+    db.prepare(
+      "UPDATE worlds SET last_viewed_at = datetime('now') WHERE id = ?",
+    ).run(id);
     return db.prepare('SELECT * FROM worlds WHERE id = ?').get(id) ?? null;
   });
 
