@@ -25,6 +25,18 @@ function initializeSchema(db: Database.Database): void {
       updated_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS worlds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      thumbnail TEXT,
+      short_description TEXT,
+      last_viewed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 export function closeDatabase(): void {
