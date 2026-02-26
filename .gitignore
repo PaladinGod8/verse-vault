@@ -97,6 +97,7 @@ docs/
 
 # Coding Agents
 .claude/
+.github/
 
 # Playwright
 playwright-report/
