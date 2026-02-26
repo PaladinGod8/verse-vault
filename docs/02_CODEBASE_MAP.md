@@ -7,7 +7,7 @@
 
 | Path | Responsibility |
 |------|----------------|
-| `src/main.ts` | App bootstrap, BrowserWindow creation, IPC handler registration |
+| `src/main.ts` | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read) |
 | `src/preload.ts` | contextBridge - exposes `window.db` to renderer |
 | `src/database/db.ts` | SQLite singleton, schema init (`verses`, `worlds`), open/close |
 | `src/shared/ipcChannels.ts` | All IPC channel name constants (single source of truth) |
@@ -60,6 +60,16 @@
 - **IPC**: contract exists from Step 01; runtime handlers still not wired in this step
 - **Main handler**: not wired in this step
 - **Storage**: `verse-vault.db` -> `worlds` table (`id`, `name`, `thumbnail`, `short_description`, `last_viewed_at`, `created_at`, `updated_at`)
+
+### Worlds Main Read Handlers (Step 03)
+
+- **Purpose**: provide read-only worlds retrieval in main process while preserving existing verses behavior
+- **Status**: added on 2026-02-26
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: `IPC.WORLDS_GET_ALL`, `IPC.WORLDS_GET_BY_ID`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Storage**: `SELECT * FROM worlds ORDER BY updated_at DESC`; `SELECT * FROM worlds WHERE id = ?` (returns `null` when missing)
 
 ### App Shell / Routing
 

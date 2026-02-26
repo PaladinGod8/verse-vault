@@ -43,6 +43,14 @@ function registerIpcHandlers() {
     return db.prepare('SELECT * FROM verses ORDER BY created_at DESC').all();
   });
 
+  ipcMain.handle(IPC.WORLDS_GET_ALL, () => {
+    return db.prepare('SELECT * FROM worlds ORDER BY updated_at DESC').all();
+  });
+
+  ipcMain.handle(IPC.WORLDS_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM worlds WHERE id = ?').get(id) ?? null;
+  });
+
   ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {
