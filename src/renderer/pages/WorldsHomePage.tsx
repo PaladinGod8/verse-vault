@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
 
 export default function WorldsHomePage() {
   type WorldInput = Parameters<DbApi['worlds']['add']>[0];
+  const navigate = useNavigate();
 
   const [worlds, setWorlds] = useState<World[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,6 +154,7 @@ export default function WorldsHomePage() {
               <WorldCard
                 key={world.id}
                 world={world}
+                onOpen={() => navigate(`/world/${world.id}`)}
                 onEdit={() => {
                   setIsCreateOpen(false);
                   setEditingWorld(world);
