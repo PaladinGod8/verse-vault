@@ -5,19 +5,21 @@
 
 ## Landmarks
 
-| Path | Responsibility |
-|------|----------------|
-| `src/main.ts` | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read) |
-| `src/preload.ts` | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read) to renderer |
-| `src/database/db.ts` | SQLite singleton, schema init (`verses`, `worlds`), open/close |
-| `src/shared/ipcChannels.ts` | All IPC channel name constants (single source of truth) |
-| `src/renderer/index.tsx` | React root, HashRouter wrapper |
-| `src/renderer/App.tsx` | Route definitions and app shell |
-| `src/renderer/index.css` | Tailwind v4 import + global styles |
-| `src/store/` | Zustand stores - one file per feature domain |
-| `forge.env.d.ts` | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants |
-| `forge.config.ts` | Electron Forge packaging, makers, plugins |
-| `vite.*.config.ts` | Vite build configs (base, main, preload, renderer) |
+| Path                                           | Responsibility                                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read) |
+| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read) to renderer                 |
+| `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`), open/close                                  |
+| `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                         |
+| `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                  |
+| `src/renderer/App.tsx`                         | Route definitions and app shell                                                                 |
+| `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): read-only fetch + loading/empty/error states                         |
+| `src/renderer/components/worlds/WorldCard.tsx` | Read-only world card UI (thumbnail fallback + metadata display)                                 |
+| `src/renderer/index.css`                       | Tailwind v4 import + global styles                                                              |
+| `src/store/`                                   | Zustand stores - one file per feature domain                                                    |
+| `forge.env.d.ts`                               | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants                   |
+| `forge.config.ts`                              | Electron Forge packaging, makers, plugins                                                       |
+| `vite.*.config.ts`                             | Vite build configs (base, main, preload, renderer)                                              |
 
 ## Product Scope Map
 
@@ -82,6 +84,16 @@
 - **Preload bridge**: `src/preload.ts` -> `window.db.worlds.getAll/getById`
 - **Storage**: unchanged in this step
 
+### Worlds Home Read-Only UI (Step 05)
+
+- **Purpose**: replace the temporary home route with a read-only worlds landing page backed by `window.db.worlds.getAll()`
+- **Status**: added on 2026-02-26
+- **UI**: `src/renderer/pages/WorldsHomePage.tsx`, `src/renderer/components/worlds/WorldCard.tsx`, route update in `src/renderer/App.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.WORLDS_GET_ALL` via preload bridge (`window.db.worlds.getAll`)
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 03)
+- **Storage**: reads from `worlds` table; no write behavior added in this step
+
 ### App Shell / Routing
 
 - **UI**: `src/renderer/App.tsx` (routes), `src/renderer/index.tsx` (HashRouter)
@@ -93,13 +105,13 @@
 
 ## Where Do I Change X?
 
-| Task | Where |
-|------|-------|
-| Add a new page/route | `src/renderer/App.tsx` -> add `<Route>` |
-| Add a new IPC channel | 1) `src/shared/ipcChannels.ts` 2) `src/main.ts` handler 3) `src/preload.ts` bridge 4) `forge.env.d.ts` types |
-| Change the DB schema | `src/database/db.ts` -> `initializeSchema()` |
-| Add a global TS type | `forge.env.d.ts` |
-| Add client-side state | new `src/store/<feature>Store.ts` |
-| Change packaging/installer | `forge.config.ts` |
-| Change styles / Tailwind | `src/renderer/index.css` + component class names |
-| Add a new dependency | `yarn add <pkg>` then check whether native rebuild is needed |
+| Task                       | Where                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Add a new page/route       | `src/renderer/App.tsx` -> add `<Route>`                                                                      |
+| Add a new IPC channel      | 1) `src/shared/ipcChannels.ts` 2) `src/main.ts` handler 3) `src/preload.ts` bridge 4) `forge.env.d.ts` types |
+| Change the DB schema       | `src/database/db.ts` -> `initializeSchema()`                                                                 |
+| Add a global TS type       | `forge.env.d.ts`                                                                                             |
+| Add client-side state      | new `src/store/<feature>Store.ts`                                                                            |
+| Change packaging/installer | `forge.config.ts`                                                                                            |
+| Change styles / Tailwind   | `src/renderer/index.css` + component class names                                                             |
+| Add a new dependency       | `yarn add <pkg>` then check whether native rebuild is needed                                                 |
