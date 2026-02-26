@@ -12,12 +12,15 @@ import commonjs from '@rollup/plugin-commonjs';
 export default defineConfig((env) => {
   const forgeEnv = env as ConfigEnv<'build'>;
   const { forgeConfigSelf } = forgeEnv;
+  if (!forgeConfigSelf.entry) {
+    throw new Error('Missing main entry in Forge Vite config.');
+  }
   const define = getBuildDefine(forgeEnv);
   const config: UserConfig = {
     build: {
       sourcemap: true,
       lib: {
-        entry: forgeConfigSelf.entry!,
+        entry: forgeConfigSelf.entry,
         fileName: () => '[name].js',
         formats: ['cjs'],
       },

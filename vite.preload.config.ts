@@ -6,12 +6,15 @@ import { getBuildConfig, external, pluginHotRestart } from './vite.base.config';
 export default defineConfig((env) => {
   const forgeEnv = env as ConfigEnv<'build'>;
   const { forgeConfigSelf } = forgeEnv;
+  if (!forgeConfigSelf.entry) {
+    throw new Error('Missing preload entry in Forge Vite config.');
+  }
   const config: UserConfig = {
     build: {
       rollupOptions: {
         external,
         // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
-        input: forgeConfigSelf.entry!,
+        input: forgeConfigSelf.entry,
         output: {
           format: 'cjs',
           // It should not be split chunks.
