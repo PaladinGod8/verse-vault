@@ -52,6 +52,40 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle(
+    IPC.WORLDS_ADD,
+    (
+      _event,
+      data: {
+        name: string;
+        thumbnail?: string | null;
+        short_description?: string | null;
+      },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('World name is required');
+      }
+
+      const stmt = db.prepare(
+        'INSERT INTO worlds (name, thumbnail, short_description) VALUES (?, ?, ?)',
+      );
+      const result = stmt.run(
+        name,
+        data.thumbnail ?? null,
+        data.short_description ?? null,
+      );
+
+      const world = db
+        .prepare('SELECT * FROM worlds WHERE id = ?')
+        .get(result.lastInsertRowid);
+      if (!world) {
+        throw new Error('Failed to create world');
+      }
+      return world;
+    },
+  );
+
+  ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {
       const stmt = db.prepare(

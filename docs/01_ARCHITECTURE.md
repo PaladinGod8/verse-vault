@@ -44,7 +44,7 @@ flowchart LR
 
 4. **Channel names are constants.** All IPC channel strings live in `src/shared/ipcChannels.ts`. No magic strings in `main.ts` or `preload.ts`.
 
-5. **Shared types live in `forge.env.d.ts`.** Current scaffolds are `Verse` and `World`; Step 03 wires worlds read handlers in `main`, Step 04 exposes worlds read in preload (`window.db.worlds.getAll/getById`), and write handlers land in later steps.
+5. **Shared types live in `forge.env.d.ts`.** Current scaffolds are `Verse` and `World`; Step 03 wires worlds read handlers in `main`, Step 04 exposes worlds read in preload (`window.db.worlds.getAll/getById`), Step 06 adds worlds create in `main`, and remaining write handlers land in later steps.
 
 6. **Zustand for client state.** DB/server state flows via `window.db`. Transient UI state goes in feature-focused stores under `src/store/`.
 
@@ -62,5 +62,5 @@ flowchart LR
 
 - `src/database/db.ts -> initializeSchema()` currently creates both `verses` and `worlds` via `CREATE TABLE IF NOT EXISTS` for migration-safe startup on existing user databases.
 - `worlds` schema baseline (Step 02, 2026-02-26): `id`, `name`, `thumbnail`, `short_description`, `last_viewed_at`, `created_at`, `updated_at`.
-- `src/main.ts -> registerIpcHandlers()` currently includes worlds read handlers for `WORLDS_GET_ALL` (ordered by `updated_at DESC`) and `WORLDS_GET_BY_ID` (returns `null` when missing).
-- `src/preload.ts` currently exposes worlds read bridge methods `window.db.worlds.getAll()` and `window.db.worlds.getById(id)` that invoke those channels.
+- `src/main.ts -> registerIpcHandlers()` currently includes worlds read handlers for `WORLDS_GET_ALL` (ordered by `updated_at DESC`) and `WORLDS_GET_BY_ID` (returns `null` when missing), plus `WORLDS_ADD` with required trimmed-name validation and insert-return behavior.
+- `src/preload.ts` currently exposes worlds read bridge methods `window.db.worlds.getAll()` and `window.db.worlds.getById(id)`; worlds create bridge wiring lands in a later step.
