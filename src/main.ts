@@ -3,6 +3,25 @@ import path from 'path';
 import { getDatabase, closeDatabase } from './database/db';
 import { IPC } from './shared/ipcChannels';
 
+function isAbilityChildDuplicateError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code =
+    'code' in error && typeof error.code === 'string' ? error.code : '';
+  if (code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    return true;
+  }
+
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return error.message.includes(
+    'UNIQUE constraint failed: ability_children.parent_id, ability_children.child_id',
+  );
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -503,6 +522,64 @@ function registerIpcHandlers() {
     db.prepare('DELETE FROM abilities WHERE id = ?').run(id);
     return { id };
   });
+
+  ipcMain.handle(
+    IPC.ABILITIES_ADD_CHILD,
+    (_event, data: { parent_id: number; child_id: number }) => {
+      if (data.parent_id === data.child_id) {
+        throw new Error('Parent ability cannot be linked to itself');
+      }
+
+      const parent = db
+        .prepare('SELECT id, world_id FROM abilities WHERE id = ?')
+        .get(data.parent_id) as { id: number; world_id: number } | undefined;
+      if (!parent) {
+        throw new Error('Parent ability not found');
+      }
+
+      const child = db
+        .prepare('SELECT id, world_id FROM abilities WHERE id = ?')
+        .get(data.child_id) as { id: number; world_id: number } | undefined;
+      if (!child) {
+        throw new Error('Child ability not found');
+      }
+
+      if (parent.world_id !== child.world_id) {
+        throw new Error(
+          'Parent and child abilities must belong to the same world',
+        );
+      }
+
+      try {
+        db.prepare(
+          'INSERT INTO ability_children (parent_id, child_id) VALUES (?, ?)',
+        ).run(data.parent_id, data.child_id);
+      } catch (error) {
+        if (isAbilityChildDuplicateError(error)) {
+          throw new Error('Child ability link already exists');
+        }
+        throw error;
+      }
+
+      return {
+        parent_id: data.parent_id,
+        child_id: data.child_id,
+      };
+    },
+  );
+
+  ipcMain.handle(
+    IPC.ABILITIES_REMOVE_CHILD,
+    (_event, data: { parent_id: number; child_id: number }) => {
+      db.prepare(
+        'DELETE FROM ability_children WHERE parent_id = ? AND child_id = ?',
+      ).run(data.parent_id, data.child_id);
+      return {
+        parent_id: data.parent_id,
+        child_id: data.child_id,
+      };
+    },
+  );
 
   ipcMain.handle(IPC.ABILITIES_GET_CHILDREN, (_event, abilityId: number) => {
     return db
