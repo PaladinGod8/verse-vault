@@ -22,7 +22,12 @@ Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the sha
 | `IPC.WORLDS_ADD`         | `db:worlds:add`        | renderer -> main | `{ name: string; thumbnail?: string \| null; short_description?: string \| null }`                    | `World`          | `src/main.ts:registerIpcHandlers` |
 | `IPC.WORLDS_UPDATE`      | `db:worlds:update`     | renderer -> main | `id: number, data: { name?: string; thumbnail?: string \| null; short_description?: string \| null }` | `World`          | `src/main.ts:registerIpcHandlers` |
 | `IPC.WORLDS_DELETE`      | `db:worlds:delete`     | renderer -> main | `id: number`                                                                                          | `{ id: number }` | `src/main.ts:registerIpcHandlers` |
-| `IPC.WORLDS_MARK_VIEWED` | `db:worlds:markViewed` | renderer -> main | `id: number`                                                                                          | `World \| null`  | `src/main.ts:registerIpcHandlers` |
+| `IPC.WORLDS_MARK_VIEWED`         | `db:worlds:markViewed`      | renderer -> main | `id: number`                                                                                                                          | `World \| null`  | `src/main.ts:registerIpcHandlers` |
+| `IPC.LEVELS_GET_ALL_BY_WORLD`    | `db:levels:getAllByWorld`   | renderer -> main | `worldId: number`                                                                                                                     | `Level[]`        | not wired yet                     |
+| `IPC.LEVELS_GET_BY_ID`           | `db:levels:getById`         | renderer -> main | `id: number`                                                                                                                          | `Level \| null`  | not wired yet                     |
+| `IPC.LEVELS_ADD`                 | `db:levels:add`             | renderer -> main | `{ world_id: number; name: string; category: string; description?: string \| null }`                                                  | `Level`          | not wired yet                     |
+| `IPC.LEVELS_UPDATE`              | `db:levels:update`          | renderer -> main | `id: number, data: { name?: string; category?: string; description?: string \| null }`                                                | `Level`          | not wired yet                     |
+| `IPC.LEVELS_DELETE`              | `db:levels:delete`          | renderer -> main | `id: number`                                                                                                                          | `{ id: number }` | not wired yet                     |
 
 ## Types Reference
 
@@ -43,6 +48,16 @@ interface World {
   thumbnail: string | null;
   short_description: string | null;
   last_viewed_at: string | null;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
+interface Level {
+  id: number;
+  world_id: number;
+  name: string;
+  category: string;
+  description: string | null;
   created_at: string; // ISO datetime string from SQLite
   updated_at: string; // ISO datetime string from SQLite
 }

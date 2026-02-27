@@ -20,6 +20,16 @@ declare global {
     updated_at: string;
   }
 
+  interface Level {
+    id: number;
+    world_id: number;
+    name: string;
+    category: string;
+    description: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
   interface DbApi {
     verses: {
       getAll(): Promise<Verse[]>;
@@ -52,6 +62,21 @@ declare global {
       ): Promise<World>;
       delete(id: number): Promise<{ id: number }>;
       markViewed(id: number): Promise<World>;
+    };
+    levels: {
+      getAllByWorld(worldId: number): Promise<Level[]>;
+      getById(id: number): Promise<Level | null>;
+      add(data: {
+        world_id: number;
+        name: string;
+        category: string;
+        description?: string | null;
+      }): Promise<Level>;
+      update(
+        id: number,
+        data: { name?: string; category?: string; description?: string | null },
+      ): Promise<Level>;
+      delete(id: number): Promise<{ id: number }>;
     };
   }
 
