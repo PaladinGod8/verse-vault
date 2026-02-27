@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import LevelForm from '../components/levels/LevelForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+
+type AddLevelInput = Parameters<DbApi['levels']['add']>[0];
 
 export default function LevelsPage() {
   const { id } = useParams();
@@ -21,6 +24,9 @@ export default function LevelsPage() {
   const [levels, setLevels] = useState<Level[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingLevel, setEditingLevel] = useState<Level | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,20 +80,73 @@ export default function LevelsPage() {
     };
   }, [worldId]);
 
+  const handleCreateLevel = async (data: AddLevelInput) => {
+    const newLevel = await window.db.levels.add(data);
+    setLevels((prev) => [newLevel, ...prev.filter((l) => l.id !== newLevel.id)]);
+    setIsCreateOpen(false);
+  };
+
+  const handleUpdateLevel = async (data: AddLevelInput) => {
+    if (!editingLevel) {
+      return;
+    }
+
+    const { name, category, description } = data;
+    const updatedLevel = await window.db.levels.update(editingLevel.id, {
+      name,
+      category,
+      description,
+    });
+    setLevels((prev) =>
+      prev.map((l) => (l.id === updatedLevel.id ? updatedLevel : l)),
+    );
+    setEditingLevel(null);
+  };
+
+  const handleDeleteLevel = async (level: Level) => {
+    const isConfirmed = window.confirm(
+      `Delete "${level.name}"? This cannot be undone.`,
+    );
+    if (!isConfirmed) {
+      return;
+    }
+
+    setDeletingId(level.id);
+
+    try {
+      await window.db.levels.delete(level.id);
+      setLevels((prev) => prev.filter((l) => l.id !== level.id));
+    } finally {
+      setDeletingId((current) => (current === level.id ? null : current));
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       <WorldSidebar worldId={worldId} />
       <main className="flex-1 space-y-6 p-6">
-        <header className="space-y-2">
-          <Link
-            to={`/world/${worldId}`}
-            className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
-          >
-            Back to world
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            {world?.name ?? 'Levels'}
-          </h1>
+        <header className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <Link
+              to={`/world/${worldId}`}
+              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+            >
+              Back to world
+            </Link>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              {world?.name ?? 'Levels'}
+            </h1>
+          </div>
+
+          {worldId !== null ? (
+            <button
+              type="button"
+              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              New Level
+            </button>
+          ) : null}
         </header>
 
         {isLoading ? (
@@ -122,6 +181,9 @@ export default function LevelsPage() {
                   <th className="px-4 py-3 text-left font-medium text-slate-500">
                     Description
                   </th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -135,6 +197,31 @@ export default function LevelsPage() {
                     <td className="px-4 py-3 text-slate-500">
                       {level.description ?? '—'}
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCreateOpen(false);
+                            setEditingLevel(level);
+                          }}
+                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={deletingId === level.id}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleDeleteLevel(level);
+                          }}
+                          className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={deletingId === level.id}
+                        >
+                          {deletingId === level.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -142,6 +229,55 @@ export default function LevelsPage() {
           </section>
         ) : null}
       </main>
+
+      {isCreateOpen && worldId !== null ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-level-title"
+            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+          >
+            <h2
+              id="create-level-title"
+              className="mb-4 text-lg font-semibold text-slate-900"
+            >
+              New Level
+            </h2>
+            <LevelForm
+              mode="create"
+              worldId={worldId}
+              onSubmit={handleCreateLevel}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </section>
+        </div>
+      ) : null}
+
+      {editingLevel !== null ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-level-title"
+            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+          >
+            <h2
+              id="edit-level-title"
+              className="mb-4 text-lg font-semibold text-slate-900"
+            >
+              Edit Level
+            </h2>
+            <LevelForm
+              mode="edit"
+              worldId={editingLevel.world_id}
+              initialValues={editingLevel}
+              onSubmit={handleUpdateLevel}
+              onCancel={() => setEditingLevel(null)}
+            />
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
