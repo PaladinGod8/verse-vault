@@ -9,7 +9,7 @@
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `abilities` read + `abilities` add/update/delete/addChild/removeChild) |
 | `src/preload.ts`                                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read/add/update/delete/addChild/removeChild) to renderer                                             |
-| `src/database/db.ts`                                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                                                                                               |
+| `src/database/db.ts`                                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `campaigns`, `abilities`, `ability_children`), open/close                                                                                                                                  |
 | `src/shared/ipcChannels.ts`                                    | All IPC channel name constants (single source of truth) for verses, worlds, levels, abilities, campaigns, sessions, and scenes contracts                                                                                                                |
 | `src/renderer/index.tsx`                                       | React root, HashRouter wrapper                                                                                                                                                                                                                          |
 | `src/renderer/App.tsx`                                         | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`, `/world/:id/abilities`)                                                                                                                                                        |
@@ -379,6 +379,17 @@
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
 - **Storage**: schema/queries not added in this step
+
+### Campaign Schema Bootstrap (Step 04)
+
+- **Purpose**: ensure `campaigns` table exists during DB initialization and cascades with world deletes
+- **Status**: added on 2026-02-27 as migration-safe `CREATE TABLE IF NOT EXISTS`
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: contract exists from Step 01; runtime handlers not wired in this step
+- **Main handler**: not wired in this step
+- **Preload bridge**: not wired in this step
+- **Storage**: `verse-vault.db` -> `campaigns` table (`id`, `world_id`, `name`, `summary`, `config`, `created_at`, `updated_at`) with `world_id` FK -> `worlds(id)` `ON DELETE CASCADE`
 
 ### Session Shared Contract (Step 02)
 
