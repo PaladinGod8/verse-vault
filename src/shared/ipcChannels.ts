@@ -33,4 +33,9 @@ export const IPC = {
   SESSIONS_ADD: 'db:sessions:add',
   SESSIONS_UPDATE: 'db:sessions:update',
   SESSIONS_DELETE: 'db:sessions:delete',
+  SCENES_GET_ALL_BY_SESSION: 'db:scenes:getAllBySession',
+  SCENES_GET_BY_ID: 'db:scenes:getById',
+  SCENES_ADD: 'db:scenes:add',
+  SCENES_UPDATE: 'db:scenes:update',
+  SCENES_DELETE: 'db:scenes:delete',
 } as const;
