@@ -23,4 +23,9 @@ export const IPC = {
   ABILITIES_ADD_CHILD: 'db:abilities:addChild',
   ABILITIES_REMOVE_CHILD: 'db:abilities:removeChild',
   ABILITIES_GET_CHILDREN: 'db:abilities:getChildren',
+  CAMPAIGNS_GET_ALL_BY_WORLD: 'db:campaigns:getAllByWorld',
+  CAMPAIGNS_GET_BY_ID: 'db:campaigns:getById',
+  CAMPAIGNS_ADD: 'db:campaigns:add',
+  CAMPAIGNS_UPDATE: 'db:campaigns:update',
+  CAMPAIGNS_DELETE: 'db:campaigns:delete',
 } as const;
