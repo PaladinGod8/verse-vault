@@ -268,6 +268,32 @@ function registerIpcHandlers() {
     return { id };
   });
 
+  ipcMain.handle(IPC.ABILITIES_GET_ALL_BY_WORLD, (_event, worldId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM abilities WHERE world_id = ? ORDER BY updated_at DESC',
+      )
+      .all(worldId);
+  });
+
+  ipcMain.handle(IPC.ABILITIES_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM abilities WHERE id = ?').get(id) ?? null;
+  });
+
+  ipcMain.handle(IPC.ABILITIES_GET_CHILDREN, (_event, abilityId: number) => {
+    return db
+      .prepare(
+        `
+        SELECT child.*
+        FROM ability_children AS relation
+        INNER JOIN abilities AS child ON child.id = relation.child_id
+        WHERE relation.parent_id = ?
+        ORDER BY child.updated_at DESC
+        `,
+      )
+      .all(abilityId);
+  });
+
   ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {

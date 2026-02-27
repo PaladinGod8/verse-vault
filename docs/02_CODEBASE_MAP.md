@@ -5,26 +5,26 @@
 
 ## Landmarks
 
-| Path                                              | Responsibility                                                                                                                                                                  |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/main.ts`                                     | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete) |
-| `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete) to renderer                               |
-| `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                       |
-| `src/shared/ipcChannels.ts`                       | All IPC channel name constants (single source of truth) for verses, worlds, levels, and abilities contracts                                                                     |
-| `src/renderer/index.tsx`                          | React root, HashRouter wrapper                                                                                                                                                  |
-| `src/renderer/App.tsx`                            | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`)                                                                                                        |
-| `src/renderer/pages/WorldsHomePage.tsx`           | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                                                                   |
-| `src/renderer/pages/WorldPage.tsx`                | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview                                                       |
-| `src/renderer/pages/LevelsPage.tsx`               | Levels list page (`/world/:id/levels`): table of levels with create/edit/delete actions + loading/empty/error states                                                            |
-| `src/renderer/components/levels/LevelForm.tsx`    | Reusable levels form for create/edit (name + category required, optional description)                                                                                           |
-| `src/renderer/components/worlds/WorldSidebar.tsx` | World workspace sidebar: Level nav item linking to `/world/:id/levels`                                                                                                          |
-| `src/renderer/components/worlds/WorldCard.tsx`    | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions)                                                                              |
-| `src/renderer/components/worlds/WorldForm.tsx`    | Reusable worlds form for create/edit (name required, optional thumbnail and short description)                                                                                  |
-| `src/renderer/index.css`                          | Tailwind v4 import + global styles                                                                                                                                              |
-| `src/store/`                                      | Zustand stores - one file per feature domain                                                                                                                                    |
-| `forge.env.d.ts`                                  | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants                                                                                                   |
-| `forge.config.ts`                                 | Electron Forge packaging, makers, plugins                                                                                                                                       |
-| `vite.*.config.ts`                                | Vite build configs (base, main, preload, renderer)                                                                                                                              |
+| Path                                              | Responsibility                                                                                                                                                                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.ts`                                     | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `abilities` read) |
+| `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete) to renderer                                                  |
+| `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                                          |
+| `src/shared/ipcChannels.ts`                       | All IPC channel name constants (single source of truth) for verses, worlds, levels, and abilities contracts                                                                                        |
+| `src/renderer/index.tsx`                          | React root, HashRouter wrapper                                                                                                                                                                     |
+| `src/renderer/App.tsx`                            | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`)                                                                                                                           |
+| `src/renderer/pages/WorldsHomePage.tsx`           | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                                                                                      |
+| `src/renderer/pages/WorldPage.tsx`                | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview                                                                          |
+| `src/renderer/pages/LevelsPage.tsx`               | Levels list page (`/world/:id/levels`): table of levels with create/edit/delete actions + loading/empty/error states                                                                               |
+| `src/renderer/components/levels/LevelForm.tsx`    | Reusable levels form for create/edit (name + category required, optional description)                                                                                                              |
+| `src/renderer/components/worlds/WorldSidebar.tsx` | World workspace sidebar: Level nav item linking to `/world/:id/levels`                                                                                                                             |
+| `src/renderer/components/worlds/WorldCard.tsx`    | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions)                                                                                                 |
+| `src/renderer/components/worlds/WorldForm.tsx`    | Reusable worlds form for create/edit (name required, optional thumbnail and short description)                                                                                                     |
+| `src/renderer/index.css`                          | Tailwind v4 import + global styles                                                                                                                                                                 |
+| `src/store/`                                      | Zustand stores - one file per feature domain                                                                                                                                                       |
+| `forge.env.d.ts`                                  | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants                                                                                                                      |
+| `forge.config.ts`                                 | Electron Forge packaging, makers, plugins                                                                                                                                                          |
+| `vite.*.config.ts`                                | Vite build configs (base, main, preload, renderer)                                                                                                                                                 |
 
 ## Product Scope Map
 
@@ -266,6 +266,17 @@
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
 - **Storage**: `verse-vault.db` -> `abilities` table (`id`, `world_id`, `name`, `description`, `type`, `passive_subtype`, `level_id`, `effects`, `conditions`, `cast_cost`, `trigger`, `pick_count`, `pick_timing`, `pick_is_permanent`, `created_at`, `updated_at`) and `ability_children` (`id`, `parent_id`, `child_id`, `UNIQUE(parent_id, child_id)`)
+
+### Ability Main Read Handlers (Step 03)
+
+- **Purpose**: provide read-only abilities retrieval in main process, including parent-child lookups
+- **Status**: added on 2026-02-27
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: `IPC.ABILITIES_GET_ALL_BY_WORLD`, `IPC.ABILITIES_GET_BY_ID`, `IPC.ABILITIES_GET_CHILDREN`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Preload bridge**: not wired in this step
+- **Storage**: `SELECT * FROM abilities WHERE world_id = ? ORDER BY updated_at DESC`; `SELECT * FROM abilities WHERE id = ?` (returns `null` when missing); children query joins `ability_children.parent_id` to `abilities.child_id` and returns child rows ordered by `updated_at DESC`
 
 ### App Shell / Routing
 
