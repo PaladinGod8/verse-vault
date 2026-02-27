@@ -47,6 +47,34 @@ function initializeSchema(db: Database.Database): void {
       description TEXT,
       created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS abilities (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      world_id          INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name              TEXT    NOT NULL,
+      description       TEXT,
+      type              TEXT    NOT NULL CHECK (type IN ('active', 'passive')),
+      passive_subtype   TEXT    CHECK (
+        passive_subtype IS NULL OR passive_subtype IN ('linchpin', 'keystone', 'rostering')
+      ),
+      level_id          INTEGER REFERENCES levels(id) ON DELETE SET NULL,
+      effects           TEXT    NOT NULL DEFAULT '[]',
+      conditions        TEXT    NOT NULL DEFAULT '[]',
+      cast_cost         TEXT    NOT NULL DEFAULT '{}',
+      trigger           TEXT,
+      pick_count        INTEGER,
+      pick_timing       TEXT    CHECK (pick_timing IN ('obtain', 'rest')),
+      pick_is_permanent INTEGER NOT NULL DEFAULT 0,
+      created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ability_children (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      parent_id INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE,
+      child_id  INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE,
+      UNIQUE (parent_id, child_id)
     )
   `);
 }

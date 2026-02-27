@@ -9,7 +9,7 @@
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                     | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete) |
 | `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete) to renderer                               |
-| `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                                                                        |
+| `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                       |
 | `src/shared/ipcChannels.ts`                       | All IPC channel name constants (single source of truth) for verses, worlds, levels, and abilities contracts                                                                     |
 | `src/renderer/index.tsx`                          | React root, HashRouter wrapper                                                                                                                                                  |
 | `src/renderer/App.tsx`                            | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`)                                                                                                        |
@@ -255,6 +255,17 @@
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
 - **Storage**: schema/queries not added in this step
+
+### Ability Schema Bootstrap (Step 02)
+
+- **Purpose**: ensure `abilities` and `ability_children` tables exist during DB initialization with required constraints for subtype, timing, and parent-child uniqueness
+- **Status**: added on 2026-02-27 as migration-safe `CREATE TABLE IF NOT EXISTS`
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: contracts exist from Step 01; runtime handlers still not wired in this step
+- **Main handler**: not wired in this step
+- **Preload bridge**: not wired in this step
+- **Storage**: `verse-vault.db` -> `abilities` table (`id`, `world_id`, `name`, `description`, `type`, `passive_subtype`, `level_id`, `effects`, `conditions`, `cast_cost`, `trigger`, `pick_count`, `pick_timing`, `pick_is_permanent`, `created_at`, `updated_at`) and `ability_children` (`id`, `parent_id`, `child_id`, `UNIQUE(parent_id, child_id)`)
 
 ### App Shell / Routing
 
