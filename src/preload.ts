@@ -23,6 +23,17 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.LEVELS_GET_ALL_BY_WORLD, worldId),
     getById: (id: number): Promise<Level | null> =>
       ipcRenderer.invoke(IPC.LEVELS_GET_BY_ID, id),
+    add: (data: {
+      world_id: number;
+      name: string;
+      category: string;
+      description?: string | null;
+    }) => ipcRenderer.invoke(IPC.LEVELS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; category?: string; description?: string | null },
+    ) => ipcRenderer.invoke(IPC.LEVELS_UPDATE, id, data),
+    delete: (id: number) => ipcRenderer.invoke(IPC.LEVELS_DELETE, id),
   },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
