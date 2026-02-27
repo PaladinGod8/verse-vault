@@ -32,6 +32,13 @@ describe('App routes', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      levels: {
+        getAllByWorld: vi.fn(),
+        getById: vi.fn(),
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
       worlds: {
         getAll: worldsGetAllMock,
         getById: worldsGetByIdMock,

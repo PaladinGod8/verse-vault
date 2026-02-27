@@ -18,6 +18,12 @@ contextBridge.exposeInMainWorld('db', {
     delete: (id: number): Promise<{ id: number }> =>
       ipcRenderer.invoke(IPC.VERSES_DELETE, id),
   },
+  levels: {
+    getAllByWorld: (worldId: number): Promise<Level[]> =>
+      ipcRenderer.invoke(IPC.LEVELS_GET_ALL_BY_WORLD, worldId),
+    getById: (id: number): Promise<Level | null> =>
+      ipcRenderer.invoke(IPC.LEVELS_GET_BY_ID, id),
+  },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
     getById: (id: number): Promise<World | null> =>

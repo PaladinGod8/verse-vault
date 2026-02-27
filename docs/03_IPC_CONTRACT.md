@@ -73,5 +73,5 @@ interface Level {
 - Worlds mutation paths are wired end-to-end for `WORLDS_UPDATE`, `WORLDS_DELETE`, and `WORLDS_MARK_VIEWED` (`main` handlers + `window.db.worlds.update/delete/markViewed` in preload).
 - `WORLDS_UPDATE` updates only provided fields (`name`, `thumbnail`, `short_description`), validates `name` when present, and always refreshes `updated_at`.
 - `WORLDS_MARK_VIEWED` updates `last_viewed_at` and returns the refreshed row or `null` when the id does not exist.
-- Levels read path is wired in main for `LEVELS_GET_ALL_BY_WORLD` (returns all levels for a given `world_id`, ordered by `updated_at DESC`) and `LEVELS_GET_BY_ID` (returns matching row or `null`). Preload bridge not wired yet.
+- Levels read path is wired end-to-end for `LEVELS_GET_ALL_BY_WORLD` and `LEVELS_GET_BY_ID` (`main` handlers + `window.db.levels.getAllByWorld/getById` in preload). Mutation channels (`LEVELS_ADD`, `LEVELS_UPDATE`, `LEVELS_DELETE`) are defined as constants but not yet wired in main or preload.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.
