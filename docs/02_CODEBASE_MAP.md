@@ -8,7 +8,7 @@
 | Path                                              | Responsibility                                                                                                                                                                                                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                     | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `abilities` read + `abilities` add/update/delete/addChild/removeChild) |
-| `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read) to renderer                                                                                    |
+| `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read/add/update/delete/addChild/removeChild) to renderer                                             |
 | `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                                                                                               |
 | `src/shared/ipcChannels.ts`                       | All IPC channel name constants (single source of truth) for verses, worlds, levels, and abilities contracts                                                                                                                                             |
 | `src/renderer/index.tsx`                          | React root, HashRouter wrapper                                                                                                                                                                                                                          |
@@ -310,6 +310,17 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 03)
 - **Preload bridge**: `src/preload.ts` -> `window.db.abilities.getAllByWorld/getById/getChildren`
 - **Storage**: unchanged in this step (read-only bridge and type alignment only)
+
+### Ability Preload Mutation Bridge (Step 07)
+
+- **Purpose**: expose ability mutation methods in preload and extend shared global `DbApi.abilities` signatures for renderer-safe writes
+- **Status**: added on 2026-02-27
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.ABILITIES_ADD`, `IPC.ABILITIES_UPDATE`, `IPC.ABILITIES_DELETE`, `IPC.ABILITIES_ADD_CHILD`, `IPC.ABILITIES_REMOVE_CHILD`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Steps 04-05)
+- **Preload bridge**: `src/preload.ts` -> `window.db.abilities.add/update/delete/addChild/removeChild`
+- **Storage**: unchanged in this step (bridge and type alignment only)
 
 ### App Shell / Routing
 

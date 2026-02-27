@@ -40,6 +40,44 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.ABILITIES_GET_ALL_BY_WORLD, worldId),
     getById: (id: number): Promise<Ability | null> =>
       ipcRenderer.invoke(IPC.ABILITIES_GET_BY_ID, id),
+    add: (data: {
+      world_id: number;
+      name: string;
+      description?: string | null;
+      type: string;
+      passive_subtype?: string | null;
+      level_id?: number | null;
+      effects?: string;
+      conditions?: string;
+      cast_cost?: string;
+      trigger?: string | null;
+      pick_count?: number | null;
+      pick_timing?: string | null;
+      pick_is_permanent?: number;
+    }): Promise<Ability> => ipcRenderer.invoke(IPC.ABILITIES_ADD, data),
+    update: (
+      id: number,
+      data: {
+        name?: string;
+        description?: string | null;
+        type?: string;
+        passive_subtype?: string | null;
+        level_id?: number | null;
+        effects?: string;
+        conditions?: string;
+        cast_cost?: string;
+        trigger?: string | null;
+        pick_count?: number | null;
+        pick_timing?: string | null;
+        pick_is_permanent?: number;
+      },
+    ): Promise<Ability> => ipcRenderer.invoke(IPC.ABILITIES_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number }> =>
+      ipcRenderer.invoke(IPC.ABILITIES_DELETE, id),
+    addChild: (data: AbilityChild): Promise<AbilityChild> =>
+      ipcRenderer.invoke(IPC.ABILITIES_ADD_CHILD, data),
+    removeChild: (data: AbilityChild): Promise<AbilityChild> =>
+      ipcRenderer.invoke(IPC.ABILITIES_REMOVE_CHILD, data),
     getChildren: (abilityId: number): Promise<Ability[]> =>
       ipcRenderer.invoke(IPC.ABILITIES_GET_CHILDREN, abilityId),
   },
