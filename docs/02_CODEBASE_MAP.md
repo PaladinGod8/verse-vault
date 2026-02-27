@@ -8,7 +8,7 @@
 | Path                                              | Responsibility                                                                                                                                                                                                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                     | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `abilities` read + `abilities` add/update/delete/addChild/removeChild) |
-| `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete) to renderer                                                                                                       |
+| `src/preload.ts`                                  | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read) to renderer                                                                                    |
 | `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                                                                                               |
 | `src/shared/ipcChannels.ts`                       | All IPC channel name constants (single source of truth) for verses, worlds, levels, and abilities contracts                                                                                                                                             |
 | `src/renderer/index.tsx`                          | React root, HashRouter wrapper                                                                                                                                                                                                                          |
@@ -22,7 +22,7 @@
 | `src/renderer/components/worlds/WorldForm.tsx`    | Reusable worlds form for create/edit (name required, optional thumbnail and short description)                                                                                                                                                          |
 | `src/renderer/index.css`                          | Tailwind v4 import + global styles                                                                                                                                                                                                                      |
 | `src/store/`                                      | Zustand stores - one file per feature domain                                                                                                                                                                                                            |
-| `forge.env.d.ts`                                  | Global TS types: current scaffolds `Verse` + `World`, `DbApi`, Vite constants                                                                                                                                                                           |
+| `forge.env.d.ts`                                  | Global TS types: `Verse`, `World`, `Level`, `Ability`, `AbilityChild`, `DbApi`, Vite constants                                                                                                                                                          |
 | `forge.config.ts`                                 | Electron Forge packaging, makers, plugins                                                                                                                                                                                                               |
 | `vite.*.config.ts`                                | Vite build configs (base, main, preload, renderer)                                                                                                                                                                                                      |
 
@@ -299,6 +299,17 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Preload bridge**: not wired in this step
 - **Storage**: `ABILITIES_ADD_CHILD` rejects self-links, ensures both abilities exist, enforces same-world parent-child linking, inserts into `ability_children`, and maps unique-constraint duplicates to a clear domain error; `ABILITIES_REMOVE_CHILD` deletes by `(parent_id, child_id)` and returns `{ parent_id, child_id }` even when no row exists (safe idempotent no-op)
+
+### Ability Preload Read Bridge (Step 06)
+
+- **Purpose**: expose ability read methods in preload and align shared global types for renderer-safe usage
+- **Status**: added on 2026-02-27
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.ABILITIES_GET_ALL_BY_WORLD`, `IPC.ABILITIES_GET_BY_ID`, `IPC.ABILITIES_GET_CHILDREN`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 03)
+- **Preload bridge**: `src/preload.ts` -> `window.db.abilities.getAllByWorld/getById/getChildren`
+- **Storage**: unchanged in this step (read-only bridge and type alignment only)
 
 ### App Shell / Routing
 

@@ -9,7 +9,7 @@ Current channels cover an initial local content-record scaffold (`verses`) plus 
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
-Abilities Step 05 (2026-02-27) wires child-link mutation handlers in main for `ABILITIES_ADD_CHILD` and `ABILITIES_REMOVE_CHILD` in addition to the Step 04 core mutation handlers (`ABILITIES_ADD`, `ABILITIES_UPDATE`, `ABILITIES_DELETE`) and Step 03 read handlers (`ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, `ABILITIES_GET_CHILDREN`). Preload bridge methods for abilities remain intentionally unwired in this step.
+Abilities Step 06 (2026-02-27) exposes ability read bridges in preload (`window.db.abilities.getAllByWorld/getById/getChildren`) and adds shared `Ability` + `AbilityChild` interfaces with `DbApi.abilities` read signatures. Ability mutation bridges remain intentionally unwired in this step.
 
 ## Channels
 
@@ -71,6 +71,38 @@ interface Level {
   created_at: string; // ISO datetime string from SQLite
   updated_at: string; // ISO datetime string from SQLite
 }
+
+interface Ability {
+  id: number;
+  world_id: number;
+  name: string;
+  description: string | null;
+  type: string;
+  passive_subtype: string | null;
+  level_id: number | null;
+  effects: string;
+  conditions: string;
+  cast_cost: string;
+  trigger: string | null;
+  pick_count: number | null;
+  pick_timing: string | null;
+  pick_is_permanent: number;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
+interface AbilityChild {
+  parent_id: number;
+  child_id: number;
+}
+
+interface DbApi {
+  abilities: {
+    getAllByWorld(worldId: number): Promise<Ability[]>;
+    getById(id: number): Promise<Ability | null>;
+    getChildren(abilityId: number): Promise<Ability[]>;
+  };
+}
 ```
 
 ## Notes
@@ -93,5 +125,6 @@ interface Level {
 - `ABILITIES_DELETE` deletes by id and returns `{ id }`.
 - `ABILITIES_ADD_CHILD` validates parent/child ids as non-self links, ensures both abilities exist, enforces same-world linking (`parent.world_id === child.world_id`), inserts into `ability_children`, and converts duplicate-link unique constraint failures into a clear `'Child ability link already exists'` error.
 - `ABILITIES_REMOVE_CHILD` deletes by `(parent_id, child_id)` and returns `{ parent_id, child_id }` even when no row existed (idempotent no-op behavior).
-- Ability preload bridge methods are still not wired, so renderer access to ability channels remains out of scope in this step.
+- Ability read channels are wired end-to-end for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN` (`main` handlers + `window.db.abilities` preload bridge methods).
+- Ability mutation channels (`ABILITIES_ADD`, `ABILITIES_UPDATE`, `ABILITIES_DELETE`, `ABILITIES_ADD_CHILD`, `ABILITIES_REMOVE_CHILD`) remain main-only in this step and are not exposed through preload yet.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

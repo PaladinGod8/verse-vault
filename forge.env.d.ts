@@ -30,6 +30,30 @@ declare global {
     updated_at: string;
   }
 
+  interface Ability {
+    id: number;
+    world_id: number;
+    name: string;
+    description: string | null;
+    type: string;
+    passive_subtype: string | null;
+    level_id: number | null;
+    effects: string;
+    conditions: string;
+    cast_cost: string;
+    trigger: string | null;
+    pick_count: number | null;
+    pick_timing: string | null;
+    pick_is_permanent: number;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface AbilityChild {
+    parent_id: number;
+    child_id: number;
+  }
+
   interface DbApi {
     verses: {
       getAll(): Promise<Verse[]>;
@@ -77,6 +101,11 @@ declare global {
         data: { name?: string; category?: string; description?: string | null },
       ): Promise<Level>;
       delete(id: number): Promise<{ id: number }>;
+    };
+    abilities: {
+      getAllByWorld(worldId: number): Promise<Ability[]>;
+      getById(id: number): Promise<Ability | null>;
+      getChildren(abilityId: number): Promise<Ability[]>;
     };
   }
 
