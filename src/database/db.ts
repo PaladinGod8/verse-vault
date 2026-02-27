@@ -37,6 +37,18 @@ function initializeSchema(db: Database.Database): void {
       updated_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS levels (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      world_id    INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name        TEXT    NOT NULL,
+      category    TEXT    NOT NULL,
+      description TEXT,
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 export function closeDatabase(): void {

@@ -9,7 +9,7 @@
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed) |
 | `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed) to renderer                 |
-| `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`), open/close                                                                  |
+| `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                        |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                                                         |
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                                                  |
 | `src/renderer/App.tsx`                         | Route definitions and app shell                                                                                                 |
@@ -158,6 +158,16 @@
 - **IPC**: `IPC.LEVELS_GET_ALL_BY_WORLD`, `IPC.LEVELS_GET_BY_ID`, `IPC.LEVELS_ADD`, `IPC.LEVELS_UPDATE`, `IPC.LEVELS_DELETE`
 - **Main handler**: not wired in this step
 - **Storage**: schema/queries not added in this step
+
+### Level Schema Bootstrap (Step 02)
+
+- **Purpose**: ensure levels table exists during DB initialization without impacting existing behavior
+- **Status**: added on 2026-02-27 as migration-safe `CREATE TABLE IF NOT EXISTS`
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: contract exists from Step 01; runtime handlers not wired in this step
+- **Main handler**: not wired in this step
+- **Storage**: `verse-vault.db` -> `levels` table (`id`, `world_id`, `name`, `category`, `description`, `created_at`, `updated_at`)
 
 ### App Shell / Routing
 
