@@ -155,6 +155,16 @@ function registerIpcHandlers() {
     return db.prepare('SELECT * FROM worlds WHERE id = ?').get(id) ?? null;
   });
 
+  ipcMain.handle(IPC.LEVELS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
+    return db
+      .prepare('SELECT * FROM levels WHERE world_id = ? ORDER BY updated_at DESC')
+      .all(worldId);
+  });
+
+  ipcMain.handle(IPC.LEVELS_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM levels WHERE id = ?').get(id) ?? null;
+  });
+
   ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {

@@ -7,7 +7,7 @@
 
 | Path                                           | Responsibility                                                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed) |
+| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read) |
 | `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed) to renderer                 |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                        |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                                                         |
@@ -168,6 +168,16 @@
 - **IPC**: contract exists from Step 01; runtime handlers not wired in this step
 - **Main handler**: not wired in this step
 - **Storage**: `verse-vault.db` -> `levels` table (`id`, `world_id`, `name`, `category`, `description`, `created_at`, `updated_at`)
+
+### Level Main Read Handlers (Step 03)
+
+- **Purpose**: provide read-only levels retrieval in main process scoped to a world
+- **Status**: added on 2026-02-27
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: `IPC.LEVELS_GET_ALL_BY_WORLD`, `IPC.LEVELS_GET_BY_ID`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Storage**: `SELECT * FROM levels WHERE world_id = ? ORDER BY updated_at DESC`; `SELECT * FROM levels WHERE id = ?` (returns `null` when missing)
 
 ### App Shell / Routing
 
