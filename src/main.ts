@@ -280,6 +280,230 @@ function registerIpcHandlers() {
     return db.prepare('SELECT * FROM abilities WHERE id = ?').get(id) ?? null;
   });
 
+  ipcMain.handle(
+    IPC.ABILITIES_ADD,
+    (
+      _event,
+      data: {
+        world_id: number;
+        name: string;
+        description?: string | null;
+        type: string;
+        passive_subtype?: string | null;
+        level_id?: number | null;
+        effects?: string;
+        conditions?: string;
+        cast_cost?: string;
+        trigger?: string | null;
+        pick_count?: number | null;
+        pick_timing?: string | null;
+        pick_is_permanent?: number;
+      },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('Ability name is required');
+      }
+      const type = typeof data.type === 'string' ? data.type.trim() : '';
+      if (!type) {
+        throw new Error('Ability type is required');
+      }
+
+      const result = db
+        .prepare(
+          `
+          INSERT INTO abilities (
+            world_id,
+            name,
+            description,
+            type,
+            passive_subtype,
+            level_id,
+            effects,
+            conditions,
+            cast_cost,
+            trigger,
+            pick_count,
+            pick_timing,
+            pick_is_permanent
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+        )
+        .run(
+          data.world_id,
+          name,
+          data.description ?? null,
+          type,
+          data.passive_subtype ?? null,
+          data.level_id ?? null,
+          data.effects ?? '[]',
+          data.conditions ?? '[]',
+          data.cast_cost ?? '{}',
+          data.trigger ?? null,
+          data.pick_count ?? null,
+          data.pick_timing ?? null,
+          data.pick_is_permanent ?? 0,
+        );
+
+      const ability = db
+        .prepare('SELECT * FROM abilities WHERE id = ?')
+        .get(result.lastInsertRowid);
+      if (!ability) {
+        throw new Error('Failed to create ability');
+      }
+      return ability;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.ABILITIES_UPDATE,
+    (
+      _event,
+      id: number,
+      data: {
+        name?: string;
+        description?: string | null;
+        type?: string;
+        passive_subtype?: string | null;
+        level_id?: number | null;
+        effects?: string;
+        conditions?: string;
+        cast_cost?: string;
+        trigger?: string | null;
+        pick_count?: number | null;
+        pick_timing?: string | null;
+        pick_is_permanent?: number;
+      },
+    ) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasDescription = Object.prototype.hasOwnProperty.call(
+        data,
+        'description',
+      );
+      const hasType = Object.prototype.hasOwnProperty.call(data, 'type');
+      const hasPassiveSubtype = Object.prototype.hasOwnProperty.call(
+        data,
+        'passive_subtype',
+      );
+      const hasLevelId = Object.prototype.hasOwnProperty.call(data, 'level_id');
+      const hasEffects = Object.prototype.hasOwnProperty.call(data, 'effects');
+      const hasConditions = Object.prototype.hasOwnProperty.call(
+        data,
+        'conditions',
+      );
+      const hasCastCost = Object.prototype.hasOwnProperty.call(
+        data,
+        'cast_cost',
+      );
+      const hasTrigger = Object.prototype.hasOwnProperty.call(data, 'trigger');
+      const hasPickCount = Object.prototype.hasOwnProperty.call(
+        data,
+        'pick_count',
+      );
+      const hasPickTiming = Object.prototype.hasOwnProperty.call(
+        data,
+        'pick_timing',
+      );
+      const hasPickIsPermanent = Object.prototype.hasOwnProperty.call(
+        data,
+        'pick_is_permanent',
+      );
+
+      const setClauses: string[] = [];
+      const values: Array<string | number | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('Ability name cannot be empty');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasDescription && data.description !== undefined) {
+        setClauses.push('description = ?');
+        values.push(data.description);
+      }
+
+      if (hasType) {
+        const trimmedType =
+          typeof data.type === 'string' ? data.type.trim() : '';
+        if (!trimmedType) {
+          throw new Error('Ability type cannot be empty');
+        }
+        setClauses.push('type = ?');
+        values.push(trimmedType);
+      }
+
+      if (hasPassiveSubtype && data.passive_subtype !== undefined) {
+        setClauses.push('passive_subtype = ?');
+        values.push(data.passive_subtype);
+      }
+
+      if (hasLevelId && data.level_id !== undefined) {
+        setClauses.push('level_id = ?');
+        values.push(data.level_id);
+      }
+
+      if (hasEffects && data.effects !== undefined) {
+        setClauses.push('effects = ?');
+        values.push(data.effects);
+      }
+
+      if (hasConditions && data.conditions !== undefined) {
+        setClauses.push('conditions = ?');
+        values.push(data.conditions);
+      }
+
+      if (hasCastCost && data.cast_cost !== undefined) {
+        setClauses.push('cast_cost = ?');
+        values.push(data.cast_cost);
+      }
+
+      if (hasTrigger && data.trigger !== undefined) {
+        setClauses.push('trigger = ?');
+        values.push(data.trigger);
+      }
+
+      if (hasPickCount && data.pick_count !== undefined) {
+        setClauses.push('pick_count = ?');
+        values.push(data.pick_count);
+      }
+
+      if (hasPickTiming && data.pick_timing !== undefined) {
+        setClauses.push('pick_timing = ?');
+        values.push(data.pick_timing);
+      }
+
+      if (hasPickIsPermanent && data.pick_is_permanent !== undefined) {
+        setClauses.push('pick_is_permanent = ?');
+        values.push(data.pick_is_permanent);
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE abilities SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const ability = db
+        .prepare('SELECT * FROM abilities WHERE id = ?')
+        .get(id);
+      if (!ability) {
+        throw new Error('Ability not found');
+      }
+      return ability;
+    },
+  );
+
+  ipcMain.handle(IPC.ABILITIES_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM abilities WHERE id = ?').run(id);
+    return { id };
+  });
+
   ipcMain.handle(IPC.ABILITIES_GET_CHILDREN, (_event, abilityId: number) => {
     return db
       .prepare(
