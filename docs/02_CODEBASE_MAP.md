@@ -12,9 +12,10 @@
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                        |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                                                         |
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                                                  |
-| `src/renderer/App.tsx`                         | Route definitions and app shell                                                                                                 |
+| `src/renderer/App.tsx`                         | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`)                                                        |
 | `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                   |
 | `src/renderer/pages/WorldPage.tsx`             | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview       |
+| `src/renderer/pages/LevelsPage.tsx`            | Levels list page (`/world/:id/levels`): read-only table of levels for the world with loading/empty/error states                 |
 | `src/renderer/components/worlds/WorldSidebar.tsx` | World workspace sidebar: Level nav item linking to `/world/:id/levels`                                                       |
 | `src/renderer/components/worlds/WorldCard.tsx` | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions)                              |
 | `src/renderer/components/worlds/WorldForm.tsx` | Reusable worlds form for create/edit (name required, optional thumbnail and short description)                                  |
@@ -210,6 +211,16 @@
 - **IPC**: uses existing `IPC.WORLDS_GET_BY_ID` and `IPC.WORLDS_MARK_VIEWED` via preload bridge
 - **Main handler**: `src/main.ts` (from existing Worlds feature)
 - **Storage**: no changes
+
+### Levels List Read UI (Step 08)
+
+- **Purpose**: provide a read-only levels table at `/world/:id/levels` backed by `window.db.levels.getAllByWorld`
+- **Status**: added on 2026-02-27
+- **UI**: `src/renderer/pages/LevelsPage.tsx`, route update in `src/renderer/App.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.LEVELS_GET_ALL_BY_WORLD` via `window.db.levels.getAllByWorld`; also `IPC.WORLDS_GET_BY_ID` for world name header
+- **Main handler**: `src/main.ts` (from Steps 03 and 05)
+- **Storage**: reads from `levels` table; no write behavior in this step
 
 ### Level Preload Mutation Bridge (Step 06)
 
