@@ -14,7 +14,8 @@
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                                                  |
 | `src/renderer/App.tsx`                         | Route definitions and app shell                                                                                                 |
 | `src/renderer/pages/WorldsHomePage.tsx`        | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                   |
-| `src/renderer/pages/WorldPagePlaceholder.tsx`  | World route placeholder page (`/world/:id`): validates id, marks world viewed on entry, shows basic world context               |
+| `src/renderer/pages/WorldPage.tsx`             | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview       |
+| `src/renderer/components/worlds/WorldSidebar.tsx` | World workspace sidebar: Level nav item linking to `/world/:id/levels`                                                       |
 | `src/renderer/components/worlds/WorldCard.tsx` | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions)                              |
 | `src/renderer/components/worlds/WorldForm.tsx` | Reusable worlds form for create/edit (name required, optional thumbnail and short description)                                  |
 | `src/renderer/index.css`                       | Tailwind v4 import + global styles                                                                                              |
@@ -199,6 +200,16 @@
 - **IPC**: `IPC.LEVELS_ADD`, `IPC.LEVELS_UPDATE`, `IPC.LEVELS_DELETE`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Storage**: `LEVELS_ADD` inserts a levels row and returns it; `LEVELS_UPDATE` mutates only provided fields and sets `updated_at`; `LEVELS_DELETE` removes by id and returns `{ id }`
+
+### World Workspace Shell + Sidebar (Step 07)
+
+- **Purpose**: replace WorldPagePlaceholder with a real workspace layout and sidebar nav; Level is the first sidebar item
+- **Status**: added on 2026-02-27
+- **UI**: `src/renderer/pages/WorldPage.tsx`, `src/renderer/components/worlds/WorldSidebar.tsx`, route update in `src/renderer/App.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.WORLDS_GET_BY_ID` and `IPC.WORLDS_MARK_VIEWED` via preload bridge
+- **Main handler**: `src/main.ts` (from existing Worlds feature)
+- **Storage**: no changes
 
 ### Level Preload Mutation Bridge (Step 06)
 
