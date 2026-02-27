@@ -140,6 +140,57 @@ describe('main process', () => {
         updated_at: '2026-01-02 00:00:00',
       };
     });
+    const abilitiesSelectAllByWorldMock = vi.fn(() => [
+      {
+        id: 20,
+        world_id: 1,
+        name: 'Ability One',
+        description: null,
+        type: 'active',
+        updated_at: '2026-01-02 00:00:00',
+      },
+    ]);
+    const abilitiesInsertRunMock = vi.fn(() => ({ lastInsertRowid: 11 }));
+    const abilitiesUpdateRunMock = vi.fn();
+    const abilitiesDeleteRunMock = vi.fn();
+    const abilityChildrenInsertRunMock = vi.fn();
+    const abilityChildrenDeleteRunMock = vi.fn();
+    const abilityChildrenSelectAllMock = vi.fn(() => [
+      {
+        id: 22,
+        world_id: 1,
+        name: 'Child Ability',
+        description: null,
+        type: 'passive',
+      },
+    ]);
+    const abilitiesSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 777) return null;
+      return {
+        id,
+        world_id: 1,
+        name: `Ability ${id}`,
+        description: null,
+        type: 'active',
+        passive_subtype: null,
+        level_id: null,
+        effects: '[]',
+        conditions: '[]',
+        cast_cost: '{}',
+        trigger: null,
+        pick_count: null,
+        pick_timing: null,
+        pick_is_permanent: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const abilitiesSelectIdAndWorldByIdGetMock = vi.fn((id: number) => {
+      if (id === 1) return { id: 1, world_id: 1 };
+      if (id === 2) return { id: 2, world_id: 1 };
+      if (id === 3) return { id: 3, world_id: 2 };
+      return undefined;
+    });
 
     prepareMock.mockImplementation((sql: string) => {
       if (sql.includes('SELECT * FROM worlds ORDER BY updated_at DESC')) {
@@ -193,6 +244,38 @@ describe('main process', () => {
         return { run: levelsDeleteRunMock };
       }
 
+      if (sql.includes('SELECT * FROM abilities WHERE world_id = ?')) {
+        return { all: abilitiesSelectAllByWorldMock };
+      }
+      if (sql.includes('SELECT id, world_id FROM abilities WHERE id = ?')) {
+        return { get: abilitiesSelectIdAndWorldByIdGetMock };
+      }
+      if (sql.includes('SELECT * FROM abilities WHERE id = ?')) {
+        return { get: abilitiesSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO abilities')) {
+        return { run: abilitiesInsertRunMock };
+      }
+      if (sql.includes('UPDATE abilities SET')) {
+        return { run: abilitiesUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM abilities WHERE id = ?')) {
+        return { run: abilitiesDeleteRunMock };
+      }
+      if (
+        sql.includes(
+          'DELETE FROM ability_children WHERE parent_id = ? AND child_id = ?',
+        )
+      ) {
+        return { run: abilityChildrenDeleteRunMock };
+      }
+      if (sql.includes('INSERT INTO ability_children')) {
+        return { run: abilityChildrenInsertRunMock };
+      }
+      if (sql.includes('FROM ability_children AS relation')) {
+        return { all: abilityChildrenSelectAllMock };
+      }
+
       throw new Error(`Unexpected SQL: ${sql}`);
     });
 
@@ -224,7 +307,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(15);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(23);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -398,6 +481,196 @@ describe('main process', () => {
     const levelDeleteResult = registeredIpcHandlers[IPC.LEVELS_DELETE]({}, 10);
     expect(levelsDeleteRunMock).toHaveBeenCalledWith(10);
     expect(levelDeleteResult).toEqual({ id: 10 });
+
+    const abilitiesGetAllByWorldResult = registeredIpcHandlers[
+      IPC.ABILITIES_GET_ALL_BY_WORLD
+    ]({}, 1);
+    expect(abilitiesSelectAllByWorldMock).toHaveBeenCalledWith(1);
+    expect(abilitiesGetAllByWorldResult).toEqual([
+      {
+        id: 20,
+        world_id: 1,
+        name: 'Ability One',
+        description: null,
+        type: 'active',
+        updated_at: '2026-01-02 00:00:00',
+      },
+    ]);
+
+    const abilityByIdResult = registeredIpcHandlers[IPC.ABILITIES_GET_BY_ID](
+      {},
+      20,
+    );
+    expect(abilitiesSelectByIdGetMock).toHaveBeenCalledWith(20);
+    expect(abilityByIdResult).toMatchObject({ id: 20 });
+
+    const missingAbilityResult = registeredIpcHandlers[IPC.ABILITIES_GET_BY_ID](
+      {},
+      777,
+    );
+    expect(missingAbilityResult).toBeNull();
+
+    const abilityAddResult = registeredIpcHandlers[IPC.ABILITIES_ADD](
+      {},
+      {
+        world_id: 1,
+        name: '  New Ability  ',
+        type: '  active  ',
+      },
+    );
+    expect(abilitiesInsertRunMock).toHaveBeenCalledWith(
+      1,
+      'New Ability',
+      null,
+      'active',
+      null,
+      null,
+      '[]',
+      '[]',
+      '{}',
+      null,
+      null,
+      null,
+      0,
+    );
+    expect(abilitiesSelectByIdGetMock).toHaveBeenCalledWith(11);
+    expect(abilityAddResult).toMatchObject({ id: 11 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD](
+        {},
+        { world_id: 1, name: '   ', type: 'active' },
+      ),
+    ).toThrowError('Ability name is required');
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD](
+        {},
+        { world_id: 1, name: 'Ability', type: '   ' },
+      ),
+    ).toThrowError('Ability type is required');
+
+    const abilityUpdateResult = registeredIpcHandlers[IPC.ABILITIES_UPDATE](
+      {},
+      20,
+      {
+        name: '  Updated Ability  ',
+        pick_count: 2,
+        pick_is_permanent: 1,
+      },
+    );
+    const abilityUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE abilities SET') &&
+        sql.includes('name = ?') &&
+        sql.includes('pick_count = ?') &&
+        sql.includes('pick_is_permanent = ?'),
+    )?.[0];
+    expect(abilityUpdateSql).toContain("updated_at = datetime('now')");
+    expect(abilityUpdateSql).not.toContain('type = ?');
+    expect(abilitiesUpdateRunMock).toHaveBeenCalledWith(
+      'Updated Ability',
+      2,
+      1,
+      20,
+    );
+    expect(abilityUpdateResult).toMatchObject({ id: 20 });
+
+    const abilityTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.ABILITIES_UPDATE
+    ]({}, 21, {});
+    const abilityTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql ===
+        "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(abilityTimestampOnlySql).toBe(
+      "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(abilitiesUpdateRunMock).toHaveBeenLastCalledWith(21);
+    expect(abilityTimestampOnlyUpdateResult).toMatchObject({ id: 21 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_UPDATE]({}, 20, { name: '   ' }),
+    ).toThrowError('Ability name cannot be empty');
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_UPDATE]({}, 20, { type: '   ' }),
+    ).toThrowError('Ability type cannot be empty');
+
+    const abilityDeleteResult = registeredIpcHandlers[IPC.ABILITIES_DELETE](
+      {},
+      20,
+    );
+    expect(abilitiesDeleteRunMock).toHaveBeenCalledWith(20);
+    expect(abilityDeleteResult).toEqual({ id: 20 });
+
+    const addChildResult = registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
+      {},
+      { parent_id: 1, child_id: 2 },
+    );
+    expect(abilitiesSelectIdAndWorldByIdGetMock).toHaveBeenCalledWith(1);
+    expect(abilitiesSelectIdAndWorldByIdGetMock).toHaveBeenCalledWith(2);
+    expect(abilityChildrenInsertRunMock).toHaveBeenCalledWith(1, 2);
+    expect(addChildResult).toEqual({ parent_id: 1, child_id: 2 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
+        {},
+        { parent_id: 9, child_id: 9 },
+      ),
+    ).toThrowError('Parent ability cannot be linked to itself');
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
+        {},
+        { parent_id: 999, child_id: 2 },
+      ),
+    ).toThrowError('Parent ability not found');
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
+        {},
+        { parent_id: 1, child_id: 999 },
+      ),
+    ).toThrowError('Child ability not found');
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
+        {},
+        { parent_id: 1, child_id: 3 },
+      ),
+    ).toThrowError('Parent and child abilities must belong to the same world');
+
+    abilityChildrenInsertRunMock.mockImplementationOnce(() => {
+      const duplicateError = new Error('duplicate') as Error & { code: string };
+      duplicateError.code = 'SQLITE_CONSTRAINT_UNIQUE';
+      throw duplicateError;
+    });
+    expect(() =>
+      registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
+        {},
+        { parent_id: 1, child_id: 2 },
+      ),
+    ).toThrowError('Child ability link already exists');
+
+    const removeChildResult = registeredIpcHandlers[IPC.ABILITIES_REMOVE_CHILD](
+      {},
+      { parent_id: 1, child_id: 2 },
+    );
+    expect(abilityChildrenDeleteRunMock).toHaveBeenCalledWith(1, 2);
+    expect(removeChildResult).toEqual({ parent_id: 1, child_id: 2 });
+
+    const getChildrenResult = registeredIpcHandlers[IPC.ABILITIES_GET_CHILDREN](
+      {},
+      1,
+    );
+    expect(abilityChildrenSelectAllMock).toHaveBeenCalledWith(1);
+    expect(getChildrenResult).toEqual([
+      {
+        id: 22,
+        world_id: 1,
+        name: 'Child Ability',
+        description: null,
+        type: 'passive',
+      },
+    ]);
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);
