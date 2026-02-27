@@ -28,4 +28,9 @@ export const IPC = {
   CAMPAIGNS_ADD: 'db:campaigns:add',
   CAMPAIGNS_UPDATE: 'db:campaigns:update',
   CAMPAIGNS_DELETE: 'db:campaigns:delete',
+  SESSIONS_GET_ALL_BY_CAMPAIGN: 'db:sessions:getAllByCampaign',
+  SESSIONS_GET_BY_ID: 'db:sessions:getById',
+  SESSIONS_ADD: 'db:sessions:add',
+  SESSIONS_UPDATE: 'db:sessions:update',
+  SESSIONS_DELETE: 'db:sessions:delete',
 } as const;
