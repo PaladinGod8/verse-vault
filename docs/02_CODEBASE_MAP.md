@@ -149,6 +149,16 @@
 - **Preload bridge**: `src/preload.ts` -> `window.db.worlds.getById/markViewed` (from Steps 04 and 09)
 - **Storage**: opening `/world/:id` validates param, resolves not-found safely, and persists viewed timestamp through `UPDATE worlds SET last_viewed_at = datetime('now') WHERE id = ?`
 
+### Level Shared Contract (Step 01)
+
+- **Purpose**: define shared types and IPC constant names for the Level CRUD feature
+- **Status**: added on 2026-02-27
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: `IPC.LEVELS_GET_ALL_BY_WORLD`, `IPC.LEVELS_GET_BY_ID`, `IPC.LEVELS_ADD`, `IPC.LEVELS_UPDATE`, `IPC.LEVELS_DELETE`
+- **Main handler**: not wired in this step
+- **Storage**: schema/queries not added in this step
+
 ### App Shell / Routing
 
 - **UI**: `src/renderer/App.tsx` (routes), `src/renderer/index.tsx` (HashRouter)
