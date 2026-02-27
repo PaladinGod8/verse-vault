@@ -9,7 +9,7 @@ Current channels cover an initial local content-record scaffold (`verses`) plus 
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
-Abilities Step 01 (2026-02-27) adds shared IPC constants only for abilities CRUD and parent-child operations. Main handlers and preload bridge methods are intentionally not wired in this step.
+Abilities Step 03 (2026-02-27) wires read handlers in main for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN`. Preload bridge methods and mutation handlers remain intentionally unwired in this step.
 
 ## Channels
 
@@ -30,14 +30,14 @@ Abilities Step 01 (2026-02-27) adds shared IPC constants only for abilities CRUD
 | `IPC.LEVELS_ADD`                 | `db:levels:add`               | renderer -> main | `{ world_id: number; name: string; category: string; description?: string \| null }`                  | `Level`           | `src/main.ts:registerIpcHandlers` |
 | `IPC.LEVELS_UPDATE`              | `db:levels:update`            | renderer -> main | `id: number, data: { name?: string; category?: string; description?: string \| null }`                | `Level`           | `src/main.ts:registerIpcHandlers` |
 | `IPC.LEVELS_DELETE`              | `db:levels:delete`            | renderer -> main | `id: number`                                                                                          | `{ id: number }`  | `src/main.ts:registerIpcHandlers` |
-| `IPC.ABILITIES_GET_ALL_BY_WORLD` | _(defined in `IPC` constant)_ | renderer -> main | `worldId: number`                                                                                     | `Ability[]`       | _(not wired yet)_                 |
-| `IPC.ABILITIES_GET_BY_ID`        | _(defined in `IPC` constant)_ | renderer -> main | `id: number`                                                                                          | `Ability \| null` | _(not wired yet)_                 |
+| `IPC.ABILITIES_GET_ALL_BY_WORLD` | `db:abilities:getAllByWorld`  | renderer -> main | `worldId: number`                                                                                     | `Ability[]`       | `src/main.ts:registerIpcHandlers` |
+| `IPC.ABILITIES_GET_BY_ID`        | `db:abilities:getById`        | renderer -> main | `id: number`                                                                                          | `Ability \| null` | `src/main.ts:registerIpcHandlers` |
 | `IPC.ABILITIES_ADD`              | _(defined in `IPC` constant)_ | renderer -> main | _TBD in Step 01 (constants only)_                                                                     | _TBD_             | _(not wired yet)_                 |
 | `IPC.ABILITIES_UPDATE`           | _(defined in `IPC` constant)_ | renderer -> main | _TBD in Step 01 (constants only)_                                                                     | _TBD_             | _(not wired yet)_                 |
 | `IPC.ABILITIES_DELETE`           | _(defined in `IPC` constant)_ | renderer -> main | `id: number`                                                                                          | `{ id: number }`  | _(not wired yet)_                 |
 | `IPC.ABILITIES_ADD_CHILD`        | _(defined in `IPC` constant)_ | renderer -> main | _TBD in Step 01 (constants only)_                                                                     | _TBD_             | _(not wired yet)_                 |
 | `IPC.ABILITIES_REMOVE_CHILD`     | _(defined in `IPC` constant)_ | renderer -> main | _TBD in Step 01 (constants only)_                                                                     | _TBD_             | _(not wired yet)_                 |
-| `IPC.ABILITIES_GET_CHILDREN`     | _(defined in `IPC` constant)_ | renderer -> main | `abilityId: number`                                                                                   | `Ability[]`       | _(not wired yet)_                 |
+| `IPC.ABILITIES_GET_CHILDREN`     | `db:abilities:getChildren`    | renderer -> main | `abilityId: number`                                                                                   | `Ability[]`       | `src/main.ts:registerIpcHandlers` |
 
 ## Types Reference
 
@@ -87,5 +87,7 @@ interface Level {
 - `LEVELS_ADD` validates `name.trim()` and `category.trim()` as non-empty, inserts a levels row scoped to `world_id`, and returns the inserted row.
 - `LEVELS_UPDATE` updates only the fields explicitly provided (`name`, `category`, `description`), validates trimmed values when present, always sets `updated_at = datetime('now')`, and throws `'Level not found'` if the row does not exist after update. Uses the same `hasOwnProperty`-based partial-update pattern as `WORLDS_UPDATE`, correctly handling intentional `null` sets for the nullable `description` field.
 - `LEVELS_DELETE` deletes by id and returns `{ id }`; does not throw when the row did not exist.
-- Ability channel constants exist in `src/shared/ipcChannels.ts` for planned CRUD and parent-child operations, but Step 01 intentionally does not add main handlers or preload bridge methods yet.
+- Ability read handlers are wired in `main` for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN`; all use deterministic ordering for list returns (`updated_at DESC`).
+- Ability preload bridge methods are still not wired, so renderer access to ability channels remains out of scope in this step.
+- Ability mutation handlers (`ABILITIES_ADD`, `ABILITIES_UPDATE`, `ABILITIES_DELETE`, `ABILITIES_ADD_CHILD`, `ABILITIES_REMOVE_CHILD`) remain intentionally unwired.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.
