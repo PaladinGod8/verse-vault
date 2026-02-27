@@ -65,7 +65,7 @@ describe('App routes', () => {
     ).toBeInTheDocument();
   });
 
-  it('navigates to world placeholder when a world card is opened', async () => {
+  it('navigates to world page when a world card is opened', async () => {
     const user = userEvent.setup();
     const world = buildWorld();
 
@@ -85,7 +85,7 @@ describe('App routes', () => {
     await user.click(await screen.findByRole('button', { name: 'Open Alpha' }));
 
     expect(
-      await screen.findByRole('heading', { name: 'World Placeholder' }),
+      await screen.findByRole('heading', { name: 'World Overview' }),
     ).toBeInTheDocument();
     expect(worldsGetByIdMock).toHaveBeenCalledWith(1);
     expect(worldsMarkViewedMock).toHaveBeenCalledWith(1);
