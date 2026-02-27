@@ -120,7 +120,9 @@ export default function WorldPage() {
 
         {!isLoading && !error && world ? (
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">{world.name}</h2>
+            <h2 className="text-xl font-semibold text-slate-900">
+              {world.name}
+            </h2>
             <p className="mt-2 text-sm text-slate-600">
               {world.short_description?.trim() || 'No description yet.'}
             </p>
