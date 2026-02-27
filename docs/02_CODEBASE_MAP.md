@@ -9,7 +9,7 @@
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `abilities` read + `abilities` add/update/delete/addChild/removeChild) |
 | `src/preload.ts`                                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read/add/update/delete/addChild/removeChild) to renderer                                             |
-| `src/database/db.ts`                                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `campaigns`, `sessions`, `abilities`, `ability_children`), open/close                                                                                                                      |
+| `src/database/db.ts`                                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `campaigns`, `sessions`, `scenes`, `abilities`, `ability_children`), open/close                                                                                                            |
 | `src/shared/ipcChannels.ts`                                    | All IPC channel name constants (single source of truth) for verses, worlds, levels, abilities, campaigns, sessions, and scenes contracts                                                                                                                |
 | `src/renderer/index.tsx`                                       | React root, HashRouter wrapper                                                                                                                                                                                                                          |
 | `src/renderer/App.tsx`                                         | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`, `/world/:id/abilities`)                                                                                                                                                        |
@@ -423,6 +423,17 @@
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
 - **Storage**: schema/queries not added in this step
+
+### Scene Schema Bootstrap (Step 06)
+
+- **Purpose**: ensure `scenes` table exists during DB initialization as a lightweight scene container, not a runtime scene engine
+- **Status**: added on 2026-02-27 as migration-safe `CREATE TABLE IF NOT EXISTS`
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: scene contract exists from Step 03; runtime handlers not wired in this step
+- **Main handler**: not wired in this step
+- **Preload bridge**: not wired in this step
+- **Storage**: `verse-vault.db` -> `scenes` table (`id`, `session_id`, `name`, `notes`, `payload`, `sort_order`, `created_at`, `updated_at`) with `session_id` FK -> `sessions(id)` `ON DELETE CASCADE`; `payload` defaults to `'{}'` for future map/token/clock/rules scene state
 
 ### App Shell / Routing
 
