@@ -116,6 +116,25 @@ describe('main process', () => {
       };
     });
 
+    const levelsSelectAllByWorldMock = vi.fn(() => [
+      { id: 10, world_id: 1, name: 'Level One', category: 'Quest', description: null },
+    ]);
+    const levelsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 8 }));
+    const levelsUpdateRunMock = vi.fn();
+    const levelsDeleteRunMock = vi.fn();
+    const levelsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 999) return null;
+      return {
+        id,
+        world_id: 1,
+        name: `Level ${id}`,
+        category: 'Quest',
+        description: null,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+
     prepareMock.mockImplementation((sql: string) => {
       if (sql.includes('SELECT * FROM worlds ORDER BY updated_at DESC')) {
         return { all: worldsSelectAllMock };
@@ -151,6 +170,23 @@ describe('main process', () => {
       if (sql.includes('SELECT * FROM verses WHERE id = ?')) {
         return { get: versesSelectByIdGetMock };
       }
+
+      if (sql.includes('SELECT * FROM levels WHERE world_id = ?')) {
+        return { all: levelsSelectAllByWorldMock };
+      }
+      if (sql.includes('SELECT * FROM levels WHERE id = ?')) {
+        return { get: levelsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO levels')) {
+        return { run: levelsInsertRunMock };
+      }
+      if (sql.includes('UPDATE levels SET')) {
+        return { run: levelsUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM levels WHERE id = ?')) {
+        return { run: levelsDeleteRunMock };
+      }
+
       throw new Error(`Unexpected SQL: ${sql}`);
     });
 
@@ -182,7 +218,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(10);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(15);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -283,6 +319,65 @@ describe('main process', () => {
       id: 7,
       last_viewed_at: '2026-01-01 00:00:00',
     });
+
+    const levelsGetAllByWorldResult = registeredIpcHandlers[
+      IPC.LEVELS_GET_ALL_BY_WORLD
+    ]({}, 1);
+    expect(levelsSelectAllByWorldMock).toHaveBeenCalledTimes(1);
+    expect(levelsGetAllByWorldResult).toEqual([
+      { id: 10, world_id: 1, name: 'Level One', category: 'Quest', description: null },
+    ]);
+
+    const levelByIdResult = registeredIpcHandlers[IPC.LEVELS_GET_BY_ID]({}, 10);
+    expect(levelsSelectByIdGetMock).toHaveBeenCalledWith(10);
+    expect(levelByIdResult).toMatchObject({ id: 10 });
+
+    const missingLevelResult = registeredIpcHandlers[IPC.LEVELS_GET_BY_ID](
+      {},
+      999,
+    );
+    expect(missingLevelResult).toBeNull();
+
+    const levelAddResult = registeredIpcHandlers[IPC.LEVELS_ADD](
+      {},
+      { world_id: 1, name: '  New Level  ', category: '  Quest  ' },
+    );
+    expect(levelsInsertRunMock).toHaveBeenCalledWith(1, 'New Level', 'Quest', null);
+    expect(levelsSelectByIdGetMock).toHaveBeenCalledWith(8);
+    expect(levelAddResult).toMatchObject({ id: 8 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.LEVELS_ADD](
+        {},
+        { world_id: 1, name: '   ', category: 'Quest' },
+      ),
+    ).toThrowError('Level name is required');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.LEVELS_ADD](
+        {},
+        { world_id: 1, name: 'Name', category: '   ' },
+      ),
+    ).toThrowError('Level category is required');
+
+    const levelUpdateResult = registeredIpcHandlers[IPC.LEVELS_UPDATE](
+      {},
+      10,
+      { name: 'Updated Level', category: 'Race' },
+    );
+    const levelUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE levels SET') &&
+        sql.includes('name = ?'),
+    )?.[0];
+    expect(levelUpdateSql).toContain("updated_at = datetime('now')");
+    expect(levelsUpdateRunMock).toHaveBeenCalledWith('Updated Level', 'Race', 10);
+    expect(levelUpdateResult).toMatchObject({ id: 10 });
+
+    const levelDeleteResult = registeredIpcHandlers[IPC.LEVELS_DELETE]({}, 10);
+    expect(levelsDeleteRunMock).toHaveBeenCalledWith(10);
+    expect(levelDeleteResult).toEqual({ id: 10 });
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);

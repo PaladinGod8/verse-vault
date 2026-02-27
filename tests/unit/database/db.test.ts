@@ -59,13 +59,14 @@ describe('database', () => {
       path.join('C:/fake-user-data', 'verse-vault.db'),
     );
     expect(pragmaMock).toHaveBeenCalledWith('journal_mode = WAL');
-    expect(execMock).toHaveBeenCalledTimes(2);
+    expect(execMock).toHaveBeenCalledTimes(3);
 
     const schemaSql = execMock.mock.calls
       .map(([sql]) => String(sql))
       .join('\n');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS verses');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS levels');
     expect(schemaSql).toContain('name TEXT NOT NULL');
     expect(schemaSql).toContain('thumbnail TEXT');
     expect(schemaSql).toContain('short_description TEXT');
