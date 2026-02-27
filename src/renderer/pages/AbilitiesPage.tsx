@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import AbilityChildrenManager from '../components/abilities/AbilityChildrenManager';
 import AbilityForm from '../components/abilities/AbilityForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddAbilityInput = Parameters<DbApi['abilities']['add']>[0];
+
+function isAbilityChildManagerSupported(ability: Ability): boolean {
+  const subtype = ability.passive_subtype;
+  return (
+    ability.type === 'passive' &&
+    (subtype === 'linchpin' ||
+      subtype === 'keystone' ||
+      subtype === 'rostering')
+  );
+}
 
 export default function AbilitiesPage() {
   const { id } = useParams();
@@ -26,7 +37,28 @@ export default function AbilitiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAbility, setEditingAbility] = useState<Ability | null>(null);
+  const [managingChildrenAbilityId, setManagingChildrenAbilityId] = useState<
+    number | null
+  >(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const managingChildrenAbility = useMemo(
+    () =>
+      managingChildrenAbilityId === null
+        ? null
+        : (abilities.find(
+            (ability) => ability.id === managingChildrenAbilityId,
+          ) ?? null),
+    [abilities, managingChildrenAbilityId],
+  );
+
+  useEffect(() => {
+    if (
+      managingChildrenAbilityId !== null &&
+      managingChildrenAbility === null
+    ) {
+      setManagingChildrenAbilityId(null);
+    }
+  }, [managingChildrenAbility, managingChildrenAbilityId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -128,6 +160,9 @@ export default function AbilitiesPage() {
     try {
       await window.db.abilities.delete(ability.id);
       setAbilities((prev) => prev.filter((a) => a.id !== ability.id));
+      setManagingChildrenAbilityId((current) =>
+        current === ability.id ? null : current,
+      );
     } finally {
       setDeletingId((current) => (current === ability.id ? null : current));
     }
@@ -222,6 +257,7 @@ export default function AbilitiesPage() {
                           onClick={() => {
                             setIsCreateOpen(false);
                             setEditingAbility(ability);
+                            setManagingChildrenAbilityId(null);
                           }}
                           className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={deletingId === ability.id}
@@ -238,6 +274,20 @@ export default function AbilitiesPage() {
                         >
                           {deletingId === ability.id ? 'Deleting...' : 'Delete'}
                         </button>
+                        {isAbilityChildManagerSupported(ability) ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreateOpen(false);
+                              setEditingAbility(null);
+                              setManagingChildrenAbilityId(ability.id);
+                            }}
+                            className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={deletingId === ability.id}
+                          >
+                            Manage children
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -268,6 +318,37 @@ export default function AbilitiesPage() {
               onSubmit={handleCreateAbility}
               onCancel={() => setIsCreateOpen(false)}
             />
+          </section>
+        </div>
+      ) : null}
+
+      {managingChildrenAbility !== null ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="manage-ability-children-title"
+            className="w-full max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+          >
+            <h2
+              id="manage-ability-children-title"
+              className="mb-4 text-lg font-semibold text-slate-900"
+            >
+              Manage children - {managingChildrenAbility.name}
+            </h2>
+            <AbilityChildrenManager
+              parentAbility={managingChildrenAbility}
+              abilities={abilities}
+            />
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setManagingChildrenAbilityId(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
           </section>
         </div>
       ) : null}
