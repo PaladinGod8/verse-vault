@@ -8,7 +8,7 @@
 | Path                                           | Responsibility                                                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read) |
-| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed) to renderer                 |
+| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read) to renderer |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                        |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                                                         |
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                                                  |
@@ -178,6 +178,17 @@
 - **IPC**: `IPC.LEVELS_GET_ALL_BY_WORLD`, `IPC.LEVELS_GET_BY_ID`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Storage**: `SELECT * FROM levels WHERE world_id = ? ORDER BY updated_at DESC`; `SELECT * FROM levels WHERE id = ?` (returns `null` when missing)
+
+### Level Preload Read Bridge (Step 04)
+
+- **Purpose**: expose typed levels read methods to renderer through `window.db` without exposing `ipcRenderer`
+- **Status**: added on 2026-02-27
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: `IPC.LEVELS_GET_ALL_BY_WORLD`, `IPC.LEVELS_GET_BY_ID`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 03)
+- **Preload bridge**: `src/preload.ts` -> `window.db.levels.getAllByWorld/getById`
+- **Storage**: unchanged in this step
 
 ### App Shell / Routing
 
