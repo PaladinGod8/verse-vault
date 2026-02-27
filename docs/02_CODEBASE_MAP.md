@@ -12,12 +12,13 @@
 | `src/database/db.ts`                              | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                                                                                               |
 | `src/shared/ipcChannels.ts`                       | All IPC channel name constants (single source of truth) for verses, worlds, levels, and abilities contracts                                                                                                                                             |
 | `src/renderer/index.tsx`                          | React root, HashRouter wrapper                                                                                                                                                                                                                          |
-| `src/renderer/App.tsx`                            | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`)                                                                                                                                                                                |
+| `src/renderer/App.tsx`                            | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`, `/world/:id/abilities`)                                                                                                                                                        |
 | `src/renderer/pages/WorldsHomePage.tsx`           | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                                                                                                                                           |
 | `src/renderer/pages/WorldPage.tsx`                | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview                                                                                                                               |
 | `src/renderer/pages/LevelsPage.tsx`               | Levels list page (`/world/:id/levels`): table of levels with create/edit/delete actions + loading/empty/error states                                                                                                                                    |
+| `src/renderer/pages/AbilitiesPage.tsx`            | Abilities list page (`/world/:id/abilities`): read-only table of abilities with loading/empty/error states                                                                                                                                              |
 | `src/renderer/components/levels/LevelForm.tsx`    | Reusable levels form for create/edit (name + category required, optional description)                                                                                                                                                                   |
-| `src/renderer/components/worlds/WorldSidebar.tsx` | World workspace sidebar: Level nav item linking to `/world/:id/levels`                                                                                                                                                                                  |
+| `src/renderer/components/worlds/WorldSidebar.tsx` | World workspace sidebar: Level + Ability nav items linking to `/world/:id/levels` and `/world/:id/abilities`                                                                                                                                            |
 | `src/renderer/components/worlds/WorldCard.tsx`    | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions)                                                                                                                                                      |
 | `src/renderer/components/worlds/WorldForm.tsx`    | Reusable worlds form for create/edit (name required, optional thumbnail and short description)                                                                                                                                                          |
 | `src/renderer/index.css`                          | Tailwind v4 import + global styles                                                                                                                                                                                                                      |
@@ -321,6 +322,17 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Steps 04-05)
 - **Preload bridge**: `src/preload.ts` -> `window.db.abilities.add/update/delete/addChild/removeChild`
 - **Storage**: unchanged in this step (bridge and type alignment only)
+
+### Ability Route, Sidebar Link, and Read UI (Step 08)
+
+- **Purpose**: register the abilities workspace route and sidebar navigation, and render a read-only abilities list
+- **Status**: added on 2026-02-27
+- **UI**: `src/renderer/App.tsx`, `src/renderer/components/worlds/WorldSidebar.tsx`, `src/renderer/pages/AbilitiesPage.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.ABILITIES_GET_ALL_BY_WORLD` via `window.db.abilities.getAllByWorld`; also uses `IPC.WORLDS_GET_BY_ID` for world header and missing-world handling
+- **Main handler**: `src/main.ts` (from Ability Step 03 and Worlds Step 03)
+- **Preload bridge**: `src/preload.ts` (from Ability Step 06 and Worlds Step 04)
+- **Storage**: reads from `abilities` table only; no create/update/delete UI in this step
 
 ### App Shell / Routing
 
