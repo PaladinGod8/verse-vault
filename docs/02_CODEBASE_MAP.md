@@ -7,7 +7,7 @@
 
 | Path                                           | Responsibility                                                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read) |
+| `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete) |
 | `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read) to renderer |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                        |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                                                         |
@@ -189,6 +189,16 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 03)
 - **Preload bridge**: `src/preload.ts` -> `window.db.levels.getAllByWorld/getById`
 - **Storage**: unchanged in this step
+
+### Level Main Mutation Handlers (Step 05)
+
+- **Purpose**: add level create/update/delete in main process with validation
+- **Status**: added on 2026-02-27
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.LEVELS_ADD`, `IPC.LEVELS_UPDATE`, `IPC.LEVELS_DELETE`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Storage**: `LEVELS_ADD` inserts a levels row and returns it; `LEVELS_UPDATE` mutates only provided fields and sets `updated_at`; `LEVELS_DELETE` removes by id and returns `{ id }`
 
 ### App Shell / Routing
 
