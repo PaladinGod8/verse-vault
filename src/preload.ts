@@ -35,6 +35,14 @@ contextBridge.exposeInMainWorld('db', {
     ) => ipcRenderer.invoke(IPC.LEVELS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.LEVELS_DELETE, id),
   },
+  abilities: {
+    getAllByWorld: (worldId: number): Promise<Ability[]> =>
+      ipcRenderer.invoke(IPC.ABILITIES_GET_ALL_BY_WORLD, worldId),
+    getById: (id: number): Promise<Ability | null> =>
+      ipcRenderer.invoke(IPC.ABILITIES_GET_BY_ID, id),
+    getChildren: (abilityId: number): Promise<Ability[]> =>
+      ipcRenderer.invoke(IPC.ABILITIES_GET_CHILDREN, abilityId),
+  },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
     getById: (id: number): Promise<World | null> =>
