@@ -457,6 +457,17 @@
 - **Preload bridge**: not wired in this step
 - **Storage**: `verse-vault.db` -> `scenes` table (`id`, `session_id`, `name`, `notes`, `payload`, `sort_order`, `created_at`, `updated_at`) with `session_id` FK -> `sessions(id)` `ON DELETE CASCADE`; `payload` defaults to `'{}'` for future map/token/clock/rules scene state
 
+### Scene Main CRUD Handlers (Step 09)
+
+- **Purpose**: add scene CRUD handlers in main process scoped by session with explicit partial-update behavior while keeping scene payload as a lightweight JSON-text skeleton
+- **Status**: added on 2026-02-27
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.SCENES_GET_ALL_BY_SESSION`, `IPC.SCENES_GET_BY_ID`, `IPC.SCENES_ADD`, `IPC.SCENES_UPDATE`, `IPC.SCENES_DELETE`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Preload bridge**: not wired in this step
+- **Storage**: `SCENES_GET_ALL_BY_SESSION` reads by `session_id` ordered by `updated_at DESC`; `SCENES_GET_BY_ID` returns row or `null`; `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text, defaults omitted `payload` to `'{}'`, inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`) and returns the inserted row; `SCENES_UPDATE` mutates only provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty`, validates trimmed `name` and JSON `payload` when present, always sets `updated_at = datetime('now')`, and returns refreshed row; `SCENES_DELETE` removes by id and returns `{ id }`
+
 ### App Shell / Routing
 
 - **UI**: `src/renderer/App.tsx` (routes), `src/renderer/index.tsx` (HashRouter)

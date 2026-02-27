@@ -22,6 +22,20 @@ function isAbilityChildDuplicateError(error: unknown): boolean {
   );
 }
 
+function ensureScenePayloadJsonText(payload: unknown): string {
+  if (typeof payload !== 'string') {
+    throw new Error('Scene payload must be a JSON string');
+  }
+
+  try {
+    JSON.parse(payload);
+  } catch {
+    throw new Error('Scene payload must be valid JSON text');
+  }
+
+  return payload;
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -486,6 +500,129 @@ function registerIpcHandlers() {
 
   ipcMain.handle(IPC.SESSIONS_DELETE, (_event, id: number) => {
     db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
+    return { id };
+  });
+
+  ipcMain.handle(IPC.SCENES_GET_ALL_BY_SESSION, (_event, sessionId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM scenes WHERE session_id = ? ORDER BY updated_at DESC',
+      )
+      .all(sessionId);
+  });
+
+  ipcMain.handle(IPC.SCENES_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM scenes WHERE id = ?').get(id) ?? null;
+  });
+
+  ipcMain.handle(
+    IPC.SCENES_ADD,
+    (
+      _event,
+      data: {
+        session_id: number;
+        name: string;
+        notes?: string | null;
+        payload?: string;
+        sort_order?: number;
+      },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('Scene name is required');
+      }
+
+      const payload =
+        data.payload === undefined
+          ? '{}'
+          : ensureScenePayloadJsonText(data.payload);
+
+      const result = db
+        .prepare(
+          'INSERT INTO scenes (session_id, name, notes, payload, sort_order) VALUES (?, ?, ?, ?, ?)',
+        )
+        .run(
+          data.session_id,
+          name,
+          data.notes ?? null,
+          payload,
+          data.sort_order ?? 0,
+        );
+
+      const scene = db
+        .prepare('SELECT * FROM scenes WHERE id = ?')
+        .get(result.lastInsertRowid);
+      if (!scene) {
+        throw new Error('Failed to create scene');
+      }
+      return scene;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.SCENES_UPDATE,
+    (
+      _event,
+      id: number,
+      data: {
+        name?: string;
+        notes?: string | null;
+        payload?: string;
+        sort_order?: number;
+      },
+    ) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasNotes = Object.prototype.hasOwnProperty.call(data, 'notes');
+      const hasPayload = Object.prototype.hasOwnProperty.call(data, 'payload');
+      const hasSortOrder = Object.prototype.hasOwnProperty.call(
+        data,
+        'sort_order',
+      );
+
+      const setClauses: string[] = [];
+      const values: Array<string | number | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('Scene name cannot be empty');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasNotes && data.notes !== undefined) {
+        setClauses.push('notes = ?');
+        values.push(data.notes);
+      }
+
+      if (hasPayload && data.payload !== undefined) {
+        setClauses.push('payload = ?');
+        values.push(ensureScenePayloadJsonText(data.payload));
+      }
+
+      if (hasSortOrder && data.sort_order !== undefined) {
+        setClauses.push('sort_order = ?');
+        values.push(data.sort_order);
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE scenes SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(id);
+      if (!scene) {
+        throw new Error('Scene not found');
+      }
+      return scene;
+    },
+  );
+
+  ipcMain.handle(IPC.SCENES_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM scenes WHERE id = ?').run(id);
     return { id };
   });
 
