@@ -9,7 +9,7 @@ Current channels cover an initial local content-record scaffold (`verses`) plus 
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
-Abilities Step 06 (2026-02-27) exposes ability read bridges in preload (`window.db.abilities.getAllByWorld/getById/getChildren`) and adds shared `Ability` + `AbilityChild` interfaces with `DbApi.abilities` read signatures. Ability mutation bridges remain intentionally unwired in this step.
+Abilities Step 07 (2026-02-27) exposes ability mutation bridges in preload (`window.db.abilities.add/update/delete/addChild/removeChild`) on top of Step 06 read bridges (`getAllByWorld/getById/getChildren`), with shared `Ability` + `AbilityChild` interfaces and full `DbApi.abilities` signatures aligned to all 8 channels.
 
 ## Channels
 
@@ -100,6 +100,41 @@ interface DbApi {
   abilities: {
     getAllByWorld(worldId: number): Promise<Ability[]>;
     getById(id: number): Promise<Ability | null>;
+    add(data: {
+      world_id: number;
+      name: string;
+      description?: string | null;
+      type: string;
+      passive_subtype?: string | null;
+      level_id?: number | null;
+      effects?: string;
+      conditions?: string;
+      cast_cost?: string;
+      trigger?: string | null;
+      pick_count?: number | null;
+      pick_timing?: string | null;
+      pick_is_permanent?: number;
+    }): Promise<Ability>;
+    update(
+      id: number,
+      data: {
+        name?: string;
+        description?: string | null;
+        type?: string;
+        passive_subtype?: string | null;
+        level_id?: number | null;
+        effects?: string;
+        conditions?: string;
+        cast_cost?: string;
+        trigger?: string | null;
+        pick_count?: number | null;
+        pick_timing?: string | null;
+        pick_is_permanent?: number;
+      },
+    ): Promise<Ability>;
+    delete(id: number): Promise<{ id: number }>;
+    addChild(data: AbilityChild): Promise<AbilityChild>;
+    removeChild(data: AbilityChild): Promise<AbilityChild>;
     getChildren(abilityId: number): Promise<Ability[]>;
   };
 }
@@ -125,6 +160,6 @@ interface DbApi {
 - `ABILITIES_DELETE` deletes by id and returns `{ id }`.
 - `ABILITIES_ADD_CHILD` validates parent/child ids as non-self links, ensures both abilities exist, enforces same-world linking (`parent.world_id === child.world_id`), inserts into `ability_children`, and converts duplicate-link unique constraint failures into a clear `'Child ability link already exists'` error.
 - `ABILITIES_REMOVE_CHILD` deletes by `(parent_id, child_id)` and returns `{ parent_id, child_id }` even when no row existed (idempotent no-op behavior).
-- Ability read channels are wired end-to-end for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN` (`main` handlers + `window.db.abilities` preload bridge methods).
-- Ability mutation channels (`ABILITIES_ADD`, `ABILITIES_UPDATE`, `ABILITIES_DELETE`, `ABILITIES_ADD_CHILD`, `ABILITIES_REMOVE_CHILD`) remain main-only in this step and are not exposed through preload yet.
+- Ability read channels are wired end-to-end for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN` (`main` handlers + `window.db.abilities.getAllByWorld/getById/getChildren` preload bridge methods).
+- Ability mutation channels are now also wired end-to-end in Step 07 via preload: `window.db.abilities.add/update/delete/addChild/removeChild` invoke `ABILITIES_ADD`, `ABILITIES_UPDATE`, `ABILITIES_DELETE`, `ABILITIES_ADD_CHILD`, and `ABILITIES_REMOVE_CHILD`.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

@@ -105,6 +105,41 @@ declare global {
     abilities: {
       getAllByWorld(worldId: number): Promise<Ability[]>;
       getById(id: number): Promise<Ability | null>;
+      add(data: {
+        world_id: number;
+        name: string;
+        description?: string | null;
+        type: string;
+        passive_subtype?: string | null;
+        level_id?: number | null;
+        effects?: string;
+        conditions?: string;
+        cast_cost?: string;
+        trigger?: string | null;
+        pick_count?: number | null;
+        pick_timing?: string | null;
+        pick_is_permanent?: number;
+      }): Promise<Ability>;
+      update(
+        id: number,
+        data: {
+          name?: string;
+          description?: string | null;
+          type?: string;
+          passive_subtype?: string | null;
+          level_id?: number | null;
+          effects?: string;
+          conditions?: string;
+          cast_cost?: string;
+          trigger?: string | null;
+          pick_count?: number | null;
+          pick_timing?: string | null;
+          pick_is_permanent?: number;
+        },
+      ): Promise<Ability>;
+      delete(id: number): Promise<{ id: number }>;
+      addChild(data: AbilityChild): Promise<AbilityChild>;
+      removeChild(data: AbilityChild): Promise<AbilityChild>;
       getChildren(abilityId: number): Promise<Ability[]>;
     };
   }
