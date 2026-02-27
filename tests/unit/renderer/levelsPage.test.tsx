@@ -119,7 +119,12 @@ describe('LevelsPage', () => {
     worldsGetByIdMock.mockResolvedValue(buildWorld());
     levelsGetAllByWorldMock.mockResolvedValue([
       buildLevel(),
-      buildLevel({ id: 2, name: 'Forest Trail', category: 'Overworld', description: null }),
+      buildLevel({
+        id: 2,
+        name: 'Forest Trail',
+        category: 'Overworld',
+        description: null,
+      }),
     ]);
 
     renderLevelsPage('/world/1/levels');
@@ -133,7 +138,11 @@ describe('LevelsPage', () => {
 
   it('creates a level through the create dialog', async () => {
     const user = userEvent.setup();
-    const newLevel = buildLevel({ id: 3, name: 'Sky Fortress', category: 'Aerial' });
+    const newLevel = buildLevel({
+      id: 3,
+      name: 'Sky Fortress',
+      category: 'Aerial',
+    });
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
     levelsGetAllByWorldMock.mockResolvedValue([]);
@@ -166,7 +175,11 @@ describe('LevelsPage', () => {
   it('edits a level from the edit dialog', async () => {
     const user = userEvent.setup();
     const level = buildLevel({ description: null });
-    const updatedLevel = buildLevel({ name: 'Updated Cave', category: 'Boss', description: null });
+    const updatedLevel = buildLevel({
+      name: 'Updated Cave',
+      category: 'Boss',
+      description: null,
+    });
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
     levelsGetAllByWorldMock.mockResolvedValue([level]);
@@ -220,9 +233,7 @@ describe('LevelsPage', () => {
       expect(levelsDeleteMock).toHaveBeenCalledWith(1);
     });
     await waitFor(() => {
-      expect(
-        screen.queryByText('Cave of Shadows'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Cave of Shadows')).not.toBeInTheDocument();
     });
   });
 
