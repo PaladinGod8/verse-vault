@@ -95,13 +95,19 @@ export default function AbilitiesPage() {
       return;
     }
 
-    const { name, description, type, passive_subtype, trigger } = data;
     const updatedAbility = await window.db.abilities.update(editingAbility.id, {
-      name,
-      description,
-      type,
-      passive_subtype,
-      trigger,
+      name: data.name,
+      description: data.description ?? null,
+      type: data.type,
+      passive_subtype: data.passive_subtype ?? null,
+      level_id: data.level_id ?? null,
+      effects: data.effects ?? '[]',
+      conditions: data.conditions ?? '[]',
+      cast_cost: data.cast_cost ?? '{}',
+      trigger: data.trigger ?? null,
+      pick_count: data.pick_count ?? null,
+      pick_timing: data.pick_timing ?? null,
+      pick_is_permanent: data.pick_is_permanent ?? 0,
     });
     setAbilities((prev) =>
       prev.map((a) => (a.id === updatedAbility.id ? updatedAbility : a)),

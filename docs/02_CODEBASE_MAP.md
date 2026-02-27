@@ -17,7 +17,7 @@
 | `src/renderer/pages/WorldPage.tsx`                  | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview                                                                                                                               |
 | `src/renderer/pages/LevelsPage.tsx`                 | Levels list page (`/world/:id/levels`): table of levels with create/edit/delete actions + loading/empty/error states                                                                                                                                    |
 | `src/renderer/pages/AbilitiesPage.tsx`              | Abilities list page (`/world/:id/abilities`): table with create/edit/delete actions + loading/empty/error states                                                                                                                                        |
-| `src/renderer/components/abilities/AbilityForm.tsx` | Reusable abilities form for core create/edit fields (name + type required, optional description/passive subtype/trigger)                                                                                                                                |
+| `src/renderer/components/abilities/AbilityForm.tsx` | Reusable abilities form for create/edit with conditional type/subtype groups, JSON fields (`effects`/`conditions`/`cast_cost`), and subtype-specific fields (`level_id`, rostering config)                                                              |
 | `src/renderer/components/levels/LevelForm.tsx`      | Reusable levels form for create/edit (name + category required, optional description)                                                                                                                                                                   |
 | `src/renderer/components/worlds/WorldSidebar.tsx`   | World workspace sidebar: Level + Ability nav items linking to `/world/:id/levels` and `/world/:id/abilities`                                                                                                                                            |
 | `src/renderer/components/worlds/WorldCard.tsx`      | World card UI (thumbnail fallback + metadata display + card-open navigation + edit/delete actions)                                                                                                                                                      |
@@ -345,6 +345,17 @@
 - **Main handler**: `src/main.ts` (from Ability Step 04)
 - **Preload bridge**: `src/preload.ts` (from Ability Step 07)
 - **Storage**: create inserts and prepends returned row in local UI state; edit updates the matching row in place; delete removes by id after confirmation
+
+### Ability Conditional Form Fields (Step 10)
+
+- **Purpose**: extend AbilityForm with type/subtype-aware field visibility, JSON textarea validation/serialization, and subtype-specific payload normalization
+- **Status**: added on 2026-02-27
+- **UI**: `src/renderer/components/abilities/AbilityForm.tsx`, `src/renderer/pages/AbilitiesPage.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.ABILITIES_ADD` and `IPC.ABILITIES_UPDATE` via `window.db.abilities.add/update`
+- **Main handler**: `src/main.ts` (from Ability Step 04)
+- **Preload bridge**: `src/preload.ts` (from Ability Step 07)
+- **Storage**: form now normalizes hidden-field payload values (`passive_subtype`, `level_id`, `pick_*`, `conditions`, `cast_cost`) and blocks submit on invalid JSON shape/parse errors before sending data to IPC
 
 ### App Shell / Routing
 
