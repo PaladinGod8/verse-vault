@@ -69,7 +69,11 @@ describe('LevelForm', () => {
       <LevelForm
         mode="edit"
         worldId={1}
-        initialValues={{ name: 'Level One', category: 'Quest', description: null }}
+        initialValues={{
+          name: 'Level One',
+          category: 'Quest',
+          description: null,
+        }}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
       />,
@@ -128,7 +132,9 @@ describe('LevelForm', () => {
 
     expect(screen.getByLabelText('Name')).toHaveValue('Existing Level');
     expect(screen.getByLabelText('Category')).toHaveValue('Class');
-    expect(screen.getByLabelText('Description (optional)')).toHaveValue('Some notes');
+    expect(screen.getByLabelText('Description (optional)')).toHaveValue(
+      'Some notes',
+    );
     expect(
       screen.getByRole('button', { name: 'Save changes' }),
     ).toBeInTheDocument();

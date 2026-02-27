@@ -117,7 +117,13 @@ describe('main process', () => {
     });
 
     const levelsSelectAllByWorldMock = vi.fn(() => [
-      { id: 10, world_id: 1, name: 'Level One', category: 'Quest', description: null },
+      {
+        id: 10,
+        world_id: 1,
+        name: 'Level One',
+        category: 'Quest',
+        description: null,
+      },
     ]);
     const levelsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 8 }));
     const levelsUpdateRunMock = vi.fn();
@@ -325,7 +331,13 @@ describe('main process', () => {
     ]({}, 1);
     expect(levelsSelectAllByWorldMock).toHaveBeenCalledTimes(1);
     expect(levelsGetAllByWorldResult).toEqual([
-      { id: 10, world_id: 1, name: 'Level One', category: 'Quest', description: null },
+      {
+        id: 10,
+        world_id: 1,
+        name: 'Level One',
+        category: 'Quest',
+        description: null,
+      },
     ]);
 
     const levelByIdResult = registeredIpcHandlers[IPC.LEVELS_GET_BY_ID]({}, 10);
@@ -342,7 +354,12 @@ describe('main process', () => {
       {},
       { world_id: 1, name: '  New Level  ', category: '  Quest  ' },
     );
-    expect(levelsInsertRunMock).toHaveBeenCalledWith(1, 'New Level', 'Quest', null);
+    expect(levelsInsertRunMock).toHaveBeenCalledWith(
+      1,
+      'New Level',
+      'Quest',
+      null,
+    );
     expect(levelsSelectByIdGetMock).toHaveBeenCalledWith(8);
     expect(levelAddResult).toMatchObject({ id: 8 });
 
@@ -360,11 +377,10 @@ describe('main process', () => {
       ),
     ).toThrowError('Level category is required');
 
-    const levelUpdateResult = registeredIpcHandlers[IPC.LEVELS_UPDATE](
-      {},
-      10,
-      { name: 'Updated Level', category: 'Race' },
-    );
+    const levelUpdateResult = registeredIpcHandlers[IPC.LEVELS_UPDATE]({}, 10, {
+      name: 'Updated Level',
+      category: 'Race',
+    });
     const levelUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
         typeof sql === 'string' &&
@@ -372,7 +388,11 @@ describe('main process', () => {
         sql.includes('name = ?'),
     )?.[0];
     expect(levelUpdateSql).toContain("updated_at = datetime('now')");
-    expect(levelsUpdateRunMock).toHaveBeenCalledWith('Updated Level', 'Race', 10);
+    expect(levelsUpdateRunMock).toHaveBeenCalledWith(
+      'Updated Level',
+      'Race',
+      10,
+    );
     expect(levelUpdateResult).toMatchObject({ id: 10 });
 
     const levelDeleteResult = registeredIpcHandlers[IPC.LEVELS_DELETE]({}, 10);
