@@ -157,7 +157,9 @@ function registerIpcHandlers() {
 
   ipcMain.handle(IPC.LEVELS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
     return db
-      .prepare('SELECT * FROM levels WHERE world_id = ? ORDER BY updated_at DESC')
+      .prepare(
+        'SELECT * FROM levels WHERE world_id = ? ORDER BY updated_at DESC',
+      )
       .all(worldId);
   });
 

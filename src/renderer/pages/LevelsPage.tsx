@@ -82,7 +82,10 @@ export default function LevelsPage() {
 
   const handleCreateLevel = async (data: AddLevelInput) => {
     const newLevel = await window.db.levels.add(data);
-    setLevels((prev) => [newLevel, ...prev.filter((l) => l.id !== newLevel.id)]);
+    setLevels((prev) => [
+      newLevel,
+      ...prev.filter((l) => l.id !== newLevel.id),
+    ]);
     setIsCreateOpen(false);
   };
 
