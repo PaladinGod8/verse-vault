@@ -15,4 +15,12 @@ export const IPC = {
   LEVELS_ADD: 'db:levels:add',
   LEVELS_UPDATE: 'db:levels:update',
   LEVELS_DELETE: 'db:levels:delete',
+  ABILITIES_GET_ALL_BY_WORLD: 'db:abilities:getAllByWorld',
+  ABILITIES_GET_BY_ID: 'db:abilities:getById',
+  ABILITIES_ADD: 'db:abilities:add',
+  ABILITIES_UPDATE: 'db:abilities:update',
+  ABILITIES_DELETE: 'db:abilities:delete',
+  ABILITIES_ADD_CHILD: 'db:abilities:addChild',
+  ABILITIES_REMOVE_CHILD: 'db:abilities:removeChild',
+  ABILITIES_GET_CHILDREN: 'db:abilities:getChildren',
 } as const;
