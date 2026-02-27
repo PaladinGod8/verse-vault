@@ -10,7 +10,7 @@
 | `src/main.ts`                                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `abilities` read + `abilities` add/update/delete/addChild/removeChild) |
 | `src/preload.ts`                                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read/add/update/delete/addChild/removeChild) to renderer                                             |
 | `src/database/db.ts`                                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `abilities`, `ability_children`), open/close                                                                                                                                               |
-| `src/shared/ipcChannels.ts`                                    | All IPC channel name constants (single source of truth) for verses, worlds, levels, abilities, and campaigns contracts                                                                                                                                  |
+| `src/shared/ipcChannels.ts`                                    | All IPC channel name constants (single source of truth) for verses, worlds, levels, abilities, campaigns, and sessions contracts                                                                                                                        |
 | `src/renderer/index.tsx`                                       | React root, HashRouter wrapper                                                                                                                                                                                                                          |
 | `src/renderer/App.tsx`                                         | Route definitions and app shell (`/`, `/world/:id`, `/world/:id/levels`, `/world/:id/abilities`)                                                                                                                                                        |
 | `src/renderer/pages/WorldsHomePage.tsx`                        | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                                                                                                                                           |
@@ -376,6 +376,17 @@
 - **UI**: none yet
 - **Store**: none yet
 - **IPC**: `IPC.CAMPAIGNS_GET_ALL_BY_WORLD`, `IPC.CAMPAIGNS_GET_BY_ID`, `IPC.CAMPAIGNS_ADD`, `IPC.CAMPAIGNS_UPDATE`, `IPC.CAMPAIGNS_DELETE`
+- **Main handler**: not wired in this step
+- **Preload bridge**: not wired in this step
+- **Storage**: schema/queries not added in this step
+
+### Session Shared Contract (Step 02)
+
+- **Purpose**: define shared IPC constant names for upcoming sessions CRUD scoped by campaign
+- **Status**: added on 2026-02-27
+- **UI**: none yet
+- **Store**: none yet
+- **IPC**: `IPC.SESSIONS_GET_ALL_BY_CAMPAIGN`, `IPC.SESSIONS_GET_BY_ID`, `IPC.SESSIONS_ADD`, `IPC.SESSIONS_UPDATE`, `IPC.SESSIONS_DELETE`
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
 - **Storage**: schema/queries not added in this step
