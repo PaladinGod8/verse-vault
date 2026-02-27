@@ -386,6 +386,109 @@ function registerIpcHandlers() {
     return { id };
   });
 
+  ipcMain.handle(
+    IPC.SESSIONS_GET_ALL_BY_CAMPAIGN,
+    (_event, campaignId: number) => {
+      return db
+        .prepare(
+          'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY updated_at DESC',
+        )
+        .all(campaignId);
+    },
+  );
+
+  ipcMain.handle(IPC.SESSIONS_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM sessions WHERE id = ?').get(id) ?? null;
+  });
+
+  ipcMain.handle(
+    IPC.SESSIONS_ADD,
+    (
+      _event,
+      data: {
+        campaign_id: number;
+        name: string;
+        notes?: string | null;
+        sort_order?: number;
+      },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('Session name is required');
+      }
+
+      const result = db
+        .prepare(
+          'INSERT INTO sessions (campaign_id, name, notes, sort_order) VALUES (?, ?, ?, ?)',
+        )
+        .run(data.campaign_id, name, data.notes ?? null, data.sort_order ?? 0);
+
+      const session = db
+        .prepare('SELECT * FROM sessions WHERE id = ?')
+        .get(result.lastInsertRowid);
+      if (!session) {
+        throw new Error('Failed to create session');
+      }
+      return session;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.SESSIONS_UPDATE,
+    (
+      _event,
+      id: number,
+      data: { name?: string; notes?: string | null; sort_order?: number },
+    ) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasNotes = Object.prototype.hasOwnProperty.call(data, 'notes');
+      const hasSortOrder = Object.prototype.hasOwnProperty.call(
+        data,
+        'sort_order',
+      );
+
+      const setClauses: string[] = [];
+      const values: Array<string | number | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('Session name cannot be empty');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasNotes && data.notes !== undefined) {
+        setClauses.push('notes = ?');
+        values.push(data.notes);
+      }
+
+      if (hasSortOrder && data.sort_order !== undefined) {
+        setClauses.push('sort_order = ?');
+        values.push(data.sort_order);
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE sessions SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(id);
+      if (!session) {
+        throw new Error('Session not found');
+      }
+      return session;
+    },
+  );
+
+  ipcMain.handle(IPC.SESSIONS_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
+    return { id };
+  });
+
   ipcMain.handle(IPC.ABILITIES_GET_ALL_BY_WORLD, (_event, worldId: number) => {
     return db
       .prepare(
