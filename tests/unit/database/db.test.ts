@@ -67,11 +67,34 @@ describe('database', () => {
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS verses');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS levels');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS abilities');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS ability_children');
     expect(schemaSql).toContain('name TEXT NOT NULL');
     expect(schemaSql).toContain('thumbnail TEXT');
     expect(schemaSql).toContain('short_description TEXT');
     expect(schemaSql).toContain('last_viewed_at TEXT');
     expect(schemaSql).toContain("updated_at TEXT DEFAULT (datetime('now'))");
+    expect(schemaSql).toContain("type IN ('active', 'passive')");
+    expect(schemaSql).toContain(
+      "passive_subtype IS NULL OR passive_subtype IN ('linchpin', 'keystone', 'rostering')",
+    );
+    expect(schemaSql).toContain(
+      "effects           TEXT    NOT NULL DEFAULT '[]'",
+    );
+    expect(schemaSql).toContain(
+      "conditions        TEXT    NOT NULL DEFAULT '[]'",
+    );
+    expect(schemaSql).toContain(
+      "cast_cost         TEXT    NOT NULL DEFAULT '{}'",
+    );
+    expect(schemaSql).toContain("pick_timing IN ('obtain', 'rest')");
+    expect(schemaSql).toContain(
+      'parent_id INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain(
+      'child_id  INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain('UNIQUE (parent_id, child_id)');
   });
 
   it('closes and resets the singleton', async () => {
