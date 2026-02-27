@@ -8,7 +8,7 @@
 | Path                                           | Responsibility                                                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete) |
-| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read) to renderer |
+| `src/preload.ts`                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete) to renderer |
 | `src/database/db.ts`                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`), open/close                                                        |
 | `src/shared/ipcChannels.ts`                    | All IPC channel name constants (single source of truth)                                                                         |
 | `src/renderer/index.tsx`                       | React root, HashRouter wrapper                                                                                                  |
@@ -199,6 +199,17 @@
 - **IPC**: `IPC.LEVELS_ADD`, `IPC.LEVELS_UPDATE`, `IPC.LEVELS_DELETE`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Storage**: `LEVELS_ADD` inserts a levels row and returns it; `LEVELS_UPDATE` mutates only provided fields and sets `updated_at`; `LEVELS_DELETE` removes by id and returns `{ id }`
+
+### Level Preload Mutation Bridge (Step 06)
+
+- **Purpose**: expose level create/update/delete to renderer through window.db.levels
+- **Status**: added on 2026-02-27
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.LEVELS_ADD`, `IPC.LEVELS_UPDATE`, `IPC.LEVELS_DELETE`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Step 05)
+- **Preload bridge**: `src/preload.ts` -> `window.db.levels.add/update/delete`
+- **Storage**: unchanged in this step
 
 ### App Shell / Routing
 
