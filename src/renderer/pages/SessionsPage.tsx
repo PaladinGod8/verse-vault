@@ -17,6 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import MoveSessionDialog from '../components/sessions/MoveSessionDialog';
 import SessionForm from '../components/sessions/SessionForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
@@ -38,6 +39,7 @@ type SortableSessionRowProps = {
   isPersistingOrder: boolean;
   onEdit: (session: Session) => void;
   onDelete: (session: Session) => void;
+  onMove: (session: Session) => void;
 };
 
 function SortableSessionRow({
@@ -51,6 +53,7 @@ function SortableSessionRow({
   isPersistingOrder,
   onEdit,
   onDelete,
+  onMove,
 }: SortableSessionRowProps) {
   const isDeleting = deletingId === session.id;
   const {
@@ -110,6 +113,14 @@ function SortableSessionRow({
             disabled={isDeleting}
           >
             Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(session)}
+            disabled={isDeleting || isPersistingOrder}
+            className="text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Move
           </button>
           <button
             type="button"
@@ -181,6 +192,8 @@ export default function SessionsPage() {
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
+  const [movingSession, setMovingSession] = useState<Session | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -312,6 +325,20 @@ export default function SessionsPage() {
       });
     } finally {
       setDeletingId((current) => (current === session.id ? null : current));
+    }
+  };
+
+  const handleMoveConfirm = async (newActId: number) => {
+    if (!movingSession) {
+      return;
+    }
+    try {
+      await window.db.sessions.moveTo(movingSession.id, newActId);
+      const movedId = movingSession.id;
+      setMovingSession(null);
+      setSessions((prev) => prev.filter((s) => s.id !== movedId));
+    } catch {
+      setMoveError('Failed to move session. Please try again.');
     }
   };
 
@@ -508,6 +535,10 @@ export default function SessionsPage() {
                         onDelete={(selectedSession) => {
                           void handleDeleteSession(selectedSession);
                         }}
+                        onMove={(selectedSession) => {
+                          setMoveError(null);
+                          setMovingSession(selectedSession);
+                        }}
                       />
                     ))}
                   </tbody>
@@ -539,6 +570,29 @@ export default function SessionsPage() {
               onCancel={() => setIsCreateOpen(false)}
             />
           </section>
+        </div>
+      ) : null}
+
+      {movingSession !== null &&
+      parsedCampaignId !== null &&
+      parsedActId !== null ? (
+        <MoveSessionDialog
+          session={movingSession}
+          currentActId={parsedActId}
+          campaignId={parsedCampaignId}
+          onConfirm={(newActId) => {
+            void handleMoveConfirm(newActId);
+          }}
+          onCancel={() => {
+            setMovingSession(null);
+            setMoveError(null);
+          }}
+        />
+      ) : null}
+
+      {moveError ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-md">
+          {moveError}
         </div>
       ) : null}
 
