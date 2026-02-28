@@ -4,6 +4,7 @@ import WorldPage from './pages/WorldPage';
 import LevelsPage from './pages/LevelsPage';
 import AbilitiesPage from './pages/AbilitiesPage';
 import CampaignsPage from './pages/CampaignsPage';
+import SessionsPage from './pages/SessionsPage';
 import './index.css';
 
 export default function App() {
@@ -14,6 +15,10 @@ export default function App() {
       <Route path="/world/:id/levels" element={<LevelsPage />} />
       <Route path="/world/:id/abilities" element={<AbilitiesPage />} />
       <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
+      <Route
+        path="/world/:id/campaign/:campaignId/sessions"
+        element={<SessionsPage />}
+      />
     </Routes>
   );
 }
