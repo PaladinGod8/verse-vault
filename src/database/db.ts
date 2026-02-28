@@ -59,14 +59,32 @@ function initializeSchema(db: Database.Database): void {
       updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
-    CREATE TABLE IF NOT EXISTS sessions (
+    CREATE TABLE IF NOT EXISTS arcs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
       name        TEXT    NOT NULL,
-      notes       TEXT,
       sort_order  INTEGER NOT NULL DEFAULT 0,
       created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS acts (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      arc_id     INTEGER NOT NULL REFERENCES arcs(id) ON DELETE CASCADE,
+      name       TEXT    NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      act_id     INTEGER NOT NULL REFERENCES acts(id) ON DELETE CASCADE,
+      name       TEXT    NOT NULL,
+      notes      TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS scenes (
@@ -108,6 +126,89 @@ function initializeSchema(db: Database.Database): void {
       UNIQUE (parent_id, child_id)
     )
   `);
+
+  runArcActMigration(db);
+}
+
+function runArcActMigration(db: Database.Database): void {
+  // Check if sessions table already uses act_id (new schema or fresh DB)
+  const cols = db.prepare('PRAGMA table_info(sessions)').all() as Array<{
+    name: string;
+  }>;
+  const hasActId = cols.some((c) => c.name === 'act_id');
+  if (hasActId) return; // Already on new schema
+
+  // sessions still has campaign_id — run migration inside a transaction
+  db.transaction(() => {
+    // For each campaign, create Arc 1 + Act 1 and record the campaign→act mapping
+    const campaigns = db.prepare('SELECT id FROM campaigns').all() as Array<{
+      id: number;
+    }>;
+    const campaignToActId = new Map<number, number>();
+
+    for (const campaign of campaigns) {
+      const arcResult = db
+        .prepare(
+          "INSERT INTO arcs (campaign_id, name, sort_order) VALUES (?, 'Arc 1', 0)",
+        )
+        .run(campaign.id);
+      const actResult = db
+        .prepare(
+          "INSERT INTO acts (arc_id, name, sort_order) VALUES (?, 'Act 1', 0)",
+        )
+        .run(arcResult.lastInsertRowid);
+      campaignToActId.set(campaign.id, Number(actResult.lastInsertRowid));
+    }
+
+    // Create the new sessions table with act_id
+    db.exec(`
+      CREATE TABLE sessions_new (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        act_id     INTEGER NOT NULL REFERENCES acts(id) ON DELETE CASCADE,
+        name       TEXT    NOT NULL,
+        notes      TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    // Copy existing sessions, mapping campaign_id → act_id
+    const sessions = db.prepare('SELECT * FROM sessions').all() as Array<{
+      id: number;
+      campaign_id: number;
+      name: string;
+      notes: string | null;
+      sort_order: number;
+      created_at: string;
+      updated_at: string;
+    }>;
+
+    const insertNewSession = db.prepare(
+      'INSERT INTO sessions_new (id, act_id, name, notes, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    );
+
+    for (const session of sessions) {
+      const actId = campaignToActId.get(session.campaign_id);
+      if (actId !== undefined) {
+        insertNewSession.run(
+          session.id,
+          actId,
+          session.name,
+          session.notes ?? null,
+          session.sort_order,
+          session.created_at,
+          session.updated_at,
+        );
+      }
+    }
+
+    // Swap tables (scenes' FK references session IDs which are preserved)
+    db.exec(`
+      DROP TABLE sessions;
+      ALTER TABLE sessions_new RENAME TO sessions;
+    `);
+  })();
 }
 
 export function closeDatabase(): void {
