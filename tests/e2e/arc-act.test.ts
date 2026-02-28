@@ -96,7 +96,10 @@ test.describe('Arc / Act full flow', () => {
   });
 
   test.afterAll(async () => {
-    await app.close().catch(() => {});
+    await app.close().catch((closeError) => {
+      // App may already be closed after earlier failures in this serial flow.
+      void closeError;
+    });
   });
 
   // ────────────────────────────────────────────────────────────────────────
