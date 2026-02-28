@@ -439,7 +439,7 @@
 - **IPC**: `IPC.SESSIONS_GET_ALL_BY_CAMPAIGN`, `IPC.SESSIONS_GET_BY_ID`, `IPC.SESSIONS_ADD`, `IPC.SESSIONS_UPDATE`, `IPC.SESSIONS_DELETE`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Preload bridge**: not wired in this step
-- **Storage**: `SESSIONS_GET_ALL_BY_CAMPAIGN` reads by `campaign_id` ordered by `updated_at DESC`; `SESSIONS_GET_BY_ID` returns row or `null`; `SESSIONS_ADD` validates required trimmed `name`, inserts (`campaign_id`, `name`, `notes`, `sort_order`) and returns the inserted row; `SESSIONS_UPDATE` mutates only provided fields (`name`, `notes`, `sort_order`) using `hasOwnProperty`, always sets `updated_at = datetime('now')`, and returns refreshed row; `SESSIONS_DELETE` removes by id and returns `{ id }`
+- **Storage**: `SESSIONS_GET_ALL_BY_CAMPAIGN` reads by `campaign_id` ordered by `sort_order ASC, id ASC`; `SESSIONS_GET_BY_ID` returns row or `null`; `SESSIONS_ADD` validates required trimmed `name`, appends to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within campaign), inserts (`campaign_id`, `name`, `notes`, `sort_order`), and returns the inserted row; `SESSIONS_UPDATE` mutates only provided fields (`name`, `notes`, `sort_order`) using `hasOwnProperty`, always sets `updated_at = datetime('now')`, and returns refreshed row; `SESSIONS_DELETE` removes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `campaign_id`, and returns `{ id }`
 
 ### Scene Shared Contract (Step 03)
 
@@ -472,7 +472,7 @@
 - **IPC**: `IPC.SCENES_GET_ALL_BY_SESSION`, `IPC.SCENES_GET_BY_ID`, `IPC.SCENES_ADD`, `IPC.SCENES_UPDATE`, `IPC.SCENES_DELETE`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Preload bridge**: not wired in this step
-- **Storage**: `SCENES_GET_ALL_BY_SESSION` reads by `session_id` ordered by `updated_at DESC`; `SCENES_GET_BY_ID` returns row or `null`; `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text, defaults omitted `payload` to `'{}'`, inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`) and returns the inserted row; `SCENES_UPDATE` mutates only provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty`, validates trimmed `name` and JSON `payload` when present, always sets `updated_at = datetime('now')`, and returns refreshed row; `SCENES_DELETE` removes by id and returns `{ id }`
+- **Storage**: `SCENES_GET_ALL_BY_SESSION` reads by `session_id` ordered by `sort_order ASC, id ASC`; `SCENES_GET_BY_ID` returns row or `null`; `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text, defaults omitted `payload` to `'{}'`, appends to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within session), inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row; `SCENES_UPDATE` mutates only provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty`, validates trimmed `name` and JSON `payload` when present, always sets `updated_at = datetime('now')`, and returns refreshed row; `SCENES_DELETE` removes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `session_id`, and returns `{ id }`
 
 ### Campaign/Session/Scene Preload Bridges (Step 10)
 

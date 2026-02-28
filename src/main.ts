@@ -71,6 +71,138 @@ const createWindow = () => {
 // Register IPC handlers for database operations.
 function registerIpcHandlers() {
   const db = getDatabase();
+  const getSessionByIdStmt = db.prepare('SELECT * FROM sessions WHERE id = ?');
+  const getSceneByIdStmt = db.prepare('SELECT * FROM scenes WHERE id = ?');
+  const insertSessionStmt = db.prepare(
+    'INSERT INTO sessions (campaign_id, name, notes, sort_order) VALUES (?, ?, ?, ?)',
+  );
+  const insertSceneStmt = db.prepare(
+    'INSERT INTO scenes (session_id, name, notes, payload, sort_order) VALUES (?, ?, ?, ?, ?)',
+  );
+  const updateSessionSortOrderStmt = db.prepare(
+    'UPDATE sessions SET sort_order = ? WHERE id = ?',
+  );
+  const updateSceneSortOrderStmt = db.prepare(
+    'UPDATE scenes SET sort_order = ? WHERE id = ?',
+  );
+
+  const resequenceSessionsInCampaign = (campaignId: number): void => {
+    const siblingRows = db
+      .prepare(
+        'SELECT id FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(campaignId) as Array<{ id: number }>;
+
+    siblingRows.forEach((row, index) => {
+      updateSessionSortOrderStmt.run(index, row.id);
+    });
+  };
+
+  const resequenceScenesInSession = (sessionId: number): void => {
+    const siblingRows = db
+      .prepare(
+        'SELECT id FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(sessionId) as Array<{ id: number }>;
+
+    siblingRows.forEach((row, index) => {
+      updateSceneSortOrderStmt.run(index, row.id);
+    });
+  };
+
+  const insertSession = db.transaction(
+    (data: {
+      campaign_id: number;
+      name: string;
+      notes?: string | null;
+      sort_order?: number;
+    }) => {
+      const sortOrder =
+        data.sort_order === undefined
+          ? (
+              db
+                .prepare(
+                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE campaign_id = ?',
+                )
+                .get(data.campaign_id) as { next_sort_order: number }
+            ).next_sort_order
+          : data.sort_order;
+
+      const result = insertSessionStmt.run(
+        data.campaign_id,
+        data.name,
+        data.notes ?? null,
+        sortOrder,
+      );
+
+      const session = getSessionByIdStmt.get(result.lastInsertRowid);
+      if (!session) {
+        throw new Error('Failed to create session');
+      }
+      return session;
+    },
+  );
+
+  const insertScene = db.transaction(
+    (data: {
+      session_id: number;
+      name: string;
+      notes?: string | null;
+      payload: string;
+      sort_order?: number;
+    }) => {
+      const sortOrder =
+        data.sort_order === undefined
+          ? (
+              db
+                .prepare(
+                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM scenes WHERE session_id = ?',
+                )
+                .get(data.session_id) as { next_sort_order: number }
+            ).next_sort_order
+          : data.sort_order;
+
+      const result = insertSceneStmt.run(
+        data.session_id,
+        data.name,
+        data.notes ?? null,
+        data.payload,
+        sortOrder,
+      );
+
+      const scene = getSceneByIdStmt.get(result.lastInsertRowid);
+      if (!scene) {
+        throw new Error('Failed to create scene');
+      }
+      return scene;
+    },
+  );
+
+  const deleteSessionAndCompact = db.transaction((id: number) => {
+    const sessionToDelete = db
+      .prepare('SELECT campaign_id FROM sessions WHERE id = ?')
+      .get(id) as { campaign_id: number } | undefined;
+    if (!sessionToDelete) {
+      return { id };
+    }
+
+    db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
+    resequenceSessionsInCampaign(sessionToDelete.campaign_id);
+    return { id };
+  });
+
+  const deleteSceneAndCompact = db.transaction((id: number) => {
+    const sceneToDelete = db
+      .prepare('SELECT session_id FROM scenes WHERE id = ?')
+      .get(id) as { session_id: number } | undefined;
+    if (!sceneToDelete) {
+      return { id };
+    }
+
+    db.prepare('DELETE FROM scenes WHERE id = ?').run(id);
+    resequenceScenesInSession(sceneToDelete.session_id);
+    return { id };
+  });
 
   ipcMain.handle(IPC.VERSES_GET_ALL, () => {
     return db.prepare('SELECT * FROM verses ORDER BY created_at DESC').all();
@@ -405,7 +537,7 @@ function registerIpcHandlers() {
     (_event, campaignId: number) => {
       return db
         .prepare(
-          'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY updated_at DESC',
+          'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
         )
         .all(campaignId);
     },
@@ -431,19 +563,12 @@ function registerIpcHandlers() {
         throw new Error('Session name is required');
       }
 
-      const result = db
-        .prepare(
-          'INSERT INTO sessions (campaign_id, name, notes, sort_order) VALUES (?, ?, ?, ?)',
-        )
-        .run(data.campaign_id, name, data.notes ?? null, data.sort_order ?? 0);
-
-      const session = db
-        .prepare('SELECT * FROM sessions WHERE id = ?')
-        .get(result.lastInsertRowid);
-      if (!session) {
-        throw new Error('Failed to create session');
-      }
-      return session;
+      return insertSession({
+        campaign_id: data.campaign_id,
+        name,
+        notes: data.notes,
+        sort_order: data.sort_order,
+      });
     },
   );
 
@@ -499,14 +624,13 @@ function registerIpcHandlers() {
   );
 
   ipcMain.handle(IPC.SESSIONS_DELETE, (_event, id: number) => {
-    db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
-    return { id };
+    return deleteSessionAndCompact(id);
   });
 
   ipcMain.handle(IPC.SCENES_GET_ALL_BY_SESSION, (_event, sessionId: number) => {
     return db
       .prepare(
-        'SELECT * FROM scenes WHERE session_id = ? ORDER BY updated_at DESC',
+        'SELECT * FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
       )
       .all(sessionId);
   });
@@ -537,25 +661,13 @@ function registerIpcHandlers() {
           ? '{}'
           : ensureScenePayloadJsonText(data.payload);
 
-      const result = db
-        .prepare(
-          'INSERT INTO scenes (session_id, name, notes, payload, sort_order) VALUES (?, ?, ?, ?, ?)',
-        )
-        .run(
-          data.session_id,
-          name,
-          data.notes ?? null,
-          payload,
-          data.sort_order ?? 0,
-        );
-
-      const scene = db
-        .prepare('SELECT * FROM scenes WHERE id = ?')
-        .get(result.lastInsertRowid);
-      if (!scene) {
-        throw new Error('Failed to create scene');
-      }
-      return scene;
+      return insertScene({
+        session_id: data.session_id,
+        name,
+        notes: data.notes,
+        payload,
+        sort_order: data.sort_order,
+      });
     },
   );
 
@@ -622,8 +734,7 @@ function registerIpcHandlers() {
   );
 
   ipcMain.handle(IPC.SCENES_DELETE, (_event, id: number) => {
-    db.prepare('DELETE FROM scenes WHERE id = ?').run(id);
-    return { id };
+    return deleteSceneAndCompact(id);
   });
 
   ipcMain.handle(IPC.ABILITIES_GET_ALL_BY_WORLD, (_event, worldId: number) => {
@@ -985,9 +1096,8 @@ app.on('ready', async () => {
   registerIpcHandlers();
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    const { installExtension, REACT_DEVELOPER_TOOLS } = await import(
-      'electron-devtools-installer'
-    );
+    const { installExtension, REACT_DEVELOPER_TOOLS } =
+      await import('electron-devtools-installer');
     await installExtension(REACT_DEVELOPER_TOOLS).catch((err: unknown) => {
       console.error('Failed to install React DevTools:', err);
     });
