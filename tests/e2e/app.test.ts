@@ -15,6 +15,16 @@ test('app launches and shows worlds landing shell', async () => {
   const app = await electron.launch({ args: [mainJs], env });
 
   const window = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win) {
+      return;
+    }
+    win.setSize(1440, 960);
+    win.center();
+    win.focus();
+  });
+  await window.bringToFront();
   await window.waitForLoadState('domcontentloaded');
 
   await expect(
