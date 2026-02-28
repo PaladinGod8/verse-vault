@@ -11,11 +11,13 @@ Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the sha
 
 Abilities Step 07 (2026-02-27) exposes ability mutation bridges in preload (`window.db.abilities.add/update/delete/addChild/removeChild`) on top of Step 06 read bridges (`getAllByWorld/getById/getChildren`), with shared `Ability` + `AbilityChild` interfaces and full `DbApi.abilities` signatures aligned to all 8 channels.
 
-Campaign Step 07 (2026-02-27) wires campaign CRUD handlers in `main` for `CAMPAIGNS_GET_ALL_BY_WORLD`, `CAMPAIGNS_GET_BY_ID`, `CAMPAIGNS_ADD`, `CAMPAIGNS_UPDATE`, and `CAMPAIGNS_DELETE`. Preload bridge methods are intentionally not wired yet in this step.
+Campaign Step 07 (2026-02-27) wires campaign CRUD handlers in `main` for `CAMPAIGNS_GET_ALL_BY_WORLD`, `CAMPAIGNS_GET_BY_ID`, `CAMPAIGNS_ADD`, `CAMPAIGNS_UPDATE`, and `CAMPAIGNS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
-Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are intentionally not wired yet in this step.
+Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
-Scene Step 09 (2026-02-27) wires scene CRUD handlers in `main` for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`. Preload bridge methods are intentionally not wired yet in this step.
+Scene Step 09 (2026-02-27) wires scene CRUD handlers in `main` for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
+
+Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`.
 
 ## Channels
 
@@ -187,17 +189,17 @@ interface DbApi {
 - `CAMPAIGNS_ADD` validates `name.trim()` as required, inserts a campaign row (`world_id`, `name`, `summary`, `config`), and returns the inserted row via a post-insert `SELECT`.
 - `CAMPAIGNS_UPDATE` updates only explicitly provided fields (`name`, `summary`, `config`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
 - `CAMPAIGNS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Campaign preload bridge methods are not wired yet in this step.
+- Campaign preload bridge methods are wired end-to-end in Step 10 via `window.db.campaigns.getAllByWorld/getById/add/update/delete`.
 - Session main handlers are wired for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`.
 - `SESSIONS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns sessions ordered by `updated_at DESC`.
 - `SESSIONS_ADD` validates required trimmed `name`, inserts (`campaign_id`, `name`, `notes`, `sort_order`), and returns the inserted row.
 - `SESSIONS_UPDATE` updates only explicitly provided fields (`name`, `notes`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
 - `SESSIONS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Session preload bridge methods are not wired yet in this step.
+- Session preload bridge methods are wired end-to-end in Step 10 via `window.db.sessions.getAllByCampaign/getById/add/update/delete`.
 - Scene main handlers are wired for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`.
 - `SCENES_GET_ALL_BY_SESSION` is scoped by `session_id` and returns scenes ordered by `updated_at DESC`.
 - `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text when provided, defaults omitted `payload` to `'{}'`, inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row.
 - `SCENES_UPDATE` updates only explicitly provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, validates `payload` as JSON text when present, always refreshes `updated_at`, and returns the refreshed row.
 - `SCENES_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Scene preload bridge methods are not wired yet in this step.
+- Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

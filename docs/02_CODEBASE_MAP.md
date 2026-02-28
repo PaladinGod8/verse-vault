@@ -8,7 +8,7 @@
 | Path                                                           | Responsibility                                                                                                                                                                                                                                                                                                                         |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                                  | App bootstrap, BrowserWindow creation, IPC handler registration (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read + `levels` create/update/delete + `campaigns` read/create/update/delete + `sessions` read/create/update/delete + `abilities` read + `abilities` add/update/delete/addChild/removeChild) |
-| `src/preload.ts`                                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read/add/update/delete/addChild/removeChild) to renderer                                                                                                                            |
+| `src/preload.ts`                                               | contextBridge - exposes `window.db` (`verses` CRUD + `worlds` read/create/update/delete/markViewed + `levels` read/add/update/delete + `abilities` read/add/update/delete/addChild/removeChild + `campaigns` read/add/update/delete + `sessions` read/add/update/delete + `scenes` read/add/update/delete) to renderer                 |
 | `src/database/db.ts`                                           | SQLite singleton, schema init (`verses`, `worlds`, `levels`, `campaigns`, `sessions`, `scenes`, `abilities`, `ability_children`), open/close                                                                                                                                                                                           |
 | `src/shared/ipcChannels.ts`                                    | All IPC channel name constants (single source of truth) for verses, worlds, levels, abilities, campaigns, sessions, and scenes contracts                                                                                                                                                                                               |
 | `src/renderer/index.tsx`                                       | React root, HashRouter wrapper                                                                                                                                                                                                                                                                                                         |
@@ -467,6 +467,17 @@
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Preload bridge**: not wired in this step
 - **Storage**: `SCENES_GET_ALL_BY_SESSION` reads by `session_id` ordered by `updated_at DESC`; `SCENES_GET_BY_ID` returns row or `null`; `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text, defaults omitted `payload` to `'{}'`, inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`) and returns the inserted row; `SCENES_UPDATE` mutates only provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty`, validates trimmed `name` and JSON `payload` when present, always sets `updated_at = datetime('now')`, and returns refreshed row; `SCENES_DELETE` removes by id and returns `{ id }`
+
+### Campaign/Session/Scene Preload Bridges (Step 10)
+
+- **Purpose**: expose all 15 campaign/session/scene CRUD channels as typed bridge methods in preload so the renderer can invoke them via `window.db`
+- **Status**: added on 2026-02-28
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.CAMPAIGNS_*` (5 channels) + `IPC.SESSIONS_*` (5 channels) + `IPC.SCENES_*` (5 channels)
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` (from Campaign Step 07, Session Step 08, Scene Step 09)
+- **Preload bridge**: `src/preload.ts` -> `window.db.campaigns.getAllByWorld/getById/add/update/delete`, `window.db.sessions.getAllByCampaign/getById/add/update/delete`, `window.db.scenes.getAllBySession/getById/add/update/delete`
+- **Storage**: unchanged in this step (bridge wiring only)
 
 ### App Shell / Routing
 
