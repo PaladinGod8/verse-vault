@@ -192,6 +192,64 @@ describe('main process', () => {
       return undefined;
     });
 
+    const campaignsSelectAllByWorldMock = vi.fn(() => [
+      { id: 31, world_id: 1, name: 'Campaign One' },
+    ]);
+    const campaignsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        world_id: 1,
+        name: `Campaign ${id}`,
+        summary: null,
+        config: '{}',
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const campaignsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 30 }));
+    const campaignsUpdateRunMock = vi.fn();
+    const campaignsDeleteRunMock = vi.fn();
+
+    const sessionsSelectAllByCampaignMock = vi.fn(() => [
+      { id: 41, campaign_id: 30, name: 'Session One' },
+    ]);
+    const sessionsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        campaign_id: 30,
+        name: `Session ${id}`,
+        notes: null,
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const sessionsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 40 }));
+    const sessionsUpdateRunMock = vi.fn();
+    const sessionsDeleteRunMock = vi.fn();
+
+    const scenesSelectAllBySessionMock = vi.fn(() => [
+      { id: 51, session_id: 40, name: 'Scene One' },
+    ]);
+    const scenesSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        session_id: 40,
+        name: `Scene ${id}`,
+        notes: null,
+        payload: '{}',
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const scenesInsertRunMock = vi.fn(() => ({ lastInsertRowid: 50 }));
+    const scenesUpdateRunMock = vi.fn();
+    const scenesDeleteRunMock = vi.fn();
+
     prepareMock.mockImplementation((sql: string) => {
       if (sql.includes('SELECT * FROM worlds ORDER BY updated_at DESC')) {
         return { all: worldsSelectAllMock };
@@ -276,6 +334,54 @@ describe('main process', () => {
         return { all: abilityChildrenSelectAllMock };
       }
 
+      if (sql.includes('SELECT * FROM campaigns WHERE world_id = ?')) {
+        return { all: campaignsSelectAllByWorldMock };
+      }
+      if (sql.includes('SELECT * FROM campaigns WHERE id = ?')) {
+        return { get: campaignsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO campaigns')) {
+        return { run: campaignsInsertRunMock };
+      }
+      if (sql.includes('UPDATE campaigns SET')) {
+        return { run: campaignsUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM campaigns WHERE id = ?')) {
+        return { run: campaignsDeleteRunMock };
+      }
+
+      if (sql.includes('SELECT * FROM sessions WHERE campaign_id = ?')) {
+        return { all: sessionsSelectAllByCampaignMock };
+      }
+      if (sql.includes('SELECT * FROM sessions WHERE id = ?')) {
+        return { get: sessionsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO sessions')) {
+        return { run: sessionsInsertRunMock };
+      }
+      if (sql.includes('UPDATE sessions SET')) {
+        return { run: sessionsUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM sessions WHERE id = ?')) {
+        return { run: sessionsDeleteRunMock };
+      }
+
+      if (sql.includes('SELECT * FROM scenes WHERE session_id = ?')) {
+        return { all: scenesSelectAllBySessionMock };
+      }
+      if (sql.includes('SELECT * FROM scenes WHERE id = ?')) {
+        return { get: scenesSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO scenes')) {
+        return { run: scenesInsertRunMock };
+      }
+      if (sql.includes('UPDATE scenes SET')) {
+        return { run: scenesUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM scenes WHERE id = ?')) {
+        return { run: scenesDeleteRunMock };
+      }
+
       throw new Error(`Unexpected SQL: ${sql}`);
     });
 
@@ -307,7 +413,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(23);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(38);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -671,6 +777,268 @@ describe('main process', () => {
         type: 'passive',
       },
     ]);
+
+    // CAMPAIGNS
+    const campaignsGetAllByWorldResult = registeredIpcHandlers[
+      IPC.CAMPAIGNS_GET_ALL_BY_WORLD
+    ]({}, 1);
+    expect(campaignsSelectAllByWorldMock).toHaveBeenCalledTimes(1);
+    expect(campaignsGetAllByWorldResult).toEqual([
+      { id: 31, world_id: 1, name: 'Campaign One' },
+    ]);
+
+    const campaignByIdResult = registeredIpcHandlers[IPC.CAMPAIGNS_GET_BY_ID](
+      {},
+      31,
+    );
+    expect(campaignsSelectByIdGetMock).toHaveBeenCalledWith(31);
+    expect(campaignByIdResult).toMatchObject({ id: 31 });
+
+    const missingCampaignResult = registeredIpcHandlers[
+      IPC.CAMPAIGNS_GET_BY_ID
+    ]({}, 404);
+    expect(missingCampaignResult).toBeNull();
+
+    const campaignAddResult = registeredIpcHandlers[IPC.CAMPAIGNS_ADD](
+      {},
+      { world_id: 1, name: '  New Campaign  ' },
+    );
+    expect(campaignsInsertRunMock).toHaveBeenCalledWith(
+      1,
+      'New Campaign',
+      null,
+      '{}',
+    );
+    expect(campaignsSelectByIdGetMock).toHaveBeenCalledWith(30);
+    expect(campaignAddResult).toMatchObject({ id: 30 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.CAMPAIGNS_ADD](
+        {},
+        { world_id: 1, name: '   ' },
+      ),
+    ).toThrowError('Campaign name is required');
+
+    const campaignUpdateResult = registeredIpcHandlers[IPC.CAMPAIGNS_UPDATE](
+      {},
+      31,
+      { summary: 'A great campaign' },
+    );
+    const campaignUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE campaigns SET') &&
+        sql.includes('summary = ?'),
+    )?.[0];
+    expect(campaignUpdateSql).toContain("updated_at = datetime('now')");
+    expect(campaignUpdateSql).not.toContain('name = ?');
+    expect(campaignsUpdateRunMock).toHaveBeenCalledWith('A great campaign', 31);
+    expect(campaignUpdateResult).toMatchObject({ id: 31 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.CAMPAIGNS_UPDATE]({}, 31, { name: '   ' }),
+    ).toThrowError('Campaign name cannot be empty');
+
+    const campaignTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.CAMPAIGNS_UPDATE
+    ]({}, 32, {});
+    const campaignTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql ===
+        "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(campaignTimestampOnlySql).toBe(
+      "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(campaignsUpdateRunMock).toHaveBeenLastCalledWith(32);
+    expect(campaignTimestampOnlyUpdateResult).toMatchObject({ id: 32 });
+
+    const campaignDeleteResult = registeredIpcHandlers[IPC.CAMPAIGNS_DELETE](
+      {},
+      33,
+    );
+    expect(campaignsDeleteRunMock).toHaveBeenCalledWith(33);
+    expect(campaignDeleteResult).toEqual({ id: 33 });
+
+    // SESSIONS
+    const sessionsGetAllByCampaignResult = registeredIpcHandlers[
+      IPC.SESSIONS_GET_ALL_BY_CAMPAIGN
+    ]({}, 30);
+    expect(sessionsSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(sessionsGetAllByCampaignResult).toEqual([
+      { id: 41, campaign_id: 30, name: 'Session One' },
+    ]);
+
+    const sessionByIdResult = registeredIpcHandlers[IPC.SESSIONS_GET_BY_ID](
+      {},
+      41,
+    );
+    expect(sessionsSelectByIdGetMock).toHaveBeenCalledWith(41);
+    expect(sessionByIdResult).toMatchObject({ id: 41 });
+
+    const missingSessionResult = registeredIpcHandlers[IPC.SESSIONS_GET_BY_ID](
+      {},
+      404,
+    );
+    expect(missingSessionResult).toBeNull();
+
+    const sessionAddResult = registeredIpcHandlers[IPC.SESSIONS_ADD](
+      {},
+      { campaign_id: 30, name: '  New Session  ' },
+    );
+    expect(sessionsInsertRunMock).toHaveBeenCalledWith(
+      30,
+      'New Session',
+      null,
+      0,
+    );
+    expect(sessionsSelectByIdGetMock).toHaveBeenCalledWith(40);
+    expect(sessionAddResult).toMatchObject({ id: 40 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SESSIONS_ADD](
+        {},
+        { campaign_id: 30, name: '   ' },
+      ),
+    ).toThrowError('Session name is required');
+
+    const sessionUpdateResult = registeredIpcHandlers[IPC.SESSIONS_UPDATE](
+      {},
+      41,
+      { notes: 'Some notes', sort_order: 3 },
+    );
+    const sessionUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE sessions SET') &&
+        sql.includes('notes = ?') &&
+        sql.includes('sort_order = ?'),
+    )?.[0];
+    expect(sessionUpdateSql).toContain("updated_at = datetime('now')");
+    expect(sessionsUpdateRunMock).toHaveBeenCalledWith('Some notes', 3, 41);
+    expect(sessionUpdateResult).toMatchObject({ id: 41 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SESSIONS_UPDATE]({}, 41, { name: '   ' }),
+    ).toThrowError('Session name cannot be empty');
+
+    const sessionTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.SESSIONS_UPDATE
+    ]({}, 42, {});
+    const sessionTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql === "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(sessionTimestampOnlySql).toBe(
+      "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(sessionsUpdateRunMock).toHaveBeenLastCalledWith(42);
+    expect(sessionTimestampOnlyUpdateResult).toMatchObject({ id: 42 });
+
+    const sessionDeleteResult = registeredIpcHandlers[IPC.SESSIONS_DELETE](
+      {},
+      43,
+    );
+    expect(sessionsDeleteRunMock).toHaveBeenCalledWith(43);
+    expect(sessionDeleteResult).toEqual({ id: 43 });
+
+    // SCENES
+    const scenesGetAllBySessionResult = registeredIpcHandlers[
+      IPC.SCENES_GET_ALL_BY_SESSION
+    ]({}, 40);
+    expect(scenesSelectAllBySessionMock).toHaveBeenCalledTimes(1);
+    expect(scenesGetAllBySessionResult).toEqual([
+      { id: 51, session_id: 40, name: 'Scene One' },
+    ]);
+
+    const sceneByIdResult = registeredIpcHandlers[IPC.SCENES_GET_BY_ID]({}, 51);
+    expect(scenesSelectByIdGetMock).toHaveBeenCalledWith(51);
+    expect(sceneByIdResult).toMatchObject({ id: 51 });
+
+    const missingSceneResult = registeredIpcHandlers[IPC.SCENES_GET_BY_ID](
+      {},
+      404,
+    );
+    expect(missingSceneResult).toBeNull();
+
+    const sceneAddResult = registeredIpcHandlers[IPC.SCENES_ADD](
+      {},
+      { session_id: 40, name: '  New Scene  ' },
+    );
+    expect(scenesInsertRunMock).toHaveBeenCalledWith(
+      40,
+      'New Scene',
+      null,
+      '{}',
+      0,
+    );
+    expect(scenesSelectByIdGetMock).toHaveBeenCalledWith(50);
+    expect(sceneAddResult).toMatchObject({ id: 50 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_ADD](
+        {},
+        { session_id: 40, name: '   ' },
+      ),
+    ).toThrowError('Scene name is required');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_ADD](
+        {},
+        { session_id: 40, name: 'Valid', payload: 'not-json' },
+      ),
+    ).toThrowError('Scene payload must be valid JSON text');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_ADD](
+        {},
+        {
+          session_id: 40,
+          name: 'Valid',
+          payload: 123 as unknown as string,
+        },
+      ),
+    ).toThrowError('Scene payload must be a JSON string');
+
+    const sceneUpdateResult = registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, {
+      payload: '{"key":"value"}',
+      sort_order: 1,
+    });
+    const sceneUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE scenes SET') &&
+        sql.includes('payload = ?') &&
+        sql.includes('sort_order = ?'),
+    )?.[0];
+    expect(sceneUpdateSql).toContain("updated_at = datetime('now')");
+    expect(scenesUpdateRunMock).toHaveBeenCalledWith('{"key":"value"}', 1, 51);
+    expect(sceneUpdateResult).toMatchObject({ id: 51 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { name: '   ' }),
+    ).toThrowError('Scene name cannot be empty');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { payload: 'not-json' }),
+    ).toThrowError('Scene payload must be valid JSON text');
+
+    const sceneTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.SCENES_UPDATE
+    ]({}, 52, {});
+    const sceneTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql === "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(sceneTimestampOnlySql).toBe(
+      "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(scenesUpdateRunMock).toHaveBeenLastCalledWith(52);
+    expect(sceneTimestampOnlyUpdateResult).toMatchObject({ id: 52 });
+
+    const sceneDeleteResult = registeredIpcHandlers[IPC.SCENES_DELETE]({}, 53);
+    expect(scenesDeleteRunMock).toHaveBeenCalledWith(53);
+    expect(sceneDeleteResult).toEqual({ id: 53 });
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);
