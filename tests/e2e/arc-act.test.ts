@@ -41,13 +41,62 @@ async function launchApp() {
   await page.waitForLoadState('domcontentloaded');
 }
 
+async function ensurePageIsAvailable() {
+  if (!page.isClosed()) {
+    return;
+  }
+
+  try {
+    const windows = app.windows();
+    if (windows.length > 0) {
+      [page] = windows;
+      await page.bringToFront();
+      await page.waitForLoadState('domcontentloaded');
+      return;
+    }
+  } catch {
+    // Relaunch below when the Electron connection is no longer available.
+  }
+
+  await launchApp();
+}
+
+async function navigateToCampaignArcsPage() {
+  await ensurePageIsAvailable();
+
+  if (
+    await page
+      .getByRole('heading', { name: /arcs/i })
+      .isVisible()
+      .catch(() => false)
+  ) {
+    return;
+  }
+
+  const campaignsLink = page.getByRole('link', { name: 'Campaigns' });
+  if (await campaignsLink.isVisible().catch(() => false)) {
+    await campaignsLink.click();
+  } else {
+    await page.getByLabel(`Open ${WORLD_NAME}`).click();
+    await page.getByRole('link', { name: 'Campaigns' }).click();
+  }
+
+  const campaignRow = page
+    .locator('tr, li, article')
+    .filter({ hasText: CAMPAIGN_NAME });
+  await campaignRow.getByRole('link', { name: 'Arcs' }).click();
+  await expect(page.getByRole('heading', { name: /arcs/i })).toBeVisible();
+}
+
 test.describe('Arc / Act full flow', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeAll(async () => {
     await launchApp();
   });
 
   test.afterAll(async () => {
-    await app.close();
+    await app.close().catch(() => {});
   });
 
   // ────────────────────────────────────────────────────────────────────────
@@ -59,9 +108,15 @@ test.describe('Arc / Act full flow', () => {
       page.getByRole('heading', { name: 'Worlds', level: 1 }),
     ).toBeVisible();
 
-    await page.getByRole('button', { name: 'Create world' }).click();
-    await page.getByLabel('Name').fill(WORLD_NAME);
-    await page.getByRole('button', { name: 'Create world' }).click();
+    await page
+      .getByRole('button', { name: 'Create world', exact: true })
+      .click();
+    const worldDialog = page.getByRole('dialog', { name: 'Create world' });
+    await expect(worldDialog).toBeVisible();
+    await worldDialog.getByLabel('Name').fill(WORLD_NAME);
+    await worldDialog
+      .getByRole('button', { name: 'Create world', exact: true })
+      .click();
 
     await expect(page.getByLabel(`Open ${WORLD_NAME}`)).toBeVisible();
   });
@@ -72,12 +127,21 @@ test.describe('Arc / Act full flow', () => {
     // Navigate to Campaigns via sidebar
     await page.getByRole('link', { name: 'Campaigns' }).click();
     await expect(
-      page.getByRole('heading', { name: /campaigns/i }),
+      page.getByRole('heading', { name: WORLD_NAME, level: 1 }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /new campaign/i }),
     ).toBeVisible();
 
     await page.getByRole('button', { name: /new campaign/i }).click();
-    await page.getByLabel(/name/i).fill(CAMPAIGN_NAME);
-    await page.getByRole('button', { name: /create campaign/i }).click();
+    const campaignDialog = page.getByRole('dialog', { name: 'New Campaign' });
+    await expect(campaignDialog).toBeVisible();
+    await campaignDialog
+      .getByRole('textbox', { name: /^name/i })
+      .fill(CAMPAIGN_NAME);
+    await campaignDialog
+      .getByRole('button', { name: /create campaign/i })
+      .click();
 
     await expect(page.getByText(CAMPAIGN_NAME)).toBeVisible();
   });
@@ -99,8 +163,12 @@ test.describe('Arc / Act full flow', () => {
 
   test('creates an arc', async () => {
     await page.getByRole('button', { name: /new arc/i }).click();
-    await page.getByLabel(/name/i).fill(ARC_NAME);
-    await page.getByRole('button', { name: /create arc/i }).click();
+    const createArcDialog = page.getByRole('dialog', { name: 'New Arc' });
+    await expect(createArcDialog).toBeVisible();
+    await createArcDialog
+      .getByRole('textbox', { name: /^name/i })
+      .fill(ARC_NAME);
+    await createArcDialog.getByRole('button', { name: /create arc/i }).click();
 
     await expect(page.getByText(ARC_NAME)).toBeVisible();
   });
@@ -109,19 +177,25 @@ test.describe('Arc / Act full flow', () => {
     const arcRow = page.locator('tr').filter({ hasText: ARC_NAME });
     await arcRow.getByRole('button', { name: 'Edit' }).click();
 
-    const input = page.getByLabel(/name/i);
+    const editArcDialog = page.getByRole('dialog', { name: 'Edit Arc' });
+    await expect(editArcDialog).toBeVisible();
+    const input = editArcDialog.getByRole('textbox', { name: /^name/i });
     await input.clear();
     await input.fill(ARC_NAME_RENAMED);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await editArcDialog.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByText(ARC_NAME_RENAMED)).toBeVisible();
-    expect(page.getByText(ARC_NAME)).not.toBeDefined();
+    await expect(page.getByText(ARC_NAME)).toHaveCount(0);
   });
 
   test('creates a second arc for reparent tests', async () => {
     await page.getByRole('button', { name: /new arc/i }).click();
-    await page.getByLabel(/name/i).fill(ARC2_NAME);
-    await page.getByRole('button', { name: /create arc/i }).click();
+    const createArcDialog = page.getByRole('dialog', { name: 'New Arc' });
+    await expect(createArcDialog).toBeVisible();
+    await createArcDialog
+      .getByRole('textbox', { name: /^name/i })
+      .fill(ARC2_NAME);
+    await createArcDialog.getByRole('button', { name: /create arc/i }).click();
 
     await expect(page.getByText(ARC2_NAME)).toBeVisible();
   });
@@ -140,8 +214,12 @@ test.describe('Arc / Act full flow', () => {
 
   test('creates an act', async () => {
     await page.getByRole('button', { name: /new act/i }).click();
-    await page.getByLabel(/name/i).fill(ACT_NAME);
-    await page.getByRole('button', { name: /create act/i }).click();
+    const createActDialog = page.getByRole('dialog', { name: 'New Act' });
+    await expect(createActDialog).toBeVisible();
+    await createActDialog
+      .getByRole('textbox', { name: /^name/i })
+      .fill(ACT_NAME);
+    await createActDialog.getByRole('button', { name: /create act/i }).click();
 
     await expect(page.getByText(ACT_NAME)).toBeVisible();
   });
@@ -150,10 +228,12 @@ test.describe('Arc / Act full flow', () => {
     const actRow = page.locator('tr').filter({ hasText: ACT_NAME });
     await actRow.getByRole('button', { name: 'Edit' }).click();
 
-    const input = page.getByLabel(/name/i);
+    const editActDialog = page.getByRole('dialog', { name: 'Edit Act' });
+    await expect(editActDialog).toBeVisible();
+    const input = editActDialog.getByRole('textbox', { name: /^name/i });
     await input.clear();
     await input.fill(ACT_NAME_RENAMED);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await editActDialog.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByText(ACT_NAME_RENAMED)).toBeVisible();
   });
@@ -172,8 +252,16 @@ test.describe('Arc / Act full flow', () => {
     await expect(page.getByText('No sessions yet.')).toBeVisible();
 
     await page.getByRole('button', { name: /new session/i }).click();
-    await page.getByLabel(/name/i).fill(SESSION_NAME);
-    await page.getByRole('button', { name: /create session/i }).click();
+    const createSessionDialog = page.getByRole('dialog', {
+      name: 'New Session',
+    });
+    await expect(createSessionDialog).toBeVisible();
+    await createSessionDialog
+      .getByRole('textbox', { name: /^name/i })
+      .fill(SESSION_NAME);
+    await createSessionDialog
+      .getByRole('button', { name: /create session/i })
+      .click();
 
     await expect(page.getByText(SESSION_NAME)).toBeVisible();
   });
@@ -183,10 +271,7 @@ test.describe('Arc / Act full flow', () => {
   // ────────────────────────────────────────────────────────────────────────
 
   test('moves act to second arc via MoveActDialog', async () => {
-    // Navigate back to the first arc's acts page
-    await page.getByRole('link', { name: /arcs/i }).click();
-
-    // Wait for arc list
+    await navigateToCampaignArcsPage();
     await expect(page.getByText(ARC_NAME_RENAMED)).toBeVisible();
 
     const arcRow = page.locator('tr').filter({ hasText: ARC_NAME_RENAMED });
@@ -199,10 +284,12 @@ test.describe('Arc / Act full flow', () => {
     await actRow.getByRole('button', { name: 'Move' }).click();
 
     // MoveActDialog should appear with Arc Beta as option
-    await expect(page.getByText(ARC2_NAME)).toBeVisible();
-
-    await page.getByRole('radio', { name: new RegExp(ARC2_NAME, 'i') }).click();
-    await page.getByRole('button', { name: 'Move' }).click();
+    const moveDialog = page.locator('div.fixed.inset-0').last();
+    await expect(moveDialog.getByText(ARC2_NAME)).toBeVisible();
+    await moveDialog
+      .getByRole('radio', { name: new RegExp(ARC2_NAME, 'i') })
+      .click();
+    await moveDialog.getByRole('button', { name: 'Move' }).click();
 
     // Act should disappear from first arc's list
     await expect(page.getByText(ACT_NAME_RENAMED)).not.toBeVisible();
@@ -210,7 +297,7 @@ test.describe('Arc / Act full flow', () => {
   });
 
   test('verifies moved act appears under the second arc', async () => {
-    await page.getByRole('link', { name: /arcs/i }).click();
+    await navigateToCampaignArcsPage();
     await expect(page.getByText(ARC2_NAME)).toBeVisible();
 
     const arc2Row = page.locator('tr').filter({ hasText: ARC2_NAME });
@@ -224,7 +311,7 @@ test.describe('Arc / Act full flow', () => {
   // ────────────────────────────────────────────────────────────────────────
 
   test('deletes first arc (now empty)', async () => {
-    await page.getByRole('link', { name: /arcs/i }).click();
+    await navigateToCampaignArcsPage();
     await expect(page.getByText(ARC_NAME_RENAMED)).toBeVisible();
 
     page.once('dialog', (dialog) => dialog.accept());
