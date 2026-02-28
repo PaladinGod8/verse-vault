@@ -304,7 +304,7 @@ export default function AbilitiesPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-ability-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+            className="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
           >
             <h2
               id="create-ability-title"
@@ -359,7 +359,7 @@ export default function AbilitiesPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-ability-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+            className="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
           >
             <h2
               id="edit-ability-title"
