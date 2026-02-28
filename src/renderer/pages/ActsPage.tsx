@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ActForm from '../components/acts/ActForm';
+import MoveActDialog from '../components/acts/MoveActDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortActsByOrder = (acts: Act[]) =>
@@ -35,6 +36,7 @@ type SortableActRowProps = {
   isPersistingOrder: boolean;
   onEdit: (act: Act) => void;
   onDelete: (act: Act) => void;
+  onMove: (act: Act) => void;
 };
 
 function SortableActRow({
@@ -47,6 +49,7 @@ function SortableActRow({
   isPersistingOrder,
   onEdit,
   onDelete,
+  onMove,
 }: SortableActRowProps) {
   const isDeleting = deletingId === act.id;
   const {
@@ -108,6 +111,14 @@ function SortableActRow({
           </button>
           <button
             type="button"
+            onClick={() => onMove(act)}
+            className="text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isDeleting || isPersistingOrder}
+          >
+            Move
+          </button>
+          <button
+            type="button"
             onClick={() => onDelete(act)}
             className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isDeleting}
@@ -165,6 +176,8 @@ export default function ActsPage() {
   const [editingAct, setEditingAct] = useState<Act | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
+  const [movingAct, setMovingAct] = useState<Act | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -286,6 +299,18 @@ export default function ActsPage() {
       });
     } finally {
       setDeletingId((current) => (current === act.id ? null : current));
+    }
+  };
+
+  const handleMoveConfirm = async (newArcId: number) => {
+    if (!movingAct) return;
+    try {
+      await window.db.acts.moveTo(movingAct.id, newArcId);
+      setMovingAct(null);
+      setMoveError(null);
+      setActs((prev) => prev.filter((a) => a.id !== movingAct.id));
+    } catch {
+      setMoveError('Failed to move act. Please try again.');
     }
   };
 
@@ -464,6 +489,10 @@ export default function ActsPage() {
                         onDelete={(selectedAct) => {
                           void handleDeleteAct(selectedAct);
                         }}
+                        onMove={(selectedAct) => {
+                          setMovingAct(selectedAct);
+                          setMoveError(null);
+                        }}
                       />
                     ))}
                   </tbody>
@@ -523,6 +552,29 @@ export default function ActsPage() {
             />
           </section>
         </div>
+      ) : null}
+
+      {movingAct !== null &&
+      parsedArcId !== null &&
+      parsedCampaignId !== null ? (
+        <MoveActDialog
+          act={movingAct}
+          currentArcId={parsedArcId}
+          campaignId={parsedCampaignId}
+          onConfirm={(newArcId) => {
+            void handleMoveConfirm(newArcId);
+          }}
+          onCancel={() => {
+            setMovingAct(null);
+            setMoveError(null);
+          }}
+        />
+      ) : null}
+
+      {moveError ? (
+        <p className="fixed right-4 bottom-4 rounded bg-rose-50 px-4 py-2 text-sm text-rose-700 shadow">
+          {moveError}
+        </p>
       ) : null}
     </div>
   );
