@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { IPC } from '../../../src/shared/ipcChannels';
 
 describe('IPC channels', () => {
-  it('defines all expected verse, world, level, and ability channels', () => {
+  it('defines all expected verse, world, level, ability, campaign, session, and scene channels', () => {
     expect(IPC).toEqual({
       VERSES_GET_ALL: 'db:verses:getAll',
       VERSES_ADD: 'db:verses:add',
@@ -27,6 +27,21 @@ describe('IPC channels', () => {
       ABILITIES_ADD_CHILD: 'db:abilities:addChild',
       ABILITIES_REMOVE_CHILD: 'db:abilities:removeChild',
       ABILITIES_GET_CHILDREN: 'db:abilities:getChildren',
+      CAMPAIGNS_GET_ALL_BY_WORLD: 'db:campaigns:getAllByWorld',
+      CAMPAIGNS_GET_BY_ID: 'db:campaigns:getById',
+      CAMPAIGNS_ADD: 'db:campaigns:add',
+      CAMPAIGNS_UPDATE: 'db:campaigns:update',
+      CAMPAIGNS_DELETE: 'db:campaigns:delete',
+      SESSIONS_GET_ALL_BY_CAMPAIGN: 'db:sessions:getAllByCampaign',
+      SESSIONS_GET_BY_ID: 'db:sessions:getById',
+      SESSIONS_ADD: 'db:sessions:add',
+      SESSIONS_UPDATE: 'db:sessions:update',
+      SESSIONS_DELETE: 'db:sessions:delete',
+      SCENES_GET_ALL_BY_SESSION: 'db:scenes:getAllBySession',
+      SCENES_GET_BY_ID: 'db:scenes:getById',
+      SCENES_ADD: 'db:scenes:add',
+      SCENES_UPDATE: 'db:scenes:update',
+      SCENES_DELETE: 'db:scenes:delete',
     });
   });
 });

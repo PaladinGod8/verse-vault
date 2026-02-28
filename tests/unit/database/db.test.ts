@@ -67,6 +67,9 @@ describe('database', () => {
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS verses');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS levels');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS campaigns');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS sessions');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS scenes');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS abilities');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS ability_children');
     expect(schemaSql).toContain('name TEXT NOT NULL');
@@ -95,6 +98,15 @@ describe('database', () => {
       'child_id  INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE',
     );
     expect(schemaSql).toContain('UNIQUE (parent_id, child_id)');
+    expect(schemaSql).toContain(
+      'campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain(
+      'session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain("config     TEXT    NOT NULL DEFAULT '{}'");
+    expect(schemaSql).toContain('sort_order  INTEGER NOT NULL DEFAULT 0');
+    expect(schemaSql).toContain("payload    TEXT    NOT NULL DEFAULT '{}'");
   });
 
   it('closes and resets the singleton', async () => {
