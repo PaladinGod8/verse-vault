@@ -25,7 +25,7 @@ export default defineConfig((env) => {
         formats: ['cjs'],
       },
       rollupOptions: {
-        external,
+        external: [...external, 'electron-devtools-installer'],
       },
     },
     plugins: [pluginHotRestart('restart'), commonjs()],
