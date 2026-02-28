@@ -981,8 +981,18 @@ function registerIpcHandlers() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', () => {
+app.on('ready', async () => {
   registerIpcHandlers();
+
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    const { installExtension, REACT_DEVELOPER_TOOLS } = await import(
+      'electron-devtools-installer'
+    );
+    await installExtension(REACT_DEVELOPER_TOOLS).catch((err: unknown) => {
+      console.error('Failed to install React DevTools:', err);
+    });
+  }
+
   createWindow();
 });
 
