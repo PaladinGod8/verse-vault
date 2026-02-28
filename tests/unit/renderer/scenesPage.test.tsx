@@ -2,7 +2,75 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import ScenesPage from '../../../src/renderer/pages/ScenesPage';
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({
+    children,
+    onDragEnd,
+  }: {
+    children: ReactNode;
+    onDragEnd?: (event: {
+      active: { id: number };
+      over: { id: number } | null;
+    }) => void;
+  }) => (
+    <div>
+      <button
+        type="button"
+        data-testid="mock-dnd-drag-end"
+        onClick={() =>
+          onDragEnd?.(
+            ((globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown })
+              .__TEST_DND_DRAG_END_EVENT__ as
+              | {
+                  active: { id: number };
+                  over: { id: number } | null;
+                }
+              | undefined) ?? {
+              active: { id: 1 },
+              over: { id: 2 },
+            },
+          )
+        }
+      >
+        Trigger drag end
+      </button>
+      {children}
+    </div>
+  ),
+  KeyboardSensor: function KeyboardSensor() {
+    return null;
+  },
+  PointerSensor: function PointerSensor() {
+    return null;
+  },
+  closestCenter: vi.fn(),
+  useSensor: vi.fn(() => ({})),
+  useSensors: vi.fn((...configuredSensors: unknown[]) => configuredSensors),
+}));
+
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: { children: ReactNode }) => children,
+  arrayMove: <T,>(items: T[], oldIndex: number, newIndex: number): T[] => {
+    const nextItems = [...items];
+    const [movedItem] = nextItems.splice(oldIndex, 1);
+    nextItems.splice(newIndex, 0, movedItem);
+    return nextItems;
+  },
+  sortableKeyboardCoordinates: vi.fn(),
+  useSortable: vi.fn(() => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    setActivatorNodeRef: vi.fn(),
+    transform: null,
+    transition: undefined,
+    isDragging: false,
+  })),
+  verticalListSortingStrategy: {},
+}));
 
 const sessionsGetByIdMock = vi.fn();
 const scenesGetAllBySessionMock = vi.fn();
@@ -50,9 +118,37 @@ function renderScenesPage(path: string) {
   );
 }
 
+function setDragEndEvent(activeId: number, overId: number | null): void {
+  (
+    globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown }
+  ).__TEST_DND_DRAG_END_EVENT__ = {
+    active: { id: activeId },
+    over: overId === null ? null : { id: overId },
+  };
+}
+
+function getSceneRows() {
+  return screen.getAllByRole('row').slice(1);
+}
+
+function getRenderedSceneNames() {
+  return getSceneRows().map((row) => {
+    const cells = within(row).getAllByRole('cell');
+    return cells[1].textContent?.trim();
+  });
+}
+
+function getRenderedSceneNumbers() {
+  return getSceneRows().map((row) => {
+    const orderCellText = within(row).getAllByRole('cell')[0].textContent ?? '';
+    return Number(orderCellText.match(/\d+/)?.[0]);
+  });
+}
+
 describe('ScenesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setDragEndEvent(1, 2);
 
     window.db = {
       verses: {
@@ -172,6 +268,93 @@ describe('ScenesPage', () => {
     expect(await screen.findByText('The Opening')).toBeInTheDocument();
     expect(screen.getByText('Players arrive at tavern')).toBeInTheDocument();
     expect(screen.getByText('The Reveal')).toBeInTheDocument();
+  });
+
+  it('renders scenes in sort_order order with contiguous numbering', async () => {
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([
+      buildScene({ id: 3, name: 'The Finale', sort_order: 2 }),
+      buildScene({ id: 1, name: 'The Opening', sort_order: 0 }),
+      buildScene({ id: 2, name: 'The Reveal', sort_order: 1 }),
+    ]);
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    expect(getRenderedSceneNames()).toEqual([
+      'The Opening',
+      'The Reveal',
+      'The Finale',
+    ]);
+    expect(getRenderedSceneNumbers()).toEqual([1, 2, 3]);
+  });
+
+  it('persists only changed sort_order values when scenes are reordered', async () => {
+    const user = userEvent.setup();
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([
+      buildScene({ id: 1, name: 'The Opening', sort_order: 0 }),
+      buildScene({ id: 2, name: 'The Reveal', sort_order: 1 }),
+      buildScene({ id: 3, name: 'The Finale', sort_order: 2 }),
+    ]);
+    scenesUpdateMock.mockResolvedValue(buildScene());
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    setDragEndEvent(1, 2);
+    await user.click(screen.getByTestId('mock-dnd-drag-end'));
+
+    await waitFor(() => {
+      expect(scenesUpdateMock).toHaveBeenCalledTimes(2);
+    });
+    expect(scenesUpdateMock).toHaveBeenNthCalledWith(1, 2, { sort_order: 0 });
+    expect(scenesUpdateMock).toHaveBeenNthCalledWith(2, 1, { sort_order: 1 });
+    expect(getRenderedSceneNames()).toEqual([
+      'The Reveal',
+      'The Opening',
+      'The Finale',
+    ]);
+    expect(getRenderedSceneNumbers()).toEqual([1, 2, 3]);
+  });
+
+  it('shows reorder failure and reloads canonical order from backend', async () => {
+    const user = userEvent.setup();
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock
+      .mockResolvedValueOnce([
+        buildScene({ id: 1, name: 'The Opening', sort_order: 0 }),
+        buildScene({ id: 2, name: 'The Reveal', sort_order: 1 }),
+        buildScene({ id: 3, name: 'The Finale', sort_order: 2 }),
+      ])
+      .mockResolvedValueOnce([
+        buildScene({ id: 3, name: 'The Finale', sort_order: 0 }),
+        buildScene({ id: 1, name: 'The Opening', sort_order: 1 }),
+        buildScene({ id: 2, name: 'The Reveal', sort_order: 2 }),
+      ]);
+    scenesUpdateMock.mockRejectedValue(
+      new Error('Unable to reorder scenes right now.'),
+    );
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    setDragEndEvent(1, 2);
+    await user.click(screen.getByTestId('mock-dnd-drag-end'));
+
+    expect(
+      await screen.findByText('Unable to reorder scenes right now.'),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(scenesGetAllBySessionMock).toHaveBeenCalledTimes(2);
+    });
+    await waitFor(() => {
+      expect(getRenderedSceneNames()).toEqual([
+        'The Finale',
+        'The Opening',
+        'The Reveal',
+      ]);
+    });
   });
 
   it('creates a scene through the create dialog', async () => {

@@ -2,7 +2,75 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import SessionsPage from '../../../src/renderer/pages/SessionsPage';
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({
+    children,
+    onDragEnd,
+  }: {
+    children: ReactNode;
+    onDragEnd?: (event: {
+      active: { id: number };
+      over: { id: number } | null;
+    }) => void;
+  }) => (
+    <div>
+      <button
+        type="button"
+        data-testid="mock-dnd-drag-end"
+        onClick={() =>
+          onDragEnd?.(
+            ((globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown })
+              .__TEST_DND_DRAG_END_EVENT__ as
+              | {
+                  active: { id: number };
+                  over: { id: number } | null;
+                }
+              | undefined) ?? {
+              active: { id: 1 },
+              over: { id: 2 },
+            },
+          )
+        }
+      >
+        Trigger drag end
+      </button>
+      {children}
+    </div>
+  ),
+  KeyboardSensor: function KeyboardSensor() {
+    return null;
+  },
+  PointerSensor: function PointerSensor() {
+    return null;
+  },
+  closestCenter: vi.fn(),
+  useSensor: vi.fn(() => ({})),
+  useSensors: vi.fn((...configuredSensors: unknown[]) => configuredSensors),
+}));
+
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: { children: ReactNode }) => children,
+  arrayMove: <T,>(items: T[], oldIndex: number, newIndex: number): T[] => {
+    const nextItems = [...items];
+    const [movedItem] = nextItems.splice(oldIndex, 1);
+    nextItems.splice(newIndex, 0, movedItem);
+    return nextItems;
+  },
+  sortableKeyboardCoordinates: vi.fn(),
+  useSortable: vi.fn(() => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    setActivatorNodeRef: vi.fn(),
+    transform: null,
+    transition: undefined,
+    isDragging: false,
+  })),
+  verticalListSortingStrategy: {},
+}));
 
 const campaignsGetByIdMock = vi.fn();
 const sessionsGetAllByCampaignMock = vi.fn();
@@ -53,9 +121,37 @@ function renderSessionsPage(path: string) {
   );
 }
 
+function setDragEndEvent(activeId: number, overId: number | null): void {
+  (
+    globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown }
+  ).__TEST_DND_DRAG_END_EVENT__ = {
+    active: { id: activeId },
+    over: overId === null ? null : { id: overId },
+  };
+}
+
+function getSessionRows() {
+  return screen.getAllByRole('row').slice(1);
+}
+
+function getRenderedSessionNames() {
+  return getSessionRows().map((row) => {
+    const cells = within(row).getAllByRole('cell');
+    return cells[1].textContent?.trim();
+  });
+}
+
+function getRenderedSessionNumbers() {
+  return getSessionRows().map((row) => {
+    const orderCellText = within(row).getAllByRole('cell')[0].textContent ?? '';
+    return Number(orderCellText.match(/\d+/)?.[0]);
+  });
+}
+
 describe('SessionsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setDragEndEvent(1, 2);
 
     window.db = {
       verses: {
@@ -175,6 +271,93 @@ describe('SessionsPage', () => {
     expect(await screen.findByText('Session One')).toBeInTheDocument();
     expect(screen.getByText('Initial meeting')).toBeInTheDocument();
     expect(screen.getByText('Session Two')).toBeInTheDocument();
+  });
+
+  it('renders sessions in sort_order order with contiguous numbering', async () => {
+    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
+    sessionsGetAllByCampaignMock.mockResolvedValue([
+      buildSession({ id: 3, name: 'Session Three', sort_order: 2 }),
+      buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+    ]);
+
+    renderSessionsPage('/world/1/campaign/1/sessions');
+
+    await screen.findByText('Session One');
+    expect(getRenderedSessionNames()).toEqual([
+      'Session One',
+      'Session Two',
+      'Session Three',
+    ]);
+    expect(getRenderedSessionNumbers()).toEqual([1, 2, 3]);
+  });
+
+  it('persists only changed sort_order values when sessions are reordered', async () => {
+    const user = userEvent.setup();
+    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
+    sessionsGetAllByCampaignMock.mockResolvedValue([
+      buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+      buildSession({ id: 3, name: 'Session Three', sort_order: 2 }),
+    ]);
+    sessionsUpdateMock.mockResolvedValue(buildSession());
+
+    renderSessionsPage('/world/1/campaign/1/sessions');
+
+    await screen.findByText('Session One');
+    setDragEndEvent(1, 2);
+    await user.click(screen.getByTestId('mock-dnd-drag-end'));
+
+    await waitFor(() => {
+      expect(sessionsUpdateMock).toHaveBeenCalledTimes(2);
+    });
+    expect(sessionsUpdateMock).toHaveBeenNthCalledWith(1, 2, { sort_order: 0 });
+    expect(sessionsUpdateMock).toHaveBeenNthCalledWith(2, 1, { sort_order: 1 });
+    expect(getRenderedSessionNames()).toEqual([
+      'Session Two',
+      'Session One',
+      'Session Three',
+    ]);
+    expect(getRenderedSessionNumbers()).toEqual([1, 2, 3]);
+  });
+
+  it('shows reorder failure and reloads canonical order from backend', async () => {
+    const user = userEvent.setup();
+    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
+    sessionsGetAllByCampaignMock
+      .mockResolvedValueOnce([
+        buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+        buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+        buildSession({ id: 3, name: 'Session Three', sort_order: 2 }),
+      ])
+      .mockResolvedValueOnce([
+        buildSession({ id: 3, name: 'Session Three', sort_order: 0 }),
+        buildSession({ id: 1, name: 'Session One', sort_order: 1 }),
+        buildSession({ id: 2, name: 'Session Two', sort_order: 2 }),
+      ]);
+    sessionsUpdateMock.mockRejectedValue(
+      new Error('Unable to reorder sessions right now.'),
+    );
+
+    renderSessionsPage('/world/1/campaign/1/sessions');
+
+    await screen.findByText('Session One');
+    setDragEndEvent(1, 2);
+    await user.click(screen.getByTestId('mock-dnd-drag-end'));
+
+    expect(
+      await screen.findByText('Unable to reorder sessions right now.'),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(sessionsGetAllByCampaignMock).toHaveBeenCalledTimes(2);
+    });
+    await waitFor(() => {
+      expect(getRenderedSessionNames()).toEqual([
+        'Session Three',
+        'Session One',
+        'Session Two',
+      ]);
+    });
   });
 
   it('creates a session through the create dialog', async () => {
