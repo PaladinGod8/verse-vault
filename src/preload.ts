@@ -81,6 +81,60 @@ contextBridge.exposeInMainWorld('db', {
     getChildren: (abilityId: number): Promise<Ability[]> =>
       ipcRenderer.invoke(IPC.ABILITIES_GET_CHILDREN, abilityId),
   },
+  campaigns: {
+    getAllByWorld: (worldId: number) =>
+      ipcRenderer.invoke(IPC.CAMPAIGNS_GET_ALL_BY_WORLD, worldId),
+    getById: (id: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_GET_BY_ID, id),
+    add: (data: {
+      world_id: number;
+      name: string;
+      summary?: string | null;
+      config?: string;
+    }) => ipcRenderer.invoke(IPC.CAMPAIGNS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; summary?: string | null; config?: string },
+    ) => ipcRenderer.invoke(IPC.CAMPAIGNS_UPDATE, id, data),
+    delete: (id: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_DELETE, id),
+  },
+  sessions: {
+    getAllByCampaign: (campaignId: number) =>
+      ipcRenderer.invoke(IPC.SESSIONS_GET_ALL_BY_CAMPAIGN, campaignId),
+    getById: (id: number) => ipcRenderer.invoke(IPC.SESSIONS_GET_BY_ID, id),
+    add: (data: {
+      campaign_id: number;
+      name: string;
+      notes?: string | null;
+      sort_order?: number;
+    }) => ipcRenderer.invoke(IPC.SESSIONS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; notes?: string | null; sort_order?: number },
+    ) => ipcRenderer.invoke(IPC.SESSIONS_UPDATE, id, data),
+    delete: (id: number) => ipcRenderer.invoke(IPC.SESSIONS_DELETE, id),
+  },
+  scenes: {
+    getAllBySession: (sessionId: number) =>
+      ipcRenderer.invoke(IPC.SCENES_GET_ALL_BY_SESSION, sessionId),
+    getById: (id: number) => ipcRenderer.invoke(IPC.SCENES_GET_BY_ID, id),
+    add: (data: {
+      session_id: number;
+      name: string;
+      notes?: string | null;
+      payload?: string;
+      sort_order?: number;
+    }) => ipcRenderer.invoke(IPC.SCENES_ADD, data),
+    update: (
+      id: number,
+      data: {
+        name?: string;
+        notes?: string | null;
+        payload?: string;
+        sort_order?: number;
+      },
+    ) => ipcRenderer.invoke(IPC.SCENES_UPDATE, id, data),
+    delete: (id: number) => ipcRenderer.invoke(IPC.SCENES_DELETE, id),
+  },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
     getById: (id: number): Promise<World | null> =>
