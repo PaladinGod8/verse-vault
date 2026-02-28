@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Extends the Verse Vault data hierarchy below the World layer with three new tiers: Campaign, Session, and Scene. Each tier is a full CRUD resource wired end-to-end through SQLite → IPC → preload bridge → renderer UI.
+Extends the Verse Vault data hierarchy below the World layer with three tiers: Campaign, Session, and Scene. Campaigns are standard CRUD records; sessions and scenes are sequence-driven records with persisted sibling ordering.
 
 ## Hierarchy Model
 
 ```
 World
-└── Campaign   (belongs to one World)
-    └── Session    (belongs to one Campaign)
-        └── Scene      (belongs to one Session)
+`-- Campaign   (belongs to one World)
+    `-- Session    (belongs to one Campaign; ordered within campaign)
+        `-- Scene      (belongs to one Session; ordered within session)
 ```
 
 Foreign keys cascade on delete, so removing a parent removes all descendants.
@@ -19,7 +19,7 @@ Foreign keys cascade on delete, so removing a parent removes all descendants.
 
 ### Database
 
-Three tables added in `src/database/db.ts`:
+Three tables are defined in `src/database/db.ts`:
 
 | Table       | Key Columns                                                                                                                       |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -31,7 +31,7 @@ All FKs use `ON DELETE CASCADE`.
 
 ### IPC Channels
 
-Fifteen channels defined in `src/shared/ipcChannels.ts` (five per tier):
+Fifteen channels are defined in `src/shared/ipcChannels.ts`:
 
 | Tier     | Channels                                                                                                               |
 | -------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -39,94 +39,82 @@ Fifteen channels defined in `src/shared/ipcChannels.ts` (five per tier):
 | Session  | `db:sessions:getAllByCampaign`, `db:sessions:getById`, `db:sessions:add`, `db:sessions:update`, `db:sessions:delete`   |
 | Scene    | `db:scenes:getAllBySession`, `db:scenes:getById`, `db:scenes:add`, `db:scenes:update`, `db:scenes:delete`              |
 
-### Main-Process Handlers (src/main.ts)
+### Main-Process Handler Semantics (`src/main.ts`)
 
-- **getAll\***: ordered `updated_at DESC`.
-- **getById**: returns row or `null`.
-- **add**: validates trimmed `name` as required; defaults `config`/`payload` to `'{}'`, `summary`/`notes` to `null`; scene `add` also validates `payload` as valid JSON.
-- **update**: partial update via `hasOwnProperty` guards; re-validates `name` and JSON fields when present; always refreshes `updated_at`; throws if row not found.
-- **delete**: idempotent — returns `{ id }` even if row was already absent.
+- Campaign list reads are ordered by `updated_at DESC`.
+- Session and scene list reads are ordered by `sort_order ASC, id ASC`.
+- Session/scene create appends to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` in parent scope).
+- Session/scene update accepts partial `sort_order` updates and refreshes `updated_at`.
+- Session/scene delete compacts sibling order to contiguous `0..N-1` in parent scope.
+- Delete remains idempotent (`{ id }` is returned even if the row was already absent).
 
-### Preload Bridge (src/preload.ts)
+### Preload Bridge and Types
 
-Exposed on `window.db`:
+Renderer access stays behind `window.db` (`src/preload.ts`, `forge.env.d.ts`):
 
 - `window.db.campaigns.{ getAllByWorld, getById, add, update, delete }`
 - `window.db.sessions.{ getAllByCampaign, getById, add, update, delete }`
 - `window.db.scenes.{ getAllBySession, getById, add, update, delete }`
 
-### TypeScript Contracts (forge.env.d.ts)
-
-```ts
-interface Campaign {
-  id: number;
-  world_id: number;
-  name: string;
-  summary: string | null;
-  config: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Session {
-  id: number;
-  campaign_id: number;
-  name: string;
-  notes: string | null;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Scene {
-  id: number;
-  session_id: number;
-  name: string;
-  notes: string | null;
-  payload: string;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-```
-
 ### Renderer Routes and Pages
 
-| Route                                                       | Page            | Behavior                                                                                                                                |
-| ----------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `/world/:id/campaigns`                                      | `CampaignsPage` | Lists campaigns for a world; create/edit modal (name required, summary optional); delete with confirmation; "Sessions" link drills down |
-| `/world/:id/campaign/:campaignId/sessions`                  | `SessionsPage`  | Lists sessions for a campaign; create/edit modal (name required, notes optional); delete with confirmation; "Scenes" link drills down   |
-| `/world/:id/campaign/:campaignId/session/:sessionId/scenes` | `ScenesPage`    | Lists scenes for a session; create/edit modal (name required, notes optional, payload optional JSON); delete with confirmation          |
+| Route                                                       | Page            | Behavior                                                                                                                                                                                                                               |
+| ----------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/world/:id/campaigns`                                      | `CampaignsPage` | Lists campaigns for a world; create/edit modal (name required, summary optional); delete with confirmation; "Sessions" link drills down                                                                                                |
+| `/world/:id/campaign/:campaignId/sessions`                  | `SessionsPage`  | Lists sessions ordered by `sort_order`; shows visible order numbers; create/edit/delete; dnd-kit row reorder persisted through `sessions.update(..., { sort_order })`; "Scenes" link drills down                                       |
+| `/world/:id/campaign/:campaignId/session/:sessionId/scenes` | `ScenesPage`    | Lists scenes ordered by `sort_order`; shows visible order numbers; create/edit/delete; dnd-kit row reorder persisted through `scenes.update(..., { sort_order })`; scene form validates payload JSON; no child route below scene level |
 
-### Form Validation
+## Sequence-Driven Ordering
 
-- `name`: required, trimmed; blank → client error before submit.
-- `summary` / `notes`: optional; empty string converted to `null`.
-- `payload` (Scene only): must be valid JSON when non-empty; empty string converted to `'{}'`; invalid JSON shows "Payload must be valid JSON." before submit.
+- Session and scene sequence is parent-scoped and persisted in `sort_order`.
+- Tables render rows in `sort_order ASC, id ASC`.
+- The visible "Order" column displays contiguous human-facing numbers (`1..N`), derived from the sorted rows.
+- The stored `sort_order` remains zero-based (`0..N-1`).
 
-## Non-Goals (Scene Engine / Runtime)
+## dnd-kit Reorder Behavior
 
-The following are explicitly out of scope for this backbone:
+- Both sessions and scenes use dnd-kit sortable rows (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`).
+- Reorder is row-internal via drag handle in the "Order" column.
+- Pointer and keyboard sensors are enabled.
+- Reorder is in-table only; there is no cross-parent or cross-table move.
 
-- **Scene execution / playback** — `payload` is stored as raw JSON text with no runtime interpretation.
-- **Scene graph or state machine** — no step sequencing, branching logic, or condition evaluation.
-- **Prompt templates / AI integration** — scenes carry no prompt rendering or LLM wiring.
-- **Campaign or session state tracking** — no "active session", progress tracking, or event log.
-- **Real-time collaboration** — all operations are local-only via better-sqlite3.
+## Reorder Persistence and Failure Handling
+
+- Reorder is optimistic in the renderer: UI order updates immediately after drop.
+- Only rows whose `sort_order` changed are persisted.
+- Persistence uses existing update APIs per row:
+  - `window.db.sessions.update(id, { sort_order })`
+  - `window.db.scenes.update(id, { sort_order })`
+- On persistence failure:
+  - an inline error message is shown,
+  - canonical order is reloaded from backend (`getAllByCampaign` / `getAllBySession`),
+  - if reload also fails, the UI falls back to the pre-drag snapshot.
+
+## Validation
+
+- `name`: required, trimmed; blank blocked in both renderer and main handlers.
+- `summary` / `notes`: optional; empty string maps to `null` in forms.
+- `payload` (Scene): must be valid JSON when provided; empty form input defaults to `'{}'`.
+
+## Non-Goals
+
+- Scene runtime/execution engine (playback, branching, condition evaluation).
+- Prompt templating or LLM workflow integration.
+- Cross-parent reparenting moves (session -> different campaign, scene -> different session).
+- Collaboration/conflict resolution across multiple concurrent clients.
 
 ## Known Limits
 
-- List ordering is fixed at `updated_at DESC`; `sort_order` columns are stored but not used by the UI to reorder rows.
-- Delete is idempotent on the backend but the renderer does not handle the "already deleted" case specially.
-- `config` (Campaign) and `payload` (Scene) are stored as opaque JSON strings; no schema validation beyond syntactic JSON validity.
-- Campaign form does not expose `config`; it is always written as the default `'{}'` on create.
-- There is no drill-down page below scenes; scenes have no child resource yet.
-- `/world/:id` does not yet link to campaigns; navigation starts from a manually typed or linked URL.
+- Reorder persistence is multiple per-row updates, not a single atomic batch IPC call.
+- No undo stack for reorder operations.
+- Campaign rows still use `updated_at DESC`; sequence semantics apply only to sessions/scenes.
+- `config` (Campaign) and `payload` (Scene) are stored as JSON text without schema-level domain validation.
+- There is still no route below scene level.
 
 ## Possible Next Extensions
 
-- Wire `/world/:id` world page to surface a "Campaigns" entry point link.
-- Use `sort_order` to support drag-and-drop reordering of sessions and scenes.
-- Add a scene detail/editor page for structured `payload` editing.
-- Add campaign `config` editing to the campaign form.
-- Add pagination or search to the campaign/session/scene lists.
+- Add dedicated batch reorder IPC handlers for transactional sibling updates.
+- Add explicit reparent/move flows with validation for cross-parent transfers.
+- Add campaign `config` editing UI.
+- Add scene detail/editor page for structured `payload` editing.
+- Add pagination and/or search to campaign/session/scene tables.
