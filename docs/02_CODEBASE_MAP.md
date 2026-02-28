@@ -16,7 +16,7 @@
 | `src/renderer/pages/WorldsHomePage.tsx`                        | Worlds landing page (`/`): list fetch + create/edit modals + edit/delete actions + loading/empty/error states                                                                                                                                                                                                                                                                                                        |
 | `src/renderer/pages/WorldPage.tsx`                             | World workspace page (`/world/:id`): validates id, marks world viewed on entry, two-column layout with sidebar + overview                                                                                                                                                                                                                                                                                            |
 | `src/renderer/pages/LevelsPage.tsx`                            | Levels list page (`/world/:id/levels`): table of levels with create/edit/delete actions + loading/empty/error states                                                                                                                                                                                                                                                                                                 |
-| `src/renderer/pages/AbilitiesPage.tsx`                         | Abilities list page (`/world/:id/abilities`): table with create/edit/delete actions, gated child-link manager modal for supported passive subtypes, and loading/empty/error states                                                                                                                                                                                                                                   |
+| `src/renderer/pages/AbilitiesPage.tsx`                         | Abilities list page (`/world/:id/abilities`): table with create/edit/delete actions, viewport-bounded scrollable create/edit modals, gated child-link manager modal for supported passive subtypes, and loading/empty/error states                                                                                                                                                                                   |
 | `src/renderer/pages/CampaignsPage.tsx`                         | Campaigns list page (`/world/:id/campaigns`): table of campaigns with create/edit/delete actions, Sessions link per row (`/world/:id/campaign/:campaignId/sessions`), and loading/empty/error states                                                                                                                                                                                                                 |
 | `src/renderer/pages/SessionsPage.tsx`                          | Sessions list page (`/world/:id/campaign/:campaignId/sessions`): validates worldId + campaignId, loads campaign header + sessions ordered by `sort_order`, supports create/edit/delete, supports dnd-kit row reorder with persisted `sort_order`, shows visible sequence numbers, exposes Scenes link per row (`/world/:id/campaign/:campaignId/session/:sessionId/scenes`), and includes loading/empty/error states |
 | `src/renderer/pages/ScenesPage.tsx`                            | Scenes list page (`/world/:id/campaign/:campaignId/session/:sessionId/scenes`): validates worldId + campaignId + sessionId, loads session header + scenes ordered by `sort_order`, supports create/edit/delete, supports dnd-kit row reorder with persisted `sort_order`, shows visible sequence numbers, and includes loading/empty/error states                                                                    |
@@ -374,6 +374,17 @@
 - **Main handler**: `src/main.ts` (from Ability Steps 03 and 05)
 - **Preload bridge**: `src/preload.ts` (from Ability Steps 06 and 07)
 - **Storage**: manager excludes invalid candidates (self and already-linked abilities), restricts operations to same-world ability rows, and updates linked children list after add/remove actions
+
+### Ability Dialog Viewport Scroll Fix (Step 18)
+
+- **Purpose**: keep ability create/edit submit actions reachable when conditional ability fields make the form taller than the app viewport
+- **Status**: added on 2026-02-28
+- **UI**: `src/renderer/pages/AbilitiesPage.tsx`
+- **Store**: none yet
+- **IPC**: unchanged (uses existing ability CRUD channels through `window.db.abilities.*`)
+- **Main handler**: unchanged in this step
+- **Preload bridge**: unchanged in this step
+- **Storage**: unchanged in this step (renderer-only modal layout update with `max-h` + internal `overflow-y-auto`)
 
 ### Campaign Shared Contract (Step 01)
 
