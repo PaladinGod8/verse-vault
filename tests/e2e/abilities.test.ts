@@ -19,6 +19,16 @@ test('abilities CRUD and child-link flow works end to end', async () => {
 
   try {
     const window = await app.firstWindow();
+    await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (!win) {
+        return;
+      }
+      win.setSize(1440, 960);
+      win.center();
+      win.focus();
+    });
+    await window.bringToFront();
     await window.waitForLoadState('domcontentloaded');
 
     const unique = Date.now().toString();
