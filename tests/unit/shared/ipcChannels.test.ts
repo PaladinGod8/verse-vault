@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { IPC } from '../../../src/shared/ipcChannels';
 
 describe('IPC channels', () => {
-  it('defines all expected verse, world, level, ability, campaign, session, and scene channels', () => {
+  it('defines all expected verse, world, level, ability, campaign, arc, act, session, and scene channels', () => {
     expect(IPC).toEqual({
       VERSES_GET_ALL: 'db:verses:getAll',
       VERSES_ADD: 'db:verses:add',
@@ -32,11 +32,25 @@ describe('IPC channels', () => {
       CAMPAIGNS_ADD: 'db:campaigns:add',
       CAMPAIGNS_UPDATE: 'db:campaigns:update',
       CAMPAIGNS_DELETE: 'db:campaigns:delete',
+      ARCS_GET_ALL_BY_CAMPAIGN: 'db:arcs:getAllByCampaign',
+      ARCS_GET_BY_ID: 'db:arcs:getById',
+      ARCS_ADD: 'db:arcs:add',
+      ARCS_UPDATE: 'db:arcs:update',
+      ARCS_DELETE: 'db:arcs:delete',
+      ACTS_GET_ALL_BY_ARC: 'db:acts:getAllByArc',
+      ACTS_GET_ALL_BY_CAMPAIGN: 'db:acts:getAllByCampaign',
+      ACTS_GET_BY_ID: 'db:acts:getById',
+      ACTS_ADD: 'db:acts:add',
+      ACTS_UPDATE: 'db:acts:update',
+      ACTS_DELETE: 'db:acts:delete',
+      ACTS_MOVE_TO_ARC: 'db:acts:moveToArc',
       SESSIONS_GET_ALL_BY_CAMPAIGN: 'db:sessions:getAllByCampaign',
+      SESSIONS_GET_ALL_BY_ACT: 'db:sessions:getAllByAct',
       SESSIONS_GET_BY_ID: 'db:sessions:getById',
       SESSIONS_ADD: 'db:sessions:add',
       SESSIONS_UPDATE: 'db:sessions:update',
       SESSIONS_DELETE: 'db:sessions:delete',
+      SESSIONS_MOVE_TO_ACT: 'db:sessions:moveToAct',
       SCENES_GET_ALL_BY_SESSION: 'db:scenes:getAllBySession',
       SCENES_GET_BY_ID: 'db:scenes:getById',
       SCENES_ADD: 'db:scenes:add',
