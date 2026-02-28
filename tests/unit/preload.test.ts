@@ -31,6 +31,8 @@ describe('preload', () => {
         abilities: expect.any(Object),
         worlds: expect.any(Object),
         campaigns: expect.any(Object),
+        arcs: expect.any(Object),
+        acts: expect.any(Object),
         sessions: expect.any(Object),
         scenes: expect.any(Object),
       }),
@@ -65,11 +67,24 @@ describe('preload', () => {
     await api.campaigns.add({ world_id: 1, name: 'Campaign' });
     await api.campaigns.update(31, { summary: 'Updated' });
     await api.campaigns.delete(31);
-    await api.sessions.getAllByCampaign(30);
+    await api.arcs.getAllByCampaign(1);
+    await api.arcs.getById(10);
+    await api.arcs.add({ campaign_id: 1, name: 'Arc' });
+    await api.arcs.update(10, { name: 'Updated Arc' });
+    await api.arcs.delete(10);
+    await api.acts.getAllByArc(10);
+    await api.acts.getAllByCampaign(1);
+    await api.acts.getById(20);
+    await api.acts.add({ arc_id: 10, name: 'Act' });
+    await api.acts.update(20, { name: 'Updated Act' });
+    await api.acts.delete(20);
+    await api.acts.moveTo(20, 11);
+    await api.sessions.getAllByAct(20);
     await api.sessions.getById(41);
-    await api.sessions.add({ campaign_id: 30, name: 'Session' });
+    await api.sessions.add({ act_id: 20, name: 'Session' });
     await api.sessions.update(41, { sort_order: 2 });
     await api.sessions.delete(41);
+    await api.sessions.moveTo(41, 21);
     await api.scenes.getAllBySession(40);
     await api.scenes.getById(51);
     await api.scenes.add({ session_id: 40, name: 'Scene' });
@@ -138,31 +153,72 @@ describe('preload', () => {
     expect(invokeMock).toHaveBeenNthCalledWith(23, IPC.CAMPAIGNS_DELETE, 31);
     expect(invokeMock).toHaveBeenNthCalledWith(
       24,
-      IPC.SESSIONS_GET_ALL_BY_CAMPAIGN,
-      30,
+      IPC.ARCS_GET_ALL_BY_CAMPAIGN,
+      1,
     );
-    expect(invokeMock).toHaveBeenNthCalledWith(25, IPC.SESSIONS_GET_BY_ID, 41);
-    expect(invokeMock).toHaveBeenNthCalledWith(26, IPC.SESSIONS_ADD, {
-      campaign_id: 30,
+    expect(invokeMock).toHaveBeenNthCalledWith(25, IPC.ARCS_GET_BY_ID, 10);
+    expect(invokeMock).toHaveBeenNthCalledWith(26, IPC.ARCS_ADD, {
+      campaign_id: 1,
+      name: 'Arc',
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(27, IPC.ARCS_UPDATE, 10, {
+      name: 'Updated Arc',
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(28, IPC.ARCS_DELETE, 10);
+    expect(invokeMock).toHaveBeenNthCalledWith(29, IPC.ACTS_GET_ALL_BY_ARC, 10);
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      30,
+      IPC.ACTS_GET_ALL_BY_CAMPAIGN,
+      1,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(31, IPC.ACTS_GET_BY_ID, 20);
+    expect(invokeMock).toHaveBeenNthCalledWith(32, IPC.ACTS_ADD, {
+      arc_id: 10,
+      name: 'Act',
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(33, IPC.ACTS_UPDATE, 20, {
+      name: 'Updated Act',
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(34, IPC.ACTS_DELETE, 20);
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      35,
+      IPC.ACTS_MOVE_TO_ARC,
+      20,
+      11,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      36,
+      IPC.SESSIONS_GET_ALL_BY_ACT,
+      20,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(37, IPC.SESSIONS_GET_BY_ID, 41);
+    expect(invokeMock).toHaveBeenNthCalledWith(38, IPC.SESSIONS_ADD, {
+      act_id: 20,
       name: 'Session',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(27, IPC.SESSIONS_UPDATE, 41, {
+    expect(invokeMock).toHaveBeenNthCalledWith(39, IPC.SESSIONS_UPDATE, 41, {
       sort_order: 2,
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(28, IPC.SESSIONS_DELETE, 41);
+    expect(invokeMock).toHaveBeenNthCalledWith(40, IPC.SESSIONS_DELETE, 41);
     expect(invokeMock).toHaveBeenNthCalledWith(
-      29,
+      41,
+      IPC.SESSIONS_MOVE_TO_ACT,
+      41,
+      21,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      42,
       IPC.SCENES_GET_ALL_BY_SESSION,
       40,
     );
-    expect(invokeMock).toHaveBeenNthCalledWith(30, IPC.SCENES_GET_BY_ID, 51);
-    expect(invokeMock).toHaveBeenNthCalledWith(31, IPC.SCENES_ADD, {
+    expect(invokeMock).toHaveBeenNthCalledWith(43, IPC.SCENES_GET_BY_ID, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(44, IPC.SCENES_ADD, {
       session_id: 40,
       name: 'Scene',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(32, IPC.SCENES_UPDATE, 51, {
+    expect(invokeMock).toHaveBeenNthCalledWith(45, IPC.SCENES_UPDATE, 51, {
       payload: '{}',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(33, IPC.SCENES_DELETE, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(46, IPC.SCENES_DELETE, 51);
   });
 });

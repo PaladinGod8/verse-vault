@@ -217,14 +217,67 @@ describe('main process', () => {
     const campaignsUpdateRunMock = vi.fn();
     const campaignsDeleteRunMock = vi.fn();
 
-    const sessionsSelectAllByCampaignMock = vi.fn(() => [
-      { id: 41, campaign_id: 30, name: 'Session One' },
+    const arcsSelectAllByCampaignMock = vi.fn(() => [
+      { id: 10, campaign_id: 1, name: 'Arc One', sort_order: 0 },
+    ]);
+    const arcsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        campaign_id: 1,
+        name: `Arc ${id}`,
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const arcsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 10 }));
+    const arcsUpdateRunMock = vi.fn();
+    const arcsSortOrderUpdateRunMock = vi.fn();
+    const arcsDeleteRunMock = vi.fn();
+    const arcsNextSortOrderGetMock = vi.fn(() => ({ next: 1 }));
+    const arcsCampaignForDeleteGetMock = vi.fn((id: number) => {
+      if (id === 10) return { campaign_id: 1 };
+      return undefined;
+    });
+    const arcsSiblingIdsAllMock = vi.fn(() => [{ id: 10 }]);
+
+    const actsSelectAllByArcMock = vi.fn(() => [
+      { id: 20, arc_id: 10, name: 'Act One', sort_order: 0 },
+    ]);
+    const actsSelectAllByCampaignMock = vi.fn(() => [
+      { id: 20, arc_id: 10, name: 'Act One', sort_order: 0 },
+    ]);
+    const actsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        arc_id: 10,
+        name: `Act ${id}`,
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const actsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 20 }));
+    const actsUpdateRunMock = vi.fn();
+    const actsSortOrderUpdateRunMock = vi.fn();
+    const actsDeleteRunMock = vi.fn();
+    const actsNextSortOrderGetMock = vi.fn(() => ({ next: 1 }));
+    const actsArcForDeleteGetMock = vi.fn((id: number) => {
+      if (id === 20) return { arc_id: 10 };
+      return undefined;
+    });
+    const actsSiblingIdsAllMock = vi.fn(() => [{ id: 20 }]);
+
+    const sessionsSelectAllByActMock = vi.fn(() => [
+      { id: 41, act_id: 20, name: 'Session One' },
     ]);
     const sessionsSelectByIdGetMock = vi.fn((id: number) => {
       if (id === 404) return null;
       return {
         id,
-        campaign_id: 30,
+        act_id: 20,
         name: `Session ${id}`,
         notes: null,
         sort_order: 0,
@@ -237,8 +290,8 @@ describe('main process', () => {
     const sessionsSortOrderUpdateRunMock = vi.fn();
     const sessionsDeleteRunMock = vi.fn();
     const sessionsNextSortOrderGetMock = vi.fn(() => ({ next_sort_order: 7 }));
-    const sessionsCampaignForDeleteGetMock = vi.fn((id: number) => {
-      if (id === 43) return { campaign_id: 30 };
+    const sessionsActForDeleteGetMock = vi.fn((id: number) => {
+      if (id === 43) return { act_id: 20 };
       return undefined;
     });
     const sessionsSiblingIdsAllMock = vi.fn(() => [{ id: 41 }, { id: 42 }]);
@@ -370,25 +423,108 @@ describe('main process', () => {
         return { run: campaignsDeleteRunMock };
       }
 
-      if (sql.includes('SELECT * FROM sessions WHERE campaign_id = ?')) {
-        return { all: sessionsSelectAllByCampaignMock };
+      if (
+        sql.includes(
+          'SELECT * FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+        )
+      ) {
+        return { all: arcsSelectAllByCampaignMock };
+      }
+      if (sql.includes('SELECT * FROM arcs WHERE id = ?')) {
+        return { get: arcsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO arcs')) {
+        return { run: arcsInsertRunMock };
       }
       if (
         sql.includes(
-          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE campaign_id = ?',
+          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM arcs WHERE campaign_id = ?',
+        )
+      ) {
+        return { get: arcsNextSortOrderGetMock };
+      }
+      if (sql === 'UPDATE arcs SET sort_order = ? WHERE id = ?') {
+        return { run: arcsSortOrderUpdateRunMock };
+      }
+      if (sql.includes('UPDATE arcs SET')) {
+        return { run: arcsUpdateRunMock };
+      }
+      if (sql.includes('SELECT campaign_id FROM arcs WHERE id = ?')) {
+        return { get: arcsCampaignForDeleteGetMock };
+      }
+      if (
+        sql.includes(
+          'SELECT id FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+        )
+      ) {
+        return { all: arcsSiblingIdsAllMock };
+      }
+      if (sql.includes('DELETE FROM arcs WHERE id = ?')) {
+        return { run: arcsDeleteRunMock };
+      }
+
+      if (
+        sql.includes(
+          'SELECT * FROM acts WHERE arc_id = ? ORDER BY sort_order ASC, id ASC',
+        )
+      ) {
+        return { all: actsSelectAllByArcMock };
+      }
+      if (sql.includes('SELECT acts.*') && sql.includes('JOIN arcs')) {
+        return { all: actsSelectAllByCampaignMock };
+      }
+      if (sql.includes('SELECT * FROM acts WHERE id = ?')) {
+        return { get: actsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO acts')) {
+        return { run: actsInsertRunMock };
+      }
+      if (
+        sql.includes(
+          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM acts WHERE arc_id = ?',
+        )
+      ) {
+        return { get: actsNextSortOrderGetMock };
+      }
+      if (sql === 'UPDATE acts SET sort_order = ? WHERE id = ?') {
+        return { run: actsSortOrderUpdateRunMock };
+      }
+      if (sql.includes('UPDATE acts SET')) {
+        return { run: actsUpdateRunMock };
+      }
+      if (sql.includes('SELECT arc_id FROM acts WHERE id = ?')) {
+        return { get: actsArcForDeleteGetMock };
+      }
+      if (
+        sql.includes(
+          'SELECT id FROM acts WHERE arc_id = ? ORDER BY sort_order ASC, id ASC',
+        )
+      ) {
+        return { all: actsSiblingIdsAllMock };
+      }
+      if (sql.includes('DELETE FROM acts WHERE id = ?')) {
+        return { run: actsDeleteRunMock };
+      }
+
+      if (sql.includes('SELECT * FROM sessions WHERE act_id = ?')) {
+        return { all: sessionsSelectAllByActMock };
+      }
+      if (
+        sql.includes(
+          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE act_id = ?',
         )
       ) {
         return { get: sessionsNextSortOrderGetMock };
       }
       if (
         sql.includes(
-          'SELECT id FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+          'SELECT id FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
         )
       ) {
         return { all: sessionsSiblingIdsAllMock };
       }
-      if (sql.includes('SELECT campaign_id FROM sessions WHERE id = ?')) {
-        return { get: sessionsCampaignForDeleteGetMock };
+      if (sql.includes('SELECT act_id FROM sessions WHERE id = ?')) {
+        return { get: sessionsActForDeleteGetMock };
       }
       if (sql.includes('SELECT * FROM sessions WHERE id = ?')) {
         return { get: sessionsSelectByIdGetMock };
@@ -459,7 +595,7 @@ describe('main process', () => {
     await registeredEvents.ready();
 
     expect(getDatabaseMock).toHaveBeenCalledTimes(1);
-    expect(transactionMock).toHaveBeenCalledTimes(4);
+    expect(transactionMock).toHaveBeenCalledTimes(8);
     expect(browserWindowCtorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         width: 800,
@@ -474,7 +610,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(38);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(51);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -921,22 +1057,136 @@ describe('main process', () => {
     expect(campaignsDeleteRunMock).toHaveBeenCalledWith(33);
     expect(campaignDeleteResult).toEqual({ id: 33 });
 
+    // ARCS
+    const arcsGetAllByCampaignResult = registeredIpcHandlers[
+      IPC.ARCS_GET_ALL_BY_CAMPAIGN
+    ]({}, 1);
+    expect(arcsSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(arcsSelectAllByCampaignMock).toHaveBeenCalledWith(1);
+    expect(arcsGetAllByCampaignResult).toEqual([
+      { id: 10, campaign_id: 1, name: 'Arc One', sort_order: 0 },
+    ]);
+
+    const arcByIdResult = registeredIpcHandlers[IPC.ARCS_GET_BY_ID]({}, 10);
+    expect(arcsSelectByIdGetMock).toHaveBeenCalledWith(10);
+    expect(arcByIdResult).toMatchObject({ id: 10 });
+
+    const missingArcResult = registeredIpcHandlers[IPC.ARCS_GET_BY_ID]({}, 404);
+    expect(missingArcResult).toBeNull();
+
+    const arcAddResult = registeredIpcHandlers[IPC.ARCS_ADD](
+      {},
+      { campaign_id: 1, name: '  New Arc  ' },
+    );
+    expect(arcsNextSortOrderGetMock).toHaveBeenCalledWith(1);
+    expect(arcsInsertRunMock).toHaveBeenCalledWith(1, 'New Arc', 1);
+    expect(arcsSelectByIdGetMock).toHaveBeenCalledWith(10);
+    expect(arcAddResult).toMatchObject({ id: 10 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ARCS_ADD]({}, { campaign_id: 1, name: '   ' }),
+    ).toThrowError('Arc name is required');
+
+    const arcUpdateResult = registeredIpcHandlers[IPC.ARCS_UPDATE]({}, 10, {
+      name: 'Updated Arc',
+    });
+    const arcUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE arcs SET') &&
+        sql.includes('name = ?'),
+    )?.[0];
+    expect(arcUpdateSql).toContain("updated_at = datetime('now')");
+    expect(arcsUpdateRunMock).toHaveBeenCalledWith('Updated Arc', 10);
+    expect(arcUpdateResult).toMatchObject({ id: 10 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ARCS_UPDATE]({}, 10, { name: '   ' }),
+    ).toThrowError('Arc name cannot be empty');
+
+    const arcDeleteResult = registeredIpcHandlers[IPC.ARCS_DELETE]({}, 10);
+    expect(arcsCampaignForDeleteGetMock).toHaveBeenCalledWith(10);
+    expect(arcsDeleteRunMock).toHaveBeenCalledWith(10);
+    expect(arcsSiblingIdsAllMock).toHaveBeenCalledWith(1);
+    expect(arcDeleteResult).toEqual({ id: 10 });
+
+    // ACTS
+    const actsGetAllByArcResult = registeredIpcHandlers[
+      IPC.ACTS_GET_ALL_BY_ARC
+    ]({}, 10);
+    expect(actsSelectAllByArcMock).toHaveBeenCalledTimes(1);
+    expect(actsSelectAllByArcMock).toHaveBeenCalledWith(10);
+    expect(actsGetAllByArcResult).toEqual([
+      { id: 20, arc_id: 10, name: 'Act One', sort_order: 0 },
+    ]);
+
+    const actsGetAllByCampaignResult = registeredIpcHandlers[
+      IPC.ACTS_GET_ALL_BY_CAMPAIGN
+    ]({}, 1);
+    expect(actsSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(actsGetAllByCampaignResult).toEqual([
+      { id: 20, arc_id: 10, name: 'Act One', sort_order: 0 },
+    ]);
+
+    const actByIdResult = registeredIpcHandlers[IPC.ACTS_GET_BY_ID]({}, 20);
+    expect(actsSelectByIdGetMock).toHaveBeenCalledWith(20);
+    expect(actByIdResult).toMatchObject({ id: 20 });
+
+    const missingActResult = registeredIpcHandlers[IPC.ACTS_GET_BY_ID]({}, 404);
+    expect(missingActResult).toBeNull();
+
+    const actAddResult = registeredIpcHandlers[IPC.ACTS_ADD](
+      {},
+      { arc_id: 10, name: '  New Act  ' },
+    );
+    expect(actsNextSortOrderGetMock).toHaveBeenCalledWith(10);
+    expect(actsInsertRunMock).toHaveBeenCalledWith(10, 'New Act', 1);
+    expect(actsSelectByIdGetMock).toHaveBeenCalledWith(20);
+    expect(actAddResult).toMatchObject({ id: 20 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ACTS_ADD]({}, { arc_id: 10, name: '   ' }),
+    ).toThrowError('Act name is required');
+
+    const actUpdateResult = registeredIpcHandlers[IPC.ACTS_UPDATE]({}, 20, {
+      name: 'Updated Act',
+    });
+    const actUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE acts SET') &&
+        sql.includes('name = ?'),
+    )?.[0];
+    expect(actUpdateSql).toContain("updated_at = datetime('now')");
+    expect(actsUpdateRunMock).toHaveBeenCalledWith('Updated Act', 20);
+    expect(actUpdateResult).toMatchObject({ id: 20 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.ACTS_UPDATE]({}, 20, { name: '   ' }),
+    ).toThrowError('Act name cannot be empty');
+
+    const actDeleteResult = registeredIpcHandlers[IPC.ACTS_DELETE]({}, 20);
+    expect(actsArcForDeleteGetMock).toHaveBeenCalledWith(20);
+    expect(actsDeleteRunMock).toHaveBeenCalledWith(20);
+    expect(actsSiblingIdsAllMock).toHaveBeenCalledWith(10);
+    expect(actDeleteResult).toEqual({ id: 20 });
+
     // SESSIONS
-    const sessionsGetAllByCampaignResult = registeredIpcHandlers[
-      IPC.SESSIONS_GET_ALL_BY_CAMPAIGN
-    ]({}, 30);
-    expect(sessionsSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
-    expect(sessionsSelectAllByCampaignMock).toHaveBeenCalledWith(30);
+    const sessionsGetAllByActResult = registeredIpcHandlers[
+      IPC.SESSIONS_GET_ALL_BY_ACT
+    ]({}, 20);
+    expect(sessionsSelectAllByActMock).toHaveBeenCalledTimes(1);
+    expect(sessionsSelectAllByActMock).toHaveBeenCalledWith(20);
     const sessionsOrderedSql = prepareMock.mock.calls.find(
       ([sql]) =>
         sql ===
-        'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+        'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
     )?.[0];
     expect(sessionsOrderedSql).toBe(
-      'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+      'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
     );
-    expect(sessionsGetAllByCampaignResult).toEqual([
-      { id: 41, campaign_id: 30, name: 'Session One' },
+    expect(sessionsGetAllByActResult).toEqual([
+      { id: 41, act_id: 20, name: 'Session One' },
     ]);
 
     const sessionByIdResult = registeredIpcHandlers[IPC.SESSIONS_GET_BY_ID](
@@ -954,11 +1204,11 @@ describe('main process', () => {
 
     const sessionAddResult = registeredIpcHandlers[IPC.SESSIONS_ADD](
       {},
-      { campaign_id: 30, name: '  New Session  ' },
+      { act_id: 20, name: '  New Session  ' },
     );
-    expect(sessionsNextSortOrderGetMock).toHaveBeenCalledWith(30);
+    expect(sessionsNextSortOrderGetMock).toHaveBeenCalledWith(20);
     expect(sessionsInsertRunMock).toHaveBeenCalledWith(
-      30,
+      20,
       'New Session',
       null,
       7,
@@ -967,10 +1217,7 @@ describe('main process', () => {
     expect(sessionAddResult).toMatchObject({ id: 40 });
 
     expect(() =>
-      registeredIpcHandlers[IPC.SESSIONS_ADD](
-        {},
-        { campaign_id: 30, name: '   ' },
-      ),
+      registeredIpcHandlers[IPC.SESSIONS_ADD]({}, { act_id: 20, name: '   ' }),
     ).toThrowError('Session name is required');
 
     const sessionUpdateResult = registeredIpcHandlers[IPC.SESSIONS_UPDATE](
@@ -1010,9 +1257,9 @@ describe('main process', () => {
       {},
       43,
     );
-    expect(sessionsCampaignForDeleteGetMock).toHaveBeenCalledWith(43);
+    expect(sessionsActForDeleteGetMock).toHaveBeenCalledWith(43);
     expect(sessionsDeleteRunMock).toHaveBeenCalledWith(43);
-    expect(sessionsSiblingIdsAllMock).toHaveBeenCalledWith(30);
+    expect(sessionsSiblingIdsAllMock).toHaveBeenCalledWith(20);
     expect(sessionsSortOrderUpdateRunMock).toHaveBeenCalledWith(0, 41);
     expect(sessionsSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 42);
     expect(sessionDeleteResult).toEqual({ id: 43 });

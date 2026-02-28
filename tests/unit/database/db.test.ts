@@ -8,10 +8,16 @@ async function loadDbModule() {
   const closeMock = vi.fn();
   const databaseCtorMock = vi.fn();
 
+  const prepareMock = vi.fn().mockReturnValue({
+    all: () => [{ name: 'act_id' }], // Simulate new schema; migration is skipped
+    run: vi.fn(),
+  });
+
   class FakeDatabase {
     pragma = pragmaMock;
     exec = execMock;
     close = closeMock;
+    prepare = prepareMock;
 
     constructor(dbPath: string) {
       databaseCtorMock(dbPath);
@@ -68,6 +74,8 @@ describe('database', () => {
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS levels');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS campaigns');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS arcs');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS acts');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS sessions');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS scenes');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS abilities');
