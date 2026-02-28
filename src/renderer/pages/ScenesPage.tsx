@@ -112,7 +112,7 @@ function SortableSceneRow({
 }
 
 export default function ScenesPage() {
-  const { id, campaignId, sessionId } = useParams();
+  const { id, campaignId, arcId, actId, sessionId } = useParams();
 
   const worldId = useMemo(() => {
     if (!id) {
@@ -135,6 +135,28 @@ export default function ScenesPage() {
     }
     return parsed;
   }, [campaignId]);
+
+  const parsedArcId = useMemo(() => {
+    if (!arcId) {
+      return null;
+    }
+    const parsed = Number(arcId);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }, [arcId]);
+
+  const parsedActId = useMemo(() => {
+    if (!actId) {
+      return null;
+    }
+    const parsed = Number(actId);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }, [actId]);
 
   const parsedSessionId = useMemo(() => {
     if (!sessionId) {
@@ -363,12 +385,37 @@ export default function ScenesPage() {
       <main className="flex-1 space-y-6 p-6">
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <Link
-              to={`/world/${worldId}/campaign/${parsedCampaignId}/sessions`}
-              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
-            >
-              Back to sessions
-            </Link>
+            <nav className="flex items-center gap-2 text-sm text-slate-500">
+              <Link
+                to={`/world/${worldId}/campaigns`}
+                className="font-medium transition hover:text-slate-900"
+              >
+                Campaign
+              </Link>
+              <span>/</span>
+              <Link
+                to={`/world/${worldId}/campaign/${parsedCampaignId}/arcs`}
+                className="font-medium transition hover:text-slate-900"
+              >
+                Arc
+              </Link>
+              <span>/</span>
+              <Link
+                to={`/world/${worldId}/campaign/${parsedCampaignId}/arc/${parsedArcId}/acts`}
+                className="font-medium transition hover:text-slate-900"
+              >
+                Act
+              </Link>
+              <span>/</span>
+              <Link
+                to={`/world/${worldId}/campaign/${parsedCampaignId}/arc/${parsedArcId}/act/${parsedActId}/sessions`}
+                className="font-medium transition hover:text-slate-900"
+              >
+                Session
+              </Link>
+              <span>/</span>
+              <span className="text-slate-700">Scenes</span>
+            </nav>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
               {session?.name ?? 'Scenes'}
             </h1>

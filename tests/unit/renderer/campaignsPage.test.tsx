@@ -42,8 +42,8 @@ function renderCampaignsPage(path: string) {
       <Routes>
         <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
         <Route
-          path="/world/:id/campaign/:campaignId/sessions"
-          element={<div>Sessions Page</div>}
+          path="/world/:id/campaign/:campaignId/arcs"
+          element={<div>Arcs Page</div>}
         />
       </Routes>
     </MemoryRouter>,
@@ -302,7 +302,7 @@ describe('CampaignsPage', () => {
     expect(screen.getByText('The Dragon Saga')).toBeInTheDocument();
   });
 
-  it('navigates to sessions page when Sessions link is clicked', async () => {
+  it('navigates to arcs page when Arcs link is clicked', async () => {
     const user = userEvent.setup();
     const campaign = buildCampaign();
 
@@ -312,8 +312,8 @@ describe('CampaignsPage', () => {
     renderCampaignsPage('/world/1/campaigns');
 
     await screen.findByText('The Dragon Saga');
-    await user.click(screen.getByRole('link', { name: 'Sessions' }));
+    await user.click(screen.getByRole('link', { name: 'Arcs' }));
 
-    expect(await screen.findByText('Sessions Page')).toBeInTheDocument();
+    expect(await screen.findByText('Arcs Page')).toBeInTheDocument();
   });
 });

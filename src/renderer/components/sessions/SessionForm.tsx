@@ -9,7 +9,7 @@ type SessionFormInitialValues = {
 
 type SessionFormProps = {
   mode?: 'create' | 'edit';
-  campaignId: number;
+  actId: number;
   initialValues?: Partial<SessionFormInitialValues>;
   onSubmit: (data: AddSessionInput) => Promise<void>;
   onCancel: () => void;
@@ -17,7 +17,7 @@ type SessionFormProps = {
 
 export default function SessionForm({
   mode = 'create',
-  campaignId,
+  actId,
   initialValues,
   onSubmit,
   onCancel,
@@ -42,7 +42,7 @@ export default function SessionForm({
 
     try {
       await onSubmit({
-        campaign_id: campaignId,
+        act_id: actId,
         name: trimmedName,
         notes: notes.trim() || null,
       });
