@@ -9,7 +9,11 @@ const worldsGetByIdMock = vi.fn();
 const worldsMarkViewedMock = vi.fn();
 const campaignsGetAllByWorldMock = vi.fn();
 const campaignsGetByIdMock = vi.fn();
-const sessionsGetAllByCampaignMock = vi.fn();
+const arcsGetAllByCampaignMock = vi.fn();
+const arcsGetByIdMock = vi.fn();
+const actsGetAllByArcMock = vi.fn();
+const actsGetByIdMock = vi.fn();
+const sessionsGetAllByActMock = vi.fn();
 const sessionsGetByIdMock = vi.fn();
 const scenesGetAllBySessionMock = vi.fn();
 
@@ -39,10 +43,22 @@ function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
   };
 }
 
+function buildAct(overrides: Partial<Act> = {}): Act {
+  return {
+    id: 1,
+    arc_id: 1,
+    name: 'Act One',
+    sort_order: 0,
+    created_at: '2026-02-26 00:00:00',
+    updated_at: '2026-02-26 00:00:00',
+    ...overrides,
+  };
+}
+
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 1,
-    campaign_id: 1,
+    act_id: 1,
     name: 'Session One',
     notes: null,
     sort_order: 0,
@@ -95,12 +111,29 @@ describe('App routes', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      arcs: {
+        getAllByCampaign: arcsGetAllByCampaignMock,
+        getById: arcsGetByIdMock,
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      acts: {
+        getAllByArc: actsGetAllByArcMock,
+        getAllByCampaign: vi.fn(),
+        getById: actsGetByIdMock,
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        moveTo: vi.fn(),
+      },
       sessions: {
-        getAllByCampaign: sessionsGetAllByCampaignMock,
+        getAllByAct: sessionsGetAllByActMock,
         getById: sessionsGetByIdMock,
         add: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        moveTo: vi.fn(),
       },
       scenes: {
         getAllBySession: scenesGetAllBySessionMock,
@@ -166,12 +199,27 @@ describe('App routes', () => {
     expect(await screen.findByText('No campaigns yet.')).toBeInTheDocument();
   });
 
-  it('renders sessions page at /world/:id/campaign/:campaignId/sessions', async () => {
+  it('renders arcs page at /world/:id/campaign/:campaignId/arcs', async () => {
     campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([]);
+    arcsGetAllByCampaignMock.mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={['/world/1/campaign/1/sessions']}>
+      <MemoryRouter initialEntries={['/world/1/campaign/1/arcs']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('No arcs yet.')).toBeInTheDocument();
+  });
+
+  it('renders sessions page at /world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions', async () => {
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter
+        initialEntries={['/world/1/campaign/1/arc/1/act/1/sessions']}
+      >
         <App />
       </MemoryRouter>,
     );
@@ -179,12 +227,14 @@ describe('App routes', () => {
     expect(await screen.findByText('No sessions yet.')).toBeInTheDocument();
   });
 
-  it('renders scenes page at /world/:id/campaign/:campaignId/session/:sessionId/scenes', async () => {
+  it('renders scenes page at /world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes', async () => {
     sessionsGetByIdMock.mockResolvedValue(buildSession());
     scenesGetAllBySessionMock.mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={['/world/1/campaign/1/session/1/scenes']}>
+      <MemoryRouter
+        initialEntries={['/world/1/campaign/1/arc/1/act/1/session/1/scenes']}
+      >
         <App />
       </MemoryRouter>,
     );
@@ -192,14 +242,14 @@ describe('App routes', () => {
     expect(await screen.findByText('No scenes yet.')).toBeInTheDocument();
   });
 
-  it('navigates from campaign list to sessions page', async () => {
+  it('navigates from campaign list to arcs page', async () => {
     const user = userEvent.setup();
     const campaign = buildCampaign();
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
     campaignsGetAllByWorldMock.mockResolvedValue([campaign]);
     campaignsGetByIdMock.mockResolvedValue(campaign);
-    sessionsGetAllByCampaignMock.mockResolvedValue([]);
+    arcsGetAllByCampaignMock.mockResolvedValue([]);
 
     render(
       <MemoryRouter initialEntries={['/world/1/campaigns']}>
@@ -208,22 +258,24 @@ describe('App routes', () => {
     );
 
     await screen.findByText('The Dragon Saga');
-    await user.click(screen.getByRole('link', { name: 'Sessions' }));
+    await user.click(screen.getByRole('link', { name: 'Arcs' }));
 
-    expect(await screen.findByText('No sessions yet.')).toBeInTheDocument();
+    expect(await screen.findByText('No arcs yet.')).toBeInTheDocument();
   });
 
   it('navigates from session list to scenes page', async () => {
     const user = userEvent.setup();
     const session = buildSession();
 
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([session]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([session]);
     sessionsGetByIdMock.mockResolvedValue(session);
     scenesGetAllBySessionMock.mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={['/world/1/campaign/1/sessions']}>
+      <MemoryRouter
+        initialEntries={['/world/1/campaign/1/arc/1/act/1/sessions']}
+      >
         <App />
       </MemoryRouter>,
     );

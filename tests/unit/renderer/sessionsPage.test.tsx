@@ -72,19 +72,18 @@ vi.mock('@dnd-kit/sortable', () => ({
   verticalListSortingStrategy: {},
 }));
 
-const campaignsGetByIdMock = vi.fn();
-const sessionsGetAllByCampaignMock = vi.fn();
+const actsGetByIdMock = vi.fn();
+const sessionsGetAllByActMock = vi.fn();
 const sessionsAddMock = vi.fn();
 const sessionsUpdateMock = vi.fn();
 const sessionsDeleteMock = vi.fn();
 
-function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
+function buildAct(overrides: Partial<Act> = {}): Act {
   return {
     id: 1,
-    world_id: 1,
-    name: 'The Dragon Saga',
-    summary: 'An epic dragon quest',
-    config: '{}',
+    arc_id: 1,
+    name: 'Act One',
+    sort_order: 0,
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
@@ -94,7 +93,7 @@ function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 1,
-    campaign_id: 1,
+    act_id: 1,
     name: 'Session One',
     notes: 'Initial meeting',
     sort_order: 0,
@@ -104,18 +103,17 @@ function buildSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+const SESSION_ROUTE =
+  '/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions';
+const SCENES_ROUTE =
+  '/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes';
+
 function renderSessionsPage(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route
-          path="/world/:id/campaign/:campaignId/sessions"
-          element={<SessionsPage />}
-        />
-        <Route
-          path="/world/:id/campaign/:campaignId/session/:sessionId/scenes"
-          element={<div>Scenes Page</div>}
-        />
+        <Route path={SESSION_ROUTE} element={<SessionsPage />} />
+        <Route path={SCENES_ROUTE} element={<div>Scenes Page</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -187,17 +185,34 @@ describe('SessionsPage', () => {
       },
       campaigns: {
         getAllByWorld: vi.fn(),
-        getById: campaignsGetByIdMock,
+        getById: vi.fn(),
         add: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
       },
+      arcs: {
+        getAllByCampaign: vi.fn(),
+        getById: vi.fn(),
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      acts: {
+        getAllByArc: vi.fn(),
+        getAllByCampaign: vi.fn(),
+        getById: actsGetByIdMock,
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        moveTo: vi.fn(),
+      },
       sessions: {
-        getAllByCampaign: sessionsGetAllByCampaignMock,
+        getAllByAct: sessionsGetAllByActMock,
         getById: vi.fn(),
         add: sessionsAddMock,
         update: sessionsUpdateMock,
         delete: sessionsDeleteMock,
+        moveTo: vi.fn(),
       },
       scenes: {
         getAllBySession: vi.fn(),
@@ -212,61 +227,61 @@ describe('SessionsPage', () => {
   });
 
   it('shows error when world id is invalid', async () => {
-    renderSessionsPage('/world/abc/campaign/1/sessions');
+    renderSessionsPage('/world/abc/campaign/1/arc/1/act/1/sessions');
 
     expect(
-      await screen.findByText('Invalid world or campaign id.'),
+      await screen.findByText('Invalid world, campaign, arc, or act id.'),
     ).toBeInTheDocument();
-    expect(campaignsGetByIdMock).not.toHaveBeenCalled();
+    expect(actsGetByIdMock).not.toHaveBeenCalled();
   });
 
-  it('shows error when campaign id is invalid', async () => {
-    renderSessionsPage('/world/1/campaign/xyz/sessions');
+  it('shows error when act id is invalid', async () => {
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/xyz/sessions');
 
     expect(
-      await screen.findByText('Invalid world or campaign id.'),
+      await screen.findByText('Invalid world, campaign, arc, or act id.'),
     ).toBeInTheDocument();
-    expect(campaignsGetByIdMock).not.toHaveBeenCalled();
+    expect(actsGetByIdMock).not.toHaveBeenCalled();
   });
 
-  it('shows error when campaign is not found', async () => {
-    campaignsGetByIdMock.mockResolvedValue(null);
+  it('shows error when act is not found', async () => {
+    actsGetByIdMock.mockResolvedValue(null);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
-    expect(await screen.findByText('Campaign not found.')).toBeInTheDocument();
-    expect(campaignsGetByIdMock).toHaveBeenCalledWith(1);
-    expect(sessionsGetAllByCampaignMock).not.toHaveBeenCalled();
+    expect(await screen.findByText('Act not found.')).toBeInTheDocument();
+    expect(actsGetByIdMock).toHaveBeenCalledWith(1);
+    expect(sessionsGetAllByActMock).not.toHaveBeenCalled();
   });
 
   it('shows load error when api throws', async () => {
-    campaignsGetByIdMock.mockRejectedValue(new Error('db unavailable'));
+    actsGetByIdMock.mockRejectedValue(new Error('db unavailable'));
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     expect(
       await screen.findByText('Unable to load sessions right now.'),
     ).toBeInTheDocument();
   });
 
-  it('shows empty state when campaign has no sessions', async () => {
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([]);
+  it('shows empty state when act has no sessions', async () => {
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([]);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     expect(await screen.findByText('No sessions yet.')).toBeInTheDocument();
-    expect(sessionsGetAllByCampaignMock).toHaveBeenCalledWith(1);
+    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(1);
   });
 
   it('renders sessions list after successful load', async () => {
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([
       buildSession(),
       buildSession({ id: 2, name: 'Session Two', notes: null }),
     ]);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     expect(await screen.findByText('Session One')).toBeInTheDocument();
     expect(screen.getByText('Initial meeting')).toBeInTheDocument();
@@ -274,14 +289,14 @@ describe('SessionsPage', () => {
   });
 
   it('renders sessions in sort_order order with contiguous numbering', async () => {
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([
       buildSession({ id: 3, name: 'Session Three', sort_order: 2 }),
       buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
       buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
     ]);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     expect(getRenderedSessionNames()).toEqual([
@@ -294,15 +309,15 @@ describe('SessionsPage', () => {
 
   it('persists only changed sort_order values when sessions are reordered', async () => {
     const user = userEvent.setup();
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([
       buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
       buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
       buildSession({ id: 3, name: 'Session Three', sort_order: 2 }),
     ]);
     sessionsUpdateMock.mockResolvedValue(buildSession());
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     setDragEndEvent(1, 2);
@@ -323,8 +338,8 @@ describe('SessionsPage', () => {
 
   it('shows reorder failure and reloads canonical order from backend', async () => {
     const user = userEvent.setup();
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock
       .mockResolvedValueOnce([
         buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
         buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
@@ -339,7 +354,7 @@ describe('SessionsPage', () => {
       new Error('Unable to reorder sessions right now.'),
     );
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     setDragEndEvent(1, 2);
@@ -349,7 +364,7 @@ describe('SessionsPage', () => {
       await screen.findByText('Unable to reorder sessions right now.'),
     ).toBeInTheDocument();
     await waitFor(() => {
-      expect(sessionsGetAllByCampaignMock).toHaveBeenCalledTimes(2);
+      expect(sessionsGetAllByActMock).toHaveBeenCalledTimes(2);
     });
     await waitFor(() => {
       expect(getRenderedSessionNames()).toEqual([
@@ -368,11 +383,11 @@ describe('SessionsPage', () => {
       notes: 'New notes',
     });
 
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([]);
     sessionsAddMock.mockResolvedValue(newSession);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('No sessions yet.');
     await user.click(screen.getByRole('button', { name: 'New Session' }));
@@ -388,7 +403,7 @@ describe('SessionsPage', () => {
     );
 
     expect(sessionsAddMock).toHaveBeenCalledWith({
-      campaign_id: 1,
+      act_id: 1,
       name: 'Session Three',
       notes: 'New notes',
     });
@@ -400,10 +415,10 @@ describe('SessionsPage', () => {
 
   it('cancels the create dialog without creating', async () => {
     const user = userEvent.setup();
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([]);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('No sessions yet.');
     await user.click(screen.getByRole('button', { name: 'New Session' }));
@@ -425,11 +440,11 @@ describe('SessionsPage', () => {
       notes: 'Updated notes',
     });
 
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([session]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([session]);
     sessionsUpdateMock.mockResolvedValue(updatedSession);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     await user.click(screen.getByRole('button', { name: 'Edit' }));
@@ -461,11 +476,11 @@ describe('SessionsPage', () => {
     const user = userEvent.setup();
     const session = buildSession();
 
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([session]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([session]);
     sessionsDeleteMock.mockResolvedValue({ id: 1 });
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
@@ -486,10 +501,10 @@ describe('SessionsPage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     const session = buildSession();
 
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([session]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([session]);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
@@ -503,10 +518,10 @@ describe('SessionsPage', () => {
     const user = userEvent.setup();
     const session = buildSession();
 
-    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
-    sessionsGetAllByCampaignMock.mockResolvedValue([session]);
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([session]);
 
-    renderSessionsPage('/world/1/campaign/1/sessions');
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
     await user.click(screen.getByRole('link', { name: 'Scenes' }));

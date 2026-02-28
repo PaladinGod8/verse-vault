@@ -573,6 +573,23 @@
 - **Preload bridge**: `src/preload.ts` (from Campaign/Session/Scene Step 10)
 - **Storage**: renderer now sorts scenes by `sort_order` for display, reassigns contiguous `sort_order` values on drag/drop, persists changed rows through `window.db.scenes.update(id, { sort_order })`, and on save failure restores canonical order by reloading from `SCENES_GET_ALL_BY_SESSION` (fallback to pre-drag snapshot if reload fails)
 
+### Arc + Act CRUD Pages (Step 02 — Arc/Act UI)
+
+- **Purpose**: add ArcsPage and ActsPage to the hierarchy (World > Campaign > Arc > Act > Session > Scene); update SessionsPage and ScenesPage to the new 6-level route path; update CampaignsPage to link to Arcs instead of Sessions
+- **Status**: added on 2026-02-28
+- **UI**:
+  - `src/renderer/pages/ArcsPage.tsx` — lists Arcs under a Campaign; dnd-kit reordering; create/edit/delete dialogs; links to ActsPage
+  - `src/renderer/pages/ActsPage.tsx` — lists Acts under an Arc; dnd-kit reordering; create/edit/delete dialogs; links to SessionsPage
+  - `src/renderer/components/arcs/ArcForm.tsx` — controlled form for Arc name
+  - `src/renderer/components/acts/ActForm.tsx` — controlled form for Act name
+  - `src/renderer/pages/SessionsPage.tsx` — updated: reads `actId` from route params; uses `window.db.sessions.getAllByAct`; full breadcrumb chain
+  - `src/renderer/pages/ScenesPage.tsx` — updated: reads `arcId`/`actId` from route params for breadcrumb; data loading unchanged
+  - `src/renderer/pages/CampaignsPage.tsx` — updated: campaign row action now links to Arcs
+  - `src/renderer/components/sessions/SessionForm.tsx` — updated: uses `actId`/`act_id` instead of `campaignId`/`campaign_id`
+  - `src/renderer/App.tsx` — updated: new routes for arcs, acts, sessions, scenes with full path
+- **Store**: none
+- **IPC**: `window.db.arcs.*` (getAllByCampaign, getById, add, update, delete); `window.db.acts.*` (getAllByArc, getById, add, update, delete); `window.db.sessions.getAllByAct`
+
 ### App Shell / Routing
 
 - **UI**: `src/renderer/App.tsx` (routes), `src/renderer/index.tsx` (HashRouter)

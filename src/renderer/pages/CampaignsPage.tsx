@@ -198,10 +198,10 @@ export default function CampaignsPage() {
                     <td className="px-4 py-3">
                       <div className="flex gap-3">
                         <Link
-                          to={`/world/${worldId}/campaign/${campaign.id}/sessions`}
+                          to={`/world/${worldId}/campaign/${campaign.id}/arcs`}
                           className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
                         >
-                          Sessions
+                          Arcs
                         </Link>
                         <button
                           type="button"
