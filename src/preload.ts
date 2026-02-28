@@ -97,12 +97,50 @@ contextBridge.exposeInMainWorld('db', {
     ) => ipcRenderer.invoke(IPC.CAMPAIGNS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_DELETE, id),
   },
-  sessions: {
-    getAllByCampaign: (campaignId: number) =>
-      ipcRenderer.invoke(IPC.SESSIONS_GET_ALL_BY_CAMPAIGN, campaignId),
-    getById: (id: number) => ipcRenderer.invoke(IPC.SESSIONS_GET_BY_ID, id),
+  arcs: {
+    getAllByCampaign: (campaignId: number): Promise<Arc[]> =>
+      ipcRenderer.invoke(IPC.ARCS_GET_ALL_BY_CAMPAIGN, campaignId),
+    getById: (id: number): Promise<Arc | null> =>
+      ipcRenderer.invoke(IPC.ARCS_GET_BY_ID, id),
     add: (data: {
       campaign_id: number;
+      name: string;
+      sort_order?: number;
+    }): Promise<Arc> => ipcRenderer.invoke(IPC.ARCS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; sort_order?: number },
+    ): Promise<Arc> => ipcRenderer.invoke(IPC.ARCS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number }> =>
+      ipcRenderer.invoke(IPC.ARCS_DELETE, id),
+  },
+  acts: {
+    getAllByArc: (arcId: number): Promise<Act[]> =>
+      ipcRenderer.invoke(IPC.ACTS_GET_ALL_BY_ARC, arcId),
+    getAllByCampaign: (campaignId: number): Promise<Act[]> =>
+      ipcRenderer.invoke(IPC.ACTS_GET_ALL_BY_CAMPAIGN, campaignId),
+    getById: (id: number): Promise<Act | null> =>
+      ipcRenderer.invoke(IPC.ACTS_GET_BY_ID, id),
+    add: (data: {
+      arc_id: number;
+      name: string;
+      sort_order?: number;
+    }): Promise<Act> => ipcRenderer.invoke(IPC.ACTS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; sort_order?: number },
+    ): Promise<Act> => ipcRenderer.invoke(IPC.ACTS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number }> =>
+      ipcRenderer.invoke(IPC.ACTS_DELETE, id),
+    moveTo: (actId: number, newArcId: number): Promise<Act> =>
+      ipcRenderer.invoke(IPC.ACTS_MOVE_TO_ARC, actId, newArcId),
+  },
+  sessions: {
+    getAllByAct: (actId: number): Promise<Session[]> =>
+      ipcRenderer.invoke(IPC.SESSIONS_GET_ALL_BY_ACT, actId),
+    getById: (id: number) => ipcRenderer.invoke(IPC.SESSIONS_GET_BY_ID, id),
+    add: (data: {
+      act_id: number;
       name: string;
       notes?: string | null;
       sort_order?: number;
@@ -112,6 +150,8 @@ contextBridge.exposeInMainWorld('db', {
       data: { name?: string; notes?: string | null; sort_order?: number },
     ) => ipcRenderer.invoke(IPC.SESSIONS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.SESSIONS_DELETE, id),
+    moveTo: (sessionId: number, newActId: number): Promise<Session> =>
+      ipcRenderer.invoke(IPC.SESSIONS_MOVE_TO_ACT, sessionId, newActId),
   },
   scenes: {
     getAllBySession: (sessionId: number) =>

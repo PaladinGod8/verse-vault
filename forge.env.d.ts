@@ -64,9 +64,27 @@ declare global {
     updated_at: string;
   }
 
-  interface Session {
+  interface Arc {
     id: number;
     campaign_id: number;
+    name: string;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface Act {
+    id: number;
+    arc_id: number;
+    name: string;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface Session {
+    id: number;
+    act_id: number;
     name: string;
     notes: string | null;
     sort_order: number;
@@ -188,11 +206,41 @@ declare global {
       ): Promise<Campaign>;
       delete(id: number): Promise<{ id: number }>;
     };
-    sessions: {
-      getAllByCampaign(campaignId: number): Promise<Session[]>;
-      getById(id: number): Promise<Session | null>;
+    arcs: {
+      getAllByCampaign(campaignId: number): Promise<Arc[]>;
+      getById(id: number): Promise<Arc | null>;
       add(data: {
         campaign_id: number;
+        name: string;
+        sort_order?: number;
+      }): Promise<Arc>;
+      update(
+        id: number,
+        data: { name?: string; sort_order?: number },
+      ): Promise<Arc>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+    acts: {
+      getAllByArc(arcId: number): Promise<Act[]>;
+      getAllByCampaign(campaignId: number): Promise<Act[]>;
+      getById(id: number): Promise<Act | null>;
+      add(data: {
+        arc_id: number;
+        name: string;
+        sort_order?: number;
+      }): Promise<Act>;
+      update(
+        id: number,
+        data: { name?: string; sort_order?: number },
+      ): Promise<Act>;
+      delete(id: number): Promise<{ id: number }>;
+      moveTo(actId: number, newArcId: number): Promise<Act>;
+    };
+    sessions: {
+      getAllByAct(actId: number): Promise<Session[]>;
+      getById(id: number): Promise<Session | null>;
+      add(data: {
+        act_id: number;
         name: string;
         notes?: string | null;
         sort_order?: number;
@@ -202,6 +250,7 @@ declare global {
         data: { name?: string; notes?: string | null; sort_order?: number },
       ): Promise<Session>;
       delete(id: number): Promise<{ id: number }>;
+      moveTo(sessionId: number, newActId: number): Promise<Session>;
     };
     scenes: {
       getAllBySession(sessionId: number): Promise<Scene[]>;

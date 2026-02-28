@@ -73,11 +73,19 @@ function registerIpcHandlers() {
   const db = getDatabase();
   const getSessionByIdStmt = db.prepare('SELECT * FROM sessions WHERE id = ?');
   const getSceneByIdStmt = db.prepare('SELECT * FROM scenes WHERE id = ?');
+  const getArcByIdStmt = db.prepare('SELECT * FROM arcs WHERE id = ?');
+  const getActByIdStmt = db.prepare('SELECT * FROM acts WHERE id = ?');
   const insertSessionStmt = db.prepare(
-    'INSERT INTO sessions (campaign_id, name, notes, sort_order) VALUES (?, ?, ?, ?)',
+    'INSERT INTO sessions (act_id, name, notes, sort_order) VALUES (?, ?, ?, ?)',
   );
   const insertSceneStmt = db.prepare(
     'INSERT INTO scenes (session_id, name, notes, payload, sort_order) VALUES (?, ?, ?, ?, ?)',
+  );
+  const insertArcStmt = db.prepare(
+    'INSERT INTO arcs (campaign_id, name, sort_order) VALUES (?, ?, ?)',
+  );
+  const insertActStmt = db.prepare(
+    'INSERT INTO acts (arc_id, name, sort_order) VALUES (?, ?, ?)',
   );
   const updateSessionSortOrderStmt = db.prepare(
     'UPDATE sessions SET sort_order = ? WHERE id = ?',
@@ -85,16 +93,44 @@ function registerIpcHandlers() {
   const updateSceneSortOrderStmt = db.prepare(
     'UPDATE scenes SET sort_order = ? WHERE id = ?',
   );
+  const updateArcSortOrderStmt = db.prepare(
+    'UPDATE arcs SET sort_order = ? WHERE id = ?',
+  );
+  const updateActSortOrderStmt = db.prepare(
+    'UPDATE acts SET sort_order = ? WHERE id = ?',
+  );
 
-  const resequenceSessionsInCampaign = (campaignId: number): void => {
+  const resequenceSessionsInAct = (actId: number): void => {
     const siblingRows = db
       .prepare(
-        'SELECT id FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+        'SELECT id FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
       )
-      .all(campaignId) as Array<{ id: number }>;
+      .all(actId) as Array<{ id: number }>;
 
     siblingRows.forEach((row, index) => {
       updateSessionSortOrderStmt.run(index, row.id);
+    });
+  };
+
+  const resequenceArcsInCampaign = (campaignId: number): void => {
+    const rows = db
+      .prepare(
+        'SELECT id FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(campaignId) as Array<{ id: number }>;
+    rows.forEach((row, index) => {
+      updateArcSortOrderStmt.run(index, row.id);
+    });
+  };
+
+  const resequenceActsInArc = (arcId: number): void => {
+    const rows = db
+      .prepare(
+        'SELECT id FROM acts WHERE arc_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(arcId) as Array<{ id: number }>;
+    rows.forEach((row, index) => {
+      updateActSortOrderStmt.run(index, row.id);
     });
   };
 
@@ -112,7 +148,7 @@ function registerIpcHandlers() {
 
   const insertSession = db.transaction(
     (data: {
-      campaign_id: number;
+      act_id: number;
       name: string;
       notes?: string | null;
       sort_order?: number;
@@ -122,14 +158,14 @@ function registerIpcHandlers() {
           ? (
               db
                 .prepare(
-                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE campaign_id = ?',
+                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE act_id = ?',
                 )
-                .get(data.campaign_id) as { next_sort_order: number }
+                .get(data.act_id) as { next_sort_order: number }
             ).next_sort_order
           : data.sort_order;
 
       const result = insertSessionStmt.run(
-        data.campaign_id,
+        data.act_id,
         data.name,
         data.notes ?? null,
         sortOrder,
@@ -142,6 +178,64 @@ function registerIpcHandlers() {
       return session;
     },
   );
+
+  const insertArc = db.transaction(
+    (data: { campaign_id: number; name: string; sort_order?: number }) => {
+      const sortOrder =
+        data.sort_order === undefined
+          ? (
+              db
+                .prepare(
+                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM arcs WHERE campaign_id = ?',
+                )
+                .get(data.campaign_id) as { next: number }
+            ).next
+          : data.sort_order;
+      const result = insertArcStmt.run(data.campaign_id, data.name, sortOrder);
+      const arc = getArcByIdStmt.get(result.lastInsertRowid);
+      if (!arc) throw new Error('Failed to create arc');
+      return arc;
+    },
+  );
+
+  const deleteArcAndCompact = db.transaction((id: number) => {
+    const arc = db
+      .prepare('SELECT campaign_id FROM arcs WHERE id = ?')
+      .get(id) as { campaign_id: number } | undefined;
+    if (!arc) return { id };
+    db.prepare('DELETE FROM arcs WHERE id = ?').run(id);
+    resequenceArcsInCampaign(arc.campaign_id);
+    return { id };
+  });
+
+  const insertAct = db.transaction(
+    (data: { arc_id: number; name: string; sort_order?: number }) => {
+      const sortOrder =
+        data.sort_order === undefined
+          ? (
+              db
+                .prepare(
+                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM acts WHERE arc_id = ?',
+                )
+                .get(data.arc_id) as { next: number }
+            ).next
+          : data.sort_order;
+      const result = insertActStmt.run(data.arc_id, data.name, sortOrder);
+      const act = getActByIdStmt.get(result.lastInsertRowid);
+      if (!act) throw new Error('Failed to create act');
+      return act;
+    },
+  );
+
+  const deleteActAndCompact = db.transaction((id: number) => {
+    const act = db.prepare('SELECT arc_id FROM acts WHERE id = ?').get(id) as
+      | { arc_id: number }
+      | undefined;
+    if (!act) return { id };
+    db.prepare('DELETE FROM acts WHERE id = ?').run(id);
+    resequenceActsInArc(act.arc_id);
+    return { id };
+  });
 
   const insertScene = db.transaction(
     (data: {
@@ -180,14 +274,14 @@ function registerIpcHandlers() {
 
   const deleteSessionAndCompact = db.transaction((id: number) => {
     const sessionToDelete = db
-      .prepare('SELECT campaign_id FROM sessions WHERE id = ?')
-      .get(id) as { campaign_id: number } | undefined;
+      .prepare('SELECT act_id FROM sessions WHERE id = ?')
+      .get(id) as { act_id: number } | undefined;
     if (!sessionToDelete) {
       return { id };
     }
 
     db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
-    resequenceSessionsInCampaign(sessionToDelete.campaign_id);
+    resequenceSessionsInAct(sessionToDelete.act_id);
     return { id };
   });
 
@@ -532,16 +626,182 @@ function registerIpcHandlers() {
     return { id };
   });
 
+  ipcMain.handle(IPC.ARCS_GET_ALL_BY_CAMPAIGN, (_event, campaignId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(campaignId);
+  });
+
+  ipcMain.handle(IPC.ARCS_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM arcs WHERE id = ?').get(id) ?? null;
+  });
+
   ipcMain.handle(
-    IPC.SESSIONS_GET_ALL_BY_CAMPAIGN,
-    (_event, campaignId: number) => {
-      return db
-        .prepare(
-          'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
-        )
-        .all(campaignId);
+    IPC.ARCS_ADD,
+    (
+      _event,
+      data: { campaign_id: number; name: string; sort_order?: number },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) throw new Error('Arc name is required');
+      return insertArc({
+        campaign_id: data.campaign_id,
+        name,
+        sort_order: data.sort_order,
+      });
     },
   );
+
+  ipcMain.handle(
+    IPC.ARCS_UPDATE,
+    (_event, id: number, data: { name?: string; sort_order?: number }) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasSortOrder = Object.prototype.hasOwnProperty.call(
+        data,
+        'sort_order',
+      );
+      const setClauses: string[] = [];
+      const values: Array<string | number | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) throw new Error('Arc name cannot be empty');
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+      if (hasSortOrder && data.sort_order !== undefined) {
+        setClauses.push('sort_order = ?');
+        values.push(data.sort_order);
+      }
+
+      const sql =
+        setClauses.length > 0
+          ? `UPDATE arcs SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE arcs SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(sql).run(...values, id);
+
+      const arc = db.prepare('SELECT * FROM arcs WHERE id = ?').get(id);
+      if (!arc) throw new Error('Arc not found');
+      return arc;
+    },
+  );
+
+  ipcMain.handle(IPC.ARCS_DELETE, (_event, id: number) => {
+    return deleteArcAndCompact(id);
+  });
+
+  ipcMain.handle(IPC.ACTS_GET_ALL_BY_ARC, (_event, arcId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM acts WHERE arc_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(arcId);
+  });
+
+  ipcMain.handle(IPC.ACTS_GET_ALL_BY_CAMPAIGN, (_event, campaignId: number) => {
+    return db
+      .prepare(
+        `SELECT acts.* FROM acts
+           JOIN arcs ON acts.arc_id = arcs.id
+           WHERE arcs.campaign_id = ?
+           ORDER BY arcs.sort_order ASC, arcs.id ASC, acts.sort_order ASC, acts.id ASC`,
+      )
+      .all(campaignId);
+  });
+
+  ipcMain.handle(IPC.ACTS_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM acts WHERE id = ?').get(id) ?? null;
+  });
+
+  ipcMain.handle(
+    IPC.ACTS_ADD,
+    (_event, data: { arc_id: number; name: string; sort_order?: number }) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) throw new Error('Act name is required');
+      return insertAct({
+        arc_id: data.arc_id,
+        name,
+        sort_order: data.sort_order,
+      });
+    },
+  );
+
+  ipcMain.handle(
+    IPC.ACTS_UPDATE,
+    (_event, id: number, data: { name?: string; sort_order?: number }) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasSortOrder = Object.prototype.hasOwnProperty.call(
+        data,
+        'sort_order',
+      );
+      const setClauses: string[] = [];
+      const values: Array<string | number | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) throw new Error('Act name cannot be empty');
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+      if (hasSortOrder && data.sort_order !== undefined) {
+        setClauses.push('sort_order = ?');
+        values.push(data.sort_order);
+      }
+
+      const sql =
+        setClauses.length > 0
+          ? `UPDATE acts SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE acts SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(sql).run(...values, id);
+
+      const act = db.prepare('SELECT * FROM acts WHERE id = ?').get(id);
+      if (!act) throw new Error('Act not found');
+      return act;
+    },
+  );
+
+  ipcMain.handle(IPC.ACTS_DELETE, (_event, id: number) => {
+    return deleteActAndCompact(id);
+  });
+
+  ipcMain.handle(
+    IPC.ACTS_MOVE_TO_ARC,
+    (_event, actId: number, newArcId: number) => {
+      return db.transaction(() => {
+        const act = db.prepare('SELECT * FROM acts WHERE id = ?').get(actId) as
+          | Act
+          | undefined;
+        if (!act) throw new Error('Act not found');
+        const oldArcId = (act as unknown as { arc_id: number }).arc_id;
+
+        const { next: newSortOrder } = db
+          .prepare(
+            'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM acts WHERE arc_id = ?',
+          )
+          .get(newArcId) as { next: number };
+
+        db.prepare(
+          "UPDATE acts SET arc_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?",
+        ).run(newArcId, newSortOrder, actId);
+
+        resequenceActsInArc(oldArcId);
+
+        return db.prepare('SELECT * FROM acts WHERE id = ?').get(actId);
+      })();
+    },
+  );
+
+  ipcMain.handle(IPC.SESSIONS_GET_ALL_BY_ACT, (_event, actId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
+      )
+      .all(actId);
+  });
 
   ipcMain.handle(IPC.SESSIONS_GET_BY_ID, (_event, id: number) => {
     return db.prepare('SELECT * FROM sessions WHERE id = ?').get(id) ?? null;
@@ -552,7 +812,7 @@ function registerIpcHandlers() {
     (
       _event,
       data: {
-        campaign_id: number;
+        act_id: number;
         name: string;
         notes?: string | null;
         sort_order?: number;
@@ -564,7 +824,7 @@ function registerIpcHandlers() {
       }
 
       return insertSession({
-        campaign_id: data.campaign_id,
+        act_id: data.act_id,
         name,
         notes: data.notes,
         sort_order: data.sort_order,
@@ -626,6 +886,33 @@ function registerIpcHandlers() {
   ipcMain.handle(IPC.SESSIONS_DELETE, (_event, id: number) => {
     return deleteSessionAndCompact(id);
   });
+
+  ipcMain.handle(
+    IPC.SESSIONS_MOVE_TO_ACT,
+    (_event, sessionId: number, newActId: number) => {
+      return db.transaction(() => {
+        const session = db
+          .prepare('SELECT * FROM sessions WHERE id = ?')
+          .get(sessionId) as Session | undefined;
+        if (!session) throw new Error('Session not found');
+        const oldActId = (session as unknown as { act_id: number }).act_id;
+
+        const { next: newSortOrder } = db
+          .prepare(
+            'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM sessions WHERE act_id = ?',
+          )
+          .get(newActId) as { next: number };
+
+        db.prepare(
+          "UPDATE sessions SET act_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?",
+        ).run(newActId, newSortOrder, sessionId);
+
+        resequenceSessionsInAct(oldActId);
+
+        return db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId);
+      })();
+    },
+  );
 
   ipcMain.handle(IPC.SCENES_GET_ALL_BY_SESSION, (_event, sessionId: number) => {
     return db
