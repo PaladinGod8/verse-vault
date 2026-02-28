@@ -35,8 +35,14 @@ class BrowserWindowMock {
 }
 
 const prepareMock = vi.fn();
+const transactionMock = vi.fn(
+  (callback: (...args: unknown[]) => unknown) =>
+    (...args: unknown[]) =>
+      callback(...args),
+);
 const getDatabaseMock = vi.fn(() => ({
   prepare: prepareMock,
+  transaction: transactionMock,
 }));
 const closeDatabaseMock = vi.fn();
 
@@ -228,7 +234,14 @@ describe('main process', () => {
     });
     const sessionsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 40 }));
     const sessionsUpdateRunMock = vi.fn();
+    const sessionsSortOrderUpdateRunMock = vi.fn();
     const sessionsDeleteRunMock = vi.fn();
+    const sessionsNextSortOrderGetMock = vi.fn(() => ({ next_sort_order: 7 }));
+    const sessionsCampaignForDeleteGetMock = vi.fn((id: number) => {
+      if (id === 43) return { campaign_id: 30 };
+      return undefined;
+    });
+    const sessionsSiblingIdsAllMock = vi.fn(() => [{ id: 41 }, { id: 42 }]);
 
     const scenesSelectAllBySessionMock = vi.fn(() => [
       { id: 51, session_id: 40, name: 'Scene One' },
@@ -248,7 +261,14 @@ describe('main process', () => {
     });
     const scenesInsertRunMock = vi.fn(() => ({ lastInsertRowid: 50 }));
     const scenesUpdateRunMock = vi.fn();
+    const scenesSortOrderUpdateRunMock = vi.fn();
     const scenesDeleteRunMock = vi.fn();
+    const scenesNextSortOrderGetMock = vi.fn(() => ({ next_sort_order: 9 }));
+    const scenesSessionForDeleteGetMock = vi.fn((id: number) => {
+      if (id === 53) return { session_id: 40 };
+      return undefined;
+    });
+    const scenesSiblingIdsAllMock = vi.fn(() => [{ id: 51 }, { id: 52 }]);
 
     prepareMock.mockImplementation((sql: string) => {
       if (sql.includes('SELECT * FROM worlds ORDER BY updated_at DESC')) {
@@ -353,11 +373,31 @@ describe('main process', () => {
       if (sql.includes('SELECT * FROM sessions WHERE campaign_id = ?')) {
         return { all: sessionsSelectAllByCampaignMock };
       }
+      if (
+        sql.includes(
+          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE campaign_id = ?',
+        )
+      ) {
+        return { get: sessionsNextSortOrderGetMock };
+      }
+      if (
+        sql.includes(
+          'SELECT id FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+        )
+      ) {
+        return { all: sessionsSiblingIdsAllMock };
+      }
+      if (sql.includes('SELECT campaign_id FROM sessions WHERE id = ?')) {
+        return { get: sessionsCampaignForDeleteGetMock };
+      }
       if (sql.includes('SELECT * FROM sessions WHERE id = ?')) {
         return { get: sessionsSelectByIdGetMock };
       }
       if (sql.includes('INSERT INTO sessions')) {
         return { run: sessionsInsertRunMock };
+      }
+      if (sql === 'UPDATE sessions SET sort_order = ? WHERE id = ?') {
+        return { run: sessionsSortOrderUpdateRunMock };
       }
       if (sql.includes('UPDATE sessions SET')) {
         return { run: sessionsUpdateRunMock };
@@ -369,11 +409,31 @@ describe('main process', () => {
       if (sql.includes('SELECT * FROM scenes WHERE session_id = ?')) {
         return { all: scenesSelectAllBySessionMock };
       }
+      if (
+        sql.includes(
+          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM scenes WHERE session_id = ?',
+        )
+      ) {
+        return { get: scenesNextSortOrderGetMock };
+      }
+      if (
+        sql.includes(
+          'SELECT id FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
+        )
+      ) {
+        return { all: scenesSiblingIdsAllMock };
+      }
+      if (sql.includes('SELECT session_id FROM scenes WHERE id = ?')) {
+        return { get: scenesSessionForDeleteGetMock };
+      }
       if (sql.includes('SELECT * FROM scenes WHERE id = ?')) {
         return { get: scenesSelectByIdGetMock };
       }
       if (sql.includes('INSERT INTO scenes')) {
         return { run: scenesInsertRunMock };
+      }
+      if (sql === 'UPDATE scenes SET sort_order = ? WHERE id = ?') {
+        return { run: scenesSortOrderUpdateRunMock };
       }
       if (sql.includes('UPDATE scenes SET')) {
         return { run: scenesUpdateRunMock };
@@ -396,9 +456,10 @@ describe('main process', () => {
     expect(registeredEvents['window-all-closed']).toBeTypeOf('function');
     expect(registeredEvents.activate).toBeTypeOf('function');
 
-    registeredEvents.ready();
+    await registeredEvents.ready();
 
     expect(getDatabaseMock).toHaveBeenCalledTimes(1);
+    expect(transactionMock).toHaveBeenCalledTimes(4);
     expect(browserWindowCtorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         width: 800,
@@ -865,6 +926,15 @@ describe('main process', () => {
       IPC.SESSIONS_GET_ALL_BY_CAMPAIGN
     ]({}, 30);
     expect(sessionsSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(sessionsSelectAllByCampaignMock).toHaveBeenCalledWith(30);
+    const sessionsOrderedSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql ===
+        'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+    )?.[0];
+    expect(sessionsOrderedSql).toBe(
+      'SELECT * FROM sessions WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
+    );
     expect(sessionsGetAllByCampaignResult).toEqual([
       { id: 41, campaign_id: 30, name: 'Session One' },
     ]);
@@ -886,11 +956,12 @@ describe('main process', () => {
       {},
       { campaign_id: 30, name: '  New Session  ' },
     );
+    expect(sessionsNextSortOrderGetMock).toHaveBeenCalledWith(30);
     expect(sessionsInsertRunMock).toHaveBeenCalledWith(
       30,
       'New Session',
       null,
-      0,
+      7,
     );
     expect(sessionsSelectByIdGetMock).toHaveBeenCalledWith(40);
     expect(sessionAddResult).toMatchObject({ id: 40 });
@@ -939,7 +1010,11 @@ describe('main process', () => {
       {},
       43,
     );
+    expect(sessionsCampaignForDeleteGetMock).toHaveBeenCalledWith(43);
     expect(sessionsDeleteRunMock).toHaveBeenCalledWith(43);
+    expect(sessionsSiblingIdsAllMock).toHaveBeenCalledWith(30);
+    expect(sessionsSortOrderUpdateRunMock).toHaveBeenCalledWith(0, 41);
+    expect(sessionsSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 42);
     expect(sessionDeleteResult).toEqual({ id: 43 });
 
     // SCENES
@@ -947,6 +1022,15 @@ describe('main process', () => {
       IPC.SCENES_GET_ALL_BY_SESSION
     ]({}, 40);
     expect(scenesSelectAllBySessionMock).toHaveBeenCalledTimes(1);
+    expect(scenesSelectAllBySessionMock).toHaveBeenCalledWith(40);
+    const scenesOrderedSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql ===
+        'SELECT * FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
+    )?.[0];
+    expect(scenesOrderedSql).toBe(
+      'SELECT * FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
+    );
     expect(scenesGetAllBySessionResult).toEqual([
       { id: 51, session_id: 40, name: 'Scene One' },
     ]);
@@ -965,12 +1049,13 @@ describe('main process', () => {
       {},
       { session_id: 40, name: '  New Scene  ' },
     );
+    expect(scenesNextSortOrderGetMock).toHaveBeenCalledWith(40);
     expect(scenesInsertRunMock).toHaveBeenCalledWith(
       40,
       'New Scene',
       null,
       '{}',
-      0,
+      9,
     );
     expect(scenesSelectByIdGetMock).toHaveBeenCalledWith(50);
     expect(sceneAddResult).toMatchObject({ id: 50 });
@@ -1037,7 +1122,11 @@ describe('main process', () => {
     expect(sceneTimestampOnlyUpdateResult).toMatchObject({ id: 52 });
 
     const sceneDeleteResult = registeredIpcHandlers[IPC.SCENES_DELETE]({}, 53);
+    expect(scenesSessionForDeleteGetMock).toHaveBeenCalledWith(53);
     expect(scenesDeleteRunMock).toHaveBeenCalledWith(53);
+    expect(scenesSiblingIdsAllMock).toHaveBeenCalledWith(40);
+    expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(0, 51);
+    expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 52);
     expect(sceneDeleteResult).toEqual({ id: 53 });
 
     registeredEvents['before-quit']();
@@ -1063,7 +1152,7 @@ describe('main process', () => {
     expect(appQuitMock).toHaveBeenCalledTimes(1);
 
     setForgeGlobals(undefined);
-    registeredEvents.ready();
+    await registeredEvents.ready();
     expect(loadFileMock).toHaveBeenCalledTimes(1);
   });
 });
