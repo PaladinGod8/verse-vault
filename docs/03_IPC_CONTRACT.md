@@ -5,7 +5,7 @@
 
 ## Scope Note
 
-Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, and session CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, session CRUD handlers, and scene CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
@@ -18,6 +18,8 @@ Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS
 Scene Step 09 (2026-02-27) wires scene CRUD handlers in `main` for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
 Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`.
+
+Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`, aligning the TypeScript contract with schema columns and IPC payloads.
 
 ## Channels
 
@@ -119,6 +121,37 @@ interface AbilityChild {
   child_id: number;
 }
 
+interface Campaign {
+  id: number;
+  world_id: number;
+  name: string;
+  summary: string | null;
+  config: string;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
+interface Session {
+  id: number;
+  campaign_id: number;
+  name: string;
+  notes: string | null;
+  sort_order: number;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
+interface Scene {
+  id: number;
+  session_id: number;
+  name: string;
+  notes: string | null;
+  payload: string;
+  sort_order: number;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
 interface DbApi {
   abilities: {
     getAllByWorld(worldId: number): Promise<Ability[]>;
@@ -159,6 +192,57 @@ interface DbApi {
     addChild(data: AbilityChild): Promise<AbilityChild>;
     removeChild(data: AbilityChild): Promise<AbilityChild>;
     getChildren(abilityId: number): Promise<Ability[]>;
+  };
+  campaigns: {
+    getAllByWorld(worldId: number): Promise<Campaign[]>;
+    getById(id: number): Promise<Campaign | null>;
+    add(data: {
+      world_id: number;
+      name: string;
+      summary?: string | null;
+      config?: string;
+    }): Promise<Campaign>;
+    update(
+      id: number,
+      data: { name?: string; summary?: string | null; config?: string },
+    ): Promise<Campaign>;
+    delete(id: number): Promise<{ id: number }>;
+  };
+  sessions: {
+    getAllByCampaign(campaignId: number): Promise<Session[]>;
+    getById(id: number): Promise<Session | null>;
+    add(data: {
+      campaign_id: number;
+      name: string;
+      notes?: string | null;
+      sort_order?: number;
+    }): Promise<Session>;
+    update(
+      id: number,
+      data: { name?: string; notes?: string | null; sort_order?: number },
+    ): Promise<Session>;
+    delete(id: number): Promise<{ id: number }>;
+  };
+  scenes: {
+    getAllBySession(sessionId: number): Promise<Scene[]>;
+    getById(id: number): Promise<Scene | null>;
+    add(data: {
+      session_id: number;
+      name: string;
+      notes?: string | null;
+      payload?: string;
+      sort_order?: number;
+    }): Promise<Scene>;
+    update(
+      id: number,
+      data: {
+        name?: string;
+        notes?: string | null;
+        payload?: string;
+        sort_order?: number;
+      },
+    ): Promise<Scene>;
+    delete(id: number): Promise<{ id: number }>;
   };
 }
 ```

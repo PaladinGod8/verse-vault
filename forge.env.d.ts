@@ -54,6 +54,37 @@ declare global {
     child_id: number;
   }
 
+  interface Campaign {
+    id: number;
+    world_id: number;
+    name: string;
+    summary: string | null;
+    config: string;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface Session {
+    id: number;
+    campaign_id: number;
+    name: string;
+    notes: string | null;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface Scene {
+    id: number;
+    session_id: number;
+    name: string;
+    notes: string | null;
+    payload: string;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  }
+
   interface DbApi {
     verses: {
       getAll(): Promise<Verse[]>;
@@ -141,6 +172,57 @@ declare global {
       addChild(data: AbilityChild): Promise<AbilityChild>;
       removeChild(data: AbilityChild): Promise<AbilityChild>;
       getChildren(abilityId: number): Promise<Ability[]>;
+    };
+    campaigns: {
+      getAllByWorld(worldId: number): Promise<Campaign[]>;
+      getById(id: number): Promise<Campaign | null>;
+      add(data: {
+        world_id: number;
+        name: string;
+        summary?: string | null;
+        config?: string;
+      }): Promise<Campaign>;
+      update(
+        id: number,
+        data: { name?: string; summary?: string | null; config?: string },
+      ): Promise<Campaign>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+    sessions: {
+      getAllByCampaign(campaignId: number): Promise<Session[]>;
+      getById(id: number): Promise<Session | null>;
+      add(data: {
+        campaign_id: number;
+        name: string;
+        notes?: string | null;
+        sort_order?: number;
+      }): Promise<Session>;
+      update(
+        id: number,
+        data: { name?: string; notes?: string | null; sort_order?: number },
+      ): Promise<Session>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+    scenes: {
+      getAllBySession(sessionId: number): Promise<Scene[]>;
+      getById(id: number): Promise<Scene | null>;
+      add(data: {
+        session_id: number;
+        name: string;
+        notes?: string | null;
+        payload?: string;
+        sort_order?: number;
+      }): Promise<Scene>;
+      update(
+        id: number,
+        data: {
+          name?: string;
+          notes?: string | null;
+          payload?: string;
+          sort_order?: number;
+        },
+      ): Promise<Scene>;
+      delete(id: number): Promise<{ id: number }>;
     };
   }
 
