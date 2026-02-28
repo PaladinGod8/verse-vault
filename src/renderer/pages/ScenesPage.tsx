@@ -1,9 +1,115 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  type DragEndEvent,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SceneForm from '../components/scenes/SceneForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSceneInput = Parameters<DbApi['scenes']['add']>[0];
+
+const sortScenesByOrder = (scenes: Scene[]) =>
+  [...scenes].sort(
+    (left, right) => left.sort_order - right.sort_order || left.id - right.id,
+  );
+
+type SortableSceneRowProps = {
+  scene: Scene;
+  sequence: number;
+  deletingId: number | null;
+  isPersistingOrder: boolean;
+  onEdit: (scene: Scene) => void;
+  onDelete: (scene: Scene) => void;
+};
+
+function SortableSceneRow({
+  scene,
+  sequence,
+  deletingId,
+  isPersistingOrder,
+  onEdit,
+  onDelete,
+}: SortableSceneRowProps) {
+  const isDeleting = deletingId === scene.id;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: scene.id,
+    disabled: isDeleting || isPersistingOrder,
+  });
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={`border-b border-slate-100 last:border-0 ${
+        isDragging ? 'bg-slate-50' : ''
+      }`}
+    >
+      <td className="w-28 px-4 py-3 text-slate-600">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            className="inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label={`Reorder scene ${scene.name}`}
+            disabled={isDeleting || isPersistingOrder}
+          >
+            ::
+          </button>
+          <span className="tabular-nums">{sequence}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3 font-medium">{scene.name}</td>
+      <td className="px-4 py-3 text-slate-500">{scene.notes ?? '-'}</td>
+      <td className="px-4 py-3">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => onEdit(scene)}
+            className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isDeleting}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(scene)}
+            className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
 
 export default function ScenesPage() {
   const { id, campaignId, sessionId } = useParams();
@@ -45,9 +151,22 @@ export default function ScenesPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reorderError, setReorderError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingScene, setEditingScene] = useState<Scene | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isPersistingOrder, setIsPersistingOrder] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const sortedScenes = useMemo(() => sortScenesByOrder(scenes), [scenes]);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,6 +179,7 @@ export default function ScenesPage() {
       setSession(null);
       setScenes([]);
       setError('Invalid world, campaign, or session id.');
+      setReorderError(null);
       setIsLoading(false);
       return () => {
         isMounted = false;
@@ -69,6 +189,7 @@ export default function ScenesPage() {
     const loadData = async () => {
       setIsLoading(true);
       setError(null);
+      setReorderError(null);
 
       try {
         const existingSession =
@@ -85,7 +206,7 @@ export default function ScenesPage() {
           await window.db.scenes.getAllBySession(parsedSessionId);
         if (isMounted) {
           setSession(existingSession);
-          setScenes(scenesList);
+          setScenes(sortScenesByOrder(scenesList));
         }
       } catch {
         if (isMounted) {
@@ -109,10 +230,13 @@ export default function ScenesPage() {
 
   const handleCreateScene = async (data: AddSceneInput) => {
     const newScene = await window.db.scenes.add(data);
-    setScenes((prev) => [
-      newScene,
-      ...prev.filter((s) => s.id !== newScene.id),
-    ]);
+    setReorderError(null);
+    setScenes((prev) =>
+      sortScenesByOrder([
+        newScene,
+        ...prev.filter((scene) => scene.id !== newScene.id),
+      ]),
+    );
     setIsCreateOpen(false);
   };
 
@@ -127,8 +251,13 @@ export default function ScenesPage() {
       notes,
       payload,
     });
+    setReorderError(null);
     setScenes((prev) =>
-      prev.map((s) => (s.id === updatedScene.id ? updatedScene : s)),
+      sortScenesByOrder(
+        prev.map((scene) =>
+          scene.id === updatedScene.id ? updatedScene : scene,
+        ),
+      ),
     );
     setEditingScene(null);
   };
@@ -145,9 +274,86 @@ export default function ScenesPage() {
 
     try {
       await window.db.scenes.delete(scene.id);
-      setScenes((prev) => prev.filter((s) => s.id !== scene.id));
+      setReorderError(null);
+      setScenes((prev) => {
+        const remainingScenes = sortScenesByOrder(
+          prev.filter((existingScene) => existingScene.id !== scene.id),
+        );
+        return remainingScenes.map((remainingScene, index) => ({
+          ...remainingScene,
+          sort_order: index,
+        }));
+      });
     } finally {
       setDeletingId((current) => (current === scene.id ? null : current));
+    }
+  };
+
+  const handleReorderScenes = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || parsedSessionId === null || isPersistingOrder) {
+      return;
+    }
+
+    const activeId = Number(active.id);
+    const overId = Number(over.id);
+    if (
+      !Number.isInteger(activeId) ||
+      !Number.isInteger(overId) ||
+      activeId === overId
+    ) {
+      return;
+    }
+
+    const oldIndex = sortedScenes.findIndex((scene) => scene.id === activeId);
+    const newIndex = sortedScenes.findIndex((scene) => scene.id === overId);
+    if (oldIndex < 0 || newIndex < 0) {
+      return;
+    }
+
+    const previousScenes = sortedScenes;
+    const previousSortOrderById = new Map(
+      previousScenes.map((scene) => [scene.id, scene.sort_order]),
+    );
+    const reorderedScenes = arrayMove(previousScenes, oldIndex, newIndex).map(
+      (scene, index) => ({
+        ...scene,
+        sort_order: index,
+      }),
+    );
+    const scenesWithSortOrderChanges = reorderedScenes.filter(
+      (scene) => previousSortOrderById.get(scene.id) !== scene.sort_order,
+    );
+
+    setReorderError(null);
+    setScenes(reorderedScenes);
+    setIsPersistingOrder(true);
+
+    try {
+      await Promise.all(
+        scenesWithSortOrderChanges.map((scene) =>
+          window.db.scenes.update(scene.id, {
+            sort_order: scene.sort_order,
+          }),
+        ),
+      );
+    } catch (sortOrderError) {
+      setReorderError(
+        sortOrderError instanceof Error
+          ? sortOrderError.message
+          : 'Failed to save scene order. Restored the latest saved order.',
+      );
+
+      try {
+        const canonicalScenes =
+          await window.db.scenes.getAllBySession(parsedSessionId);
+        setScenes(sortScenesByOrder(canonicalScenes));
+      } catch {
+        setScenes(previousScenes);
+      }
+    } finally {
+      setIsPersistingOrder(false);
     }
   };
 
@@ -193,6 +399,12 @@ export default function ScenesPage() {
           </section>
         ) : null}
 
+        {!isLoading && !error && reorderError ? (
+          <section className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm">
+            {reorderError}
+          </section>
+        ) : null}
+
         {!isLoading && !error && scenes.length === 0 ? (
           <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <p className="text-sm text-slate-600">No scenes yet.</p>
@@ -201,59 +413,55 @@ export default function ScenesPage() {
 
         {!isLoading && !error && scenes.length > 0 ? (
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm text-slate-700">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Notes
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {scenes.map((scene) => (
-                  <tr
-                    key={scene.id}
-                    className="border-b border-slate-100 last:border-0"
-                  >
-                    <td className="px-4 py-3 font-medium">{scene.name}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {scene.notes ?? '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreateOpen(false);
-                            setEditingScene(scene);
-                          }}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === scene.id}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void handleDeleteScene(scene);
-                          }}
-                          className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === scene.id}
-                        >
-                          {deletingId === scene.id ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
-                    </td>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => {
+                void handleReorderScenes(event);
+              }}
+            >
+              <table className="w-full text-sm text-slate-700">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-medium text-slate-500">
+                      Order
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-500">
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-500">
+                      Notes
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-500">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <SortableContext
+                  items={sortedScenes.map((scene) => scene.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <tbody>
+                    {sortedScenes.map((scene, index) => (
+                      <SortableSceneRow
+                        key={scene.id}
+                        scene={scene}
+                        sequence={index + 1}
+                        deletingId={deletingId}
+                        isPersistingOrder={isPersistingOrder}
+                        onEdit={(selectedScene) => {
+                          setIsCreateOpen(false);
+                          setEditingScene(selectedScene);
+                        }}
+                        onDelete={(selectedScene) => {
+                          void handleDeleteScene(selectedScene);
+                        }}
+                      />
+                    ))}
+                  </tbody>
+                </SortableContext>
+              </table>
+            </DndContext>
           </section>
         ) : null}
       </main>
