@@ -19,7 +19,7 @@
 | `src/renderer/pages/AbilitiesPage.tsx`                         | Abilities list page (`/world/:id/abilities`): table with create/edit/delete actions, gated child-link manager modal for supported passive subtypes, and loading/empty/error states                                                                                                                                                                                                                                   |
 | `src/renderer/pages/CampaignsPage.tsx`                         | Campaigns list page (`/world/:id/campaigns`): table of campaigns with create/edit/delete actions, Sessions link per row (`/world/:id/campaign/:campaignId/sessions`), and loading/empty/error states                                                                                                                                                                                                                 |
 | `src/renderer/pages/SessionsPage.tsx`                          | Sessions list page (`/world/:id/campaign/:campaignId/sessions`): validates worldId + campaignId, loads campaign header + sessions ordered by `sort_order`, supports create/edit/delete, supports dnd-kit row reorder with persisted `sort_order`, shows visible sequence numbers, exposes Scenes link per row (`/world/:id/campaign/:campaignId/session/:sessionId/scenes`), and includes loading/empty/error states |
-| `src/renderer/pages/ScenesPage.tsx`                            | Scenes list page (`/world/:id/campaign/:campaignId/session/:sessionId/scenes`): validates worldId + campaignId + sessionId, loads session header + scenes, supports create/edit/delete, and loading/empty/error states                                                                                                                                                                                               |
+| `src/renderer/pages/ScenesPage.tsx`                            | Scenes list page (`/world/:id/campaign/:campaignId/session/:sessionId/scenes`): validates worldId + campaignId + sessionId, loads session header + scenes ordered by `sort_order`, supports create/edit/delete, supports dnd-kit row reorder with persisted `sort_order`, shows visible sequence numbers, and includes loading/empty/error states                                                                    |
 | `src/renderer/components/scenes/SceneForm.tsx`                 | Reusable scenes form for create/edit (name required, optional notes, optional payload JSON text defaulting to `'{}'`)                                                                                                                                                                                                                                                                                                |
 | `src/renderer/components/sessions/SessionForm.tsx`             | Reusable sessions form for create/edit (name required, optional notes)                                                                                                                                                                                                                                                                                                                                               |
 | `src/renderer/components/campaigns/CampaignForm.tsx`           | Reusable campaigns form for create/edit (name required, optional summary)                                                                                                                                                                                                                                                                                                                                            |
@@ -539,6 +539,17 @@
 - **Main handler**: `src/main.ts` (from Scene Step 09)
 - **Preload bridge**: `src/preload.ts` (from Campaign/Session/Scene Step 10)
 - **Storage**: create inserts and prepends returned row in local UI state; edit updates the matching row in place; delete removes by id after confirmation
+
+### Scene Table Sequence + dnd-kit Reorder (Step 17)
+
+- **Purpose**: add visible `1..N` ordering in Scenes table and allow in-table drag-and-drop reordering persisted via existing scene update calls
+- **Status**: added on 2026-02-28
+- **UI**: `src/renderer/pages/ScenesPage.tsx`
+- **Store**: none yet
+- **IPC**: uses existing `IPC.SCENES_UPDATE` and `IPC.SCENES_GET_ALL_BY_SESSION` via `window.db.scenes.update/getAllBySession`
+- **Main handler**: `src/main.ts` (from Scene Step 09)
+- **Preload bridge**: `src/preload.ts` (from Campaign/Session/Scene Step 10)
+- **Storage**: renderer now sorts scenes by `sort_order` for display, reassigns contiguous `sort_order` values on drag/drop, persists changed rows through `window.db.scenes.update(id, { sort_order })`, and on save failure restores canonical order by reloading from `SCENES_GET_ALL_BY_SESSION` (fallback to pre-drag snapshot if reload fails)
 
 ### App Shell / Routing
 
