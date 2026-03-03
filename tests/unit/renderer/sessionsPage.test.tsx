@@ -105,7 +105,9 @@ function buildSession(overrides: Partial<Session> = {}): Session {
 }
 
 function formatPlannedAtForAssertion(value: string): string {
-  const normalized = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
+  const normalized = value.includes('T')
+    ? value
+    : `${value.replace(' ', 'T')}Z`;
   const parsed = new Date(normalized);
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
@@ -315,12 +317,16 @@ describe('SessionsPage', () => {
     renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
     await screen.findByText('Session One');
-    expect(screen.getByText(formatPlannedAtForAssertion(plannedAt))).toBeInTheDocument();
+    expect(
+      screen.getByText(formatPlannedAtForAssertion(plannedAt)),
+    ).toBeInTheDocument();
   });
 
   it('renders planned date-time fallback when planned_at is missing', async () => {
     actsGetByIdMock.mockResolvedValue(buildAct());
-    sessionsGetAllByActMock.mockResolvedValue([buildSession({ planned_at: null })]);
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ planned_at: null }),
+    ]);
 
     renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
 
