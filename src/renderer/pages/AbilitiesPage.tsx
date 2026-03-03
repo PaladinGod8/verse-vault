@@ -4,6 +4,7 @@ import AbilityChildrenManager from '../components/abilities/AbilityChildrenManag
 import AbilityForm from '../components/abilities/AbilityForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddAbilityInput = Parameters<DbApi['abilities']['add']>[0];
@@ -19,6 +20,7 @@ function isAbilityChildManagerSupported(ability: Ability): boolean {
 }
 
 export default function AbilitiesPage() {
+  const toast = useToast();
   const { id } = useParams();
   const worldId = useMemo(() => {
     if (!id) {
@@ -118,12 +120,23 @@ export default function AbilitiesPage() {
   }, [worldId]);
 
   const handleCreateAbility = async (data: AddAbilityInput) => {
-    const newAbility = await window.db.abilities.add(data);
-    setAbilities((prev) => [
-      newAbility,
-      ...prev.filter((a) => a.id !== newAbility.id),
-    ]);
-    setIsCreateOpen(false);
+    try {
+      const newAbility = await window.db.abilities.add(data);
+      setAbilities((prev) => [
+        newAbility,
+        ...prev.filter((a) => a.id !== newAbility.id),
+      ]);
+      setIsCreateOpen(false);
+      toast.success('Ability created.', `"${newAbility.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create ability.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateAbility = async (data: AddAbilityInput) => {
@@ -131,24 +144,38 @@ export default function AbilitiesPage() {
       return;
     }
 
-    const updatedAbility = await window.db.abilities.update(editingAbility.id, {
-      name: data.name,
-      description: data.description ?? null,
-      type: data.type,
-      passive_subtype: data.passive_subtype ?? null,
-      level_id: data.level_id ?? null,
-      effects: data.effects ?? '[]',
-      conditions: data.conditions ?? '[]',
-      cast_cost: data.cast_cost ?? '{}',
-      trigger: data.trigger ?? null,
-      pick_count: data.pick_count ?? null,
-      pick_timing: data.pick_timing ?? null,
-      pick_is_permanent: data.pick_is_permanent ?? 0,
-    });
-    setAbilities((prev) =>
-      prev.map((a) => (a.id === updatedAbility.id ? updatedAbility : a)),
-    );
-    setEditingAbility(null);
+    try {
+      const updatedAbility = await window.db.abilities.update(
+        editingAbility.id,
+        {
+          name: data.name,
+          description: data.description ?? null,
+          type: data.type,
+          passive_subtype: data.passive_subtype ?? null,
+          level_id: data.level_id ?? null,
+          effects: data.effects ?? '[]',
+          conditions: data.conditions ?? '[]',
+          cast_cost: data.cast_cost ?? '{}',
+          trigger: data.trigger ?? null,
+          pick_count: data.pick_count ?? null,
+          pick_timing: data.pick_timing ?? null,
+          pick_is_permanent: data.pick_is_permanent ?? 0,
+        },
+      );
+      setAbilities((prev) =>
+        prev.map((a) => (a.id === updatedAbility.id ? updatedAbility : a)),
+      );
+      setEditingAbility(null);
+      toast.success('Ability updated.', `"${updatedAbility.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update ability.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteAbility = (ability: Ability) => {
@@ -168,6 +195,14 @@ export default function AbilitiesPage() {
       setAbilities((prev) => prev.filter((a) => a.id !== ability.id));
       setManagingChildrenAbilityId((current) =>
         current === ability.id ? null : current,
+      );
+      toast.success('Ability deleted.', `"${ability.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete ability.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
       );
     } finally {
       setDeletingId((current) => (current === ability.id ? null : current));

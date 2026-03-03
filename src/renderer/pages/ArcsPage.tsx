@@ -20,6 +20,7 @@ import { Link, useParams } from 'react-router-dom';
 import ArcForm from '../components/arcs/ArcForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortArcsByOrder = (arcs: Arc[]) =>
@@ -121,6 +122,7 @@ function SortableArcRow({
 }
 
 export default function ArcsPage() {
+  const toast = useToast();
   const { id, campaignId } = useParams();
 
   const worldId = useMemo(() => {
@@ -227,31 +229,55 @@ export default function ArcsPage() {
     if (parsedCampaignId === null) {
       return;
     }
-    const newArc = await window.db.arcs.add({
-      campaign_id: parsedCampaignId,
-      name: data.name,
-    });
-    setReorderError(null);
-    setArcs((prev) =>
-      sortArcsByOrder([newArc, ...prev.filter((arc) => arc.id !== newArc.id)]),
-    );
-    setIsCreateOpen(false);
+
+    try {
+      const newArc = await window.db.arcs.add({
+        campaign_id: parsedCampaignId,
+        name: data.name,
+      });
+      setReorderError(null);
+      setArcs((prev) =>
+        sortArcsByOrder([
+          newArc,
+          ...prev.filter((arc) => arc.id !== newArc.id),
+        ]),
+      );
+      setIsCreateOpen(false);
+      toast.success('Arc created.', `"${newArc.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create arc.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+    }
   };
 
   const handleUpdateArc = async (data: { name: string }) => {
     if (!editingArc) {
       return;
     }
-    const updatedArc = await window.db.arcs.update(editingArc.id, {
-      name: data.name,
-    });
-    setReorderError(null);
-    setArcs((prev) =>
-      sortArcsByOrder(
-        prev.map((arc) => (arc.id === updatedArc.id ? updatedArc : arc)),
-      ),
-    );
-    setEditingArc(null);
+    try {
+      const updatedArc = await window.db.arcs.update(editingArc.id, {
+        name: data.name,
+      });
+      setReorderError(null);
+      setArcs((prev) =>
+        sortArcsByOrder(
+          prev.map((arc) => (arc.id === updatedArc.id ? updatedArc : arc)),
+        ),
+      );
+      setEditingArc(null);
+      toast.success('Arc updated.', `"${updatedArc.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update arc.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+    }
   };
 
   const handleRequestDeleteArc = (arc: Arc) => {
@@ -278,6 +304,14 @@ export default function ArcsPage() {
           sort_order: index,
         }));
       });
+      toast.success('Arc deleted.', `"${arc.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete arc.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingId((current) => (current === arc.id ? null : current));
       setPendingDeleteArc((current) =>

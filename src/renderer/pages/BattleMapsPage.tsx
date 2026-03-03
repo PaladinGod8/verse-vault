@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import BattleMapForm from '../components/battlemaps/BattleMapForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddBattleMapInput = Parameters<DbApi['battlemaps']['add']>[0];
@@ -28,6 +29,7 @@ function formatTimestamp(timestamp: string | null): string {
 }
 
 export default function BattleMapsPage() {
+  const toast = useToast();
   const { id } = useParams();
   const worldId = useMemo(() => {
     if (!id) {
@@ -108,12 +110,23 @@ export default function BattleMapsPage() {
   }, [worldId]);
 
   const handleCreateBattleMap = async (data: AddBattleMapInput) => {
-    const newBattleMap = await window.db.battlemaps.add(data);
-    setBattleMaps((prev) => [
-      newBattleMap,
-      ...prev.filter((battleMap) => battleMap.id !== newBattleMap.id),
-    ]);
-    setIsCreateOpen(false);
+    try {
+      const newBattleMap = await window.db.battlemaps.add(data);
+      setBattleMaps((prev) => [
+        newBattleMap,
+        ...prev.filter((battleMap) => battleMap.id !== newBattleMap.id),
+      ]);
+      setIsCreateOpen(false);
+      toast.success('BattleMap created.', `"${newBattleMap.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create BattleMap.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateBattleMap = async (data: AddBattleMapInput) => {
@@ -122,19 +135,34 @@ export default function BattleMapsPage() {
     }
 
     const { name, config } = data;
-    const updatedBattleMap = await window.db.battlemaps.update(
-      editingBattleMap.id,
-      {
-        name,
-        config,
-      },
-    );
-    setBattleMaps((prev) =>
-      prev.map((battleMap) =>
-        battleMap.id === updatedBattleMap.id ? updatedBattleMap : battleMap,
-      ),
-    );
-    setEditingBattleMap(null);
+
+    try {
+      const updatedBattleMap = await window.db.battlemaps.update(
+        editingBattleMap.id,
+        {
+          name,
+          config,
+        },
+      );
+      setBattleMaps((prev) =>
+        prev.map((battleMap) =>
+          battleMap.id === updatedBattleMap.id ? updatedBattleMap : battleMap,
+        ),
+      );
+      setEditingBattleMap(null);
+      toast.success(
+        'BattleMap updated.',
+        `"${updatedBattleMap.name}" was saved.`,
+      );
+    } catch (updateError) {
+      toast.error(
+        'Failed to update BattleMap.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteBattleMap = (battleMap: BattleMap) => {
@@ -155,6 +183,14 @@ export default function BattleMapsPage() {
         prev.filter(
           (existingBattleMap) => existingBattleMap.id !== battleMap.id,
         ),
+      );
+      toast.success('BattleMap deleted.', `"${battleMap.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete BattleMap.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
       );
     } finally {
       setDeletingId((current) => (current === battleMap.id ? null : current));

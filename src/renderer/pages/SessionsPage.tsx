@@ -21,6 +21,7 @@ import MoveSessionDialog from '../components/sessions/MoveSessionDialog';
 import SessionForm from '../components/sessions/SessionForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSessionInput = Parameters<DbApi['sessions']['add']>[0];
@@ -162,6 +163,7 @@ function SortableSessionRow({
 }
 
 export default function SessionsPage() {
+  const toast = useToast();
   const { id, campaignId, arcId, actId } = useParams();
 
   const worldId = useMemo(() => {
@@ -220,7 +222,6 @@ export default function SessionsPage() {
     useState<Session | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingSession, setMovingSession] = useState<Session | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -296,15 +297,26 @@ export default function SessionsPage() {
   }, [worldId, parsedCampaignId, parsedArcId, parsedActId]);
 
   const handleCreateSession = async (data: AddSessionInput) => {
-    const newSession = await window.db.sessions.add(data);
-    setReorderError(null);
-    setSessions((prev) =>
-      sortSessionsByOrder([
-        newSession,
-        ...prev.filter((session) => session.id !== newSession.id),
-      ]),
-    );
-    setIsCreateOpen(false);
+    try {
+      const newSession = await window.db.sessions.add(data);
+      setReorderError(null);
+      setSessions((prev) =>
+        sortSessionsByOrder([
+          newSession,
+          ...prev.filter((session) => session.id !== newSession.id),
+        ]),
+      );
+      setIsCreateOpen(false);
+      toast.success('Session created.', `"${newSession.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create session.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateSession = async (data: AddSessionInput) => {
@@ -313,20 +325,35 @@ export default function SessionsPage() {
     }
 
     const { name, notes, planned_at } = data;
-    const updatedSession = await window.db.sessions.update(editingSession.id, {
-      name,
-      notes,
-      planned_at,
-    });
-    setReorderError(null);
-    setSessions((prev) =>
-      sortSessionsByOrder(
-        prev.map((session) =>
-          session.id === updatedSession.id ? updatedSession : session,
+
+    try {
+      const updatedSession = await window.db.sessions.update(
+        editingSession.id,
+        {
+          name,
+          notes,
+          planned_at,
+        },
+      );
+      setReorderError(null);
+      setSessions((prev) =>
+        sortSessionsByOrder(
+          prev.map((session) =>
+            session.id === updatedSession.id ? updatedSession : session,
+          ),
         ),
-      ),
-    );
-    setEditingSession(null);
+      );
+      setEditingSession(null);
+      toast.success('Session updated.', `"${updatedSession.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update session.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteSession = (session: Session) => {
@@ -353,6 +380,14 @@ export default function SessionsPage() {
           sort_order: index,
         }));
       });
+      toast.success('Session deleted.', `"${session.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete session.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingId((current) => (current === session.id ? null : current));
       setPendingDeleteSession((current) =>
@@ -365,13 +400,23 @@ export default function SessionsPage() {
     if (!movingSession) {
       return;
     }
+
+    const session = movingSession;
+
     try {
-      await window.db.sessions.moveTo(movingSession.id, newActId);
-      const movedId = movingSession.id;
+      await window.db.sessions.moveTo(session.id, newActId);
+      const movedId = session.id;
       setMovingSession(null);
       setSessions((prev) => prev.filter((s) => s.id !== movedId));
-    } catch {
-      setMoveError('Failed to move session. Please try again.');
+      toast.success(
+        'Session moved.',
+        `"${session.name}" was moved to another act.`,
+      );
+    } catch (moveError) {
+      toast.error(
+        'Failed to move session.',
+        moveError instanceof Error ? moveError.message : 'Please try again.',
+      );
     }
   };
 
@@ -572,7 +617,6 @@ export default function SessionsPage() {
                           handleRequestDeleteSession(selectedSession);
                         }}
                         onMove={(selectedSession) => {
-                          setMoveError(null);
                           setMovingSession(selectedSession);
                         }}
                       />
@@ -619,15 +663,8 @@ export default function SessionsPage() {
           }}
           onCancel={() => {
             setMovingSession(null);
-            setMoveError(null);
           }}
         />
-      ) : null}
-
-      {moveError ? (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-md">
-          {moveError}
-        </div>
       ) : null}
 
       {editingSession !== null ? (

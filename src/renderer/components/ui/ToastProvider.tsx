@@ -38,8 +38,22 @@ type ToastContextValue = {
 
 const DEFAULT_DURATION_MS = 4000;
 const MIN_DURATION_MS = 1000;
+const MAX_VISIBLE_TOASTS = 4;
+const NOOP_TOAST_ID = 'toast-noop';
+const noop = () => undefined;
+const noopToast = () => NOOP_TOAST_ID;
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+
+const fallbackToastContext: ToastContextValue = {
+  showToast: noopToast,
+  dismissToast: noop,
+  clearToasts: noop,
+  success: noopToast,
+  error: noopToast,
+  warning: noopToast,
+  info: noopToast,
+};
 
 const variantClassMap: Record<ToastVariant, string> = {
   success: 'alert-success',
@@ -117,7 +131,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       durationMs: normalizeDuration(input.durationMs),
     };
 
-    setToasts((current) => [...current, nextToast]);
+    setToasts((current) => [...current, nextToast].slice(-MAX_VISIBLE_TOASTS));
     return id;
   }, []);
 
@@ -165,10 +179,5 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function useToast() {
   const context = useContext(ToastContext);
-
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-
-  return context;
+  return context ?? fallbackToastContext;
 }

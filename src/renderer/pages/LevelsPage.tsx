@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import LevelForm from '../components/levels/LevelForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddLevelInput = Parameters<DbApi['levels']['add']>[0];
 
 export default function LevelsPage() {
+  const toast = useToast();
   const { id } = useParams();
   const worldId = useMemo(() => {
     if (!id) {
@@ -86,12 +88,23 @@ export default function LevelsPage() {
   }, [worldId]);
 
   const handleCreateLevel = async (data: AddLevelInput) => {
-    const newLevel = await window.db.levels.add(data);
-    setLevels((prev) => [
-      newLevel,
-      ...prev.filter((l) => l.id !== newLevel.id),
-    ]);
-    setIsCreateOpen(false);
+    try {
+      const newLevel = await window.db.levels.add(data);
+      setLevels((prev) => [
+        newLevel,
+        ...prev.filter((l) => l.id !== newLevel.id),
+      ]);
+      setIsCreateOpen(false);
+      toast.success('Level created.', `"${newLevel.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create level.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateLevel = async (data: AddLevelInput) => {
@@ -100,15 +113,27 @@ export default function LevelsPage() {
     }
 
     const { name, category, description } = data;
-    const updatedLevel = await window.db.levels.update(editingLevel.id, {
-      name,
-      category,
-      description,
-    });
-    setLevels((prev) =>
-      prev.map((l) => (l.id === updatedLevel.id ? updatedLevel : l)),
-    );
-    setEditingLevel(null);
+
+    try {
+      const updatedLevel = await window.db.levels.update(editingLevel.id, {
+        name,
+        category,
+        description,
+      });
+      setLevels((prev) =>
+        prev.map((l) => (l.id === updatedLevel.id ? updatedLevel : l)),
+      );
+      setEditingLevel(null);
+      toast.success('Level updated.', `"${updatedLevel.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update level.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteLevel = (level: Level) => {
@@ -126,6 +151,14 @@ export default function LevelsPage() {
     try {
       await window.db.levels.delete(level.id);
       setLevels((prev) => prev.filter((l) => l.id !== level.id));
+      toast.success('Level deleted.', `"${level.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete level.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingId((current) => (current === level.id ? null : current));
       setPendingDeleteLevel((current) =>
