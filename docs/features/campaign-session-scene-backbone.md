@@ -39,7 +39,7 @@ Note: `sessions.planned_at` was added as a nullable `TEXT` column. Existing data
 
 ### IPC Channels
 
-Twenty-eight channels are used for this backbone in `src/shared/ipcChannels.ts`:
+Twenty-nine channels are used for this backbone in `src/shared/ipcChannels.ts`:
 
 | Tier     | Channels                                                                                                                                 |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -47,8 +47,8 @@ Twenty-eight channels are used for this backbone in `src/shared/ipcChannels.ts`:
 | Arc      | `db:arcs:getAllByCampaign`, `db:arcs:getById`, `db:arcs:add`, `db:arcs:update`, `db:arcs:delete`                                         |
 | Act      | `db:acts:getAllByArc`, `db:acts:getAllByCampaign`, `db:acts:getById`, `db:acts:add`, `db:acts:update`, `db:acts:delete`                  |
 | Session  | `db:sessions:getAllByAct`, `db:sessions:getById`, `db:sessions:add`, `db:sessions:update`, `db:sessions:delete`, `db:sessions:moveToAct` |
-| Scene    | `db:scenes:getAllBySession`, `db:scenes:getById`, `db:scenes:add`, `db:scenes:update`, `db:scenes:delete`                                |
-| Reparent | `db:acts:moveToArc`                                                                                                                      |
+| Scene    | `db:scenes:getAllBySession`, `db:scenes:getById`, `db:scenes:add`, `db:scenes:update`, `db:scenes:delete`, `db:scenes:moveToSession`      |
+| Reparent | `db:acts:moveToArc`                                                                                                                        |
 
 Note: `db:acts:getAllByCampaign` is a convenience channel for `MoveSessionDialog` - it returns all acts across all arcs in a campaign ordered by `arc.sort_order, arc.id, act.sort_order, act.id`.
 
@@ -65,6 +65,7 @@ Note: `db:acts:getAllByCampaign` is a convenience channel for `MoveSessionDialog
 - Session and scene delete compact sibling order to contiguous `0..N-1` in parent scope.
 - Session handlers are scoped by `act_id` (not `campaign_id`).
 - `db:sessions:moveToAct(sessionId, newActId)` runs as an atomic transaction: move session to target-act tail, resequence the old act, return updated session.
+- `db:scenes:moveToSession(sceneId, newSessionId)` runs as an atomic transaction: validate source scene + target session, return unchanged row when session is unchanged, move scene to target-session tail, resequence the old session to contiguous `0..N-1`, return updated scene.
 - `db:acts:moveToArc(actId, newArcId)` runs as an atomic transaction: move act to target-arc tail, resequence the old arc, return updated act.
 - Delete handlers remain idempotent (`{ id }` is returned even when the row is already absent).
 
@@ -76,7 +77,7 @@ Renderer access stays behind `window.db` (`src/preload.ts`, `forge.env.d.ts`):
 - `window.db.arcs.{ getAllByCampaign, getById, add, update, delete }`
 - `window.db.acts.{ getAllByArc, getAllByCampaign, getById, add, update, delete, moveTo }`
 - `window.db.sessions.{ getAllByAct, getById, add, update, delete, moveTo }`
-- `window.db.scenes.{ getAllBySession, getById, add, update, delete }`
+- `window.db.scenes.{ getAllBySession, getById, add, update, delete, moveTo }`
 - Session contract includes `planned_at: string | null`; `window.db.sessions.add/update` accept optional `planned_at?: string | null`.
 
 ### Renderer Routes and Pages
@@ -105,7 +106,14 @@ Renderer access stays behind `window.db` (`src/preload.ts`, `forge.env.d.ts`):
 
 ## Reparenting
 
-Two reparent operations are supported. Both are atomic transactions in the main process.
+Three reparent operations are supported. All are atomic transactions in the main process.
+
+### Scene -> different Session ("Move...")
+
+- Available from each scene row in `ScenesPage`.
+- Opens `MoveSceneDialog`: lists all sessions in the same campaign, grouped by arc and act. The current session is excluded.
+- On confirm: `db:scenes:moveToSession(sceneId, newSessionId)` moves the scene to the target-session tail (`MAX(sort_order) + 1`) and resequences the old session to contiguous order (`0..N-1`). The scene disappears from the current `ScenesPage` list.
+- Child entities are not affected because Scene is the leaf tier.
 
 ### Session -> different Act ("Move to Act...")
 
@@ -147,7 +155,6 @@ Two reparent operations are supported. Both are atomic transactions in the main 
 
 - Scene runtime/execution engine (playback, branching).
 - Prompt templating or LLM workflow integration.
-- Cross-parent reparenting for scenes (scene -> different session).
 - Multi-select or bulk reparenting.
 - Drag-and-drop cross-level reparenting (dialog only).
 - Undo/redo for reorder or reparent operations.
