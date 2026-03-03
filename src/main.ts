@@ -36,6 +36,20 @@ function ensureScenePayloadJsonText(payload: unknown): string {
   return payload;
 }
 
+function ensureBattleMapConfigJsonText(config: unknown): string {
+  if (typeof config !== 'string') {
+    throw new Error('BattleMap config must be a JSON string');
+  }
+
+  try {
+    JSON.parse(config);
+  } catch {
+    throw new Error('BattleMap config must be valid JSON text');
+  }
+
+  return config;
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -625,6 +639,99 @@ function registerIpcHandlers() {
 
   ipcMain.handle(IPC.CAMPAIGNS_DELETE, (_event, id: number) => {
     db.prepare('DELETE FROM campaigns WHERE id = ?').run(id);
+    return { id };
+  });
+
+  ipcMain.handle(IPC.BATTLEMAPS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM battlemaps WHERE world_id = ? ORDER BY updated_at DESC, id DESC',
+      )
+      .all(worldId);
+  });
+
+  ipcMain.handle(IPC.BATTLEMAPS_GET_BY_ID, (_event, id: number) => {
+    return db.prepare('SELECT * FROM battlemaps WHERE id = ?').get(id) ?? null;
+  });
+
+  ipcMain.handle(
+    IPC.BATTLEMAPS_ADD,
+    (
+      _event,
+      data: {
+        world_id: number;
+        name: string;
+        config?: string;
+      },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('BattleMap name is required');
+      }
+
+      const config =
+        data.config === undefined
+          ? '{}'
+          : ensureBattleMapConfigJsonText(data.config);
+
+      const result = db
+        .prepare(
+          'INSERT INTO battlemaps (world_id, name, config) VALUES (?, ?, ?)',
+        )
+        .run(data.world_id, name, config);
+
+      const battleMap = db
+        .prepare('SELECT * FROM battlemaps WHERE id = ?')
+        .get(result.lastInsertRowid);
+      if (!battleMap) {
+        throw new Error('Failed to create BattleMap');
+      }
+      return battleMap;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.BATTLEMAPS_UPDATE,
+    (_event, id: number, data: { name?: string; config?: string }) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasConfig = Object.prototype.hasOwnProperty.call(data, 'config');
+
+      const setClauses: string[] = [];
+      const values: string[] = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('BattleMap name cannot be empty');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasConfig && data.config !== undefined) {
+        setClauses.push('config = ?');
+        values.push(ensureBattleMapConfigJsonText(data.config));
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE battlemaps SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const battleMap = db
+        .prepare('SELECT * FROM battlemaps WHERE id = ?')
+        .get(id);
+      if (!battleMap) {
+        throw new Error('BattleMap not found');
+      }
+      return battleMap;
+    },
+  );
+
+  ipcMain.handle(IPC.BATTLEMAPS_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM battlemaps WHERE id = ?').run(id);
     return { id };
   });
 
