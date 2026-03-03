@@ -17,6 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import MoveSceneDialog from '../components/scenes/MoveSceneDialog';
 import SceneForm from '../components/scenes/SceneForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
@@ -33,6 +34,7 @@ type SortableSceneRowProps = {
   deletingId: number | null;
   isPersistingOrder: boolean;
   onEdit: (scene: Scene) => void;
+  onMove: (scene: Scene) => void;
   onDelete: (scene: Scene) => void;
 };
 
@@ -42,6 +44,7 @@ function SortableSceneRow({
   deletingId,
   isPersistingOrder,
   onEdit,
+  onMove,
   onDelete,
 }: SortableSceneRowProps) {
   const isDeleting = deletingId === scene.id;
@@ -96,6 +99,14 @@ function SortableSceneRow({
             disabled={isDeleting}
           >
             Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(scene)}
+            disabled={isDeleting || isPersistingOrder}
+            className="text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Move
           </button>
           <button
             type="button"
@@ -178,6 +189,8 @@ export default function ScenesPage() {
   const [editingScene, setEditingScene] = useState<Scene | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
+  const [movingScene, setMovingScene] = useState<Scene | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -308,6 +321,22 @@ export default function ScenesPage() {
       });
     } finally {
       setDeletingId((current) => (current === scene.id ? null : current));
+    }
+  };
+
+  const handleMoveConfirm = async (newSessionId: number) => {
+    if (!movingScene) {
+      return;
+    }
+
+    try {
+      await window.db.scenes.moveTo(movingScene.id, newSessionId);
+      const movedSceneId = movingScene.id;
+      setMovingScene(null);
+      setMoveError(null);
+      setScenes((prev) => prev.filter((scene) => scene.id !== movedSceneId));
+    } catch {
+      setMoveError('Failed to move scene. Please try again.');
     }
   };
 
@@ -500,6 +529,10 @@ export default function ScenesPage() {
                           setIsCreateOpen(false);
                           setEditingScene(selectedScene);
                         }}
+                        onMove={(selectedScene) => {
+                          setMoveError(null);
+                          setMovingScene(selectedScene);
+                        }}
                         onDelete={(selectedScene) => {
                           void handleDeleteScene(selectedScene);
                         }}
@@ -534,6 +567,29 @@ export default function ScenesPage() {
               onCancel={() => setIsCreateOpen(false)}
             />
           </section>
+        </div>
+      ) : null}
+
+      {movingScene !== null &&
+      parsedCampaignId !== null &&
+      parsedSessionId !== null ? (
+        <MoveSceneDialog
+          scene={movingScene}
+          currentSessionId={parsedSessionId}
+          campaignId={parsedCampaignId}
+          onConfirm={(newSessionId) => {
+            void handleMoveConfirm(newSessionId);
+          }}
+          onCancel={() => {
+            setMovingScene(null);
+            setMoveError(null);
+          }}
+        />
+      ) : null}
+
+      {moveError ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-md">
+          {moveError}
         </div>
       ) : null}
 
