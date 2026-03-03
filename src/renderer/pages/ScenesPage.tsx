@@ -21,6 +21,7 @@ import MoveSceneDialog from '../components/scenes/MoveSceneDialog';
 import SceneForm from '../components/scenes/SceneForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSceneInput = Parameters<DbApi['scenes']['add']>[0];
@@ -125,6 +126,7 @@ function SortableSceneRow({
 }
 
 export default function ScenesPage() {
+  const toast = useToast();
   const { id, campaignId, arcId, actId, sessionId } = useParams();
 
   const worldId = useMemo(() => {
@@ -195,7 +197,6 @@ export default function ScenesPage() {
   );
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingScene, setMovingScene] = useState<Scene | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -269,15 +270,26 @@ export default function ScenesPage() {
   }, [worldId, parsedCampaignId, parsedSessionId]);
 
   const handleCreateScene = async (data: AddSceneInput) => {
-    const newScene = await window.db.scenes.add(data);
-    setReorderError(null);
-    setScenes((prev) =>
-      sortScenesByOrder([
-        newScene,
-        ...prev.filter((scene) => scene.id !== newScene.id),
-      ]),
-    );
-    setIsCreateOpen(false);
+    try {
+      const newScene = await window.db.scenes.add(data);
+      setReorderError(null);
+      setScenes((prev) =>
+        sortScenesByOrder([
+          newScene,
+          ...prev.filter((scene) => scene.id !== newScene.id),
+        ]),
+      );
+      setIsCreateOpen(false);
+      toast.success('Scene created.', `"${newScene.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create scene.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateScene = async (data: AddSceneInput) => {
@@ -286,20 +298,32 @@ export default function ScenesPage() {
     }
 
     const { name, notes, payload } = data;
-    const updatedScene = await window.db.scenes.update(editingScene.id, {
-      name,
-      notes,
-      payload,
-    });
-    setReorderError(null);
-    setScenes((prev) =>
-      sortScenesByOrder(
-        prev.map((scene) =>
-          scene.id === updatedScene.id ? updatedScene : scene,
+
+    try {
+      const updatedScene = await window.db.scenes.update(editingScene.id, {
+        name,
+        notes,
+        payload,
+      });
+      setReorderError(null);
+      setScenes((prev) =>
+        sortScenesByOrder(
+          prev.map((scene) =>
+            scene.id === updatedScene.id ? updatedScene : scene,
+          ),
         ),
-      ),
-    );
-    setEditingScene(null);
+      );
+      setEditingScene(null);
+      toast.success('Scene updated.', `"${updatedScene.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update scene.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteScene = (scene: Scene) => {
@@ -326,6 +350,14 @@ export default function ScenesPage() {
           sort_order: index,
         }));
       });
+      toast.success('Scene deleted.', `"${scene.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete scene.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingId((current) => (current === scene.id ? null : current));
       setPendingDeleteScene((current) =>
@@ -339,14 +371,22 @@ export default function ScenesPage() {
       return;
     }
 
+    const scene = movingScene;
+
     try {
-      await window.db.scenes.moveTo(movingScene.id, newSessionId);
-      const movedSceneId = movingScene.id;
+      await window.db.scenes.moveTo(scene.id, newSessionId);
+      const movedSceneId = scene.id;
       setMovingScene(null);
-      setMoveError(null);
       setScenes((prev) => prev.filter((scene) => scene.id !== movedSceneId));
-    } catch {
-      setMoveError('Failed to move scene. Please try again.');
+      toast.success(
+        'Scene moved.',
+        `"${scene.name}" was moved to another session.`,
+      );
+    } catch (moveError) {
+      toast.error(
+        'Failed to move scene.',
+        moveError instanceof Error ? moveError.message : 'Please try again.',
+      );
     }
   };
 
@@ -540,7 +580,6 @@ export default function ScenesPage() {
                           setEditingScene(selectedScene);
                         }}
                         onMove={(selectedScene) => {
-                          setMoveError(null);
                           setMovingScene(selectedScene);
                         }}
                         onDelete={(selectedScene) => {
@@ -590,15 +629,8 @@ export default function ScenesPage() {
           }}
           onCancel={() => {
             setMovingScene(null);
-            setMoveError(null);
           }}
         />
-      ) : null}
-
-      {moveError ? (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-md">
-          {moveError}
-        </div>
       ) : null}
 
       {editingScene !== null ? (

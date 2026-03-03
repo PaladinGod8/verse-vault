@@ -2,17 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
 
 export default function WorldsHomePage() {
   type WorldInput = Parameters<DbApi['worlds']['add']>[0];
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [worlds, setWorlds] = useState<World[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [mutationError, setMutationError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWorld, setEditingWorld] = useState<World | null>(null);
   const [deletingWorldId, setDeletingWorldId] = useState<number | null>(null);
@@ -55,11 +56,21 @@ export default function WorldsHomePage() {
   };
 
   const handleCreateWorld = async (data: WorldInput) => {
-    const createdWorld = await window.db.worlds.add(data);
-    upsertWorld(createdWorld);
-    setLoadError(null);
-    setMutationError(null);
-    setIsCreateOpen(false);
+    try {
+      const createdWorld = await window.db.worlds.add(data);
+      upsertWorld(createdWorld);
+      setLoadError(null);
+      setIsCreateOpen(false);
+      toast.success('World created.', `"${createdWorld.name}" is ready.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create world.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateWorld = async (data: WorldInput) => {
@@ -67,11 +78,21 @@ export default function WorldsHomePage() {
       return;
     }
 
-    const updatedWorld = await window.db.worlds.update(editingWorld.id, data);
-    upsertWorld(updatedWorld);
-    setLoadError(null);
-    setMutationError(null);
-    setEditingWorld(null);
+    try {
+      const updatedWorld = await window.db.worlds.update(editingWorld.id, data);
+      upsertWorld(updatedWorld);
+      setLoadError(null);
+      setEditingWorld(null);
+      toast.success('World updated.', `"${updatedWorld.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update world.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteWorld = (world: World) => {
@@ -84,7 +105,6 @@ export default function WorldsHomePage() {
     }
     const world = pendingDeleteWorld;
 
-    setMutationError(null);
     setDeletingWorldId(world.id);
 
     try {
@@ -93,10 +113,15 @@ export default function WorldsHomePage() {
         previousWorlds.filter((item) => item.id !== world.id),
       );
       setLoadError(null);
-      setMutationError(null);
       setEditingWorld((current) => (current?.id === world.id ? null : current));
-    } catch {
-      setMutationError('Unable to delete world right now.');
+      toast.success('World deleted.', `"${world.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete world.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingWorldId((current) => (current === world.id ? null : current));
       setPendingDeleteWorld((current) =>
@@ -136,12 +161,6 @@ export default function WorldsHomePage() {
         {!isLoading && loadError ? (
           <section className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm">
             {loadError}
-          </section>
-        ) : null}
-
-        {!isLoading && !loadError && mutationError ? (
-          <section className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm">
-            {mutationError}
           </section>
         ) : null}
 

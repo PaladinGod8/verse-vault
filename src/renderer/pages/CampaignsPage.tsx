@@ -3,11 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import CampaignForm from '../components/campaigns/CampaignForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddCampaignInput = Parameters<DbApi['campaigns']['add']>[0];
 
 export default function CampaignsPage() {
+  const toast = useToast();
   const { id } = useParams();
   const worldId = useMemo(() => {
     if (!id) {
@@ -85,12 +87,23 @@ export default function CampaignsPage() {
   }, [worldId]);
 
   const handleCreateCampaign = async (data: AddCampaignInput) => {
-    const newCampaign = await window.db.campaigns.add(data);
-    setCampaigns((prev) => [
-      newCampaign,
-      ...prev.filter((c) => c.id !== newCampaign.id),
-    ]);
-    setIsCreateOpen(false);
+    try {
+      const newCampaign = await window.db.campaigns.add(data);
+      setCampaigns((prev) => [
+        newCampaign,
+        ...prev.filter((c) => c.id !== newCampaign.id),
+      ]);
+      setIsCreateOpen(false);
+      toast.success('Campaign created.', `"${newCampaign.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create campaign.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+      throw createError;
+    }
   };
 
   const handleUpdateCampaign = async (data: AddCampaignInput) => {
@@ -99,14 +112,29 @@ export default function CampaignsPage() {
     }
 
     const { name, summary } = data;
-    const updatedCampaign = await window.db.campaigns.update(
-      editingCampaign.id,
-      { name, summary },
-    );
-    setCampaigns((prev) =>
-      prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)),
-    );
-    setEditingCampaign(null);
+
+    try {
+      const updatedCampaign = await window.db.campaigns.update(
+        editingCampaign.id,
+        { name, summary },
+      );
+      setCampaigns((prev) =>
+        prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)),
+      );
+      setEditingCampaign(null);
+      toast.success(
+        'Campaign updated.',
+        `"${updatedCampaign.name}" was saved.`,
+      );
+    } catch (updateError) {
+      toast.error(
+        'Failed to update campaign.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+      throw updateError;
+    }
   };
 
   const handleRequestDeleteCampaign = (campaign: Campaign) => {
@@ -124,6 +152,14 @@ export default function CampaignsPage() {
     try {
       await window.db.campaigns.delete(campaign.id);
       setCampaigns((prev) => prev.filter((c) => c.id !== campaign.id));
+      toast.success('Campaign deleted.', `"${campaign.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete campaign.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingId((current) => (current === campaign.id ? null : current));
       setPendingDeleteCampaign((current) =>

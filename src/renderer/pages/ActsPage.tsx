@@ -21,6 +21,7 @@ import ActForm from '../components/acts/ActForm';
 import MoveActDialog from '../components/acts/MoveActDialog';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortActsByOrder = (acts: Act[]) =>
@@ -134,6 +135,7 @@ function SortableActRow({
 }
 
 export default function ActsPage() {
+  const toast = useToast();
   const { id, campaignId, arcId } = useParams();
 
   const worldId = useMemo(() => {
@@ -180,7 +182,6 @@ export default function ActsPage() {
   const [pendingDeleteAct, setPendingDeleteAct] = useState<Act | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingAct, setMovingAct] = useState<Act | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -251,31 +252,55 @@ export default function ActsPage() {
     if (parsedArcId === null) {
       return;
     }
-    const newAct = await window.db.acts.add({
-      arc_id: parsedArcId,
-      name: data.name,
-    });
-    setReorderError(null);
-    setActs((prev) =>
-      sortActsByOrder([newAct, ...prev.filter((act) => act.id !== newAct.id)]),
-    );
-    setIsCreateOpen(false);
+
+    try {
+      const newAct = await window.db.acts.add({
+        arc_id: parsedArcId,
+        name: data.name,
+      });
+      setReorderError(null);
+      setActs((prev) =>
+        sortActsByOrder([
+          newAct,
+          ...prev.filter((act) => act.id !== newAct.id),
+        ]),
+      );
+      setIsCreateOpen(false);
+      toast.success('Act created.', `"${newAct.name}" was added.`);
+    } catch (createError) {
+      toast.error(
+        'Failed to create act.',
+        createError instanceof Error
+          ? createError.message
+          : 'Please try again.',
+      );
+    }
   };
 
   const handleUpdateAct = async (data: { name: string }) => {
     if (!editingAct) {
       return;
     }
-    const updatedAct = await window.db.acts.update(editingAct.id, {
-      name: data.name,
-    });
-    setReorderError(null);
-    setActs((prev) =>
-      sortActsByOrder(
-        prev.map((act) => (act.id === updatedAct.id ? updatedAct : act)),
-      ),
-    );
-    setEditingAct(null);
+    try {
+      const updatedAct = await window.db.acts.update(editingAct.id, {
+        name: data.name,
+      });
+      setReorderError(null);
+      setActs((prev) =>
+        sortActsByOrder(
+          prev.map((act) => (act.id === updatedAct.id ? updatedAct : act)),
+        ),
+      );
+      setEditingAct(null);
+      toast.success('Act updated.', `"${updatedAct.name}" was saved.`);
+    } catch (updateError) {
+      toast.error(
+        'Failed to update act.',
+        updateError instanceof Error
+          ? updateError.message
+          : 'Please try again.',
+      );
+    }
   };
 
   const handleRequestDeleteAct = (act: Act) => {
@@ -302,6 +327,14 @@ export default function ActsPage() {
           sort_order: index,
         }));
       });
+      toast.success('Act deleted.', `"${act.name}" was removed.`);
+    } catch (deleteError) {
+      toast.error(
+        'Failed to delete act.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
+      );
     } finally {
       setDeletingId((current) => (current === act.id ? null : current));
       setPendingDeleteAct((current) =>
@@ -311,14 +344,22 @@ export default function ActsPage() {
   };
 
   const handleMoveConfirm = async (newArcId: number) => {
-    if (!movingAct) return;
+    if (!movingAct) {
+      return;
+    }
+
+    const act = movingAct;
+
     try {
-      await window.db.acts.moveTo(movingAct.id, newArcId);
+      await window.db.acts.moveTo(act.id, newArcId);
       setMovingAct(null);
-      setMoveError(null);
-      setActs((prev) => prev.filter((a) => a.id !== movingAct.id));
-    } catch {
-      setMoveError('Failed to move act. Please try again.');
+      setActs((prev) => prev.filter((a) => a.id !== act.id));
+      toast.success('Act moved.', `"${act.name}" was moved to another arc.`);
+    } catch (moveError) {
+      toast.error(
+        'Failed to move act.',
+        moveError instanceof Error ? moveError.message : 'Please try again.',
+      );
     }
   };
 
@@ -499,7 +540,6 @@ export default function ActsPage() {
                         }}
                         onMove={(selectedAct) => {
                           setMovingAct(selectedAct);
-                          setMoveError(null);
                         }}
                       />
                     ))}
@@ -570,15 +610,8 @@ export default function ActsPage() {
           }}
           onCancel={() => {
             setMovingAct(null);
-            setMoveError(null);
           }}
         />
-      ) : null}
-
-      {moveError ? (
-        <p className="fixed right-4 bottom-4 rounded bg-rose-50 px-4 py-2 text-sm text-rose-700 shadow">
-          {moveError}
-        </p>
       ) : null}
 
       <ConfirmDialog
