@@ -98,6 +98,7 @@ describe('preload', () => {
     await api.scenes.add({ session_id: 40, name: 'Scene' });
     await api.scenes.update(51, { payload: '{}' });
     await api.scenes.delete(51);
+    await api.scenes.moveTo(51, 42);
 
     expect(invokeMock).toHaveBeenNthCalledWith(1, IPC.VERSES_GET_ALL);
     expect(invokeMock).toHaveBeenNthCalledWith(2, IPC.VERSES_ADD, {
@@ -231,5 +232,11 @@ describe('preload', () => {
       payload: '{}',
     });
     expect(invokeMock).toHaveBeenNthCalledWith(46, IPC.SCENES_DELETE, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      47,
+      IPC.SCENES_MOVE_TO_SESSION,
+      51,
+      42,
+    );
   });
 });
