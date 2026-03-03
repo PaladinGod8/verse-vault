@@ -5,6 +5,23 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import SessionsPage from '../../../src/renderer/pages/SessionsPage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({
     children,
@@ -241,8 +258,6 @@ describe('SessionsPage', () => {
         delete: vi.fn(),
       },
     } as DbApi;
-
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('shows error when world id is invalid', async () => {
@@ -529,7 +544,7 @@ describe('SessionsPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('deletes a session after confirmation', async () => {
+  it('deletes a session after dialog confirmation', async () => {
     const user = userEvent.setup();
     const session = buildSession();
 
@@ -541,9 +556,11 @@ describe('SessionsPage', () => {
 
     await screen.findByText('Session One');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "Session One"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Session One"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(sessionsDeleteMock).toHaveBeenCalledWith(1);
@@ -551,11 +568,14 @@ describe('SessionsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Session One')).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'Session deleted.',
+      '"Session One" was removed.',
+    );
   });
 
-  it('does not delete when confirmation is cancelled', async () => {
+  it('does not delete when dialog confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const session = buildSession();
 
     actsGetByIdMock.mockResolvedValue(buildAct());
@@ -565,10 +585,46 @@ describe('SessionsPage', () => {
 
     await screen.findByText('Session One');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Session One"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(sessionsDeleteMock).not.toHaveBeenCalled();
     expect(screen.getByText('Session One')).toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when session deletion fails', async () => {
+    const user = userEvent.setup();
+    const session = buildSession();
+
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([session]);
+    sessionsDeleteMock.mockRejectedValue(new Error('delete failed'));
+
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
+
+    await screen.findByText('Session One');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Session One"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(sessionsDeleteMock).toHaveBeenCalledWith(1);
+    });
+    expect(screen.getByText('Session One')).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete session.',
+      'delete failed',
+    );
   });
 
   it('navigates to scenes page when Scenes link is clicked', async () => {

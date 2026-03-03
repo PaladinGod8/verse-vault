@@ -4,6 +4,23 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import LevelsPage from '../../../src/renderer/pages/LevelsPage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 const worldsGetByIdMock = vi.fn();
 const levelsGetAllByWorldMock = vi.fn();
 const levelsAddMock = vi.fn();
@@ -74,8 +91,6 @@ describe('LevelsPage', () => {
         markViewed: vi.fn(),
       },
     } as DbApi;
-
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('shows error when world id is invalid', async () => {
@@ -213,7 +228,7 @@ describe('LevelsPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('deletes a level after confirmation', async () => {
+  it('deletes a level after dialog confirmation', async () => {
     const user = userEvent.setup();
     const level = buildLevel();
 
@@ -225,9 +240,11 @@ describe('LevelsPage', () => {
 
     await screen.findByText('Cave of Shadows');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "Cave of Shadows"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Cave of Shadows"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(levelsDeleteMock).toHaveBeenCalledWith(1);
@@ -235,11 +252,14 @@ describe('LevelsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Cave of Shadows')).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'Level deleted.',
+      '"Cave of Shadows" was removed.',
+    );
   });
 
-  it('does not delete when confirmation is cancelled', async () => {
+  it('does not delete when dialog confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const level = buildLevel();
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
@@ -249,9 +269,45 @@ describe('LevelsPage', () => {
 
     await screen.findByText('Cave of Shadows');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Cave of Shadows"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(levelsDeleteMock).not.toHaveBeenCalled();
     expect(screen.getByText('Cave of Shadows')).toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when level deletion fails', async () => {
+    const user = userEvent.setup();
+    const level = buildLevel();
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    levelsGetAllByWorldMock.mockResolvedValue([level]);
+    levelsDeleteMock.mockRejectedValue(new Error('db unavailable'));
+
+    renderLevelsPage('/world/1/levels');
+
+    await screen.findByText('Cave of Shadows');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Cave of Shadows"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(levelsDeleteMock).toHaveBeenCalledWith(1);
+    });
+    expect(screen.getByText('Cave of Shadows')).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete level.',
+      'db unavailable',
+    );
   });
 });

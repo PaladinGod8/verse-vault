@@ -121,18 +121,20 @@ test('abilities CRUD and child-link flow works end to end', async () => {
     await expect(linkedChild).toHaveCount(0);
     await childrenDialog.getByRole('button', { name: 'Close' }).click();
 
-    window.on('dialog', (dialog) => {
-      void dialog.accept();
-    });
-
     await abilityRow(window, childAbilityUpdatedName)
       .getByRole('button', { name: 'Delete' })
       .click();
+    const childDeleteDialog = window.locator('.modal.modal-open').last();
+    await expect(childDeleteDialog).toBeVisible();
+    await childDeleteDialog.getByRole('button', { name: 'Delete' }).click();
     await expect(abilityRow(window, childAbilityUpdatedName)).toHaveCount(0);
 
     await abilityRow(window, parentAbilityName)
       .getByRole('button', { name: 'Delete' })
       .click();
+    const parentDeleteDialog = window.locator('.modal.modal-open').last();
+    await expect(parentDeleteDialog).toBeVisible();
+    await parentDeleteDialog.getByRole('button', { name: 'Delete' }).click();
     await expect(abilityRow(window, parentAbilityName)).toHaveCount(0);
   } finally {
     await app.close();

@@ -10,6 +10,23 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AbilitiesPage from '../../../src/renderer/pages/AbilitiesPage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 const worldsGetByIdMock = vi.fn();
 const levelsGetAllByWorldMock = vi.fn();
 const abilitiesGetAllByWorldMock = vi.fn();
@@ -102,7 +119,6 @@ describe('AbilitiesPage', () => {
     } as DbApi;
 
     levelsGetAllByWorldMock.mockResolvedValue([]);
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('shows error when world id is invalid', async () => {
@@ -289,7 +305,7 @@ describe('AbilitiesPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('deletes an ability after confirmation', async () => {
+  it('deletes an ability after dialog confirmation', async () => {
     const user = userEvent.setup();
     const ability = buildAbility({ id: 11, name: 'Disposable' });
 
@@ -301,9 +317,11 @@ describe('AbilitiesPage', () => {
 
     await screen.findByText('Disposable');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "Disposable"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Disposable"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(abilitiesDeleteMock).toHaveBeenCalledWith(11);
@@ -311,11 +329,14 @@ describe('AbilitiesPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Disposable')).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'Ability deleted.',
+      '"Disposable" was removed.',
+    );
   });
 
-  it('does not delete when confirmation is cancelled', async () => {
+  it('does not delete when dialog confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const ability = buildAbility({ id: 12, name: 'Keep Me' });
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
@@ -325,10 +346,46 @@ describe('AbilitiesPage', () => {
 
     await screen.findByText('Keep Me');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Keep Me"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(abilitiesDeleteMock).not.toHaveBeenCalled();
     expect(screen.getByText('Keep Me')).toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when ability deletion fails', async () => {
+    const user = userEvent.setup();
+    const ability = buildAbility({ id: 13, name: 'Fragile' });
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    abilitiesGetAllByWorldMock.mockResolvedValue([ability]);
+    abilitiesDeleteMock.mockRejectedValue(new Error('delete failed'));
+
+    renderAbilitiesPage('/world/1/abilities');
+
+    await screen.findByText('Fragile');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Fragile"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(abilitiesDeleteMock).toHaveBeenCalledWith(13);
+    });
+    expect(screen.getByText('Fragile')).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete ability.',
+      'delete failed',
+    );
   });
 
   it('opens and closes the manage children dialog', async () => {
@@ -383,6 +440,12 @@ describe('AbilitiesPage', () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Managed Ability"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
 
     await waitFor(() => {
       expect(abilitiesDeleteMock).toHaveBeenCalledWith(21);

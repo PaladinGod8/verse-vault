@@ -72,17 +72,17 @@ test('battlemaps CRUD flow works end to end', async () => {
       .click();
     const editDialog = window.getByRole('dialog', { name: 'Edit BattleMap' });
     await expect(editDialog).toBeVisible();
-    await editDialog.getByLabel('Name').fill(renamedBattleMapName);
-    await editDialog.getByRole('button', { name: 'Save changes' }).click();
+    const editNameInput = editDialog.getByLabel('Name');
+    await editNameInput.fill(renamedBattleMapName);
+    await editNameInput.press('Enter');
     await expect(battleMapRow(window, renamedBattleMapName)).toBeVisible();
-
-    window.on('dialog', (dialog) => {
-      void dialog.accept();
-    });
 
     await battleMapRow(window, renamedBattleMapName)
       .getByRole('button', { name: 'Delete' })
       .click();
+    const deleteDialog = window.locator('.modal.modal-open').last();
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: 'Delete' }).click();
     await expect(battleMapRow(window, renamedBattleMapName)).toHaveCount(0);
     await expect(window.getByText('No BattleMaps yet.')).toBeVisible();
   } finally {

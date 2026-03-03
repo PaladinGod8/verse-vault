@@ -1,10 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { DragEndEvent } from '@dnd-kit/core';
 
 import ActsPage from '../../src/renderer/pages/ActsPage';
+
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
 
 // Capture the DndContext onDragEnd handler so tests can invoke it directly.
 let capturedOnDragEnd: ((event: DragEndEvent) => void) | undefined;
@@ -337,37 +354,82 @@ describe('ActsPage', () => {
   });
 
   describe('delete act', () => {
-    it('removes act from list after confirmation', async () => {
+    it('removes act from list after dialog confirmation', async () => {
       const user = userEvent.setup();
       window.db.acts.getAllByArc = vi
         .fn()
         .mockResolvedValue([buildAct({ id: 1, name: 'Act One' })]);
       window.db.acts.delete = vi.fn().mockResolvedValue({ id: 1 });
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       renderPage();
       await screen.findByText('Act One');
       await user.click(screen.getByRole('button', { name: 'Delete' }));
+      const confirmDialog = await screen.findByRole('dialog', {
+        name: 'Delete "Act One"?',
+      });
+      await user.click(
+        within(confirmDialog).getByRole('button', { name: 'Delete' }),
+      );
 
       await waitFor(() =>
         expect(screen.queryByText('Act One')).not.toBeInTheDocument(),
       );
       expect(window.db.acts.delete).toHaveBeenCalledWith(1);
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        'Act deleted.',
+        '"Act One" was removed.',
+      );
     });
 
-    it('keeps act in list when confirm returns false', async () => {
+    it('keeps act in list when dialog confirmation is cancelled', async () => {
       const user = userEvent.setup();
       window.db.acts.getAllByArc = vi
         .fn()
         .mockResolvedValue([buildAct({ id: 1, name: 'Act One' })]);
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       renderPage();
       await screen.findByText('Act One');
       await user.click(screen.getByRole('button', { name: 'Delete' }));
+      const confirmDialog = await screen.findByRole('dialog', {
+        name: 'Delete "Act One"?',
+      });
+      await user.click(
+        within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+      );
 
       expect(screen.getByText('Act One')).toBeInTheDocument();
       expect(window.db.acts.delete).not.toHaveBeenCalled();
+      expect(toastSuccessMock).not.toHaveBeenCalled();
+      expect(toastErrorMock).not.toHaveBeenCalled();
+    });
+
+    it('shows a delete failure toast when act deletion fails', async () => {
+      const user = userEvent.setup();
+      window.db.acts.getAllByArc = vi
+        .fn()
+        .mockResolvedValue([buildAct({ id: 1, name: 'Act One' })]);
+      window.db.acts.delete = vi
+        .fn()
+        .mockRejectedValue(new Error('delete failed'));
+
+      renderPage();
+      await screen.findByText('Act One');
+      await user.click(screen.getByRole('button', { name: 'Delete' }));
+      const confirmDialog = await screen.findByRole('dialog', {
+        name: 'Delete "Act One"?',
+      });
+      await user.click(
+        within(confirmDialog).getByRole('button', { name: 'Delete' }),
+      );
+
+      await waitFor(() =>
+        expect(window.db.acts.delete).toHaveBeenCalledWith(1),
+      );
+      expect(screen.getByText('Act One')).toBeInTheDocument();
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to delete act.',
+        'delete failed',
+      );
     });
   });
 
@@ -422,7 +484,11 @@ describe('ActsPage', () => {
       await user.click(screen.getByRole('button', { name: 'Move' }));
       await user.click(screen.getByRole('button', { name: 'Confirm Move' }));
 
-      await screen.findByText('Failed to move act. Please try again.');
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to move act.',
+        'Move failed',
+      );
+      expect(screen.getByText('Act One')).toBeInTheDocument();
     });
 
     it('closes MoveActDialog when Cancel Move is clicked', async () => {

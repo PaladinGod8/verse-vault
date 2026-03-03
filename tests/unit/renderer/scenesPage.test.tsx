@@ -5,6 +5,23 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import ScenesPage from '../../../src/renderer/pages/ScenesPage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({
     children,
@@ -227,8 +244,6 @@ describe('ScenesPage', () => {
         moveTo: scenesMoveToMock,
       },
     } as DbApi;
-
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('shows error when world id is invalid', async () => {
@@ -559,9 +574,12 @@ describe('ScenesPage', () => {
     const moveButtons = screen.getAllByRole('button', { name: 'Move' });
     await user.click(moveButtons[moveButtons.length - 1]);
 
-    expect(
-      await screen.findByText('Failed to move scene. Please try again.'),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to move scene.',
+        'move failed',
+      );
+    });
     expect(screen.getByText('The Opening')).toBeInTheDocument();
   });
 
@@ -665,7 +683,7 @@ describe('ScenesPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('deletes a scene after confirmation', async () => {
+  it('deletes a scene after dialog confirmation', async () => {
     const user = userEvent.setup();
     const scene = buildScene();
 
@@ -677,9 +695,11 @@ describe('ScenesPage', () => {
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "The Opening"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "The Opening"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(scenesDeleteMock).toHaveBeenCalledWith(1);
@@ -687,11 +707,14 @@ describe('ScenesPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('The Opening')).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'Scene deleted.',
+      '"The Opening" was removed.',
+    );
   });
 
-  it('does not delete when confirmation is cancelled', async () => {
+  it('does not delete when dialog confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const scene = buildScene();
 
     sessionsGetByIdMock.mockResolvedValue(buildSession());
@@ -701,9 +724,45 @@ describe('ScenesPage', () => {
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "The Opening"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(scenesDeleteMock).not.toHaveBeenCalled();
     expect(screen.getByText('The Opening')).toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when scene deletion fails', async () => {
+    const user = userEvent.setup();
+    const scene = buildScene();
+
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([scene]);
+    scenesDeleteMock.mockRejectedValue(new Error('delete failed'));
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "The Opening"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(scenesDeleteMock).toHaveBeenCalledWith(1);
+    });
+    expect(screen.getByText('The Opening')).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete scene.',
+      'delete failed',
+    );
   });
 });

@@ -4,6 +4,23 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CampaignsPage from '../../../src/renderer/pages/CampaignsPage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 const worldsGetByIdMock = vi.fn();
 const campaignsGetAllByWorldMock = vi.fn();
 const campaignsAddMock = vi.fn();
@@ -112,8 +129,6 @@ describe('CampaignsPage', () => {
         delete: vi.fn(),
       },
     } as DbApi;
-
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('shows error when world id is invalid', async () => {
@@ -264,7 +279,7 @@ describe('CampaignsPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('deletes a campaign after confirmation', async () => {
+  it('deletes a campaign after dialog confirmation', async () => {
     const user = userEvent.setup();
     const campaign = buildCampaign();
 
@@ -276,9 +291,11 @@ describe('CampaignsPage', () => {
 
     await screen.findByText('The Dragon Saga');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "The Dragon Saga"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "The Dragon Saga"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(campaignsDeleteMock).toHaveBeenCalledWith(1);
@@ -286,11 +303,14 @@ describe('CampaignsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('The Dragon Saga')).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'Campaign deleted.',
+      '"The Dragon Saga" was removed.',
+    );
   });
 
-  it('does not delete when confirmation is cancelled', async () => {
+  it('does not delete when dialog confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const campaign = buildCampaign();
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
@@ -300,10 +320,46 @@ describe('CampaignsPage', () => {
 
     await screen.findByText('The Dragon Saga');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "The Dragon Saga"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(campaignsDeleteMock).not.toHaveBeenCalled();
     expect(screen.getByText('The Dragon Saga')).toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when campaign deletion fails', async () => {
+    const user = userEvent.setup();
+    const campaign = buildCampaign();
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([campaign]);
+    campaignsDeleteMock.mockRejectedValue(new Error('delete failed'));
+
+    renderCampaignsPage('/world/1/campaigns');
+
+    await screen.findByText('The Dragon Saga');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "The Dragon Saga"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(campaignsDeleteMock).toHaveBeenCalledWith(1);
+    });
+    expect(screen.getByText('The Dragon Saga')).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete campaign.',
+      'delete failed',
+    );
   });
 
   it('navigates to arcs page when Arcs link is clicked', async () => {
