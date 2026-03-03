@@ -93,6 +93,7 @@ describe('preload', () => {
     });
     await api.sessions.delete(41);
     await api.sessions.moveTo(41, 21);
+    await api.scenes.getAllByCampaign(1);
     await api.scenes.getAllBySession(40);
     await api.scenes.getById(51);
     await api.scenes.add({ session_id: 40, name: 'Scene' });
@@ -220,20 +221,25 @@ describe('preload', () => {
     );
     expect(invokeMock).toHaveBeenNthCalledWith(
       42,
+      IPC.SCENES_GET_ALL_BY_CAMPAIGN,
+      1,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      43,
       IPC.SCENES_GET_ALL_BY_SESSION,
       40,
     );
-    expect(invokeMock).toHaveBeenNthCalledWith(43, IPC.SCENES_GET_BY_ID, 51);
-    expect(invokeMock).toHaveBeenNthCalledWith(44, IPC.SCENES_ADD, {
+    expect(invokeMock).toHaveBeenNthCalledWith(44, IPC.SCENES_GET_BY_ID, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(45, IPC.SCENES_ADD, {
       session_id: 40,
       name: 'Scene',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(45, IPC.SCENES_UPDATE, 51, {
+    expect(invokeMock).toHaveBeenNthCalledWith(46, IPC.SCENES_UPDATE, 51, {
       payload: '{}',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(46, IPC.SCENES_DELETE, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(47, IPC.SCENES_DELETE, 51);
     expect(invokeMock).toHaveBeenNthCalledWith(
-      47,
+      48,
       IPC.SCENES_MOVE_TO_SESSION,
       51,
       42,
