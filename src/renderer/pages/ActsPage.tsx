@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ActForm from '../components/acts/ActForm';
 import MoveActDialog from '../components/acts/MoveActDialog';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortActsByOrder = (acts: Act[]) =>
@@ -175,6 +176,7 @@ export default function ActsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAct, setEditingAct] = useState<Act | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteAct, setPendingDeleteAct] = useState<Act | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingAct, setMovingAct] = useState<Act | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -275,13 +277,15 @@ export default function ActsPage() {
     setEditingAct(null);
   };
 
-  const handleDeleteAct = async (act: Act) => {
-    const isConfirmed = window.confirm(
-      `Delete "${act.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteAct = (act: Act) => {
+    setPendingDeleteAct(act);
+  };
+
+  const handleDeleteAct = async () => {
+    if (!pendingDeleteAct) {
       return;
     }
+    const act = pendingDeleteAct;
 
     setDeletingId(act.id);
 
@@ -299,6 +303,9 @@ export default function ActsPage() {
       });
     } finally {
       setDeletingId((current) => (current === act.id ? null : current));
+      setPendingDeleteAct((current) =>
+        current?.id === act.id ? null : current,
+      );
     }
   };
 
@@ -487,7 +494,7 @@ export default function ActsPage() {
                           setEditingAct(selectedAct);
                         }}
                         onDelete={(selectedAct) => {
-                          void handleDeleteAct(selectedAct);
+                          handleRequestDeleteAct(selectedAct);
                         }}
                         onMove={(selectedAct) => {
                           setMovingAct(selectedAct);
@@ -576,6 +583,18 @@ export default function ActsPage() {
           {moveError}
         </p>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteAct !== null}
+        title={`Delete "${pendingDeleteAct?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteAct();
+        }}
+        onCancel={() => setPendingDeleteAct(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }

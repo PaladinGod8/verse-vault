@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CampaignForm from '../components/campaigns/CampaignForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddCampaignInput = Parameters<DbApi['campaigns']['add']>[0];
@@ -27,6 +28,8 @@ export default function CampaignsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteCampaign, setPendingDeleteCampaign] =
+    useState<Campaign | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,13 +108,15 @@ export default function CampaignsPage() {
     setEditingCampaign(null);
   };
 
-  const handleDeleteCampaign = async (campaign: Campaign) => {
-    const isConfirmed = window.confirm(
-      `Delete "${campaign.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteCampaign = (campaign: Campaign) => {
+    setPendingDeleteCampaign(campaign);
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!pendingDeleteCampaign) {
       return;
     }
+    const campaign = pendingDeleteCampaign;
 
     setDeletingId(campaign.id);
 
@@ -120,6 +125,9 @@ export default function CampaignsPage() {
       setCampaigns((prev) => prev.filter((c) => c.id !== campaign.id));
     } finally {
       setDeletingId((current) => (current === campaign.id ? null : current));
+      setPendingDeleteCampaign((current) =>
+        current?.id === campaign.id ? null : current,
+      );
     }
   };
 
@@ -223,7 +231,7 @@ export default function CampaignsPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            void handleDeleteCampaign(campaign);
+                            handleRequestDeleteCampaign(campaign);
                           }}
                           className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={deletingId === campaign.id}
@@ -290,6 +298,18 @@ export default function CampaignsPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteCampaign !== null}
+        title={`Delete "${pendingDeleteCampaign?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteCampaign();
+        }}
+        onCancel={() => setPendingDeleteCampaign(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }
