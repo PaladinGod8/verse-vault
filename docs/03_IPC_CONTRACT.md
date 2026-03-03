@@ -19,9 +19,11 @@ Scene Step 09 (2026-02-27) wires scene CRUD handlers in `main` for `SCENES_GET_A
 
 Scenes Move Step 01 (2026-03-03) adds `SCENES_MOVE_TO_SESSION` in main with transactional move/resequence semantics and exposes `window.db.scenes.moveTo(sceneId, newSessionId)` in preload and shared types.
 
-Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`.
+Campaign Scenes Index Step 01 (2026-03-03) adds `SCENES_GET_ALL_BY_CAMPAIGN` in main as a read-only campaign query (`scenes -> sessions -> acts -> arcs`, filtered by `arcs.campaign_id`) and exposes `window.db.scenes.getAllByCampaign(campaignId)` in preload.
 
-Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`, aligning the TypeScript contract with schema columns and IPC payloads.
+Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`; Campaign Scenes Index Step 01 extends this with one additional read channel (16 total).
+
+Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`; Campaign Scenes Index Step 01 adds `CampaignSceneListItem` and `DbApi.scenes.getAllByCampaign`.
 
 Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.campaign_id` → `sessions.act_id`, adds full CRUD + reparenting channels for arcs and acts (`ARCS_*`, `ACTS_*`), replaces `SESSIONS_GET_ALL_BY_CAMPAIGN` handler with `SESSIONS_GET_ALL_BY_ACT`, adds `SESSIONS_MOVE_TO_ACT`, and exposes `window.db.arcs.*`, `window.db.acts.*`, and updated `window.db.sessions.getAllByAct/moveTo` bridge methods. `SESSIONS_GET_ALL_BY_CAMPAIGN` constant retained for renderer compatibility until Step 02.
 
@@ -75,6 +77,7 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.SESSIONS_UPDATE`            | `db:sessions:update`         | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; planned_at?: string \| null; sort_order?: number }`                                                                                                                                                                                                             | `Session`                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.SESSIONS_DELETE`            | `db:sessions:delete`         | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                          | `src/main.ts:registerIpcHandlers` |
 | `IPC.SESSIONS_MOVE_TO_ACT`       | `db:sessions:moveToAct`      | renderer -> main | `sessionId: number, newActId: number`                                                                                                                                                                                                                                                                                       | `Session`                                 | `src/main.ts:registerIpcHandlers` |
+| `IPC.SCENES_GET_ALL_BY_CAMPAIGN` | `db:scenes:getAllByCampaign` | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                        | `CampaignSceneListItem[]`                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_GET_ALL_BY_SESSION`  | `db:scenes:getAllBySession`  | renderer -> main | `sessionId: number`                                                                                                                                                                                                                                                                                                         | `Scene[]`                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_GET_BY_ID`           | `db:scenes:getById`          | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `Scene \| null`                           | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_ADD`                 | `db:scenes:add`              | renderer -> main | `{ session_id: number; name: string; notes?: string \| null; payload?: string; sort_order?: number }`                                                                                                                                                                                                                       | `Scene`                                   | `src/main.ts:registerIpcHandlers` |
@@ -189,6 +192,14 @@ interface Scene {
   updated_at: string; // ISO datetime string from SQLite
 }
 
+interface CampaignSceneListItem extends Scene {
+  session_name: string;
+  act_id: number;
+  act_name: string;
+  arc_id: number;
+  arc_name: string;
+}
+
 interface DbApi {
   abilities: {
     getAllByWorld(worldId: number): Promise<Ability[]>;
@@ -298,6 +309,7 @@ interface DbApi {
     moveTo(sessionId: number, newActId: number): Promise<Session>;
   };
   scenes: {
+    getAllByCampaign(campaignId: number): Promise<CampaignSceneListItem[]>;
     getAllBySession(sessionId: number): Promise<Scene[]>;
     getById(id: number): Promise<Scene | null>;
     add(data: {
@@ -368,11 +380,12 @@ interface DbApi {
 - `SESSIONS_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `act_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - `SESSIONS_MOVE_TO_ACT` moves a session to a new act, appends at the tail of the new act's sort order, resequences the old act, and returns the updated session.
 - Session preload bridge methods are wired via `window.db.sessions.getAllByAct/getById/add/update/delete/moveTo`.
-- Scene main handlers are wired for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, `SCENES_DELETE`, and `SCENES_MOVE_TO_SESSION`.
+- Scene main handlers are wired for `SCENES_GET_ALL_BY_CAMPAIGN`, `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, `SCENES_DELETE`, and `SCENES_MOVE_TO_SESSION`.
+- `SCENES_GET_ALL_BY_CAMPAIGN` joins `scenes -> sessions -> acts -> arcs`, filters by `arcs.campaign_id`, and returns deterministic hierarchy order (`arc.sort_order/id`, `act.sort_order/id`, `session.sort_order/id`, `scene.sort_order/id`).
 - `SCENES_GET_ALL_BY_SESSION` is scoped by `session_id` and returns scenes ordered by `sort_order ASC, id ASC`.
 - `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text when provided, defaults omitted `payload` to `'{}'`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the session), inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row.
 - `SCENES_UPDATE` updates only explicitly provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, validates `payload` as JSON text when present, always refreshes `updated_at`, and returns the refreshed row.
 - `SCENES_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `session_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - `SCENES_MOVE_TO_SESSION` runs inside a transaction, validates source scene + target session, returns unchanged row when target equals current `session_id`, appends moved scene to target tail (`MAX(sort_order) + 1`), resequences the old session, and returns the refreshed moved row.
-- Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`.
+- Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`, and extended in Campaign Scenes Index Step 01 with `window.db.scenes.getAllByCampaign`.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

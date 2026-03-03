@@ -104,6 +104,14 @@ declare global {
     updated_at: string;
   }
 
+  interface CampaignSceneListItem extends Scene {
+    session_name: string;
+    act_id: number;
+    act_name: string;
+    arc_id: number;
+    arc_name: string;
+  }
+
   interface DbApi {
     verses: {
       getAll(): Promise<Verse[]>;
@@ -260,6 +268,7 @@ declare global {
       moveTo(sessionId: number, newActId: number): Promise<Session>;
     };
     scenes: {
+      getAllByCampaign(campaignId: number): Promise<CampaignSceneListItem[]>;
       getAllBySession(sessionId: number): Promise<Scene[]>;
       getById(id: number): Promise<Scene | null>;
       add(data: {
