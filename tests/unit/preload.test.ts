@@ -81,8 +81,16 @@ describe('preload', () => {
     await api.acts.moveTo(20, 11);
     await api.sessions.getAllByAct(20);
     await api.sessions.getById(41);
-    await api.sessions.add({ act_id: 20, name: 'Session' });
-    await api.sessions.update(41, { sort_order: 2 });
+    await api.sessions.add({
+      act_id: 20,
+      name: 'Session',
+      notes: 'Session notes',
+      planned_at: '2026-03-15T09:30',
+    });
+    await api.sessions.update(41, {
+      sort_order: 2,
+      planned_at: '2026-03-16T11:45',
+    });
     await api.sessions.delete(41);
     await api.sessions.moveTo(41, 21);
     await api.scenes.getAllBySession(40);
@@ -195,9 +203,12 @@ describe('preload', () => {
     expect(invokeMock).toHaveBeenNthCalledWith(38, IPC.SESSIONS_ADD, {
       act_id: 20,
       name: 'Session',
+      notes: 'Session notes',
+      planned_at: '2026-03-15T09:30',
     });
     expect(invokeMock).toHaveBeenNthCalledWith(39, IPC.SESSIONS_UPDATE, 41, {
       sort_order: 2,
+      planned_at: '2026-03-16T11:45',
     });
     expect(invokeMock).toHaveBeenNthCalledWith(40, IPC.SESSIONS_DELETE, 41);
     expect(invokeMock).toHaveBeenNthCalledWith(

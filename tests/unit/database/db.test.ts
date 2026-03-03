@@ -1,23 +1,42 @@
 import path from 'path';
 import { describe, expect, it, vi } from 'vitest';
 
-async function loadDbModule() {
+async function loadDbModule(options?: {
+  tableInfoRows?: Array<{ name: string }>;
+  prepareImplementation?: (sql: string) => {
+    all?: (...args: unknown[]) => unknown;
+    get?: (...args: unknown[]) => unknown;
+    run?: (...args: unknown[]) => unknown;
+  };
+}) {
   const appGetPathMock = vi.fn(() => 'C:/fake-user-data');
   const pragmaMock = vi.fn();
   const execMock = vi.fn();
   const closeMock = vi.fn();
   const databaseCtorMock = vi.fn();
+  const transactionMock = vi.fn(
+    (callback: (...args: unknown[]) => unknown) =>
+      (...args: unknown[]) =>
+        callback(...args),
+  );
+  const tableInfoRows = options?.tableInfoRows ?? [
+    { name: 'act_id' },
+    { name: 'planned_at' },
+  ];
 
-  const prepareMock = vi.fn().mockReturnValue({
-    all: () => [{ name: 'act_id' }], // Simulate new schema; migration is skipped
-    run: vi.fn(),
-  });
+  const prepareMock = options?.prepareImplementation
+    ? vi.fn((sql: string) => options.prepareImplementation?.(sql))
+    : vi.fn().mockReturnValue({
+        all: () => tableInfoRows,
+        run: vi.fn(),
+      });
 
   class FakeDatabase {
     pragma = pragmaMock;
     exec = execMock;
     close = closeMock;
     prepare = prepareMock;
+    transaction = transactionMock;
 
     constructor(dbPath: string) {
       databaseCtorMock(dbPath);
@@ -42,6 +61,7 @@ async function loadDbModule() {
     execMock,
     closeMock,
     databaseCtorMock,
+    prepareMock,
   };
 }
 
@@ -80,6 +100,7 @@ describe('database', () => {
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS scenes');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS abilities');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS ability_children');
+    expect(schemaSql).toContain('planned_at TEXT');
     expect(schemaSql).toContain('name TEXT NOT NULL');
     expect(schemaSql).toContain('thumbnail TEXT');
     expect(schemaSql).toContain('short_description TEXT');
@@ -115,6 +136,107 @@ describe('database', () => {
     expect(schemaSql).toContain("config     TEXT    NOT NULL DEFAULT '{}'");
     expect(schemaSql).toContain('sort_order  INTEGER NOT NULL DEFAULT 0');
     expect(schemaSql).toContain("payload    TEXT    NOT NULL DEFAULT '{}'");
+  });
+
+  it('adds planned_at to sessions for existing databases missing the column', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule({
+      tableInfoRows: [{ name: 'act_id' }],
+    });
+
+    getDatabase();
+    closeDatabase();
+
+    expect(execMock).toHaveBeenCalledTimes(4);
+    expect(
+      execMock.mock.calls.some(
+        ([sql]) =>
+          typeof sql === 'string' &&
+          sql.includes('ALTER TABLE sessions ADD COLUMN planned_at TEXT'),
+      ),
+    ).toBe(true);
+  });
+
+  it('migrates legacy sessions schema from campaign_id to act_id', async () => {
+    const arcInsertRunMock = vi.fn(() => ({ lastInsertRowid: 11 }));
+    const actInsertRunMock = vi.fn(() => ({ lastInsertRowid: 21 }));
+    const insertNewSessionRunMock = vi.fn();
+    const campaignsSelectAllMock = vi.fn(() => [{ id: 1 }]);
+    const legacySessionsSelectAllMock = vi.fn(() => [
+      {
+        id: 5,
+        campaign_id: 1,
+        name: 'Legacy Session',
+        notes: 'Legacy notes',
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      },
+    ]);
+
+    let tableInfoCallCount = 0;
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule({
+      prepareImplementation: (sql) => {
+        if (sql === 'PRAGMA table_info(sessions)') {
+          return {
+            all: () => {
+              tableInfoCallCount += 1;
+              return tableInfoCallCount === 1
+                ? [{ name: 'campaign_id' }]
+                : [{ name: 'act_id' }, { name: 'planned_at' }];
+            },
+          };
+        }
+        if (sql === 'SELECT id FROM campaigns') {
+          return { all: campaignsSelectAllMock };
+        }
+        if (
+          sql ===
+          "INSERT INTO arcs (campaign_id, name, sort_order) VALUES (?, 'Arc 1', 0)"
+        ) {
+          return { run: arcInsertRunMock };
+        }
+        if (
+          sql ===
+          "INSERT INTO acts (arc_id, name, sort_order) VALUES (?, 'Act 1', 0)"
+        ) {
+          return { run: actInsertRunMock };
+        }
+        if (sql === 'SELECT * FROM sessions') {
+          return { all: legacySessionsSelectAllMock };
+        }
+        if (
+          sql ===
+          'INSERT INTO sessions_new (id, act_id, name, notes, planned_at, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ) {
+          return { run: insertNewSessionRunMock };
+        }
+
+        throw new Error(`Unexpected SQL in migration test: ${sql}`);
+      },
+    });
+
+    getDatabase();
+    closeDatabase();
+
+    expect(campaignsSelectAllMock).toHaveBeenCalledTimes(1);
+    expect(legacySessionsSelectAllMock).toHaveBeenCalledTimes(1);
+    expect(arcInsertRunMock).toHaveBeenCalledWith(1);
+    expect(actInsertRunMock).toHaveBeenCalledWith(11);
+    expect(insertNewSessionRunMock).toHaveBeenCalledWith(
+      5,
+      21,
+      'Legacy Session',
+      'Legacy notes',
+      null,
+      0,
+      '2026-01-01 00:00:00',
+      '2026-01-02 00:00:00',
+    );
+
+    const execSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    expect(execSql).toContain('CREATE TABLE sessions_new');
+    expect(execSql).toContain('ALTER TABLE sessions_new RENAME TO sessions');
+    expect(execSql).not.toContain('ALTER TABLE sessions ADD COLUMN planned_at TEXT');
   });
 
   it('closes and resets the singleton', async () => {

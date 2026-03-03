@@ -96,11 +96,21 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     act_id: 1,
     name: 'Session One',
     notes: 'Initial meeting',
+    planned_at: null,
     sort_order: 0,
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
   };
+}
+
+function formatPlannedAtForAssertion(value: string): string {
+  const normalized = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
+  const parsed = new Date(normalized);
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(parsed);
 }
 
 const SESSION_ROUTE =
@@ -143,6 +153,13 @@ function getRenderedSessionNumbers() {
   return getSessionRows().map((row) => {
     const orderCellText = within(row).getAllByRole('cell')[0].textContent ?? '';
     return Number(orderCellText.match(/\d+/)?.[0]);
+  });
+}
+
+function getRenderedPlannedAtValues() {
+  return getSessionRows().map((row) => {
+    const cells = within(row).getAllByRole('cell');
+    return cells[3].textContent?.trim();
   });
 }
 
@@ -288,6 +305,29 @@ describe('SessionsPage', () => {
     expect(screen.getByText('Session Two')).toBeInTheDocument();
   });
 
+  it('renders a formatted planned date-time when a session has planned_at', async () => {
+    const plannedAt = '2026-03-20T14:30';
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ planned_at: plannedAt }),
+    ]);
+
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
+
+    await screen.findByText('Session One');
+    expect(screen.getByText(formatPlannedAtForAssertion(plannedAt))).toBeInTheDocument();
+  });
+
+  it('renders planned date-time fallback when planned_at is missing', async () => {
+    actsGetByIdMock.mockResolvedValue(buildAct());
+    sessionsGetAllByActMock.mockResolvedValue([buildSession({ planned_at: null })]);
+
+    renderSessionsPage('/world/1/campaign/1/arc/1/act/1/sessions');
+
+    await screen.findByText('Session One');
+    expect(getRenderedPlannedAtValues()).toEqual(['-']);
+  });
+
   it('renders sessions in sort_order order with contiguous numbering', async () => {
     actsGetByIdMock.mockResolvedValue(buildAct());
     sessionsGetAllByActMock.mockResolvedValue([
@@ -398,6 +438,10 @@ describe('SessionsPage', () => {
       within(dialog).getByLabelText('Notes (optional)'),
       'New notes',
     );
+    await user.type(
+      within(dialog).getByLabelText('Planned date-time (optional)'),
+      '2026-03-10T09:45',
+    );
     await user.click(
       within(dialog).getByRole('button', { name: 'Create session' }),
     );
@@ -406,6 +450,7 @@ describe('SessionsPage', () => {
       act_id: 1,
       name: 'Session Three',
       notes: 'New notes',
+      planned_at: '2026-03-10T09:45',
     });
     expect(await screen.findByText('Session Three')).toBeInTheDocument();
     expect(
@@ -438,6 +483,7 @@ describe('SessionsPage', () => {
     const updatedSession = buildSession({
       name: 'Updated Session',
       notes: 'Updated notes',
+      planned_at: '2026-03-11T13:15',
     });
 
     actsGetByIdMock.mockResolvedValue(buildAct());
@@ -458,6 +504,10 @@ describe('SessionsPage', () => {
       within(dialog).getByLabelText('Notes (optional)'),
       'Updated notes',
     );
+    const plannedAtInput = within(dialog).getByLabelText(
+      'Planned date-time (optional)',
+    );
+    await user.type(plannedAtInput, '2026-03-11T13:15');
     await user.click(
       within(dialog).getByRole('button', { name: 'Save changes' }),
     );
@@ -465,6 +515,7 @@ describe('SessionsPage', () => {
     expect(sessionsUpdateMock).toHaveBeenCalledWith(1, {
       name: 'Updated Session',
       notes: 'Updated notes',
+      planned_at: '2026-03-11T13:15',
     });
     expect(await screen.findByText('Updated Session')).toBeInTheDocument();
     expect(
