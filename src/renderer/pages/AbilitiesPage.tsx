@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import AbilityChildrenManager from '../components/abilities/AbilityChildrenManager';
 import AbilityForm from '../components/abilities/AbilityForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddAbilityInput = Parameters<DbApi['abilities']['add']>[0];
@@ -307,83 +308,77 @@ export default function AbilitiesPage() {
       </main>
 
       {isCreateOpen && worldId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-ability-title"
-            className="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-ability-title"
+          boxClassName="max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
+        >
+          <h2
+            id="create-ability-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-ability-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Ability
-            </h2>
-            <AbilityForm
-              mode="create"
-              worldId={worldId}
-              onSubmit={handleCreateAbility}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            New Ability
+          </h2>
+          <AbilityForm
+            mode="create"
+            worldId={worldId}
+            onSubmit={handleCreateAbility}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {managingChildrenAbility !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="manage-ability-children-title"
-            className="w-full max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={managingChildrenAbility !== null}
+          onClose={() => setManagingChildrenAbilityId(null)}
+          labelledBy="manage-ability-children-title"
+          boxClassName="max-w-4xl"
+        >
+          <h2
+            id="manage-ability-children-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="manage-ability-children-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
+            Manage children - {managingChildrenAbility.name}
+          </h2>
+          <AbilityChildrenManager
+            parentAbility={managingChildrenAbility}
+            abilities={abilities}
+          />
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setManagingChildrenAbilityId(null)}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
-              Manage children - {managingChildrenAbility.name}
-            </h2>
-            <AbilityChildrenManager
-              parentAbility={managingChildrenAbility}
-              abilities={abilities}
-            />
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setManagingChildrenAbilityId(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Close
-              </button>
-            </div>
-          </section>
-        </div>
+              Close
+            </button>
+          </div>
+        </ModalShell>
       ) : null}
 
       {editingAbility !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-ability-title"
-            className="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingAbility !== null}
+          onClose={() => setEditingAbility(null)}
+          labelledBy="edit-ability-title"
+          boxClassName="max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
+        >
+          <h2
+            id="edit-ability-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-ability-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Ability
-            </h2>
-            <AbilityForm
-              mode="edit"
-              worldId={editingAbility.world_id}
-              initialValues={editingAbility}
-              onSubmit={handleUpdateAbility}
-              onCancel={() => setEditingAbility(null)}
-            />
-          </section>
-        </div>
+            Edit Ability
+          </h2>
+          <AbilityForm
+            mode="edit"
+            worldId={editingAbility.world_id}
+            initialValues={editingAbility}
+            onSubmit={handleUpdateAbility}
+            onCancel={() => setEditingAbility(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog

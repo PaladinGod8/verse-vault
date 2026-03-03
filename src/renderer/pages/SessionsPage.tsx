@@ -20,6 +20,7 @@ import { Link, useParams } from 'react-router-dom';
 import MoveSessionDialog from '../components/sessions/MoveSessionDialog';
 import SessionForm from '../components/sessions/SessionForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSessionInput = Parameters<DbApi['sessions']['add']>[0];
@@ -585,27 +586,25 @@ export default function SessionsPage() {
       </main>
 
       {isCreateOpen && parsedActId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-session-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-session-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-session-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-session-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Session
-            </h2>
-            <SessionForm
-              mode="create"
-              actId={parsedActId}
-              onSubmit={handleCreateSession}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            New Session
+          </h2>
+          <SessionForm
+            mode="create"
+            actId={parsedActId}
+            onSubmit={handleCreateSession}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {movingSession !== null &&
@@ -632,28 +631,26 @@ export default function SessionsPage() {
       ) : null}
 
       {editingSession !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-session-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingSession !== null}
+          onClose={() => setEditingSession(null)}
+          labelledBy="edit-session-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-session-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-session-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Session
-            </h2>
-            <SessionForm
-              mode="edit"
-              actId={editingSession.act_id}
-              initialValues={editingSession}
-              onSubmit={handleUpdateSession}
-              onCancel={() => setEditingSession(null)}
-            />
-          </section>
-        </div>
+            Edit Session
+          </h2>
+          <SessionForm
+            mode="edit"
+            actId={editingSession.act_id}
+            initialValues={editingSession}
+            onSubmit={handleUpdateSession}
+            onCancel={() => setEditingSession(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog

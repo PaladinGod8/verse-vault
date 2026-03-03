@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
 
@@ -177,50 +178,46 @@ export default function WorldsHomePage() {
       </main>
 
       {isCreateOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-world-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-world-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-world-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-world-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Create world
-            </h2>
-            <WorldForm
-              mode="create"
-              onSubmit={handleCreateWorld}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            Create world
+          </h2>
+          <WorldForm
+            mode="create"
+            onSubmit={handleCreateWorld}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {editingWorld ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-world-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingWorld !== null}
+          onClose={() => setEditingWorld(null)}
+          labelledBy="edit-world-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-world-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-world-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit world
-            </h2>
-            <WorldForm
-              mode="edit"
-              initialValues={editingWorld}
-              onSubmit={handleUpdateWorld}
-              onCancel={() => setEditingWorld(null)}
-            />
-          </section>
-        </div>
+            Edit world
+          </h2>
+          <WorldForm
+            mode="edit"
+            initialValues={editingWorld}
+            onSubmit={handleUpdateWorld}
+            onCancel={() => setEditingWorld(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog
