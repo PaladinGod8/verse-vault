@@ -76,7 +76,7 @@ function registerIpcHandlers() {
   const getArcByIdStmt = db.prepare('SELECT * FROM arcs WHERE id = ?');
   const getActByIdStmt = db.prepare('SELECT * FROM acts WHERE id = ?');
   const insertSessionStmt = db.prepare(
-    'INSERT INTO sessions (act_id, name, notes, sort_order) VALUES (?, ?, ?, ?)',
+    'INSERT INTO sessions (act_id, name, notes, planned_at, sort_order) VALUES (?, ?, ?, ?, ?)',
   );
   const insertSceneStmt = db.prepare(
     'INSERT INTO scenes (session_id, name, notes, payload, sort_order) VALUES (?, ?, ?, ?, ?)',
@@ -151,6 +151,7 @@ function registerIpcHandlers() {
       act_id: number;
       name: string;
       notes?: string | null;
+      planned_at?: string | null;
       sort_order?: number;
     }) => {
       const sortOrder =
@@ -168,6 +169,7 @@ function registerIpcHandlers() {
         data.act_id,
         data.name,
         data.notes ?? null,
+        data.planned_at ?? null,
         sortOrder,
       );
 
@@ -815,6 +817,7 @@ function registerIpcHandlers() {
         act_id: number;
         name: string;
         notes?: string | null;
+        planned_at?: string | null;
         sort_order?: number;
       },
     ) => {
@@ -827,6 +830,7 @@ function registerIpcHandlers() {
         act_id: data.act_id,
         name,
         notes: data.notes,
+        planned_at: data.planned_at,
         sort_order: data.sort_order,
       });
     },
@@ -837,10 +841,19 @@ function registerIpcHandlers() {
     (
       _event,
       id: number,
-      data: { name?: string; notes?: string | null; sort_order?: number },
+      data: {
+        name?: string;
+        notes?: string | null;
+        planned_at?: string | null;
+        sort_order?: number;
+      },
     ) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasNotes = Object.prototype.hasOwnProperty.call(data, 'notes');
+      const hasPlannedAt = Object.prototype.hasOwnProperty.call(
+        data,
+        'planned_at',
+      );
       const hasSortOrder = Object.prototype.hasOwnProperty.call(
         data,
         'sort_order',
@@ -862,6 +875,11 @@ function registerIpcHandlers() {
       if (hasNotes && data.notes !== undefined) {
         setClauses.push('notes = ?');
         values.push(data.notes);
+      }
+
+      if (hasPlannedAt && data.planned_at !== undefined) {
+        setClauses.push('planned_at = ?');
+        values.push(data.planned_at);
       }
 
       if (hasSortOrder && data.sort_order !== undefined) {

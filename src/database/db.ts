@@ -82,6 +82,7 @@ function initializeSchema(db: Database.Database): void {
       act_id     INTEGER NOT NULL REFERENCES acts(id) ON DELETE CASCADE,
       name       TEXT    NOT NULL,
       notes      TEXT,
+      planned_at TEXT,
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -128,6 +129,7 @@ function initializeSchema(db: Database.Database): void {
   `);
 
   runArcActMigration(db);
+  runSessionPlannedAtMigration(db);
 }
 
 function runArcActMigration(db: Database.Database): void {
@@ -167,6 +169,7 @@ function runArcActMigration(db: Database.Database): void {
         act_id     INTEGER NOT NULL REFERENCES acts(id) ON DELETE CASCADE,
         name       TEXT    NOT NULL,
         notes      TEXT,
+        planned_at TEXT,
         sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TEXT    NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -185,7 +188,7 @@ function runArcActMigration(db: Database.Database): void {
     }>;
 
     const insertNewSession = db.prepare(
-      'INSERT INTO sessions_new (id, act_id, name, notes, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO sessions_new (id, act_id, name, notes, planned_at, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     );
 
     for (const session of sessions) {
@@ -196,6 +199,7 @@ function runArcActMigration(db: Database.Database): void {
           actId,
           session.name,
           session.notes ?? null,
+          null,
           session.sort_order,
           session.created_at,
           session.updated_at,
@@ -209,6 +213,18 @@ function runArcActMigration(db: Database.Database): void {
       ALTER TABLE sessions_new RENAME TO sessions;
     `);
   })();
+}
+
+function runSessionPlannedAtMigration(db: Database.Database): void {
+  const cols = db.prepare('PRAGMA table_info(sessions)').all() as Array<{
+    name: string;
+  }>;
+  const hasPlannedAt = cols.some((c) => c.name === 'planned_at');
+  if (hasPlannedAt) {
+    return;
+  }
+
+  db.exec('ALTER TABLE sessions ADD COLUMN planned_at TEXT');
 }
 
 export function closeDatabase(): void {

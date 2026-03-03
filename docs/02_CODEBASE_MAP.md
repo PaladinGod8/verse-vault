@@ -446,13 +446,13 @@
 ### Session Schema Bootstrap (Step 05)
 
 - **Purpose**: ensure `sessions` table exists during DB initialization and cascades deletes
-- **Status**: added on 2026-02-27 as migration-safe `CREATE TABLE IF NOT EXISTS`; schema updated Arc/Act Step 01 (2026-02-28) — `campaign_id` FK replaced by `act_id` FK for fresh DBs; existing DBs auto-migrated by `runArcActMigration`
+- **Status**: added on 2026-02-27 as migration-safe `CREATE TABLE IF NOT EXISTS`; schema updated Arc/Act Step 01 (2026-02-28) — `campaign_id` FK replaced by `act_id` FK for fresh DBs; existing DBs auto-migrated by `runArcActMigration`; Session planned date-time Step 01 (2026-03-03) adds nullable `planned_at` with `runSessionPlannedAtMigration` for existing DBs.
 - **UI**: none yet
 - **Store**: none yet
 - **IPC**: session contract exists from Step 02; runtime handlers are added later in Step 08
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
-- **Storage**: `verse-vault.db` -> `sessions` table (`id`, `act_id` FK -> `acts(id)` `ON DELETE CASCADE`, `name`, `notes`, `sort_order`, `created_at`, `updated_at`)
+- **Storage**: `verse-vault.db` -> `sessions` table (`id`, `act_id` FK -> `acts(id)` `ON DELETE CASCADE`, `name`, `notes`, `planned_at` nullable `TEXT`, `sort_order`, `created_at`, `updated_at`)
 
 ### Session Main CRUD Handlers (Step 08)
 
@@ -463,7 +463,7 @@
 - **IPC**: `IPC.SESSIONS_GET_ALL_BY_ACT`, `IPC.SESSIONS_GET_BY_ID`, `IPC.SESSIONS_ADD`, `IPC.SESSIONS_UPDATE`, `IPC.SESSIONS_DELETE`, `IPC.SESSIONS_MOVE_TO_ACT`
 - **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
 - **Preload bridge**: not wired in this step
-- **Storage**: `SESSIONS_GET_ALL_BY_ACT` reads by `act_id` ordered by `sort_order ASC, id ASC`; `SESSIONS_GET_BY_ID` returns row or `null`; `SESSIONS_ADD` validates required trimmed `name`, appends to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within act), inserts (`act_id`, `name`, `notes`, `sort_order`), and returns the inserted row; `SESSIONS_UPDATE` mutates only provided fields using `hasOwnProperty`, always sets `updated_at = datetime('now')`, and returns refreshed row; `SESSIONS_DELETE` removes by id, compacts remaining sibling `sort_order` values within `act_id`, and returns `{ id }`; `SESSIONS_MOVE_TO_ACT` moves session to a different act, appends at the tail of the new act, and resequences the old act
+- **Storage**: `SESSIONS_GET_ALL_BY_ACT` reads by `act_id` ordered by `sort_order ASC, id ASC`; `SESSIONS_GET_BY_ID` returns row or `null`; `SESSIONS_ADD` validates required trimmed `name`, appends to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within act), inserts (`act_id`, `name`, `notes`, `planned_at`, `sort_order`), and returns the inserted row; `SESSIONS_UPDATE` mutates only provided fields (`name`, `notes`, `planned_at`, `sort_order`) using `hasOwnProperty`, always sets `updated_at = datetime('now')`, and returns refreshed row; `SESSIONS_DELETE` removes by id, compacts remaining sibling `sort_order` values within `act_id`, and returns `{ id }`; `SESSIONS_MOVE_TO_ACT` moves session to a different act, appends at the tail of the new act, and resequences the old act
 
 ### Scene Shared Contract (Step 03)
 

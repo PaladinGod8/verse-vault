@@ -69,8 +69,8 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.ACTS_MOVE_TO_ARC`           | `db:acts:moveToArc`          | renderer -> main | `actId: number, newArcId: number`                                                                                                                                                                                                                                                                                           | `Act`                                     | `src/main.ts:registerIpcHandlers` |
 | `IPC.SESSIONS_GET_ALL_BY_ACT`    | `db:sessions:getAllByAct`    | renderer -> main | `actId: number`                                                                                                                                                                                                                                                                                                             | `Session[]`                               | `src/main.ts:registerIpcHandlers` |
 | `IPC.SESSIONS_GET_BY_ID`         | `db:sessions:getById`        | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `Session \| null`                         | `src/main.ts:registerIpcHandlers` |
-| `IPC.SESSIONS_ADD`               | `db:sessions:add`            | renderer -> main | `{ act_id: number; name: string; notes?: string \| null; sort_order?: number }`                                                                                                                                                                                                                                             | `Session`                                 | `src/main.ts:registerIpcHandlers` |
-| `IPC.SESSIONS_UPDATE`            | `db:sessions:update`         | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; sort_order?: number }`                                                                                                                                                                                                                                          | `Session`                                 | `src/main.ts:registerIpcHandlers` |
+| `IPC.SESSIONS_ADD`               | `db:sessions:add`            | renderer -> main | `{ act_id: number; name: string; notes?: string \| null; planned_at?: string \| null; sort_order?: number }`                                                                                                                                                                                                                | `Session`                                 | `src/main.ts:registerIpcHandlers` |
+| `IPC.SESSIONS_UPDATE`            | `db:sessions:update`         | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; planned_at?: string \| null; sort_order?: number }`                                                                                                                                                                                                             | `Session`                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.SESSIONS_DELETE`            | `db:sessions:delete`         | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                          | `src/main.ts:registerIpcHandlers` |
 | `IPC.SESSIONS_MOVE_TO_ACT`       | `db:sessions:moveToAct`      | renderer -> main | `sessionId: number, newActId: number`                                                                                                                                                                                                                                                                                       | `Session`                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_GET_ALL_BY_SESSION`  | `db:scenes:getAllBySession`  | renderer -> main | `sessionId: number`                                                                                                                                                                                                                                                                                                         | `Scene[]`                                 | `src/main.ts:registerIpcHandlers` |
@@ -169,6 +169,7 @@ interface Session {
   act_id: number;
   name: string;
   notes: string | null;
+  planned_at: string | null;
   sort_order: number;
   created_at: string; // ISO datetime string from SQLite
   updated_at: string; // ISO datetime string from SQLite
@@ -278,11 +279,17 @@ interface DbApi {
       act_id: number;
       name: string;
       notes?: string | null;
+      planned_at?: string | null;
       sort_order?: number;
     }): Promise<Session>;
     update(
       id: number,
-      data: { name?: string; notes?: string | null; sort_order?: number },
+      data: {
+        name?: string;
+        notes?: string | null;
+        planned_at?: string | null;
+        sort_order?: number;
+      },
     ): Promise<Session>;
     delete(id: number): Promise<{ id: number }>;
     moveTo(sessionId: number, newActId: number): Promise<Session>;
@@ -352,8 +359,8 @@ interface DbApi {
 - Act preload bridge methods are wired via `window.db.acts.getAllByArc/getAllByCampaign/getById/add/update/delete/moveTo`.
 - Session main handlers are wired for `SESSIONS_GET_ALL_BY_ACT`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, `SESSIONS_DELETE`, and `SESSIONS_MOVE_TO_ACT`.
 - `SESSIONS_GET_ALL_BY_ACT` is scoped by `act_id` and returns sessions ordered by `sort_order ASC, id ASC`.
-- `SESSIONS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the act), inserts (`act_id`, `name`, `notes`, `sort_order`), and returns the inserted row.
-- `SESSIONS_UPDATE` updates only explicitly provided fields (`name`, `notes`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
+- `SESSIONS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the act), inserts (`act_id`, `name`, `notes`, `planned_at`, `sort_order`), and returns the inserted row.
+- `SESSIONS_UPDATE` updates only explicitly provided fields (`name`, `notes`, `planned_at`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
 - `SESSIONS_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `act_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - `SESSIONS_MOVE_TO_ACT` moves a session to a new act, appends at the tail of the new act's sort order, resequences the old act, and returns the updated session.
 - Session preload bridge methods are wired via `window.db.sessions.getAllByAct/getById/add/update/delete/moveTo`.
