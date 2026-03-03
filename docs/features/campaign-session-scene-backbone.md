@@ -28,12 +28,14 @@ Five tables are defined in `src/database/db.ts`:
 | `campaigns` | `id`, `world_id` FK, `name`, `summary`, `config` (JSON text, default `{}`), `created_at`, `updated_at`                            |
 | `arcs`      | `id`, `campaign_id` FK, `name`, `sort_order` (default 0), `created_at`, `updated_at`                                              |
 | `acts`      | `id`, `arc_id` FK, `name`, `sort_order` (default 0), `created_at`, `updated_at`                                                   |
-| `sessions`  | `id`, `act_id` FK, `name`, `notes`, `sort_order` (default 0), `created_at`, `updated_at`                                          |
+| `sessions`  | `id`, `act_id` FK, `name`, `notes`, `planned_at` (optional text), `sort_order` (default 0), `created_at`, `updated_at`            |
 | `scenes`    | `id`, `session_id` FK, `name`, `notes`, `payload` (JSON text, default `{}`), `sort_order` (default 0), `created_at`, `updated_at` |
 
 All FKs use `ON DELETE CASCADE`.
 
 Note: `sessions.campaign_id` (previous schema) was migrated to `sessions.act_id`. Existing sessions were assigned to auto-generated `Arc 1` / `Act 1` records per campaign.
+
+Note: `sessions.planned_at` was added as a nullable `TEXT` column. Existing databases missing the column are migrated in place.
 
 ### IPC Channels
 
@@ -58,6 +60,7 @@ Note: `db:acts:getAllByCampaign` is a convenience channel for `MoveSessionDialog
 - Session and scene create append to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` in parent scope).
 - Arc and act update accept partial `sort_order` updates and refresh `updated_at`.
 - Session and scene update accept partial `sort_order` updates and refresh `updated_at`.
+- Session create/update payloads support optional `planned_at` (`string | null`) and persist it to `sessions.planned_at`.
 - Arc and act delete compact sibling order to contiguous `0..N-1` in parent scope.
 - Session and scene delete compact sibling order to contiguous `0..N-1` in parent scope.
 - Session handlers are scoped by `act_id` (not `campaign_id`).
@@ -74,6 +77,7 @@ Renderer access stays behind `window.db` (`src/preload.ts`, `forge.env.d.ts`):
 - `window.db.acts.{ getAllByArc, getAllByCampaign, getById, add, update, delete, moveTo }`
 - `window.db.sessions.{ getAllByAct, getById, add, update, delete, moveTo }`
 - `window.db.scenes.{ getAllBySession, getById, add, update, delete }`
+- Session contract includes `planned_at: string | null`; `window.db.sessions.add/update` accept optional `planned_at?: string | null`.
 
 ### Renderer Routes and Pages
 
@@ -82,7 +86,7 @@ Renderer access stays behind `window.db` (`src/preload.ts`, `forge.env.d.ts`):
 | `/world/:id/campaigns`                                                            | `CampaignsPage` | Lists campaigns for a world; create/edit/delete; `Arcs` link drills down                                                          |
 | `/world/:id/campaign/:campaignId/arcs`                                            | `ArcsPage`      | Lists arcs ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Acts` link                                              |
 | `/world/:id/campaign/:campaignId/arc/:arcId/acts`                                 | `ActsPage`      | Lists acts ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Sessions` link; move action opens `MoveActDialog`       |
-| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | `SessionsPage`  | Lists sessions ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Scenes` link; move action opens `MoveSessionDialog` |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | `SessionsPage`  | Lists sessions ordered by `sort_order`; includes planned date-time column (localized display, `-` when missing); dnd-kit reorder; create/edit/delete; `Scenes` link; move action opens `MoveSessionDialog` |
 | `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | `ScenesPage`    | Lists scenes ordered by `sort_order`; dnd-kit reorder; create/edit/delete; payload JSON validation                                |
 
 ## Sequence-Driven Ordering
@@ -135,6 +139,8 @@ Two reparent operations are supported. Both are atomic transactions in the main 
 
 - `name`: required, trimmed; blank blocked in both renderer and main handlers.
 - `summary` / `notes`: optional; empty string maps to `null` in forms.
+- `planned_at` (Session): optional; renderer uses `datetime-local` input and submits `null` when blank.
+- `planned_at` (Session): main handlers accept `string | null` and do not enforce a strict datetime format.
 - `payload` (Scene): must be valid JSON when provided; empty form input defaults to `'{}'`.
 
 ## Non-Goals
@@ -153,6 +159,8 @@ Two reparent operations are supported. Both are atomic transactions in the main 
 - No undo stack for reorder or reparent operations.
 - Campaign rows still use `updated_at DESC`; sequence semantics apply only to arcs, acts, sessions, and scenes.
 - `config` (Campaign) and `payload` (Scene) are stored as JSON text without schema-level domain validation.
+- `sessions.planned_at` is stored as SQLite `TEXT` with no schema-level timezone/format constraint.
+- Planned date-time display is locale-dependent (`Intl.DateTimeFormat`) and invalid stored values render as raw text.
 - There is no route below scene level.
 
 ## Possible Next Extensions
