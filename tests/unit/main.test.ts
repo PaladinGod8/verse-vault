@@ -271,7 +271,7 @@ describe('main process', () => {
     const actsSiblingIdsAllMock = vi.fn(() => [{ id: 20 }]);
 
     const sessionsSelectAllByActMock = vi.fn(() => [
-      { id: 41, act_id: 20, name: 'Session One' },
+      { id: 41, act_id: 20, name: 'Session One', planned_at: null },
     ]);
     const sessionsSelectByIdGetMock = vi.fn((id: number) => {
       if (id === 404) return null;
@@ -280,6 +280,12 @@ describe('main process', () => {
         act_id: 20,
         name: `Session ${id}`,
         notes: null,
+        planned_at:
+          id === 40
+            ? '2026-03-15T09:30'
+            : id === 41
+              ? '2026-03-17T10:45'
+              : null,
         sort_order: 0,
         created_at: '2026-01-01 00:00:00',
         updated_at: '2026-01-02 00:00:00',
@@ -1186,7 +1192,7 @@ describe('main process', () => {
       'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
     );
     expect(sessionsGetAllByActResult).toEqual([
-      { id: 41, act_id: 20, name: 'Session One' },
+      { id: 41, act_id: 20, name: 'Session One', planned_at: null },
     ]);
 
     const sessionByIdResult = registeredIpcHandlers[IPC.SESSIONS_GET_BY_ID](
@@ -1204,17 +1210,25 @@ describe('main process', () => {
 
     const sessionAddResult = registeredIpcHandlers[IPC.SESSIONS_ADD](
       {},
-      { act_id: 20, name: '  New Session  ' },
+      {
+        act_id: 20,
+        name: '  New Session  ',
+        planned_at: '2026-03-15T09:30',
+      },
     );
     expect(sessionsNextSortOrderGetMock).toHaveBeenCalledWith(20);
     expect(sessionsInsertRunMock).toHaveBeenCalledWith(
       20,
       'New Session',
       null,
+      '2026-03-15T09:30',
       7,
     );
     expect(sessionsSelectByIdGetMock).toHaveBeenCalledWith(40);
-    expect(sessionAddResult).toMatchObject({ id: 40 });
+    expect(sessionAddResult).toMatchObject({
+      id: 40,
+      planned_at: '2026-03-15T09:30',
+    });
 
     expect(() =>
       registeredIpcHandlers[IPC.SESSIONS_ADD]({}, { act_id: 20, name: '   ' }),
@@ -1223,18 +1237,31 @@ describe('main process', () => {
     const sessionUpdateResult = registeredIpcHandlers[IPC.SESSIONS_UPDATE](
       {},
       41,
-      { notes: 'Some notes', sort_order: 3 },
+      {
+        notes: 'Some notes',
+        planned_at: '2026-03-17T10:45',
+        sort_order: 3,
+      },
     );
     const sessionUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
         typeof sql === 'string' &&
         sql.includes('UPDATE sessions SET') &&
         sql.includes('notes = ?') &&
+        sql.includes('planned_at = ?') &&
         sql.includes('sort_order = ?'),
     )?.[0];
     expect(sessionUpdateSql).toContain("updated_at = datetime('now')");
-    expect(sessionsUpdateRunMock).toHaveBeenCalledWith('Some notes', 3, 41);
-    expect(sessionUpdateResult).toMatchObject({ id: 41 });
+    expect(sessionsUpdateRunMock).toHaveBeenCalledWith(
+      'Some notes',
+      '2026-03-17T10:45',
+      3,
+      41,
+    );
+    expect(sessionUpdateResult).toMatchObject({
+      id: 41,
+      planned_at: '2026-03-17T10:45',
+    });
 
     expect(() =>
       registeredIpcHandlers[IPC.SESSIONS_UPDATE]({}, 41, { name: '   ' }),
