@@ -1,4 +1,39 @@
 @import 'tailwindcss';
+@plugin 'daisyui';
+@plugin 'daisyui/theme' {
+  name: 'versevault';
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #f8fafc;
+  --color-base-200: #f1f5f9;
+  --color-base-300: #e2e8f0;
+  --color-base-content: #0f172a;
+  --color-primary: #0f172a;
+  --color-primary-content: #f8fafc;
+  --color-secondary: #334155;
+  --color-secondary-content: #f8fafc;
+  --color-accent: #0ea5e9;
+  --color-accent-content: #f8fafc;
+  --color-neutral: #1e293b;
+  --color-neutral-content: #f8fafc;
+  --color-info: #0284c7;
+  --color-info-content: #f8fafc;
+  --color-success: #15803d;
+  --color-success-content: #f8fafc;
+  --color-warning: #b45309;
+  --color-warning-content: #fefce8;
+  --color-error: #b91c1c;
+  --color-error-content: #fef2f2;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
 
 body {
   font-family:
