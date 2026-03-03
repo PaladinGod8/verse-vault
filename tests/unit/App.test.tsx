@@ -8,6 +8,7 @@ const worldsGetAllMock = vi.fn();
 const worldsGetByIdMock = vi.fn();
 const worldsMarkViewedMock = vi.fn();
 const campaignsGetAllByWorldMock = vi.fn();
+const battlemapsGetAllByWorldMock = vi.fn();
 const campaignsGetByIdMock = vi.fn();
 const arcsGetAllByCampaignMock = vi.fn();
 const arcsGetByIdMock = vi.fn();
@@ -112,6 +113,13 @@ describe('App routes', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      battlemaps: {
+        getAllByWorld: battlemapsGetAllByWorldMock,
+        getById: vi.fn(),
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
       arcs: {
         getAllByCampaign: arcsGetAllByCampaignMock,
         getById: arcsGetByIdMock,
@@ -200,6 +208,21 @@ describe('App routes', () => {
     );
 
     expect(await screen.findByText('No campaigns yet.')).toBeInTheDocument();
+  });
+
+  it('renders battlemaps page at /world/:id/battlemaps', async () => {
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    battlemapsGetAllByWorldMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/world/1/battlemaps']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('No BattleMaps yet.')).toBeInTheDocument();
+    expect(worldsGetByIdMock).toHaveBeenCalledWith(1);
+    expect(battlemapsGetAllByWorldMock).toHaveBeenCalledWith(1);
   });
 
   it('renders arcs page at /world/:id/campaign/:campaignId/arcs', async () => {

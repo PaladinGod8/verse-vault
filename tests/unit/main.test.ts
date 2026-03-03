@@ -216,6 +216,23 @@ describe('main process', () => {
     const campaignsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 30 }));
     const campaignsUpdateRunMock = vi.fn();
     const campaignsDeleteRunMock = vi.fn();
+    const battlemapsSelectAllByWorldMock = vi.fn(() => [
+      { id: 61, world_id: 1, name: 'Dungeon Grid', config: '{}' },
+    ]);
+    const battlemapsSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        world_id: 1,
+        name: `BattleMap ${id}`,
+        config: '{"size":20}',
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const battlemapsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 61 }));
+    const battlemapsUpdateRunMock = vi.fn();
+    const battlemapsDeleteRunMock = vi.fn();
 
     const arcsSelectAllByCampaignMock = vi.fn(() => [
       { id: 10, campaign_id: 1, name: 'Arc One', sort_order: 0 },
@@ -449,6 +466,26 @@ describe('main process', () => {
 
       if (
         sql.includes(
+          'SELECT * FROM battlemaps WHERE world_id = ? ORDER BY updated_at DESC, id DESC',
+        )
+      ) {
+        return { all: battlemapsSelectAllByWorldMock };
+      }
+      if (sql.includes('SELECT * FROM battlemaps WHERE id = ?')) {
+        return { get: battlemapsSelectByIdGetMock };
+      }
+      if (sql.includes('INSERT INTO battlemaps')) {
+        return { run: battlemapsInsertRunMock };
+      }
+      if (sql.includes('UPDATE battlemaps SET')) {
+        return { run: battlemapsUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM battlemaps WHERE id = ?')) {
+        return { run: battlemapsDeleteRunMock };
+      }
+
+      if (
+        sql.includes(
           'SELECT * FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
         )
       ) {
@@ -648,7 +685,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(53);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(58);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -1094,6 +1131,128 @@ describe('main process', () => {
     );
     expect(campaignsDeleteRunMock).toHaveBeenCalledWith(33);
     expect(campaignDeleteResult).toEqual({ id: 33 });
+
+    // BATTLEMAPS
+    const battlemapsGetAllByWorldResult = registeredIpcHandlers[
+      IPC.BATTLEMAPS_GET_ALL_BY_WORLD
+    ]({}, 1);
+    expect(battlemapsSelectAllByWorldMock).toHaveBeenCalledTimes(1);
+    expect(battlemapsSelectAllByWorldMock).toHaveBeenCalledWith(1);
+    expect(battlemapsGetAllByWorldResult).toEqual([
+      { id: 61, world_id: 1, name: 'Dungeon Grid', config: '{}' },
+    ]);
+
+    const battlemapByIdResult = registeredIpcHandlers[IPC.BATTLEMAPS_GET_BY_ID](
+      {},
+      61,
+    );
+    expect(battlemapsSelectByIdGetMock).toHaveBeenCalledWith(61);
+    expect(battlemapByIdResult).toMatchObject({ id: 61 });
+
+    const missingBattleMapResult = registeredIpcHandlers[
+      IPC.BATTLEMAPS_GET_BY_ID
+    ]({}, 404);
+    expect(missingBattleMapResult).toBeNull();
+
+    const battlemapAddResult = registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
+      {},
+      { world_id: 1, name: '  New BattleMap  ' },
+    );
+    expect(battlemapsInsertRunMock).toHaveBeenCalledWith(
+      1,
+      'New BattleMap',
+      '{}',
+    );
+    expect(battlemapsSelectByIdGetMock).toHaveBeenCalledWith(61);
+    expect(battlemapAddResult).toMatchObject({ id: 61 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
+        {},
+        { world_id: 1, name: '   ' },
+      ),
+    ).toThrowError('BattleMap name is required');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
+        {},
+        { world_id: 1, name: 'Valid', config: 'not-json' },
+      ),
+    ).toThrowError('BattleMap config must be valid JSON text');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
+        {},
+        {
+          world_id: 1,
+          name: 'Valid',
+          config: 123 as unknown as string,
+        },
+      ),
+    ).toThrowError('BattleMap config must be a JSON string');
+
+    const battlemapUpdateResult = registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE](
+      {},
+      61,
+      { name: 'Updated BattleMap', config: '{"size":40}' },
+    );
+    const battlemapUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE battlemaps SET') &&
+        sql.includes('name = ?') &&
+        sql.includes('config = ?'),
+    )?.[0];
+    expect(battlemapUpdateSql).toContain("updated_at = datetime('now')");
+    expect(battlemapsUpdateRunMock).toHaveBeenCalledWith(
+      'Updated BattleMap',
+      '{"size":40}',
+      61,
+    );
+    expect(battlemapUpdateResult).toMatchObject({ id: 61 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, { name: '   ' }),
+    ).toThrowError('BattleMap name cannot be empty');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, {
+        config: 'not-json',
+      }),
+    ).toThrowError('BattleMap config must be valid JSON text');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, {
+        config: 123 as unknown as string,
+      }),
+    ).toThrowError('BattleMap config must be a JSON string');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 404, {
+        name: 'Missing BattleMap',
+      }),
+    ).toThrowError('BattleMap not found');
+
+    const battlemapTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.BATTLEMAPS_UPDATE
+    ]({}, 62, {});
+    const battlemapTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql ===
+        "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(battlemapTimestampOnlySql).toBe(
+      "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(battlemapsUpdateRunMock).toHaveBeenLastCalledWith(62);
+    expect(battlemapTimestampOnlyUpdateResult).toMatchObject({ id: 62 });
+
+    const battlemapDeleteResult = registeredIpcHandlers[IPC.BATTLEMAPS_DELETE](
+      {},
+      63,
+    );
+    expect(battlemapsDeleteRunMock).toHaveBeenCalledWith(63);
+    expect(battlemapDeleteResult).toEqual({ id: 63 });
 
     // ARCS
     const arcsGetAllByCampaignResult = registeredIpcHandlers[
