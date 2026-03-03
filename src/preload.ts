@@ -143,11 +143,17 @@ contextBridge.exposeInMainWorld('db', {
       act_id: number;
       name: string;
       notes?: string | null;
+      planned_at?: string | null;
       sort_order?: number;
     }) => ipcRenderer.invoke(IPC.SESSIONS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; notes?: string | null; sort_order?: number },
+      data: {
+        name?: string;
+        notes?: string | null;
+        planned_at?: string | null;
+        sort_order?: number;
+      },
     ) => ipcRenderer.invoke(IPC.SESSIONS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.SESSIONS_DELETE, id),
     moveTo: (sessionId: number, newActId: number): Promise<Session> =>

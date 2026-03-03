@@ -87,6 +87,7 @@ declare global {
     act_id: number;
     name: string;
     notes: string | null;
+    planned_at: string | null;
     sort_order: number;
     created_at: string;
     updated_at: string;
@@ -243,11 +244,17 @@ declare global {
         act_id: number;
         name: string;
         notes?: string | null;
+        planned_at?: string | null;
         sort_order?: number;
       }): Promise<Session>;
       update(
         id: number,
-        data: { name?: string; notes?: string | null; sort_order?: number },
+        data: {
+          name?: string;
+          notes?: string | null;
+          planned_at?: string | null;
+          sort_order?: number;
+        },
       ): Promise<Session>;
       delete(id: number): Promise<{ id: number }>;
       moveTo(sessionId: number, newActId: number): Promise<Session>;
