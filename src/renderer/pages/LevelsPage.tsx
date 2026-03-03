@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import LevelForm from '../components/levels/LevelForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
@@ -27,6 +28,9 @@ export default function LevelsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<Level | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteLevel, setPendingDeleteLevel] = useState<Level | null>(
+    null,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -106,13 +110,15 @@ export default function LevelsPage() {
     setEditingLevel(null);
   };
 
-  const handleDeleteLevel = async (level: Level) => {
-    const isConfirmed = window.confirm(
-      `Delete "${level.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteLevel = (level: Level) => {
+    setPendingDeleteLevel(level);
+  };
+
+  const handleDeleteLevel = async () => {
+    if (!pendingDeleteLevel) {
       return;
     }
+    const level = pendingDeleteLevel;
 
     setDeletingId(level.id);
 
@@ -121,6 +127,9 @@ export default function LevelsPage() {
       setLevels((prev) => prev.filter((l) => l.id !== level.id));
     } finally {
       setDeletingId((current) => (current === level.id ? null : current));
+      setPendingDeleteLevel((current) =>
+        current?.id === level.id ? null : current,
+      );
     }
   };
 
@@ -216,7 +225,7 @@ export default function LevelsPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            void handleDeleteLevel(level);
+                            handleRequestDeleteLevel(level);
                           }}
                           className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={deletingId === level.id}
@@ -281,6 +290,18 @@ export default function LevelsPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteLevel !== null}
+        title={`Delete "${pendingDeleteLevel?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteLevel();
+        }}
+        onCancel={() => setPendingDeleteLevel(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }

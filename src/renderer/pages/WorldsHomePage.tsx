@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
 
@@ -14,6 +15,9 @@ export default function WorldsHomePage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWorld, setEditingWorld] = useState<World | null>(null);
   const [deletingWorldId, setDeletingWorldId] = useState<number | null>(null);
+  const [pendingDeleteWorld, setPendingDeleteWorld] = useState<World | null>(
+    null,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -69,13 +73,15 @@ export default function WorldsHomePage() {
     setEditingWorld(null);
   };
 
-  const handleDeleteWorld = async (world: World) => {
-    const isConfirmed = window.confirm(
-      `Delete "${world.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteWorld = (world: World) => {
+    setPendingDeleteWorld(world);
+  };
+
+  const handleDeleteWorld = async () => {
+    if (!pendingDeleteWorld) {
       return;
     }
+    const world = pendingDeleteWorld;
 
     setMutationError(null);
     setDeletingWorldId(world.id);
@@ -92,6 +98,9 @@ export default function WorldsHomePage() {
       setMutationError('Unable to delete world right now.');
     } finally {
       setDeletingWorldId((current) => (current === world.id ? null : current));
+      setPendingDeleteWorld((current) =>
+        current?.id === world.id ? null : current,
+      );
     }
   };
 
@@ -158,7 +167,7 @@ export default function WorldsHomePage() {
                   setEditingWorld(world);
                 }}
                 onDelete={() => {
-                  void handleDeleteWorld(world);
+                  handleRequestDeleteWorld(world);
                 }}
                 isDeleting={deletingWorldId === world.id}
               />
@@ -213,6 +222,18 @@ export default function WorldsHomePage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteWorld !== null}
+        title={`Delete "${pendingDeleteWorld?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteWorld();
+        }}
+        onCancel={() => setPendingDeleteWorld(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingWorldId !== null}
+      />
     </>
   );
 }

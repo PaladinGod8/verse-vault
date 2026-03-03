@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import AbilityChildrenManager from '../components/abilities/AbilityChildrenManager';
 import AbilityForm from '../components/abilities/AbilityForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddAbilityInput = Parameters<DbApi['abilities']['add']>[0];
@@ -41,6 +42,8 @@ export default function AbilitiesPage() {
     number | null
   >(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteAbility, setPendingDeleteAbility] =
+    useState<Ability | null>(null);
   const managingChildrenAbility = useMemo(
     () =>
       managingChildrenAbilityId === null
@@ -147,13 +150,15 @@ export default function AbilitiesPage() {
     setEditingAbility(null);
   };
 
-  const handleDeleteAbility = async (ability: Ability) => {
-    const isConfirmed = window.confirm(
-      `Delete "${ability.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteAbility = (ability: Ability) => {
+    setPendingDeleteAbility(ability);
+  };
+
+  const handleDeleteAbility = async () => {
+    if (!pendingDeleteAbility) {
       return;
     }
+    const ability = pendingDeleteAbility;
 
     setDeletingId(ability.id);
 
@@ -165,6 +170,9 @@ export default function AbilitiesPage() {
       );
     } finally {
       setDeletingId((current) => (current === ability.id ? null : current));
+      setPendingDeleteAbility((current) =>
+        current?.id === ability.id ? null : current,
+      );
     }
   };
 
@@ -267,7 +275,7 @@ export default function AbilitiesPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            void handleDeleteAbility(ability);
+                            handleRequestDeleteAbility(ability);
                           }}
                           className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={deletingId === ability.id}
@@ -377,6 +385,18 @@ export default function AbilitiesPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteAbility !== null}
+        title={`Delete "${pendingDeleteAbility?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteAbility();
+        }}
+        onCancel={() => setPendingDeleteAbility(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }

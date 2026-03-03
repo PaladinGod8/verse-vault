@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import BattleMapForm from '../components/battlemaps/BattleMapForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddBattleMapInput = Parameters<DbApi['battlemaps']['add']>[0];
@@ -49,6 +50,8 @@ export default function BattleMapsPage() {
     null,
   );
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteBattleMap, setPendingDeleteBattleMap] =
+    useState<BattleMap | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -133,13 +136,15 @@ export default function BattleMapsPage() {
     setEditingBattleMap(null);
   };
 
-  const handleDeleteBattleMap = async (battleMap: BattleMap) => {
-    const isConfirmed = window.confirm(
-      `Delete "${battleMap.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteBattleMap = (battleMap: BattleMap) => {
+    setPendingDeleteBattleMap(battleMap);
+  };
+
+  const handleDeleteBattleMap = async () => {
+    if (!pendingDeleteBattleMap) {
       return;
     }
+    const battleMap = pendingDeleteBattleMap;
 
     setDeletingId(battleMap.id);
 
@@ -152,6 +157,9 @@ export default function BattleMapsPage() {
       );
     } finally {
       setDeletingId((current) => (current === battleMap.id ? null : current));
+      setPendingDeleteBattleMap((current) =>
+        current?.id === battleMap.id ? null : current,
+      );
     }
   };
 
@@ -252,7 +260,7 @@ export default function BattleMapsPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            void handleDeleteBattleMap(battleMap);
+                            handleRequestDeleteBattleMap(battleMap);
                           }}
                           className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={deletingId === battleMap.id}
@@ -319,6 +327,18 @@ export default function BattleMapsPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteBattleMap !== null}
+        title={`Delete "${pendingDeleteBattleMap?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteBattleMap();
+        }}
+        onCancel={() => setPendingDeleteBattleMap(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }

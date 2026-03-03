@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import MoveSessionDialog from '../components/sessions/MoveSessionDialog';
 import SessionForm from '../components/sessions/SessionForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSessionInput = Parameters<DbApi['sessions']['add']>[0];
@@ -214,6 +215,8 @@ export default function SessionsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteSession, setPendingDeleteSession] =
+    useState<Session | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingSession, setMovingSession] = useState<Session | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -325,13 +328,15 @@ export default function SessionsPage() {
     setEditingSession(null);
   };
 
-  const handleDeleteSession = async (session: Session) => {
-    const isConfirmed = window.confirm(
-      `Delete "${session.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteSession = (session: Session) => {
+    setPendingDeleteSession(session);
+  };
+
+  const handleDeleteSession = async () => {
+    if (!pendingDeleteSession) {
       return;
     }
+    const session = pendingDeleteSession;
 
     setDeletingId(session.id);
 
@@ -349,6 +354,9 @@ export default function SessionsPage() {
       });
     } finally {
       setDeletingId((current) => (current === session.id ? null : current));
+      setPendingDeleteSession((current) =>
+        current?.id === session.id ? null : current,
+      );
     }
   };
 
@@ -560,7 +568,7 @@ export default function SessionsPage() {
                           setEditingSession(selectedSession);
                         }}
                         onDelete={(selectedSession) => {
-                          void handleDeleteSession(selectedSession);
+                          handleRequestDeleteSession(selectedSession);
                         }}
                         onMove={(selectedSession) => {
                           setMoveError(null);
@@ -647,6 +655,18 @@ export default function SessionsPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteSession !== null}
+        title={`Delete "${pendingDeleteSession?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteSession();
+        }}
+        onCancel={() => setPendingDeleteSession(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }

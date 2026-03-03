@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import MoveSceneDialog from '../components/scenes/MoveSceneDialog';
 import SceneForm from '../components/scenes/SceneForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSceneInput = Parameters<DbApi['scenes']['add']>[0];
@@ -188,6 +189,9 @@ export default function ScenesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingScene, setEditingScene] = useState<Scene | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteScene, setPendingDeleteScene] = useState<Scene | null>(
+    null,
+  );
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingScene, setMovingScene] = useState<Scene | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -297,13 +301,15 @@ export default function ScenesPage() {
     setEditingScene(null);
   };
 
-  const handleDeleteScene = async (scene: Scene) => {
-    const isConfirmed = window.confirm(
-      `Delete "${scene.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteScene = (scene: Scene) => {
+    setPendingDeleteScene(scene);
+  };
+
+  const handleDeleteScene = async () => {
+    if (!pendingDeleteScene) {
       return;
     }
+    const scene = pendingDeleteScene;
 
     setDeletingId(scene.id);
 
@@ -321,6 +327,9 @@ export default function ScenesPage() {
       });
     } finally {
       setDeletingId((current) => (current === scene.id ? null : current));
+      setPendingDeleteScene((current) =>
+        current?.id === scene.id ? null : current,
+      );
     }
   };
 
@@ -534,7 +543,7 @@ export default function ScenesPage() {
                           setMovingScene(selectedScene);
                         }}
                         onDelete={(selectedScene) => {
-                          void handleDeleteScene(selectedScene);
+                          handleRequestDeleteScene(selectedScene);
                         }}
                       />
                     ))}
@@ -617,6 +626,18 @@ export default function ScenesPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteScene !== null}
+        title={`Delete "${pendingDeleteScene?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteScene();
+        }}
+        onCancel={() => setPendingDeleteScene(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }

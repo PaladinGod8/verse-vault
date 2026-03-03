@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ArcForm from '../components/arcs/ArcForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortArcsByOrder = (arcs: Arc[]) =>
@@ -151,6 +152,7 @@ export default function ArcsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingArc, setEditingArc] = useState<Arc | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteArc, setPendingDeleteArc] = useState<Arc | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
 
   const sensors = useSensors(
@@ -251,13 +253,15 @@ export default function ArcsPage() {
     setEditingArc(null);
   };
 
-  const handleDeleteArc = async (arc: Arc) => {
-    const isConfirmed = window.confirm(
-      `Delete "${arc.name}"? This cannot be undone.`,
-    );
-    if (!isConfirmed) {
+  const handleRequestDeleteArc = (arc: Arc) => {
+    setPendingDeleteArc(arc);
+  };
+
+  const handleDeleteArc = async () => {
+    if (!pendingDeleteArc) {
       return;
     }
+    const arc = pendingDeleteArc;
 
     setDeletingId(arc.id);
 
@@ -275,6 +279,9 @@ export default function ArcsPage() {
       });
     } finally {
       setDeletingId((current) => (current === arc.id ? null : current));
+      setPendingDeleteArc((current) =>
+        current?.id === arc.id ? null : current,
+      );
     }
   };
 
@@ -440,7 +447,7 @@ export default function ArcsPage() {
                           setEditingArc(selectedArc);
                         }}
                         onDelete={(selectedArc) => {
-                          void handleDeleteArc(selectedArc);
+                          handleRequestDeleteArc(selectedArc);
                         }}
                       />
                     ))}
@@ -502,6 +509,18 @@ export default function ArcsPage() {
           </section>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={pendingDeleteArc !== null}
+        title={`Delete "${pendingDeleteArc?.name ?? ''}"?`}
+        message="This cannot be undone."
+        onConfirm={() => {
+          void handleDeleteArc();
+        }}
+        onCancel={() => setPendingDeleteArc(null)}
+        confirmLabel="Delete"
+        isConfirming={deletingId !== null}
+      />
     </div>
   );
 }
