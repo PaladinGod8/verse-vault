@@ -64,6 +64,15 @@ declare global {
     updated_at: string;
   }
 
+  interface BattleMap {
+    id: number;
+    world_id: number;
+    name: string;
+    config: string;
+    created_at: string;
+    updated_at: string;
+  }
+
   interface Arc {
     id: number;
     campaign_id: number;
@@ -213,6 +222,20 @@ declare global {
         id: number,
         data: { name?: string; summary?: string | null; config?: string },
       ): Promise<Campaign>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+    battlemaps: {
+      getAllByWorld(worldId: number): Promise<BattleMap[]>;
+      getById(id: number): Promise<BattleMap | null>;
+      add(data: {
+        world_id: number;
+        name: string;
+        config?: string;
+      }): Promise<BattleMap>;
+      update(
+        id: number,
+        data: { name?: string; config?: string },
+      ): Promise<BattleMap>;
       delete(id: number): Promise<{ id: number }>;
     };
     arcs: {

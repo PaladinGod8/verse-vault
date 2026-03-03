@@ -13,7 +13,7 @@ Abilities Step 07 (2026-02-27) exposes ability mutation bridges in preload (`win
 
 Campaign Step 07 (2026-02-27) wires campaign CRUD handlers in `main` for `CAMPAIGNS_GET_ALL_BY_WORLD`, `CAMPAIGNS_GET_BY_ID`, `CAMPAIGNS_ADD`, `CAMPAIGNS_UPDATE`, and `CAMPAIGNS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
-BattleMap Step 01 (2026-03-03) adds shared constants for planned battlemaps CRUD (`BATTLEMAPS_GET_ALL_BY_WORLD`, `BATTLEMAPS_GET_BY_ID`, `BATTLEMAPS_ADD`, `BATTLEMAPS_UPDATE`, `BATTLEMAPS_DELETE`) and schema bootstrap in `db.ts`; BattleMap Step 02 (2026-03-03) wires all 5 handlers in `main` while preload bridge methods and shared type signatures remain deferred.
+BattleMap Step 01 (2026-03-03) adds shared constants for planned battlemaps CRUD (`BATTLEMAPS_GET_ALL_BY_WORLD`, `BATTLEMAPS_GET_BY_ID`, `BATTLEMAPS_ADD`, `BATTLEMAPS_UPDATE`, `BATTLEMAPS_DELETE`) and schema bootstrap in `db.ts`; BattleMap Step 02 (2026-03-03) wires all 5 handlers in `main`; BattleMap Step 03 (2026-03-03) wires preload bridge methods and shared `BattleMap` + `DbApi.battlemaps` signatures.
 
 Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
@@ -159,6 +159,15 @@ interface Campaign {
   updated_at: string; // ISO datetime string from SQLite
 }
 
+interface BattleMap {
+  id: number;
+  world_id: number;
+  name: string;
+  config: string;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
 interface Arc {
   id: number;
   campaign_id: number;
@@ -261,6 +270,20 @@ interface DbApi {
       id: number,
       data: { name?: string; summary?: string | null; config?: string },
     ): Promise<Campaign>;
+    delete(id: number): Promise<{ id: number }>;
+  };
+  battlemaps: {
+    getAllByWorld(worldId: number): Promise<BattleMap[]>;
+    getById(id: number): Promise<BattleMap | null>;
+    add(data: {
+      world_id: number;
+      name: string;
+      config?: string;
+    }): Promise<BattleMap>;
+    update(
+      id: number,
+      data: { name?: string; config?: string },
+    ): Promise<BattleMap>;
     delete(id: number): Promise<{ id: number }>;
   };
   arcs: {
@@ -373,7 +396,7 @@ interface DbApi {
 - `BATTLEMAPS_ADD` validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as JSON text, inserts (`world_id`, `name`, `config`), and returns the inserted row.
 - `BATTLEMAPS_UPDATE` updates only explicitly provided fields (`name`, `config`) using `hasOwnProperty` checks, validates trimmed `name` and JSON `config` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'BattleMap not found'` when missing).
 - `BATTLEMAPS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- BattleMap preload bridge methods and shared `BattleMap`/`DbApi.battlemaps` type signatures remain deferred to later steps.
+- BattleMap channels are wired end-to-end in Step 03 via `window.db.battlemaps.getAllByWorld/getById/add/update/delete` and shared `BattleMap` + `DbApi.battlemaps` signatures in `forge.env.d.ts`.
 - Arc main handlers are wired for `ARCS_GET_ALL_BY_CAMPAIGN`, `ARCS_GET_BY_ID`, `ARCS_ADD`, `ARCS_UPDATE`, and `ARCS_DELETE`.
 - `ARCS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns arcs ordered by `sort_order ASC, id ASC`.
 - `ARCS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted, inserts (`campaign_id`, `name`, `sort_order`), and returns the inserted row.
