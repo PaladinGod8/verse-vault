@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Extends the Verse Vault data hierarchy below the World layer with five tiers: Campaign, Arc, Act, Session, and Scene. Campaigns are standard CRUD records; arcs, acts, sessions, and scenes are sequence-driven records with persisted sibling ordering.
+Extends the Verse Vault data hierarchy below the World layer with five tiers: Campaign, Arc, Act, Session, and Scene. Campaigns are standard CRUD records; arcs, acts, sessions, and scenes are sequence-driven records with persisted sibling ordering. It also adds a campaign-wide scenes index for cross-session scene browsing inside a campaign.
 
 ## Hierarchy Model
 
@@ -39,23 +39,26 @@ Note: `sessions.planned_at` was added as a nullable `TEXT` column. Existing data
 
 ### IPC Channels
 
-Twenty-nine channels are used for this backbone in `src/shared/ipcChannels.ts`:
+Thirty channels are used for this backbone in `src/shared/ipcChannels.ts`:
 
-| Tier     | Channels                                                                                                                                 |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Campaign | `db:campaigns:getAllByWorld`, `db:campaigns:getById`, `db:campaigns:add`, `db:campaigns:update`, `db:campaigns:delete`                   |
-| Arc      | `db:arcs:getAllByCampaign`, `db:arcs:getById`, `db:arcs:add`, `db:arcs:update`, `db:arcs:delete`                                         |
-| Act      | `db:acts:getAllByArc`, `db:acts:getAllByCampaign`, `db:acts:getById`, `db:acts:add`, `db:acts:update`, `db:acts:delete`                  |
-| Session  | `db:sessions:getAllByAct`, `db:sessions:getById`, `db:sessions:add`, `db:sessions:update`, `db:sessions:delete`, `db:sessions:moveToAct` |
-| Scene    | `db:scenes:getAllBySession`, `db:scenes:getById`, `db:scenes:add`, `db:scenes:update`, `db:scenes:delete`, `db:scenes:moveToSession`      |
-| Reparent | `db:acts:moveToArc`                                                                                                                        |
+| Tier     | Channels                                                                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Campaign | `db:campaigns:getAllByWorld`, `db:campaigns:getById`, `db:campaigns:add`, `db:campaigns:update`, `db:campaigns:delete`                                             |
+| Arc      | `db:arcs:getAllByCampaign`, `db:arcs:getById`, `db:arcs:add`, `db:arcs:update`, `db:arcs:delete`                                                                   |
+| Act      | `db:acts:getAllByArc`, `db:acts:getAllByCampaign`, `db:acts:getById`, `db:acts:add`, `db:acts:update`, `db:acts:delete`                                            |
+| Session  | `db:sessions:getAllByAct`, `db:sessions:getById`, `db:sessions:add`, `db:sessions:update`, `db:sessions:delete`, `db:sessions:moveToAct`                           |
+| Scene    | `db:scenes:getAllByCampaign`, `db:scenes:getAllBySession`, `db:scenes:getById`, `db:scenes:add`, `db:scenes:update`, `db:scenes:delete`, `db:scenes:moveToSession` |
+| Reparent | `db:acts:moveToArc`                                                                                                                                                |
 
 Note: `db:acts:getAllByCampaign` is a convenience channel for `MoveSessionDialog` - it returns all acts across all arcs in a campaign ordered by `arc.sort_order, arc.id, act.sort_order, act.id`.
+
+Note: `db:scenes:getAllByCampaign` is a campaign-level read used by `CampaignScenesPage` - it joins `scenes -> sessions -> acts -> arcs`, filters by `arcs.campaign_id`, and orders rows by `arc/act/session/scene sort_order` with `id` tie-breakers.
 
 ### Main-Process Handler Semantics (`src/main.ts`)
 
 - Campaign list reads are ordered by `updated_at DESC`.
 - Arc, act, session, and scene list reads are ordered by `sort_order ASC, id ASC`.
+- Campaign scenes index reads return `CampaignSceneListItem[]` joined across `scenes -> sessions -> acts -> arcs`, ordered by hierarchy sort order (`arc`, `act`, `session`, `scene`) and `id`.
 - Arc and act create append to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` in parent scope).
 - Session and scene create append to sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` in parent scope).
 - Arc and act update accept partial `sort_order` updates and refresh `updated_at`.
@@ -77,18 +80,32 @@ Renderer access stays behind `window.db` (`src/preload.ts`, `forge.env.d.ts`):
 - `window.db.arcs.{ getAllByCampaign, getById, add, update, delete }`
 - `window.db.acts.{ getAllByArc, getAllByCampaign, getById, add, update, delete, moveTo }`
 - `window.db.sessions.{ getAllByAct, getById, add, update, delete, moveTo }`
-- `window.db.scenes.{ getAllBySession, getById, add, update, delete, moveTo }`
+- `window.db.scenes.{ getAllByCampaign, getAllBySession, getById, add, update, delete, moveTo }`
 - Session contract includes `planned_at: string | null`; `window.db.sessions.add/update` accept optional `planned_at?: string | null`.
+- Campaign scenes index contract: `window.db.scenes.getAllByCampaign(campaignId)` returns `CampaignSceneListItem[]` (`Scene` fields plus `session_name`, `act_id`, `act_name`, `arc_id`, `arc_name`).
 
 ### Renderer Routes and Pages
 
-| Route                                                                             | Page            | Behavior                                                                                                                          |
-| --------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `/world/:id/campaigns`                                                            | `CampaignsPage` | Lists campaigns for a world; create/edit/delete; `Arcs` link drills down                                                          |
-| `/world/:id/campaign/:campaignId/arcs`                                            | `ArcsPage`      | Lists arcs ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Acts` link                                              |
-| `/world/:id/campaign/:campaignId/arc/:arcId/acts`                                 | `ActsPage`      | Lists acts ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Sessions` link; move action opens `MoveActDialog`       |
-| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | `SessionsPage`  | Lists sessions ordered by `sort_order`; includes planned date-time column (localized display, `-` when missing); dnd-kit reorder; create/edit/delete; `Scenes` link; move action opens `MoveSessionDialog` |
-| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | `ScenesPage`    | Lists scenes ordered by `sort_order`; dnd-kit reorder; create/edit/delete; payload JSON validation                                |
+| Route                                                                             | Page                 | Behavior                                                                                                                                                                                                                             |
+| --------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/world/:id/campaigns`                                                            | `CampaignsPage`      | Lists campaigns for a world; create/edit/delete; `Scenes` link opens campaign-wide scenes index; `Arcs` link drills down                                                                                                             |
+| `/world/:id/campaign/:campaignId/scenes`                                          | `CampaignScenesPage` | Campaign-wide scenes index (read-only): validates world + campaign, loads campaign metadata + all scenes via `window.db.scenes.getAllByCampaign`, shows `Scene/Session/Act/Arc` columns, and links each row to session-scoped scenes |
+| `/world/:id/campaign/:campaignId/arcs`                                            | `ArcsPage`           | Lists arcs ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Acts` link                                                                                                                                                 |
+| `/world/:id/campaign/:campaignId/arc/:arcId/acts`                                 | `ActsPage`           | Lists acts ordered by `sort_order`; dnd-kit reorder; create/edit/delete; `Sessions` link; move action opens `MoveActDialog`                                                                                                          |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | `SessionsPage`       | Lists sessions ordered by `sort_order`; includes planned date-time column (localized display, `-` when missing); dnd-kit reorder; create/edit/delete; `Scenes` link; move action opens `MoveSessionDialog`                           |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | `ScenesPage`         | Lists scenes ordered by `sort_order`; dnd-kit reorder; create/edit/delete; payload JSON validation                                                                                                                                   |
+
+## Campaign-Wide Scenes Index (v1)
+
+- Update (2026-03-03): Added campaign-level scenes index route and bridge contract.
+- WCAASS relationship: this index is a top-down read view of `Campaign -> Arc -> Act -> Session -> Scene`.
+- Purpose: provide one campaign page to review all scenes with session/act/arc context before drilling into session-level scene management.
+- User flow entry point: from `CampaignsPage`, click `Scenes` on a campaign row (`/world/:id/campaigns` -> `/world/:id/campaign/:campaignId/scenes`).
+- Data source/contract summary: `CampaignScenesPage` calls `window.db.scenes.getAllByCampaign(campaignId)` which maps to `db:scenes:getAllByCampaign` in main and returns `CampaignSceneListItem[]`.
+- Current v1 limitations/non-goals:
+  - read-only index (no create/edit/delete/reorder/move actions on the campaign index page),
+  - no search/filter/pagination,
+  - navigation into editing remains session-scoped via `Open Session Scenes`.
 
 ## Sequence-Driven Ordering
 
