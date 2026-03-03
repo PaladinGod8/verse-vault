@@ -94,6 +94,7 @@ describe('database', () => {
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS levels');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS campaigns');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS battlemaps');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS arcs');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS acts');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS sessions');
