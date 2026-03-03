@@ -279,6 +279,7 @@ declare global {
         },
       ): Promise<Scene>;
       delete(id: number): Promise<{ id: number }>;
+      moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
     };
   }
 

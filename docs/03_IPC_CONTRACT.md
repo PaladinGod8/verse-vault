@@ -17,6 +17,8 @@ Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS
 
 Scene Step 09 (2026-02-27) wires scene CRUD handlers in `main` for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
+Scenes Move Step 01 (2026-03-03) adds `SCENES_MOVE_TO_SESSION` in main with transactional move/resequence semantics and exposes `window.db.scenes.moveTo(sceneId, newSessionId)` in preload and shared types.
+
 Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`.
 
 Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`, aligning the TypeScript contract with schema columns and IPC payloads.
@@ -78,6 +80,7 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.SCENES_ADD`                 | `db:scenes:add`              | renderer -> main | `{ session_id: number; name: string; notes?: string \| null; payload?: string; sort_order?: number }`                                                                                                                                                                                                                       | `Scene`                                   | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_UPDATE`              | `db:scenes:update`           | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; payload?: string; sort_order?: number }`                                                                                                                                                                                                                        | `Scene`                                   | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_DELETE`              | `db:scenes:delete`           | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                          | `src/main.ts:registerIpcHandlers` |
+| `IPC.SCENES_MOVE_TO_SESSION`     | `db:scenes:moveToSession`    | renderer -> main | `sceneId: number, newSessionId: number`                                                                                                                                                                                                                                                                                     | `Scene`                                   | `src/main.ts:registerIpcHandlers` |
 
 ## Types Reference
 
@@ -314,6 +317,7 @@ interface DbApi {
       },
     ): Promise<Scene>;
     delete(id: number): Promise<{ id: number }>;
+    moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
   };
 }
 ```
@@ -364,10 +368,11 @@ interface DbApi {
 - `SESSIONS_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `act_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - `SESSIONS_MOVE_TO_ACT` moves a session to a new act, appends at the tail of the new act's sort order, resequences the old act, and returns the updated session.
 - Session preload bridge methods are wired via `window.db.sessions.getAllByAct/getById/add/update/delete/moveTo`.
-- Scene main handlers are wired for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`.
+- Scene main handlers are wired for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, `SCENES_DELETE`, and `SCENES_MOVE_TO_SESSION`.
 - `SCENES_GET_ALL_BY_SESSION` is scoped by `session_id` and returns scenes ordered by `sort_order ASC, id ASC`.
 - `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text when provided, defaults omitted `payload` to `'{}'`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the session), inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row.
 - `SCENES_UPDATE` updates only explicitly provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, validates `payload` as JSON text when present, always refreshes `updated_at`, and returns the refreshed row.
 - `SCENES_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `session_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`.
+- `SCENES_MOVE_TO_SESSION` runs inside a transaction, validates source scene + target session, returns unchanged row when target equals current `session_id`, appends moved scene to target tail (`MAX(sort_order) + 1`), resequences the old session, and returns the refreshed moved row.
+- Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

@@ -1042,6 +1042,49 @@ function registerIpcHandlers() {
     return deleteSceneAndCompact(id);
   });
 
+  ipcMain.handle(
+    IPC.SCENES_MOVE_TO_SESSION,
+    (_event, sceneId: number, newSessionId: number) => {
+      return db.transaction(() => {
+        const scene = getSceneByIdStmt.get(sceneId) as Scene | undefined;
+        if (!scene) {
+          throw new Error('Scene not found');
+        }
+
+        const targetSession = getSessionByIdStmt.get(newSessionId) as
+          | Session
+          | undefined;
+        if (!targetSession) {
+          throw new Error('Target session not found');
+        }
+
+        const oldSessionId = (scene as unknown as { session_id: number })
+          .session_id;
+        if (newSessionId === oldSessionId) {
+          return scene;
+        }
+
+        const { nextSortOrder } = db
+          .prepare(
+            'SELECT COALESCE(MAX(sort_order), -1) + 1 AS nextSortOrder FROM scenes WHERE session_id = ?',
+          )
+          .get(newSessionId) as { nextSortOrder: number };
+
+        db.prepare(
+          "UPDATE scenes SET session_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?",
+        ).run(newSessionId, nextSortOrder, sceneId);
+
+        resequenceScenesInSession(oldSessionId);
+
+        const movedScene = getSceneByIdStmt.get(sceneId) as Scene | undefined;
+        if (!movedScene) {
+          throw new Error('Scene not found');
+        }
+        return movedScene;
+      })();
+    },
+  );
+
   ipcMain.handle(IPC.ABILITIES_GET_ALL_BY_WORLD, (_event, worldId: number) => {
     return db
       .prepare(

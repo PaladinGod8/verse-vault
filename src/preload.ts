@@ -180,6 +180,8 @@ contextBridge.exposeInMainWorld('db', {
       },
     ) => ipcRenderer.invoke(IPC.SCENES_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.SCENES_DELETE, id),
+    moveTo: (sceneId: number, newSessionId: number): Promise<Scene> =>
+      ipcRenderer.invoke(IPC.SCENES_MOVE_TO_SESSION, sceneId, newSessionId),
   },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
