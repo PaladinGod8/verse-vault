@@ -236,7 +236,9 @@ describe('database', () => {
     const execSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
     expect(execSql).toContain('CREATE TABLE sessions_new');
     expect(execSql).toContain('ALTER TABLE sessions_new RENAME TO sessions');
-    expect(execSql).not.toContain('ALTER TABLE sessions ADD COLUMN planned_at TEXT');
+    expect(execSql).not.toContain(
+      'ALTER TABLE sessions ADD COLUMN planned_at TEXT',
+    );
   });
 
   it('closes and resets the singleton', async () => {
