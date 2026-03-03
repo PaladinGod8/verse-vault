@@ -4,6 +4,7 @@ import WorldPage from './pages/WorldPage';
 import LevelsPage from './pages/LevelsPage';
 import AbilitiesPage from './pages/AbilitiesPage';
 import CampaignsPage from './pages/CampaignsPage';
+import BattleMapsPage from './pages/BattleMapsPage';
 import CampaignScenesPage from './pages/CampaignScenesPage';
 import ArcsPage from './pages/ArcsPage';
 import ActsPage from './pages/ActsPage';
@@ -19,6 +20,7 @@ export default function App() {
       <Route path="/world/:id/levels" element={<LevelsPage />} />
       <Route path="/world/:id/abilities" element={<AbilitiesPage />} />
       <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
+      <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
       <Route
         path="/world/:id/campaign/:campaignId/scenes"
         element={<CampaignScenesPage />}
