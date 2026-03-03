@@ -59,6 +59,15 @@ function initializeSchema(db: Database.Database): void {
       updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS battlemaps (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      world_id   INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name       TEXT    NOT NULL,
+      config     TEXT    NOT NULL DEFAULT '{}',
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS arcs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
