@@ -1,10 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { DragEndEvent } from '@dnd-kit/core';
 
 import ArcsPage from '../../src/renderer/pages/ArcsPage';
+
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
 
 // Capture the DndContext onDragEnd handler so tests can invoke it directly.
 let capturedOnDragEnd: ((event: DragEndEvent) => void) | undefined;
@@ -320,37 +337,82 @@ describe('ArcsPage', () => {
   });
 
   describe('delete arc', () => {
-    it('removes arc from list after confirmation', async () => {
+    it('removes arc from list after dialog confirmation', async () => {
       const user = userEvent.setup();
       window.db.arcs.getAllByCampaign = vi
         .fn()
         .mockResolvedValue([buildArc({ id: 1, name: 'Arc One' })]);
       window.db.arcs.delete = vi.fn().mockResolvedValue({ id: 1 });
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       renderPage();
       await screen.findByText('Arc One');
       await user.click(screen.getByRole('button', { name: 'Delete' }));
+      const confirmDialog = await screen.findByRole('dialog', {
+        name: 'Delete "Arc One"?',
+      });
+      await user.click(
+        within(confirmDialog).getByRole('button', { name: 'Delete' }),
+      );
 
       await waitFor(() =>
         expect(screen.queryByText('Arc One')).not.toBeInTheDocument(),
       );
       expect(window.db.arcs.delete).toHaveBeenCalledWith(1);
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        'Arc deleted.',
+        '"Arc One" was removed.',
+      );
     });
 
-    it('keeps arc in list when confirm returns false', async () => {
+    it('keeps arc in list when dialog confirmation is cancelled', async () => {
       const user = userEvent.setup();
       window.db.arcs.getAllByCampaign = vi
         .fn()
         .mockResolvedValue([buildArc({ id: 1, name: 'Arc One' })]);
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       renderPage();
       await screen.findByText('Arc One');
       await user.click(screen.getByRole('button', { name: 'Delete' }));
+      const confirmDialog = await screen.findByRole('dialog', {
+        name: 'Delete "Arc One"?',
+      });
+      await user.click(
+        within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+      );
 
       expect(screen.getByText('Arc One')).toBeInTheDocument();
       expect(window.db.arcs.delete).not.toHaveBeenCalled();
+      expect(toastSuccessMock).not.toHaveBeenCalled();
+      expect(toastErrorMock).not.toHaveBeenCalled();
+    });
+
+    it('shows a delete failure toast when arc deletion fails', async () => {
+      const user = userEvent.setup();
+      window.db.arcs.getAllByCampaign = vi
+        .fn()
+        .mockResolvedValue([buildArc({ id: 1, name: 'Arc One' })]);
+      window.db.arcs.delete = vi
+        .fn()
+        .mockRejectedValue(new Error('delete failed'));
+
+      renderPage();
+      await screen.findByText('Arc One');
+      await user.click(screen.getByRole('button', { name: 'Delete' }));
+      const confirmDialog = await screen.findByRole('dialog', {
+        name: 'Delete "Arc One"?',
+      });
+      await user.click(
+        within(confirmDialog).getByRole('button', { name: 'Delete' }),
+      );
+
+      await waitFor(() =>
+        expect(window.db.arcs.delete).toHaveBeenCalledWith(1),
+      );
+      expect(screen.getByText('Arc One')).toBeInTheDocument();
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to delete arc.',
+        'delete failed',
+      );
     });
   });
 

@@ -25,6 +25,10 @@ const SESSION_NAME = `Session One ${TS}`;
 let app: ElectronApplication;
 let page: Page;
 
+function tableRowByText(text: string) {
+  return page.locator('tbody tr').filter({ hasText: text }).first();
+}
+
 async function launchApp() {
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE; // CRITICAL: prevents Electron from running as plain Node
@@ -146,7 +150,7 @@ test.describe('Arc / Act full flow', () => {
       .getByRole('button', { name: /create campaign/i })
       .click();
 
-    await expect(page.getByText(CAMPAIGN_NAME)).toBeVisible();
+    await expect(tableRowByText(CAMPAIGN_NAME)).toBeVisible();
   });
 
   // ────────────────────────────────────────────────────────────────────────
@@ -173,7 +177,7 @@ test.describe('Arc / Act full flow', () => {
       .fill(ARC_NAME);
     await createArcDialog.getByRole('button', { name: /create arc/i }).click();
 
-    await expect(page.getByText(ARC_NAME)).toBeVisible();
+    await expect(tableRowByText(ARC_NAME)).toBeVisible();
   });
 
   test('edits an arc', async () => {
@@ -187,8 +191,8 @@ test.describe('Arc / Act full flow', () => {
     await input.fill(ARC_NAME_RENAMED);
     await editArcDialog.getByRole('button', { name: 'Save' }).click();
 
-    await expect(page.getByText(ARC_NAME_RENAMED)).toBeVisible();
-    await expect(page.getByText(ARC_NAME)).toHaveCount(0);
+    await expect(tableRowByText(ARC_NAME_RENAMED)).toBeVisible();
+    await expect(tableRowByText(ARC_NAME)).toHaveCount(0);
   });
 
   test('creates a second arc for reparent tests', async () => {
@@ -200,7 +204,7 @@ test.describe('Arc / Act full flow', () => {
       .fill(ARC2_NAME);
     await createArcDialog.getByRole('button', { name: /create arc/i }).click();
 
-    await expect(page.getByText(ARC2_NAME)).toBeVisible();
+    await expect(tableRowByText(ARC2_NAME)).toBeVisible();
   });
 
   // ────────────────────────────────────────────────────────────────────────
@@ -224,7 +228,7 @@ test.describe('Arc / Act full flow', () => {
       .fill(ACT_NAME);
     await createActDialog.getByRole('button', { name: /create act/i }).click();
 
-    await expect(page.getByText(ACT_NAME)).toBeVisible();
+    await expect(tableRowByText(ACT_NAME)).toBeVisible();
   });
 
   test('edits an act', async () => {
@@ -238,7 +242,7 @@ test.describe('Arc / Act full flow', () => {
     await input.fill(ACT_NAME_RENAMED);
     await editActDialog.getByRole('button', { name: 'Save' }).click();
 
-    await expect(page.getByText(ACT_NAME_RENAMED)).toBeVisible();
+    await expect(tableRowByText(ACT_NAME_RENAMED)).toBeVisible();
   });
 
   // ────────────────────────────────────────────────────────────────────────
@@ -266,7 +270,7 @@ test.describe('Arc / Act full flow', () => {
       .getByRole('button', { name: /create session/i })
       .click();
 
-    await expect(page.getByText(SESSION_NAME)).toBeVisible();
+    await expect(tableRowByText(SESSION_NAME)).toBeVisible();
   });
 
   // ────────────────────────────────────────────────────────────────────────
@@ -275,19 +279,20 @@ test.describe('Arc / Act full flow', () => {
 
   test('moves act to second arc via MoveActDialog', async () => {
     await navigateToCampaignArcsPage();
-    await expect(page.getByText(ARC_NAME_RENAMED)).toBeVisible();
+    await expect(tableRowByText(ARC_NAME_RENAMED)).toBeVisible();
 
     const arcRow = page.locator('tr').filter({ hasText: ARC_NAME_RENAMED });
     await arcRow.getByRole('link', { name: 'Acts' }).click();
 
-    await expect(page.getByText(ACT_NAME_RENAMED)).toBeVisible();
+    await expect(tableRowByText(ACT_NAME_RENAMED)).toBeVisible();
 
     // Click Move
     const actRow = page.locator('tr').filter({ hasText: ACT_NAME_RENAMED });
     await actRow.getByRole('button', { name: 'Move' }).click();
 
     // MoveActDialog should appear with Arc Beta as option
-    const moveDialog = page.locator('div.fixed.inset-0').last();
+    const moveDialog = page.locator('.modal.modal-open').last();
+    await expect(moveDialog).toBeVisible();
     await expect(moveDialog.getByText(ARC2_NAME)).toBeVisible();
     await moveDialog
       .getByRole('radio', { name: new RegExp(ARC2_NAME, 'i') })
@@ -295,18 +300,18 @@ test.describe('Arc / Act full flow', () => {
     await moveDialog.getByRole('button', { name: 'Move' }).click();
 
     // Act should disappear from first arc's list
-    await expect(page.getByText(ACT_NAME_RENAMED)).not.toBeVisible();
+    await expect(tableRowByText(ACT_NAME_RENAMED)).toHaveCount(0);
     await expect(page.getByText('No acts yet.')).toBeVisible();
   });
 
   test('verifies moved act appears under the second arc', async () => {
     await navigateToCampaignArcsPage();
-    await expect(page.getByText(ARC2_NAME)).toBeVisible();
+    await expect(tableRowByText(ARC2_NAME)).toBeVisible();
 
     const arc2Row = page.locator('tr').filter({ hasText: ARC2_NAME });
     await arc2Row.getByRole('link', { name: 'Acts' }).click();
 
-    await expect(page.getByText(ACT_NAME_RENAMED)).toBeVisible();
+    await expect(tableRowByText(ACT_NAME_RENAMED)).toBeVisible();
   });
 
   // ────────────────────────────────────────────────────────────────────────
@@ -315,12 +320,14 @@ test.describe('Arc / Act full flow', () => {
 
   test('deletes first arc (now empty)', async () => {
     await navigateToCampaignArcsPage();
-    await expect(page.getByText(ARC_NAME_RENAMED)).toBeVisible();
+    await expect(tableRowByText(ARC_NAME_RENAMED)).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
     const arcRow = page.locator('tr').filter({ hasText: ARC_NAME_RENAMED });
     await arcRow.getByRole('button', { name: 'Delete' }).click();
+    const deleteDialog = page.locator('.modal.modal-open').last();
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: 'Delete' }).click();
 
-    await expect(page.getByText(ARC_NAME_RENAMED)).not.toBeVisible();
+    await expect(tableRowByText(ARC_NAME_RENAMED)).toHaveCount(0);
   });
 });

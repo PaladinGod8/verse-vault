@@ -4,6 +4,23 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import WorldsHomePage from '../../../src/renderer/pages/WorldsHomePage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 const worldsGetAllMock = vi.fn();
 const worldsAddMock = vi.fn();
 const worldsUpdateMock = vi.fn();
@@ -57,8 +74,6 @@ describe('WorldsHomePage renderer behaviors', () => {
         markViewed: vi.fn(),
       },
     } as DbApi;
-
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('renders world cards from loaded worlds data', async () => {
@@ -170,7 +185,7 @@ describe('WorldsHomePage renderer behaviors', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('deletes a world when deletion is confirmed', async () => {
+  it('deletes a world when deletion is confirmed from the dialog', async () => {
     const user = userEvent.setup();
     const world = buildWorld();
 
@@ -181,9 +196,14 @@ describe('WorldsHomePage renderer behaviors', () => {
 
     await screen.findByRole('button', { name: 'Open Alpha' });
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "Alpha"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Alpha"?',
+    });
+    expect(
+      within(confirmDialog).getByText('This cannot be undone.'),
+    ).toBeInTheDocument();
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(worldsDeleteMock).toHaveBeenCalledWith(1);
@@ -193,5 +213,67 @@ describe('WorldsHomePage renderer behaviors', () => {
         screen.queryByRole('button', { name: 'Open Alpha' }),
       ).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'World deleted.',
+      '"Alpha" was removed.',
+    );
+  });
+
+  it('does not delete a world when dialog cancel is clicked', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld();
+
+    worldsGetAllMock.mockResolvedValue([world]);
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Alpha"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
+
+    expect(worldsDeleteMock).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Open Alpha' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Delete "Alpha"?' }),
+    ).not.toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when world deletion fails', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld();
+
+    worldsGetAllMock.mockResolvedValue([world]);
+    worldsDeleteMock.mockRejectedValue(new Error('delete failed'));
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Alpha"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(worldsDeleteMock).toHaveBeenCalledWith(1);
+    });
+    expect(
+      screen.getByRole('button', { name: 'Open Alpha' }),
+    ).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete world.',
+      'delete failed',
+    );
   });
 });

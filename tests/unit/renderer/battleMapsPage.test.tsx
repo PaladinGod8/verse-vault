@@ -4,6 +4,23 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import BattleMapsPage from '../../../src/renderer/pages/BattleMapsPage';
 
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}));
+
+vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    clearToasts: vi.fn(),
+    success: toastSuccessMock,
+    error: toastErrorMock,
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 const worldsGetByIdMock = vi.fn();
 const battlemapsGetAllByWorldMock = vi.fn();
 const battlemapsAddMock = vi.fn();
@@ -129,8 +146,6 @@ describe('BattleMapsPage', () => {
         moveTo: vi.fn(),
       },
     } as DbApi;
-
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('shows error when world id is invalid', async () => {
@@ -327,7 +342,7 @@ describe('BattleMapsPage', () => {
     expect(battlemapsUpdateMock).not.toHaveBeenCalled();
   });
 
-  it('deletes a battlemap after confirmation', async () => {
+  it('deletes a battlemap after dialog confirmation', async () => {
     const user = userEvent.setup();
     const battleMap = buildBattleMap();
 
@@ -339,9 +354,11 @@ describe('BattleMapsPage', () => {
 
     await screen.findByText('Dungeon Grid');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Delete "Dungeon Grid"? This cannot be undone.',
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Dungeon Grid"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
     );
     await waitFor(() => {
       expect(battlemapsDeleteMock).toHaveBeenCalledWith(1);
@@ -349,11 +366,14 @@ describe('BattleMapsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Dungeon Grid')).not.toBeInTheDocument();
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'BattleMap deleted.',
+      '"Dungeon Grid" was removed.',
+    );
   });
 
-  it('does not delete when confirmation is cancelled', async () => {
+  it('does not delete when dialog confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const battleMap = buildBattleMap();
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());
@@ -363,9 +383,45 @@ describe('BattleMapsPage', () => {
 
     await screen.findByText('Dungeon Grid');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Dungeon Grid"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Cancel' }),
+    );
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(battlemapsDeleteMock).not.toHaveBeenCalled();
     expect(screen.getByText('Dungeon Grid')).toBeInTheDocument();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a delete failure toast when battlemap deletion fails', async () => {
+    const user = userEvent.setup();
+    const battleMap = buildBattleMap();
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    battlemapsGetAllByWorldMock.mockResolvedValue([battleMap]);
+    battlemapsDeleteMock.mockRejectedValue(new Error('delete failed'));
+
+    renderBattleMapsPage('/world/1/battlemaps');
+
+    await screen.findByText('Dungeon Grid');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Dungeon Grid"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(battlemapsDeleteMock).toHaveBeenCalledWith(1);
+    });
+    expect(screen.getByText('Dungeon Grid')).toBeInTheDocument();
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Failed to delete BattleMap.',
+      'delete failed',
+    );
   });
 });
