@@ -302,6 +302,23 @@ describe('main process', () => {
     });
     const sessionsSiblingIdsAllMock = vi.fn(() => [{ id: 41 }, { id: 42 }]);
 
+    const scenesSelectAllByCampaignMock = vi.fn(() => [
+      {
+        id: 51,
+        session_id: 40,
+        name: 'Scene One',
+        notes: null,
+        payload: '{}',
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+        session_name: 'Session One',
+        act_id: 20,
+        act_name: 'Act One',
+        arc_id: 10,
+        arc_name: 'Arc One',
+      },
+    ]);
     const scenesSelectAllBySessionMock = vi.fn(() => [
       { id: 51, session_id: 40, name: 'Scene One' },
     ]);
@@ -549,6 +566,13 @@ describe('main process', () => {
         return { run: sessionsDeleteRunMock };
       }
 
+      if (
+        sql.includes('FROM scenes') &&
+        sql.includes('INNER JOIN sessions') &&
+        sql.includes('WHERE arcs.campaign_id = ?')
+      ) {
+        return { all: scenesSelectAllByCampaignMock };
+      }
       if (sql.includes('SELECT * FROM scenes WHERE session_id = ?')) {
         return { all: scenesSelectAllBySessionMock };
       }
@@ -624,7 +648,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(52);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(53);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -1300,6 +1324,34 @@ describe('main process', () => {
     expect(sessionDeleteResult).toEqual({ id: 43 });
 
     // SCENES
+    const scenesGetAllByCampaignResult = registeredIpcHandlers[
+      IPC.SCENES_GET_ALL_BY_CAMPAIGN
+    ]({}, 1);
+    expect(scenesSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(scenesSelectAllByCampaignMock).toHaveBeenCalledWith(1);
+    const campaignScenesSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('FROM scenes') &&
+        sql.includes('WHERE arcs.campaign_id = ?') &&
+        sql.includes('ORDER BY'),
+    )?.[0];
+    expect(campaignScenesSql).toContain('INNER JOIN sessions');
+    expect(campaignScenesSql).toContain('INNER JOIN acts');
+    expect(campaignScenesSql).toContain('INNER JOIN arcs');
+    expect(scenesGetAllByCampaignResult).toEqual([
+      expect.objectContaining({
+        id: 51,
+        session_id: 40,
+        name: 'Scene One',
+        session_name: 'Session One',
+        act_id: 20,
+        act_name: 'Act One',
+        arc_id: 10,
+        arc_name: 'Arc One',
+      }),
+    ]);
+
     const scenesGetAllBySessionResult = registeredIpcHandlers[
       IPC.SCENES_GET_ALL_BY_SESSION
     ]({}, 40);

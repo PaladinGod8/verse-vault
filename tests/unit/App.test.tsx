@@ -15,6 +15,7 @@ const actsGetAllByArcMock = vi.fn();
 const actsGetByIdMock = vi.fn();
 const sessionsGetAllByActMock = vi.fn();
 const sessionsGetByIdMock = vi.fn();
+const scenesGetAllByCampaignMock = vi.fn();
 const scenesGetAllBySessionMock = vi.fn();
 
 function buildWorld(overrides: Partial<World> = {}): World {
@@ -136,11 +137,13 @@ describe('App routes', () => {
         moveTo: vi.fn(),
       },
       scenes: {
+        getAllByCampaign: scenesGetAllByCampaignMock,
         getAllBySession: scenesGetAllBySessionMock,
         getById: vi.fn(),
         add: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        moveTo: vi.fn(),
       },
     } as DbApi;
   });
@@ -210,6 +213,21 @@ describe('App routes', () => {
     );
 
     expect(await screen.findByText('No arcs yet.')).toBeInTheDocument();
+  });
+
+  it('renders campaign scenes page at /world/:id/campaign/:campaignId/scenes', async () => {
+    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
+    scenesGetAllByCampaignMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/world/1/campaign/1/scenes']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('No scenes yet.')).toBeInTheDocument();
+    expect(campaignsGetByIdMock).toHaveBeenCalledWith(1);
+    expect(scenesGetAllByCampaignMock).toHaveBeenCalledWith(1);
   });
 
   it('renders sessions page at /world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions', async () => {

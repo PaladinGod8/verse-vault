@@ -51,6 +51,7 @@ describe('IPC channels', () => {
       SESSIONS_UPDATE: 'db:sessions:update',
       SESSIONS_DELETE: 'db:sessions:delete',
       SESSIONS_MOVE_TO_ACT: 'db:sessions:moveToAct',
+      SCENES_GET_ALL_BY_CAMPAIGN: 'db:scenes:getAllByCampaign',
       SCENES_GET_ALL_BY_SESSION: 'db:scenes:getAllBySession',
       SCENES_GET_BY_ID: 'db:scenes:getById',
       SCENES_ADD: 'db:scenes:add',
