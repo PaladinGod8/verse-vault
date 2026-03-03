@@ -73,10 +73,14 @@ vi.mock('@dnd-kit/sortable', () => ({
 }));
 
 const sessionsGetByIdMock = vi.fn();
+const sessionsGetAllByActMock = vi.fn();
 const scenesGetAllBySessionMock = vi.fn();
 const scenesAddMock = vi.fn();
 const scenesUpdateMock = vi.fn();
 const scenesDeleteMock = vi.fn();
+const scenesMoveToMock = vi.fn();
+const arcsGetAllByCampaignMock = vi.fn();
+const actsGetAllByCampaignMock = vi.fn();
 
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -189,12 +193,30 @@ describe('ScenesPage', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      arcs: {
+        getAllByCampaign: arcsGetAllByCampaignMock,
+        getById: vi.fn(),
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      acts: {
+        getAllByArc: vi.fn(),
+        getAllByCampaign: actsGetAllByCampaignMock,
+        getById: vi.fn(),
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        moveTo: vi.fn(),
+      },
       sessions: {
         getAllByCampaign: vi.fn(),
+        getAllByAct: sessionsGetAllByActMock,
         getById: sessionsGetByIdMock,
         add: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        moveTo: vi.fn(),
       },
       scenes: {
         getAllBySession: scenesGetAllBySessionMock,
@@ -202,6 +224,7 @@ describe('ScenesPage', () => {
         add: scenesAddMock,
         update: scenesUpdateMock,
         delete: scenesDeleteMock,
+        moveTo: scenesMoveToMock,
       },
     } as DbApi;
 
@@ -355,6 +378,191 @@ describe('ScenesPage', () => {
         'The Reveal',
       ]);
     });
+  });
+
+  it('opens move dialog and loads target session options', async () => {
+    const user = userEvent.setup();
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([buildScene()]);
+    arcsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 7,
+        campaign_id: 1,
+        name: 'Arc Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Arc,
+    ]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 11,
+        arc_id: 7,
+        name: 'Act Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Act,
+    ]);
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+    ]);
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    await user.click(screen.getByRole('button', { name: 'Move' }));
+
+    expect(await screen.findByText(/Move .* to Session/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('radio', { name: /Session Two/i }),
+    ).toBeInTheDocument();
+    expect(arcsGetAllByCampaignMock).toHaveBeenCalledWith(1);
+    expect(actsGetAllByCampaignMock).toHaveBeenCalledWith(1);
+    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(11);
+  });
+
+  it('keeps move confirm disabled until a target session is selected', async () => {
+    const user = userEvent.setup();
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([buildScene()]);
+    arcsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 7,
+        campaign_id: 1,
+        name: 'Arc Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Arc,
+    ]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 11,
+        arc_id: 7,
+        name: 'Act Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Act,
+    ]);
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+    ]);
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    await user.click(screen.getByRole('button', { name: 'Move' }));
+
+    const targetOption = await screen.findByRole('radio', {
+      name: /Session Two/i,
+    });
+    const moveButtons = screen.getAllByRole('button', { name: 'Move' });
+    const confirmButton = moveButtons[moveButtons.length - 1];
+
+    expect(confirmButton).toBeDisabled();
+    await user.click(targetOption);
+    expect(confirmButton).toBeEnabled();
+  });
+
+  it('moves a scene to another session and removes it from current list', async () => {
+    const user = userEvent.setup();
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([buildScene()]);
+    scenesMoveToMock.mockResolvedValue(
+      buildScene({ id: 1, session_id: 2, sort_order: 4 }),
+    );
+    arcsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 7,
+        campaign_id: 1,
+        name: 'Arc Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Arc,
+    ]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 11,
+        arc_id: 7,
+        name: 'Act Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Act,
+    ]);
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+    ]);
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    await user.click(screen.getByRole('button', { name: 'Move' }));
+    await user.click(
+      await screen.findByRole('radio', { name: /Session Two/i }),
+    );
+    const moveButtons = screen.getAllByRole('button', { name: 'Move' });
+    await user.click(moveButtons[moveButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(scenesMoveToMock).toHaveBeenCalledWith(1, 2);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('The Opening')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('No scenes yet.')).toBeInTheDocument();
+  });
+
+  it('shows move error and keeps scene in current list when move fails', async () => {
+    const user = userEvent.setup();
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([buildScene()]);
+    scenesMoveToMock.mockRejectedValue(new Error('move failed'));
+    arcsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 7,
+        campaign_id: 1,
+        name: 'Arc Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Arc,
+    ]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      {
+        id: 11,
+        arc_id: 7,
+        name: 'Act Prime',
+        sort_order: 0,
+        created_at: '2026-02-26 00:00:00',
+        updated_at: '2026-02-26 00:00:00',
+      } satisfies Act,
+    ]);
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ id: 1, name: 'Session One', sort_order: 0 }),
+      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+    ]);
+
+    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+
+    await screen.findByText('The Opening');
+    await user.click(screen.getByRole('button', { name: 'Move' }));
+    await user.click(
+      await screen.findByRole('radio', { name: /Session Two/i }),
+    );
+    const moveButtons = screen.getAllByRole('button', { name: 'Move' });
+    await user.click(moveButtons[moveButtons.length - 1]);
+
+    expect(
+      await screen.findByText('Failed to move scene. Please try again.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('The Opening')).toBeInTheDocument();
   });
 
   it('creates a scene through the create dialog', async () => {

@@ -323,6 +323,7 @@ describe('main process', () => {
     const scenesSortOrderUpdateRunMock = vi.fn();
     const scenesDeleteRunMock = vi.fn();
     const scenesNextSortOrderGetMock = vi.fn(() => ({ next_sort_order: 9 }));
+    const scenesMoveNextSortOrderGetMock = vi.fn(() => ({ nextSortOrder: 6 }));
     const scenesSessionForDeleteGetMock = vi.fn((id: number) => {
       if (id === 53) return { session_id: 40 };
       return undefined;
@@ -560,6 +561,13 @@ describe('main process', () => {
       }
       if (
         sql.includes(
+          'SELECT COALESCE(MAX(sort_order), -1) + 1 AS nextSortOrder FROM scenes WHERE session_id = ?',
+        )
+      ) {
+        return { get: scenesMoveNextSortOrderGetMock };
+      }
+      if (
+        sql.includes(
           'SELECT id FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
         )
       ) {
@@ -616,7 +624,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(51);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(52);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -1402,6 +1410,70 @@ describe('main process', () => {
     expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(0, 51);
     expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 52);
     expect(sceneDeleteResult).toEqual({ id: 53 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION]({}, 404, 41),
+    ).toThrowError('Scene not found');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION]({}, 51, 404),
+    ).toThrowError('Target session not found');
+
+    scenesMoveNextSortOrderGetMock.mockClear();
+    scenesUpdateRunMock.mockClear();
+    scenesSiblingIdsAllMock.mockClear();
+    scenesSortOrderUpdateRunMock.mockClear();
+
+    const noOpMoveResult = registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION](
+      {},
+      51,
+      40,
+    );
+    expect(noOpMoveResult).toMatchObject({ id: 51, session_id: 40 });
+    expect(scenesMoveNextSortOrderGetMock).not.toHaveBeenCalled();
+    expect(scenesUpdateRunMock).not.toHaveBeenCalled();
+    expect(scenesSiblingIdsAllMock).not.toHaveBeenCalled();
+    expect(scenesSortOrderUpdateRunMock).not.toHaveBeenCalled();
+
+    scenesMoveNextSortOrderGetMock.mockClear();
+    scenesMoveNextSortOrderGetMock.mockReturnValueOnce({ nextSortOrder: 6 });
+    scenesUpdateRunMock.mockClear();
+    scenesSiblingIdsAllMock.mockClear();
+    scenesSortOrderUpdateRunMock.mockClear();
+    scenesSelectByIdGetMock
+      .mockImplementationOnce((id: number) => ({
+        id,
+        session_id: 40,
+        name: `Scene ${id}`,
+        notes: null,
+        payload: '{}',
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      }))
+      .mockImplementationOnce((id: number) => ({
+        id,
+        session_id: 41,
+        name: `Scene ${id}`,
+        notes: null,
+        payload: '{}',
+        sort_order: 6,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      }));
+
+    const moveSceneResult = registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION](
+      {},
+      51,
+      41,
+    );
+    expect(sessionsSelectByIdGetMock).toHaveBeenCalledWith(41);
+    expect(scenesMoveNextSortOrderGetMock).toHaveBeenCalledWith(41);
+    expect(scenesUpdateRunMock).toHaveBeenCalledWith(41, 6, 51);
+    expect(scenesSiblingIdsAllMock).toHaveBeenCalledWith(40);
+    expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(0, 51);
+    expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 52);
+    expect(moveSceneResult).toMatchObject({ id: 51, session_id: 41 });
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);

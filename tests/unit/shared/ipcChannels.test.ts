@@ -56,6 +56,7 @@ describe('IPC channels', () => {
       SCENES_ADD: 'db:scenes:add',
       SCENES_UPDATE: 'db:scenes:update',
       SCENES_DELETE: 'db:scenes:delete',
+      SCENES_MOVE_TO_SESSION: 'db:scenes:moveToSession',
     });
   });
 });
