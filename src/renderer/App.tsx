@@ -10,37 +10,40 @@ import ArcsPage from './pages/ArcsPage';
 import ActsPage from './pages/ActsPage';
 import SessionsPage from './pages/SessionsPage';
 import ScenesPage from './pages/ScenesPage';
+import { ToastProvider } from './components/ui/ToastProvider';
 import './index.css';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<WorldsHomePage />} />
-      <Route path="/world/:id" element={<WorldPage />} />
-      <Route path="/world/:id/levels" element={<LevelsPage />} />
-      <Route path="/world/:id/abilities" element={<AbilitiesPage />} />
-      <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
-      <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
-      <Route
-        path="/world/:id/campaign/:campaignId/scenes"
-        element={<CampaignScenesPage />}
-      />
-      <Route
-        path="/world/:id/campaign/:campaignId/arcs"
-        element={<ArcsPage />}
-      />
-      <Route
-        path="/world/:id/campaign/:campaignId/arc/:arcId/acts"
-        element={<ActsPage />}
-      />
-      <Route
-        path="/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions"
-        element={<SessionsPage />}
-      />
-      <Route
-        path="/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes"
-        element={<ScenesPage />}
-      />
-    </Routes>
+    <ToastProvider>
+      <Routes>
+        <Route path="/" element={<WorldsHomePage />} />
+        <Route path="/world/:id" element={<WorldPage />} />
+        <Route path="/world/:id/levels" element={<LevelsPage />} />
+        <Route path="/world/:id/abilities" element={<AbilitiesPage />} />
+        <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
+        <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
+        <Route
+          path="/world/:id/campaign/:campaignId/scenes"
+          element={<CampaignScenesPage />}
+        />
+        <Route
+          path="/world/:id/campaign/:campaignId/arcs"
+          element={<ArcsPage />}
+        />
+        <Route
+          path="/world/:id/campaign/:campaignId/arc/:arcId/acts"
+          element={<ActsPage />}
+        />
+        <Route
+          path="/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions"
+          element={<SessionsPage />}
+        />
+        <Route
+          path="/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes"
+          element={<ScenesPage />}
+        />
+      </Routes>
+    </ToastProvider>
   );
 }
