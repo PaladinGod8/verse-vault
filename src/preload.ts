@@ -97,6 +97,24 @@ contextBridge.exposeInMainWorld('db', {
     ) => ipcRenderer.invoke(IPC.CAMPAIGNS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_DELETE, id),
   },
+  battlemaps: {
+    getAllByWorld: (worldId: number): Promise<BattleMap[]> =>
+      ipcRenderer.invoke(IPC.BATTLEMAPS_GET_ALL_BY_WORLD, worldId),
+    getById: (id: number): Promise<BattleMap | null> =>
+      ipcRenderer.invoke(IPC.BATTLEMAPS_GET_BY_ID, id),
+    add: (data: {
+      world_id: number;
+      name: string;
+      config?: string;
+    }): Promise<BattleMap> => ipcRenderer.invoke(IPC.BATTLEMAPS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; config?: string },
+    ): Promise<BattleMap> =>
+      ipcRenderer.invoke(IPC.BATTLEMAPS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number }> =>
+      ipcRenderer.invoke(IPC.BATTLEMAPS_DELETE, id),
+  },
   arcs: {
     getAllByCampaign: (campaignId: number): Promise<Arc[]> =>
       ipcRenderer.invoke(IPC.ARCS_GET_ALL_BY_CAMPAIGN, campaignId),
