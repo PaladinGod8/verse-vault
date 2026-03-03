@@ -932,6 +932,46 @@ function registerIpcHandlers() {
     },
   );
 
+  ipcMain.handle(
+    IPC.SCENES_GET_ALL_BY_CAMPAIGN,
+    (_event, campaignId: number): CampaignSceneListItem[] => {
+      return db
+        .prepare(
+          `
+          SELECT
+            scenes.id,
+            scenes.session_id,
+            scenes.name,
+            scenes.notes,
+            scenes.payload,
+            scenes.sort_order,
+            scenes.created_at,
+            scenes.updated_at,
+            sessions.name AS session_name,
+            acts.id AS act_id,
+            acts.name AS act_name,
+            arcs.id AS arc_id,
+            arcs.name AS arc_name
+          FROM scenes
+          INNER JOIN sessions ON sessions.id = scenes.session_id
+          INNER JOIN acts ON acts.id = sessions.act_id
+          INNER JOIN arcs ON arcs.id = acts.arc_id
+          WHERE arcs.campaign_id = ?
+          ORDER BY
+            arcs.sort_order ASC,
+            arcs.id ASC,
+            acts.sort_order ASC,
+            acts.id ASC,
+            sessions.sort_order ASC,
+            sessions.id ASC,
+            scenes.sort_order ASC,
+            scenes.id ASC
+          `,
+        )
+        .all(campaignId) as CampaignSceneListItem[];
+    },
+  );
+
   ipcMain.handle(IPC.SCENES_GET_ALL_BY_SESSION, (_event, sessionId: number) => {
     return db
       .prepare(

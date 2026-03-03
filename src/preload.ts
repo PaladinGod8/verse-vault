@@ -160,6 +160,8 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.SESSIONS_MOVE_TO_ACT, sessionId, newActId),
   },
   scenes: {
+    getAllByCampaign: (campaignId: number): Promise<CampaignSceneListItem[]> =>
+      ipcRenderer.invoke(IPC.SCENES_GET_ALL_BY_CAMPAIGN, campaignId),
     getAllBySession: (sessionId: number) =>
       ipcRenderer.invoke(IPC.SCENES_GET_ALL_BY_SESSION, sessionId),
     getById: (id: number) => ipcRenderer.invoke(IPC.SCENES_GET_BY_ID, id),
