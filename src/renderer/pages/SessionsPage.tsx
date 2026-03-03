@@ -28,6 +28,26 @@ const sortSessionsByOrder = (sessions: Session[]) =>
     (left, right) => left.sort_order - right.sort_order || left.id - right.id,
   );
 
+const formatPlannedAt = (plannedAt: string | null): string => {
+  if (!plannedAt) {
+    return '-';
+  }
+
+  const normalized = plannedAt.includes('T')
+    ? plannedAt
+    : `${plannedAt.replace(' ', 'T')}Z`;
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return plannedAt;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(parsed);
+};
+
 type SortableSessionRowProps = {
   session: Session;
   sequence: number;
@@ -98,6 +118,9 @@ function SortableSessionRow({
       </td>
       <td className="px-4 py-3 font-medium">{session.name}</td>
       <td className="px-4 py-3 text-slate-500">{session.notes ?? '-'}</td>
+      <td className="px-4 py-3 text-slate-500">
+        {formatPlannedAt(session.planned_at)}
+      </td>
       <td className="px-4 py-3">
         <div className="flex gap-3">
           <Link
@@ -285,10 +308,11 @@ export default function SessionsPage() {
       return;
     }
 
-    const { name, notes } = data;
+    const { name, notes, planned_at } = data;
     const updatedSession = await window.db.sessions.update(editingSession.id, {
       name,
       notes,
+      planned_at,
     });
     setReorderError(null);
     setSessions((prev) =>
@@ -506,6 +530,9 @@ export default function SessionsPage() {
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-slate-500">
                       Notes
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-500">
+                      Planned
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-slate-500">
                       Actions
