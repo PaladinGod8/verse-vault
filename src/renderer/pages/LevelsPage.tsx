@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import LevelForm from '../components/levels/LevelForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
@@ -243,52 +244,48 @@ export default function LevelsPage() {
       </main>
 
       {isCreateOpen && worldId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-level-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-level-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-level-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-level-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Level
-            </h2>
-            <LevelForm
-              mode="create"
-              worldId={worldId}
-              onSubmit={handleCreateLevel}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            New Level
+          </h2>
+          <LevelForm
+            mode="create"
+            worldId={worldId}
+            onSubmit={handleCreateLevel}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {editingLevel !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-level-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingLevel !== null}
+          onClose={() => setEditingLevel(null)}
+          labelledBy="edit-level-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-level-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-level-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Level
-            </h2>
-            <LevelForm
-              mode="edit"
-              worldId={editingLevel.world_id}
-              initialValues={editingLevel}
-              onSubmit={handleUpdateLevel}
-              onCancel={() => setEditingLevel(null)}
-            />
-          </section>
-        </div>
+            Edit Level
+          </h2>
+          <LevelForm
+            mode="edit"
+            worldId={editingLevel.world_id}
+            initialValues={editingLevel}
+            onSubmit={handleUpdateLevel}
+            onCancel={() => setEditingLevel(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog

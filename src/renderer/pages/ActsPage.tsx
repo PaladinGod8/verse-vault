@@ -20,6 +20,7 @@ import { Link, useParams } from 'react-router-dom';
 import ActForm from '../components/acts/ActForm';
 import MoveActDialog from '../components/acts/MoveActDialog';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortActsByOrder = (acts: Act[]) =>
@@ -511,54 +512,50 @@ export default function ActsPage() {
       </main>
 
       {isCreateOpen && parsedArcId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-act-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-act-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-act-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-act-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Act
-            </h2>
-            <ActForm
-              onSubmit={(data) => {
-                void handleCreateAct(data);
-              }}
-              onCancel={() => setIsCreateOpen(false)}
-              submitLabel="Create Act"
-            />
-          </section>
-        </div>
+            New Act
+          </h2>
+          <ActForm
+            onSubmit={(data) => {
+              void handleCreateAct(data);
+            }}
+            onCancel={() => setIsCreateOpen(false)}
+            submitLabel="Create Act"
+          />
+        </ModalShell>
       ) : null}
 
       {editingAct !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-act-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingAct !== null}
+          onClose={() => setEditingAct(null)}
+          labelledBy="edit-act-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-act-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-act-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Act
-            </h2>
-            <ActForm
-              initialValues={editingAct}
-              onSubmit={(data) => {
-                void handleUpdateAct(data);
-              }}
-              onCancel={() => setEditingAct(null)}
-              submitLabel="Save"
-            />
-          </section>
-        </div>
+            Edit Act
+          </h2>
+          <ActForm
+            initialValues={editingAct}
+            onSubmit={(data) => {
+              void handleUpdateAct(data);
+            }}
+            onCancel={() => setEditingAct(null)}
+            submitLabel="Save"
+          />
+        </ModalShell>
       ) : null}
 
       {movingAct !== null &&

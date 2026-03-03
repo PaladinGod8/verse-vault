@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ModalShell from '../ui/ModalShell';
 
 type SessionOption = {
   arcId: number;
@@ -108,71 +109,77 @@ export default function MoveSceneDialog({
   }, [campaignId, currentSessionId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-slate-800">
-          Move &ldquo;{scene.name}&rdquo; to Session
-        </h2>
+    <ModalShell
+      isOpen
+      onClose={onCancel}
+      labelledBy="move-scene-title"
+      boxClassName="max-w-md"
+    >
+      <h2
+        id="move-scene-title"
+        className="mb-4 text-lg font-semibold text-slate-800"
+      >
+        Move &ldquo;{scene.name}&rdquo; to Session
+      </h2>
 
-        {loading && (
-          <p className="text-sm text-slate-500">Loading target sessions...</p>
-        )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+      {loading && (
+        <p className="text-sm text-slate-500">Loading target sessions...</p>
+      )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
-        {!loading && !error && options.length === 0 && (
-          <p className="text-sm text-slate-500">
-            No other Sessions available in this Campaign.
-          </p>
-        )}
+      {!loading && !error && options.length === 0 && (
+        <p className="text-sm text-slate-500">
+          No other Sessions available in this Campaign.
+        </p>
+      )}
 
-        {!loading && !error && options.length > 0 && (
-          <div className="mb-4 max-h-64 overflow-y-auto rounded border border-slate-200">
-            {options.map((option) => (
-              <label
-                key={option.sessionId}
-                className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-slate-50"
-              >
-                <input
-                  type="radio"
-                  name="target-session"
-                  value={option.sessionId}
-                  checked={selectedSessionId === option.sessionId}
-                  onChange={() => setSelectedSessionId(option.sessionId)}
-                  className="accent-slate-800"
-                />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm text-slate-700">
-                    {option.sessionName}
-                  </span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {option.arcName} / {option.actName}
-                  </span>
+      {!loading && !error && options.length > 0 && (
+        <div className="mb-4 max-h-64 overflow-y-auto rounded border border-slate-200">
+          {options.map((option) => (
+            <label
+              key={option.sessionId}
+              className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-slate-50"
+            >
+              <input
+                type="radio"
+                name="target-session"
+                value={option.sessionId}
+                checked={selectedSessionId === option.sessionId}
+                onChange={() => setSelectedSessionId(option.sessionId)}
+                className="accent-slate-800"
+              />
+              <span className="min-w-0">
+                <span className="block truncate text-sm text-slate-700">
+                  {option.sessionName}
                 </span>
-              </label>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={selectedSessionId === null || loading}
-            onClick={() =>
-              selectedSessionId !== null && onConfirm(selectedSessionId)
-            }
-            className="rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Move
-          </button>
+                <span className="block truncate text-xs text-slate-500">
+                  {option.arcName} / {option.actName}
+                </span>
+              </span>
+            </label>
+          ))}
         </div>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={selectedSessionId === null || loading}
+          onClick={() =>
+            selectedSessionId !== null && onConfirm(selectedSessionId)
+          }
+          className="rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Move
+        </button>
       </div>
-    </div>
+    </ModalShell>
   );
 }

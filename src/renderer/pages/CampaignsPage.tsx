@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CampaignForm from '../components/campaigns/CampaignForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddCampaignInput = Parameters<DbApi['campaigns']['add']>[0];
@@ -251,52 +252,48 @@ export default function CampaignsPage() {
       </main>
 
       {isCreateOpen && worldId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-campaign-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-campaign-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-campaign-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-campaign-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Campaign
-            </h2>
-            <CampaignForm
-              mode="create"
-              worldId={worldId}
-              onSubmit={handleCreateCampaign}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            New Campaign
+          </h2>
+          <CampaignForm
+            mode="create"
+            worldId={worldId}
+            onSubmit={handleCreateCampaign}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {editingCampaign !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-campaign-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingCampaign !== null}
+          onClose={() => setEditingCampaign(null)}
+          labelledBy="edit-campaign-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-campaign-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-campaign-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Campaign
-            </h2>
-            <CampaignForm
-              mode="edit"
-              worldId={editingCampaign.world_id}
-              initialValues={editingCampaign}
-              onSubmit={handleUpdateCampaign}
-              onCancel={() => setEditingCampaign(null)}
-            />
-          </section>
-        </div>
+            Edit Campaign
+          </h2>
+          <CampaignForm
+            mode="edit"
+            worldId={editingCampaign.world_id}
+            initialValues={editingCampaign}
+            onSubmit={handleUpdateCampaign}
+            onCancel={() => setEditingCampaign(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog

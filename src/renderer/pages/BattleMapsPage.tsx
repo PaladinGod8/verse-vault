@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import BattleMapForm from '../components/battlemaps/BattleMapForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddBattleMapInput = Parameters<DbApi['battlemaps']['add']>[0];
@@ -280,52 +281,48 @@ export default function BattleMapsPage() {
       </main>
 
       {isCreateOpen && worldId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-battlemap-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-battlemap-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-battlemap-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-battlemap-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New BattleMap
-            </h2>
-            <BattleMapForm
-              mode="create"
-              worldId={worldId}
-              onSubmit={handleCreateBattleMap}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            New BattleMap
+          </h2>
+          <BattleMapForm
+            mode="create"
+            worldId={worldId}
+            onSubmit={handleCreateBattleMap}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {editingBattleMap !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-battlemap-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingBattleMap !== null}
+          onClose={() => setEditingBattleMap(null)}
+          labelledBy="edit-battlemap-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-battlemap-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-battlemap-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit BattleMap
-            </h2>
-            <BattleMapForm
-              mode="edit"
-              worldId={editingBattleMap.world_id}
-              initialValues={editingBattleMap}
-              onSubmit={handleUpdateBattleMap}
-              onCancel={() => setEditingBattleMap(null)}
-            />
-          </section>
-        </div>
+            Edit BattleMap
+          </h2>
+          <BattleMapForm
+            mode="edit"
+            worldId={editingBattleMap.world_id}
+            initialValues={editingBattleMap}
+            onSubmit={handleUpdateBattleMap}
+            onCancel={() => setEditingBattleMap(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog

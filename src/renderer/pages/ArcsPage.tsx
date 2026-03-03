@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ArcForm from '../components/arcs/ArcForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 const sortArcsByOrder = (arcs: Arc[]) =>
@@ -460,54 +461,50 @@ export default function ArcsPage() {
       </main>
 
       {isCreateOpen && parsedCampaignId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-arc-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-arc-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-arc-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-arc-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Arc
-            </h2>
-            <ArcForm
-              onSubmit={(data) => {
-                void handleCreateArc(data);
-              }}
-              onCancel={() => setIsCreateOpen(false)}
-              submitLabel="Create Arc"
-            />
-          </section>
-        </div>
+            New Arc
+          </h2>
+          <ArcForm
+            onSubmit={(data) => {
+              void handleCreateArc(data);
+            }}
+            onCancel={() => setIsCreateOpen(false)}
+            submitLabel="Create Arc"
+          />
+        </ModalShell>
       ) : null}
 
       {editingArc !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-arc-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingArc !== null}
+          onClose={() => setEditingArc(null)}
+          labelledBy="edit-arc-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-arc-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-arc-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Arc
-            </h2>
-            <ArcForm
-              initialValues={editingArc}
-              onSubmit={(data) => {
-                void handleUpdateArc(data);
-              }}
-              onCancel={() => setEditingArc(null)}
-              submitLabel="Save"
-            />
-          </section>
-        </div>
+            Edit Arc
+          </h2>
+          <ArcForm
+            initialValues={editingArc}
+            onSubmit={(data) => {
+              void handleUpdateArc(data);
+            }}
+            onCancel={() => setEditingArc(null)}
+            submitLabel="Save"
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog

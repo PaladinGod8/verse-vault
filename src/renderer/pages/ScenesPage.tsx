@@ -20,6 +20,7 @@ import { Link, useParams } from 'react-router-dom';
 import MoveSceneDialog from '../components/scenes/MoveSceneDialog';
 import SceneForm from '../components/scenes/SceneForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddSceneInput = Parameters<DbApi['scenes']['add']>[0];
@@ -556,27 +557,25 @@ export default function ScenesPage() {
       </main>
 
       {isCreateOpen && parsedSessionId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-scene-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          labelledBy="create-scene-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="create-scene-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="create-scene-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              New Scene
-            </h2>
-            <SceneForm
-              mode="create"
-              sessionId={parsedSessionId}
-              onSubmit={handleCreateScene}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </section>
-        </div>
+            New Scene
+          </h2>
+          <SceneForm
+            mode="create"
+            sessionId={parsedSessionId}
+            onSubmit={handleCreateScene}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </ModalShell>
       ) : null}
 
       {movingScene !== null &&
@@ -603,28 +602,26 @@ export default function ScenesPage() {
       ) : null}
 
       {editingScene !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-scene-title"
-            className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+        <ModalShell
+          isOpen={editingScene !== null}
+          onClose={() => setEditingScene(null)}
+          labelledBy="edit-scene-title"
+          boxClassName="max-w-xl"
+        >
+          <h2
+            id="edit-scene-title"
+            className="mb-4 text-lg font-semibold text-slate-900"
           >
-            <h2
-              id="edit-scene-title"
-              className="mb-4 text-lg font-semibold text-slate-900"
-            >
-              Edit Scene
-            </h2>
-            <SceneForm
-              mode="edit"
-              sessionId={editingScene.session_id}
-              initialValues={editingScene}
-              onSubmit={handleUpdateScene}
-              onCancel={() => setEditingScene(null)}
-            />
-          </section>
-        </div>
+            Edit Scene
+          </h2>
+          <SceneForm
+            mode="edit"
+            sessionId={editingScene.session_id}
+            initialValues={editingScene}
+            onSubmit={handleUpdateScene}
+            onCancel={() => setEditingScene(null)}
+          />
+        </ModalShell>
       ) : null}
 
       <ConfirmDialog
