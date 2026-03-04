@@ -1,8 +1,121 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TokenForm from '../../../src/renderer/components/tokens/TokenForm';
 import type { TokenFormValues } from '../../../src/renderer/components/tokens/TokenForm';
+
+vi.mock(
+  '../../../src/renderer/components/tokens/FootprintPainterModal',
+  () => ({
+    default: ({
+      onClose,
+      onConfirm,
+      gridType,
+    }: {
+      onClose: () => void;
+      onConfirm: (result: {
+        footprint: TokenFootprintConfig;
+        framing: TokenFramingConfig;
+      }) => void;
+      gridType: TokenGridType;
+    }) => (
+      <div role="dialog" aria-label="Footprint Painter">
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm({
+              footprint:
+                gridType === 'hex'
+                  ? {
+                      version: 1,
+                      grid_type: 'hex',
+                      hex_cells: [{ q: 0, r: 0 }],
+                      radius_cells: 1,
+                    }
+                  : {
+                      version: 1,
+                      grid_type: 'square',
+                      square_cells: [{ col: 0, row: 0 }],
+                      width_cells: 1,
+                      height_cells: 1,
+                    },
+              framing: {
+                center_x_cells: 0,
+                center_y_cells: 0,
+                extent_x_cells: 0.5,
+                extent_y_cells: 0.5,
+              },
+            })
+          }
+        >
+          Confirm
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    ),
+  }),
+);
+vi.mock(
+  '../../../src/renderer/components/tokens/FootprintPainterModal.tsx',
+  () => ({
+    default: ({
+      onClose,
+      onConfirm,
+      gridType,
+    }: {
+      onClose: () => void;
+      onConfirm: (result: {
+        footprint: TokenFootprintConfig;
+        framing: TokenFramingConfig;
+      }) => void;
+      gridType: TokenGridType;
+    }) => (
+      <div role="dialog" aria-label="Footprint Painter">
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm({
+              footprint:
+                gridType === 'hex'
+                  ? {
+                      version: 1,
+                      grid_type: 'hex',
+                      hex_cells: [{ q: 0, r: 0 }],
+                      radius_cells: 1,
+                    }
+                  : {
+                      version: 1,
+                      grid_type: 'square',
+                      square_cells: [{ col: 0, row: 0 }],
+                      width_cells: 1,
+                      height_cells: 1,
+                    },
+              framing: {
+                center_x_cells: 0,
+                center_y_cells: 0,
+                extent_x_cells: 0.5,
+                extent_y_cells: 0.5,
+              },
+            })
+          }
+        >
+          Confirm
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    ),
+  }),
+);
 
 if (!('createObjectURL' in URL)) {
   Object.defineProperty(URL, 'createObjectURL', {
@@ -100,6 +213,10 @@ describe('TokenForm', () => {
         files: [imageFile],
       },
     });
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
     expect(screen.getByText('token.png')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Name *'), 'Wolf');
@@ -130,6 +247,13 @@ describe('TokenForm', () => {
     fireEvent.change(getFileInput(container), {
       target: { files: [imageFile] },
     });
+
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await userEvent
+      .setup()
+      .click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
 
     expect(screen.getByText('picked.webp')).toBeInTheDocument();
     expect(
@@ -250,6 +374,10 @@ describe('TokenForm', () => {
         files: [makeImageFile('replacement.gif', 'image/gif')],
       },
     });
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
     const replacePayload = onSave.mock.calls[1][0] as TokenFormValues;

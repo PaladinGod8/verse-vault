@@ -41,6 +41,113 @@ vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
   }),
 }));
 
+vi.mock(
+  '../../../src/renderer/components/tokens/FootprintPainterModal',
+  () => ({
+    default: ({
+      onClose,
+      onConfirm,
+      gridType,
+    }: {
+      onClose: () => void;
+      onConfirm: (result: {
+        footprint: TokenFootprintConfig;
+        framing: TokenFramingConfig;
+      }) => void;
+      gridType: TokenGridType;
+    }) => (
+      <div role="dialog" aria-label="Footprint Painter">
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm({
+              footprint:
+                gridType === 'hex'
+                  ? {
+                      version: 1,
+                      grid_type: 'hex',
+                      hex_cells: [{ q: 0, r: 0 }],
+                      radius_cells: 1,
+                    }
+                  : {
+                      version: 1,
+                      grid_type: 'square',
+                      square_cells: [{ col: 0, row: 0 }],
+                      width_cells: 1,
+                      height_cells: 1,
+                    },
+              framing: {
+                center_x_cells: 0,
+                center_y_cells: 0,
+                extent_x_cells: 0.5,
+                extent_y_cells: 0.5,
+              },
+            })
+          }
+        >
+          Confirm
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    ),
+  }),
+);
+vi.mock(
+  '../../../src/renderer/components/tokens/FootprintPainterModal.tsx',
+  () => ({
+    default: ({
+      onClose,
+      onConfirm,
+      gridType,
+    }: {
+      onClose: () => void;
+      onConfirm: (result: {
+        footprint: TokenFootprintConfig;
+        framing: TokenFramingConfig;
+      }) => void;
+      gridType: TokenGridType;
+    }) => (
+      <div role="dialog" aria-label="Footprint Painter">
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm({
+              footprint:
+                gridType === 'hex'
+                  ? {
+                      version: 1,
+                      grid_type: 'hex',
+                      hex_cells: [{ q: 0, r: 0 }],
+                      radius_cells: 1,
+                    }
+                  : {
+                      version: 1,
+                      grid_type: 'square',
+                      square_cells: [{ col: 0, row: 0 }],
+                      width_cells: 1,
+                      height_cells: 1,
+                    },
+              framing: {
+                center_x_cells: 0,
+                center_y_cells: 0,
+                extent_x_cells: 0.5,
+                extent_y_cells: 0.5,
+              },
+            })
+          }
+        >
+          Confirm
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    ),
+  }),
+);
+
 const worldsGetByIdMock = vi.fn();
 const tokensGetAllByWorldMock = vi.fn();
 const tokensImportImageMock = vi.fn();
@@ -336,6 +443,10 @@ describe('TokensPage', () => {
       }),
       { dataTransfer: { files: [imageFile] } },
     );
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
     await user.type(within(dialog).getByLabelText('Name *'), 'Uploaded Wolf');
     await user.click(within(dialog).getByRole('button', { name: 'Create' }));
 
@@ -344,13 +455,19 @@ describe('TokensPage', () => {
     expect(tokensImportImageMock.mock.invocationCallOrder[0]).toBeLessThan(
       tokensAddMock.mock.invocationCallOrder[0],
     );
-    expect(tokensAddMock).toHaveBeenCalledWith({
-      world_id: 1,
-      name: 'Uploaded Wolf',
-      grid_type: 'square',
-      image_src: 'file:///a.png',
-      is_visible: 1,
-    });
+    expect(tokensAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        world_id: 1,
+        name: 'Uploaded Wolf',
+        grid_type: 'square',
+        image_src: 'file:///a.png',
+        is_visible: 1,
+      }),
+    );
+    const addPayload = tokensAddMock.mock.calls[0][0] as {
+      config?: string;
+    };
+    expect(addPayload.config).toContain('"footprint"');
   });
 
   it('shows create error toast when add fails', async () => {
@@ -453,6 +570,10 @@ describe('TokensPage', () => {
       }),
       { dataTransfer: { files: [imageFile] } },
     );
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(tokensImportImageMock).toHaveBeenCalledTimes(1));
@@ -460,12 +581,19 @@ describe('TokensPage', () => {
     expect(tokensImportImageMock.mock.invocationCallOrder[0]).toBeLessThan(
       tokensUpdateMock.mock.invocationCallOrder[0],
     );
-    expect(tokensUpdateMock).toHaveBeenCalledWith(300, {
-      name: 'Scout',
-      grid_type: 'square',
-      image_src: 'file:///new.png',
-      is_visible: 1,
-    });
+    expect(tokensUpdateMock).toHaveBeenCalledWith(
+      300,
+      expect.objectContaining({
+        name: 'Scout',
+        grid_type: 'square',
+        image_src: 'file:///new.png',
+        is_visible: 1,
+      }),
+    );
+    const updatePayload = tokensUpdateMock.mock.calls[0][1] as {
+      config?: string;
+    };
+    expect(updatePayload.config).toContain('"footprint"');
   });
 
   it('edit clear image flow sends image_src null without upload', async () => {
@@ -555,6 +683,10 @@ describe('TokensPage', () => {
       }),
       { dataTransfer: { files: [imageFile] } },
     );
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
     await user.type(within(dialog).getByLabelText('Name *'), 'Upload Fail');
     await user.click(within(dialog).getByRole('button', { name: 'Create' }));
 
@@ -597,6 +729,10 @@ describe('TokensPage', () => {
       }),
       { dataTransfer: { files: [imageFile] } },
     );
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {

@@ -92,6 +92,24 @@ async function importMainWithMocks() {
   vi.doMock('../../src/database/db', () => ({
     getDatabase: getDatabaseMock,
     closeDatabase: closeDatabaseMock,
+    ensureTokenConfigJsonText: (config: unknown) => {
+      if (typeof config !== 'string') {
+        throw new Error('Token config must be a JSON string');
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(config);
+      } catch {
+        throw new Error('Token config must be valid JSON text');
+      }
+
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Token config must be a JSON object');
+      }
+
+      return config;
+    },
   }));
 
   await import('../../src/main');

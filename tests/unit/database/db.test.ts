@@ -264,4 +264,105 @@ describe('database', () => {
     expect(closeMock).toHaveBeenCalledTimes(1);
     expect(databaseCtorMock).toHaveBeenCalledTimes(2);
   });
+
+  it('normalizes token footprint config JSON for square and hex cells', async () => {
+    const { ensureTokenConfigJsonText } = await loadDbModule();
+
+    const normalized = JSON.parse(
+      ensureTokenConfigJsonText(
+        JSON.stringify({
+          footprint: {
+            version: 1,
+            grid_type: 'square',
+            square_cells: [
+              { col: 2, row: 1 },
+              { col: 0, row: 0 },
+              { col: 2, row: 1 },
+            ],
+            width_cells: 3,
+            height_cells: 2,
+          },
+          framing: {
+            extent_x_cells: 1.5,
+            extent_y_cells: 1,
+            max_extent_cells: 1.5,
+          },
+        }),
+      ),
+    ) as TokenConfigShape;
+
+    expect(normalized.footprint?.square_cells).toEqual([
+      { col: 0, row: 0 },
+      { col: 2, row: 1 },
+    ]);
+    expect(normalized.footprint?.width_cells).toBe(3);
+    expect(normalized.footprint?.height_cells).toBe(2);
+
+    const normalizedHex = JSON.parse(
+      ensureTokenConfigJsonText(
+        JSON.stringify({
+          footprint: {
+            version: 1,
+            grid_type: 'hex',
+            hex_cells: [
+              { q: 1, r: 0 },
+              { q: 0, r: 0 },
+              { q: 1, r: 0 },
+            ],
+            radius_cells: 1,
+          },
+        }),
+      ),
+    ) as TokenConfigShape;
+
+    expect(normalizedHex.footprint?.hex_cells).toEqual([
+      { q: 0, r: 0 },
+      { q: 1, r: 0 },
+    ]);
+    expect(normalizedHex.footprint?.radius_cells).toBe(1);
+  });
+
+  it('rejects invalid token footprint config shapes and values', async () => {
+    const { ensureTokenConfigJsonText } = await loadDbModule();
+
+    expect(() =>
+      ensureTokenConfigJsonText(
+        JSON.stringify({
+          footprint: {
+            version: 2,
+          },
+        }),
+      ),
+    ).toThrowError('Token config footprint.version must be 1');
+
+    expect(() =>
+      ensureTokenConfigJsonText(
+        JSON.stringify({
+          footprint: {
+            grid_type: 'triangle',
+          },
+        }),
+      ),
+    ).toThrowError("Token config footprint.grid_type must be 'square' or 'hex'");
+
+    expect(() =>
+      ensureTokenConfigJsonText(
+        JSON.stringify({
+          footprint: {
+            square_cells: [{ col: 0.5, row: 1 }],
+          },
+        }),
+      ),
+    ).toThrowError('Token config footprint.square_cells[0].col must be an integer');
+
+    expect(() =>
+      ensureTokenConfigJsonText(
+        JSON.stringify({
+          footprint: {
+            radius_cells: 0,
+          },
+        }),
+      ),
+    ).toThrowError('Token config footprint.radius_cells must be greater than 0');
+  });
 });

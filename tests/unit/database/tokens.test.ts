@@ -120,6 +120,24 @@ async function importMainWithMocks() {
   vi.doMock('../../../src/database/db', () => ({
     getDatabase: getDatabaseMock,
     closeDatabase: closeDatabaseMock,
+    ensureTokenConfigJsonText: (config: unknown) => {
+      if (typeof config !== 'string') {
+        throw new Error('Token config must be a JSON string');
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(config);
+      } catch {
+        throw new Error('Token config must be valid JSON text');
+      }
+
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Token config must be a JSON object');
+      }
+
+      return config;
+    },
   }));
 
   await import('../../../src/main');
@@ -134,6 +152,7 @@ function buildToken(overrides: Partial<Token> = {}): Token {
     name: 'Wolf',
     image_src: null,
     config: '{}',
+    grid_type: 'square',
     is_visible: 1,
     created_at: '2026-03-01 00:00:00',
     updated_at: '2026-03-01 00:00:00',
@@ -161,6 +180,7 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
       name: string,
       imageSrc: string | null,
       config: string,
+      gridType: TokenGridType,
       isVisible: number,
     ) => {
       const id = nextTokenId++;
@@ -173,6 +193,7 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
           name,
           image_src: imageSrc,
           config,
+          grid_type: gridType,
           is_visible: isVisible,
         }),
       );
@@ -199,6 +220,10 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
         existing.config = String(args[valueIndex] ?? '{}');
         valueIndex += 1;
       }
+      if (lastTokenUpdateSql.includes('grid_type = ?')) {
+        existing.grid_type = String(args[valueIndex] ?? 'square') as TokenGridType;
+        valueIndex += 1;
+      }
       if (lastTokenUpdateSql.includes('is_visible = ?')) {
         existing.is_visible = Number(args[valueIndex] ?? 1);
       }
@@ -222,7 +247,7 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
     }
     if (
       sql ===
-      'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, grid_type, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ) {
       return { run: tokensInsertRunMock };
     }
@@ -319,6 +344,7 @@ describe('token IPC handlers', () => {
       'Wolf',
       null,
       '{}',
+      'square',
       1,
     );
     expect(worldScopedResult).toMatchObject({
@@ -348,6 +374,7 @@ describe('token IPC handlers', () => {
       'Guard',
       'https://assets.example/guard.png',
       '{"size":"large"}',
+      'square',
       0,
     );
     expect(campaignScopedResult).toMatchObject({
