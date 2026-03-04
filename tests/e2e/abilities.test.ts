@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import path from 'path';
-
-const mainJs = path.join(__dirname, '../../.vite/build/main.js');
+import { launchApp, closeApp } from './helpers/launchApp';
 
 function abilityRow(
   window: import('@playwright/test').Page,
@@ -12,10 +9,7 @@ function abilityRow(
 }
 
 test('abilities CRUD and child-link flow works end to end', async () => {
-  const env = { ...process.env };
-  delete env.ELECTRON_RUN_AS_NODE;
-
-  const app = await electron.launch({ args: [mainJs], env });
+  const { app, userDataDir } = await launchApp();
 
   try {
     const window = await app.firstWindow();
@@ -137,6 +131,6 @@ test('abilities CRUD and child-link flow works end to end', async () => {
     await parentDeleteDialog.getByRole('button', { name: 'Delete' }).click();
     await expect(abilityRow(window, parentAbilityName)).toHaveCount(0);
   } finally {
-    await app.close();
+    await closeApp(app, userDataDir);
   }
 });

@@ -4,12 +4,7 @@ import {
   type ElectronApplication,
   type Page,
 } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import path from 'path';
-
-// Requires `yarn package` to have been run first so that
-// .vite/build/main.js and .vite/renderer/main_window/ exist.
-const mainJs = path.join(__dirname, '../../.vite/build/main.js');
+import { launchApp as electronLaunchApp, closeApp } from './helpers/launchApp';
 
 // Unique suffix so repeated test runs don't collide on existing DB rows.
 const TS = Date.now();
@@ -24,15 +19,17 @@ const SESSION_NAME = `Session One ${TS}`;
 
 let app: ElectronApplication;
 let page: Page;
+let userDataDir: string;
 
 function tableRowByText(text: string) {
   return page.locator('tbody tr').filter({ hasText: text }).first();
 }
 
-async function launchApp() {
-  const env = { ...process.env };
-  delete env.ELECTRON_RUN_AS_NODE; // CRITICAL: prevents Electron from running as plain Node
-  app = await electron.launch({ args: [mainJs], env });
+async function setupApp() {
+  const result = await electronLaunchApp();
+  app = result.app;
+  userDataDir = result.userDataDir;
+
   page = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows()[0];
@@ -62,7 +59,7 @@ async function ensurePageIsAvailable() {
     // Relaunch below when the Electron connection is no longer available.
   }
 
-  await launchApp();
+  await setupApp();
 }
 
 async function navigateToCampaignArcsPage() {
@@ -96,14 +93,11 @@ test.describe('Arc / Act full flow', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeAll(async () => {
-    await launchApp();
+    await setupApp();
   });
 
   test.afterAll(async () => {
-    await app.close().catch((closeError) => {
-      // App may already be closed after earlier failures in this serial flow.
-      void closeError;
-    });
+    await closeApp(app, userDataDir);
   });
 
   // ────────────────────────────────────────────────────────────────────────
