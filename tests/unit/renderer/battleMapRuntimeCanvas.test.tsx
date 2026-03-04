@@ -343,6 +343,14 @@ function getApp(): MockPixiApp {
   return pixiState.appInstances[0] as MockPixiApp;
 }
 
+function getWorldContainer(app: MockPixiApp): MockDisplayNode {
+  const worldContainer = app.stage.children[0];
+  if (!worldContainer) {
+    throw new Error('Expected world container to be initialized');
+  }
+  return worldContainer;
+}
+
 function getTokenLayer(app: MockPixiApp): MockDisplayNode {
   const worldContainer = app.stage.children[0];
   if (!worldContainer) {
@@ -353,6 +361,24 @@ function getTokenLayer(app: MockPixiApp): MockDisplayNode {
     throw new Error('Expected token layer to be initialized');
   }
   return tokenLayer;
+}
+
+function dispatchWheelOnCanvas(
+  canvas: HTMLCanvasElement,
+  deltaY: number,
+  opts: Partial<WheelEventInit> = {},
+): void {
+  canvas.dispatchEvent(
+    new WheelEvent('wheel', {
+      deltaY,
+      deltaMode: 0,
+      clientX: 500,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true,
+      ...opts,
+    }),
+  );
 }
 
 describe('BattleMapRuntimeCanvas', () => {
@@ -763,6 +789,248 @@ describe('BattleMapRuntimeCanvas', () => {
     await waitFor(() => {
       expect(app.destroy).toHaveBeenCalledWith(true, true);
     });
+  });
+
+  it('wheel scroll down zooms in and scroll up zooms out', async () => {
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({ camera: { x: 0, y: 0, zoom: 1 } })}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+      .canvas;
+    const worldContainer = getWorldContainer(getApp());
+    expect(worldContainer.scale.x).toBeCloseTo(1, 5);
+
+    // Positive deltaY → factor > 1 → zoom increases
+    dispatchWheelOnCanvas(canvas, 500);
+    const zoomedInScale = worldContainer.scale.x;
+    expect(zoomedInScale).toBeGreaterThan(1);
+
+    // Negative deltaY from zoomed-in state → zoom decreases
+    dispatchWheelOnCanvas(canvas, -200);
+    expect(worldContainer.scale.x).toBeLessThan(zoomedInScale);
+  });
+
+  it('wheel zoom is clamped at MAX_CAMERA_ZOOM', async () => {
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({ camera: { x: 0, y: 0, zoom: 1 } })}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+      .canvas;
+    const worldContainer = getWorldContainer(getApp());
+
+    // Extreme scroll down: clamped at MAX_CAMERA_ZOOM (8)
+    dispatchWheelOnCanvas(canvas, 100_000);
+    expect(worldContainer.scale.x).toBeCloseTo(8, 5);
+
+    // Second extreme scroll from max: newZoom === oldZoom → no-op
+    dispatchWheelOnCanvas(canvas, 100_000);
+    expect(worldContainer.scale.x).toBeCloseTo(8, 5);
+  });
+
+  it('wheel zoom is clamped at the effective min zoom (fit-to-edges boundary)', async () => {
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({ camera: { x: 0, y: 0, zoom: 4 } })}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+      .canvas;
+    const worldContainer = getWorldContainer(getApp());
+
+    // Mock screen is 1000×600 and scene = viewport → fitZoom = 1.0 → effectiveMinZoom = 1.0
+    // Extreme scroll up from zoom 4 must clamp at 1.0
+    dispatchWheelOnCanvas(canvas, -100_000);
+    expect(worldContainer.scale.x).toBeCloseTo(1, 5);
+
+    // Second extreme scroll-up from min: newZoom === oldZoom → no-op
+    dispatchWheelOnCanvas(canvas, -100_000);
+    expect(worldContainer.scale.x).toBeCloseTo(1, 5);
+  });
+
+  it('wheel zoom is ignored while a token drag is active', async () => {
+    const onTokenSelect = vi.fn();
+    const onTokenMove = vi.fn();
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[buildRuntimeToken({ x: 0, y: 0 })]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={onTokenSelect}
+        onTokenMove={onTokenMove}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(pixiState.appInstances).toHaveLength(1);
+      expect(getTokenLayer(getApp()).children).toHaveLength(1);
+    });
+
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+      .canvas;
+    const worldContainer = getWorldContainer(getApp());
+    const scaleBeforeDrag = worldContainer.scale.x;
+
+    // Start a token drag to set activeTokenDragRef
+    const tokenDisplay = getTokenLayer(getApp()).children[0];
+    tokenDisplay.emit(
+      'pointerdown',
+      createFederatedPointerEvent({ pointerId: 88, global: { x: 0, y: 0 } }),
+    );
+
+    // Wheel event while drag is active must be ignored
+    dispatchWheelOnCanvas(canvas, 5_000);
+    expect(worldContainer.scale.x).toBe(scaleBeforeDrag);
+
+    // Release drag to clean up window listeners
+    window.dispatchEvent(
+      createPointerEvent('pointerup', {
+        pointerId: 88,
+        clientX: 505,
+        clientY: 305,
+      }),
+    );
+  });
+
+  it('selectedTokenInstanceId change while drag is active does not start camera animation', async () => {
+    const onTokenSelect = vi.fn();
+    const onTokenMove = vi.fn();
+    const token = buildRuntimeToken({
+      instanceId: 'runtime-token-1',
+      x: 0,
+      y: 0,
+    });
+
+    const { rerender } = render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[token]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={onTokenSelect}
+        onTokenMove={onTokenMove}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(pixiState.appInstances).toHaveLength(1);
+      expect(getTokenLayer(getApp()).children).toHaveLength(1);
+    });
+
+    // Start a token drag (activeTokenDragRef becomes non-null)
+    const tokenDisplay = getTokenLayer(getApp()).children[0];
+    tokenDisplay.emit(
+      'pointerdown',
+      createFederatedPointerEvent({ pointerId: 91, global: { x: 0, y: 0 } }),
+    );
+
+    // Rerender with a new selectedTokenInstanceId while drag is still active;
+    // the selectedTokenInstanceId useEffect must short-circuit (no ticker.add for animation)
+    const tickerCallsBefore = (getApp().ticker.add as ReturnType<typeof vi.fn>)
+      .mock.calls.length;
+    rerender(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[token]}
+        selectedTokenInstanceId={'runtime-token-1'}
+        onTokenSelect={onTokenSelect}
+        onTokenMove={onTokenMove}
+      />,
+    );
+    expect(
+      (getApp().ticker.add as ReturnType<typeof vi.fn>).mock.calls.length,
+    ).toBe(tickerCallsBefore);
+
+    // Clean up drag
+    window.dispatchEvent(
+      createPointerEvent('pointerup', {
+        pointerId: 91,
+        clientX: 505,
+        clientY: 305,
+      }),
+    );
+  });
+
+  it('runtimeConfig camera prop update applies clamped zoom to world container', async () => {
+    const { rerender } = render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({ camera: { x: 0, y: 0, zoom: 1 } })}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
+    const worldContainer = getWorldContainer(getApp());
+    expect(worldContainer.scale.x).toBeCloseTo(1, 5);
+
+    // Change camera zoom via prop → camera key changes → applyCameraState called
+    rerender(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({ camera: { x: 0, y: 0, zoom: 3 } })}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+      />,
+    );
+
+    expect(worldContainer.scale.x).toBeCloseTo(3, 5);
+  });
+
+  it('wheel zoom does nothing when canvas has zero rect dimensions', async () => {
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+      .canvas;
+    const worldContainer = getWorldContainer(getApp());
+
+    canvas.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 0,
+        height: 0,
+        right: 0,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    dispatchWheelOnCanvas(canvas, 500);
+    expect(worldContainer.scale.x).toBeCloseTo(1, 5);
   });
 
   it('skips camera focus when selected token instance is not present', async () => {
