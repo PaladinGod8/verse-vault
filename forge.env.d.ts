@@ -73,6 +73,59 @@ declare global {
     updated_at: string;
   }
 
+  type BattleMapGridMode = 'square' | 'hex' | 'none';
+
+  interface BattleMapRuntimeGridConfig {
+    mode: BattleMapGridMode;
+    cellSize: number;
+    originX: number;
+    originY: number;
+  }
+
+  interface BattleMapRuntimeMapConfig {
+    imageSrc: string | null;
+    backgroundColor: string;
+  }
+
+  interface BattleMapRuntimeCameraConfig {
+    x: number;
+    y: number;
+    zoom: number;
+  }
+
+  interface BattleMapRuntimeConfig {
+    grid: BattleMapRuntimeGridConfig;
+    map: BattleMapRuntimeMapConfig;
+    camera: BattleMapRuntimeCameraConfig;
+    [key: string]: unknown;
+  }
+
+  interface BattleMapConfig {
+    runtime?: BattleMapRuntimeConfig;
+    [key: string]: unknown;
+  }
+
+  interface ScenePayloadRuntime {
+    battlemap_id?: number | null;
+    [key: string]: unknown;
+  }
+
+  interface ScenePayload {
+    runtime?: ScenePayloadRuntime;
+    [key: string]: unknown;
+  }
+
+  interface Token {
+    id: number;
+    campaign_id: number;
+    name: string;
+    image_src: string | null;
+    config: string;
+    is_visible: number;
+    created_at: string;
+    updated_at: string;
+  }
+
   interface Arc {
     id: number;
     campaign_id: number;
@@ -236,6 +289,27 @@ declare global {
         id: number,
         data: { name?: string; config?: string },
       ): Promise<BattleMap>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+    tokens: {
+      getAllByCampaign(campaignId: number): Promise<Token[]>;
+      getById(id: number): Promise<Token | null>;
+      add(data: {
+        campaign_id: number;
+        name: string;
+        image_src?: string | null;
+        config?: string;
+        is_visible?: number;
+      }): Promise<Token>;
+      update(
+        id: number,
+        data: {
+          name?: string;
+          image_src?: string | null;
+          config?: string;
+          is_visible?: number;
+        },
+      ): Promise<Token>;
       delete(id: number): Promise<{ id: number }>;
     };
     arcs: {

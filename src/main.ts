@@ -22,32 +22,268 @@ function isAbilityChildDuplicateError(error: unknown): boolean {
   );
 }
 
-function ensureScenePayloadJsonText(payload: unknown): string {
-  if (typeof payload !== 'string') {
-    throw new Error('Scene payload must be a JSON string');
+type JsonRecord = Record<string, unknown>;
+
+const BATTLEMAP_GRID_MODES = new Set(['square', 'hex', 'none']);
+
+const DEFAULT_BATTLEMAP_RUNTIME_CONFIG = {
+  grid: {
+    mode: 'square',
+    cellSize: 50,
+    originX: 0,
+    originY: 0,
+  },
+  map: {
+    imageSrc: null as string | null,
+    backgroundColor: '#000000',
+  },
+  camera: {
+    x: 0,
+    y: 0,
+    zoom: 1,
+  },
+} as const;
+
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseJsonText(value: unknown, fieldName: string): unknown {
+  if (typeof value !== 'string') {
+    throw new Error(`${fieldName} must be a JSON string`);
   }
 
   try {
-    JSON.parse(payload);
+    return JSON.parse(value);
   } catch {
-    throw new Error('Scene payload must be valid JSON text');
+    throw new Error(`${fieldName} must be valid JSON text`);
+  }
+}
+
+function ensureFiniteNumber(value: unknown, fieldName: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`${fieldName} must be a finite number`);
+  }
+  return value;
+}
+
+function ensurePositiveFiniteNumber(value: unknown, fieldName: string): number {
+  const normalizedValue = ensureFiniteNumber(value, fieldName);
+  if (normalizedValue <= 0) {
+    throw new Error(`${fieldName} must be greater than 0`);
+  }
+  return normalizedValue;
+}
+
+function ensureSqliteBooleanNumber(value: unknown, fieldName: string): number {
+  if (value !== 0 && value !== 1) {
+    throw new Error(`${fieldName} must be 0 or 1`);
+  }
+  return value;
+}
+
+function normalizeBattleMapRuntimeGridConfig(input: unknown): JsonRecord {
+  if (input !== undefined && !isJsonRecord(input)) {
+    throw new Error('BattleMap config runtime.grid must be a JSON object');
   }
 
-  return payload;
+  const grid = isJsonRecord(input) ? input : {};
+  const modeCandidate = Object.prototype.hasOwnProperty.call(grid, 'mode')
+    ? grid.mode
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.grid.mode;
+  if (
+    typeof modeCandidate !== 'string' ||
+    !BATTLEMAP_GRID_MODES.has(modeCandidate)
+  ) {
+    throw new Error(
+      "BattleMap config runtime.grid.mode must be one of: 'square', 'hex', 'none'",
+    );
+  }
+
+  const cellSizeCandidate = Object.prototype.hasOwnProperty.call(
+    grid,
+    'cellSize',
+  )
+    ? grid.cellSize
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.grid.cellSize;
+  const originXCandidate = Object.prototype.hasOwnProperty.call(grid, 'originX')
+    ? grid.originX
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.grid.originX;
+  const originYCandidate = Object.prototype.hasOwnProperty.call(grid, 'originY')
+    ? grid.originY
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.grid.originY;
+
+  return {
+    mode: modeCandidate,
+    cellSize: ensurePositiveFiniteNumber(
+      cellSizeCandidate,
+      'BattleMap config runtime.grid.cellSize',
+    ),
+    originX: ensureFiniteNumber(
+      originXCandidate,
+      'BattleMap config runtime.grid.originX',
+    ),
+    originY: ensureFiniteNumber(
+      originYCandidate,
+      'BattleMap config runtime.grid.originY',
+    ),
+  };
+}
+
+function normalizeBattleMapRuntimeMapConfig(input: unknown): JsonRecord {
+  if (input !== undefined && !isJsonRecord(input)) {
+    throw new Error('BattleMap config runtime.map must be a JSON object');
+  }
+
+  const map = isJsonRecord(input) ? input : {};
+  const imageSrcCandidate = Object.prototype.hasOwnProperty.call(
+    map,
+    'imageSrc',
+  )
+    ? map.imageSrc
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.map.imageSrc;
+  const backgroundColorCandidate = Object.prototype.hasOwnProperty.call(
+    map,
+    'backgroundColor',
+  )
+    ? map.backgroundColor
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.map.backgroundColor;
+
+  if (imageSrcCandidate !== null && typeof imageSrcCandidate !== 'string') {
+    throw new Error(
+      'BattleMap config runtime.map.imageSrc must be a string or null',
+    );
+  }
+
+  if (typeof backgroundColorCandidate !== 'string') {
+    throw new Error(
+      'BattleMap config runtime.map.backgroundColor must be a string',
+    );
+  }
+  const backgroundColor = backgroundColorCandidate.trim();
+  if (!backgroundColor) {
+    throw new Error(
+      'BattleMap config runtime.map.backgroundColor cannot be empty',
+    );
+  }
+
+  const imageSrc =
+    typeof imageSrcCandidate === 'string' &&
+    imageSrcCandidate.trim().length === 0
+      ? null
+      : imageSrcCandidate;
+
+  return {
+    imageSrc,
+    backgroundColor,
+  };
+}
+
+function normalizeBattleMapRuntimeCameraConfig(input: unknown): JsonRecord {
+  if (input !== undefined && !isJsonRecord(input)) {
+    throw new Error('BattleMap config runtime.camera must be a JSON object');
+  }
+
+  const camera = isJsonRecord(input) ? input : {};
+  const xCandidate = Object.prototype.hasOwnProperty.call(camera, 'x')
+    ? camera.x
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.camera.x;
+  const yCandidate = Object.prototype.hasOwnProperty.call(camera, 'y')
+    ? camera.y
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.camera.y;
+  const zoomCandidate = Object.prototype.hasOwnProperty.call(camera, 'zoom')
+    ? camera.zoom
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.camera.zoom;
+
+  return {
+    x: ensureFiniteNumber(xCandidate, 'BattleMap config runtime.camera.x'),
+    y: ensureFiniteNumber(yCandidate, 'BattleMap config runtime.camera.y'),
+    zoom: ensurePositiveFiniteNumber(
+      zoomCandidate,
+      'BattleMap config runtime.camera.zoom',
+    ),
+  };
+}
+
+function normalizeBattleMapRuntimeConfig(input: unknown): JsonRecord {
+  if (input !== undefined && !isJsonRecord(input)) {
+    throw new Error('BattleMap config runtime must be a JSON object');
+  }
+
+  const runtime = isJsonRecord(input) ? input : {};
+  const normalizedRuntime: JsonRecord = isJsonRecord(input)
+    ? { ...runtime }
+    : {};
+
+  normalizedRuntime.grid = normalizeBattleMapRuntimeGridConfig(
+    Object.prototype.hasOwnProperty.call(runtime, 'grid')
+      ? runtime.grid
+      : undefined,
+  );
+  normalizedRuntime.map = normalizeBattleMapRuntimeMapConfig(
+    Object.prototype.hasOwnProperty.call(runtime, 'map')
+      ? runtime.map
+      : undefined,
+  );
+  normalizedRuntime.camera = normalizeBattleMapRuntimeCameraConfig(
+    Object.prototype.hasOwnProperty.call(runtime, 'camera')
+      ? runtime.camera
+      : undefined,
+  );
+
+  return normalizedRuntime;
+}
+
+function ensureScenePayloadJsonText(payload: unknown): string {
+  const parsedPayload = parseJsonText(payload, 'Scene payload');
+
+  if (
+    isJsonRecord(parsedPayload) &&
+    Object.prototype.hasOwnProperty.call(parsedPayload, 'runtime')
+  ) {
+    const runtimePayload = parsedPayload.runtime;
+    if (!isJsonRecord(runtimePayload)) {
+      throw new Error('Scene payload runtime must be a JSON object');
+    }
+    if (Object.prototype.hasOwnProperty.call(runtimePayload, 'battlemap_id')) {
+      const battleMapId = runtimePayload.battlemap_id;
+      if (
+        battleMapId !== null &&
+        (!Number.isInteger(battleMapId) || battleMapId <= 0)
+      ) {
+        throw new Error(
+          'Scene payload runtime.battlemap_id must be a positive integer or null',
+        );
+      }
+    }
+  }
+
+  return payload as string;
 }
 
 function ensureBattleMapConfigJsonText(config: unknown): string {
-  if (typeof config !== 'string') {
-    throw new Error('BattleMap config must be a JSON string');
+  const parsedConfig = parseJsonText(config, 'BattleMap config');
+  if (!isJsonRecord(parsedConfig)) {
+    throw new Error('BattleMap config must be a JSON object');
   }
 
-  try {
-    JSON.parse(config);
-  } catch {
-    throw new Error('BattleMap config must be valid JSON text');
+  const normalizedConfig: JsonRecord = { ...parsedConfig };
+  normalizedConfig.runtime = normalizeBattleMapRuntimeConfig(
+    Object.prototype.hasOwnProperty.call(parsedConfig, 'runtime')
+      ? parsedConfig.runtime
+      : undefined,
+  );
+
+  return JSON.stringify(normalizedConfig);
+}
+
+function ensureTokenConfigJsonText(config: unknown): string {
+  const parsedConfig = parseJsonText(config, 'Token config');
+  if (!isJsonRecord(parsedConfig)) {
+    throw new Error('Token config must be a JSON object');
   }
 
-  return config;
+  return config as string;
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -87,6 +323,7 @@ function registerIpcHandlers() {
   const db = getDatabase();
   const getSessionByIdStmt = db.prepare('SELECT * FROM sessions WHERE id = ?');
   const getSceneByIdStmt = db.prepare('SELECT * FROM scenes WHERE id = ?');
+  const getTokenByIdStmt = db.prepare('SELECT * FROM tokens WHERE id = ?');
   const getArcByIdStmt = db.prepare('SELECT * FROM arcs WHERE id = ?');
   const getActByIdStmt = db.prepare('SELECT * FROM acts WHERE id = ?');
   const insertSessionStmt = db.prepare(
@@ -669,10 +906,7 @@ function registerIpcHandlers() {
         throw new Error('BattleMap name is required');
       }
 
-      const config =
-        data.config === undefined
-          ? '{}'
-          : ensureBattleMapConfigJsonText(data.config);
+      const config = ensureBattleMapConfigJsonText(data.config ?? '{}');
 
       const result = db
         .prepare(
@@ -732,6 +966,135 @@ function registerIpcHandlers() {
 
   ipcMain.handle(IPC.BATTLEMAPS_DELETE, (_event, id: number) => {
     db.prepare('DELETE FROM battlemaps WHERE id = ?').run(id);
+    return { id };
+  });
+
+  ipcMain.handle(
+    IPC.TOKENS_GET_ALL_BY_CAMPAIGN,
+    (_event, campaignId: number): Token[] => {
+      return db
+        .prepare(
+          'SELECT * FROM tokens WHERE campaign_id = ? ORDER BY updated_at DESC, id DESC',
+        )
+        .all(campaignId) as Token[];
+    },
+  );
+
+  ipcMain.handle(IPC.TOKENS_GET_BY_ID, (_event, id: number): Token | null => {
+    return (getTokenByIdStmt.get(id) as Token | undefined) ?? null;
+  });
+
+  ipcMain.handle(
+    IPC.TOKENS_ADD,
+    (
+      _event,
+      data: {
+        campaign_id: number;
+        name: string;
+        image_src?: string | null;
+        config?: string;
+        is_visible?: number;
+      },
+    ): Token => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('Token name is required');
+      }
+
+      const config =
+        data.config === undefined
+          ? '{}'
+          : ensureTokenConfigJsonText(data.config);
+      const isVisible =
+        data.is_visible === undefined
+          ? 1
+          : ensureSqliteBooleanNumber(data.is_visible, 'Token visibility');
+
+      const result = db
+        .prepare(
+          'INSERT INTO tokens (campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?)',
+        )
+        .run(data.campaign_id, name, data.image_src ?? null, config, isVisible);
+
+      const token = getTokenByIdStmt.get(result.lastInsertRowid) as
+        | Token
+        | undefined;
+      if (!token) {
+        throw new Error('Failed to create token');
+      }
+      return token;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.TOKENS_UPDATE,
+    (
+      _event,
+      id: number,
+      data: {
+        name?: string;
+        image_src?: string | null;
+        config?: string;
+        is_visible?: number;
+      },
+    ): Token => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasImageSrc = Object.prototype.hasOwnProperty.call(
+        data,
+        'image_src',
+      );
+      const hasConfig = Object.prototype.hasOwnProperty.call(data, 'config');
+      const hasIsVisible = Object.prototype.hasOwnProperty.call(
+        data,
+        'is_visible',
+      );
+
+      const setClauses: string[] = [];
+      const values: Array<string | number | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('Token name cannot be empty');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasImageSrc && data.image_src !== undefined) {
+        setClauses.push('image_src = ?');
+        values.push(data.image_src);
+      }
+
+      if (hasConfig && data.config !== undefined) {
+        setClauses.push('config = ?');
+        values.push(ensureTokenConfigJsonText(data.config));
+      }
+
+      if (hasIsVisible && data.is_visible !== undefined) {
+        setClauses.push('is_visible = ?');
+        values.push(
+          ensureSqliteBooleanNumber(data.is_visible, 'Token visibility'),
+        );
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE tokens SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const token = getTokenByIdStmt.get(id) as Token | undefined;
+      if (!token) {
+        throw new Error('Token not found');
+      }
+      return token;
+    },
+  );
+
+  ipcMain.handle(IPC.TOKENS_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM tokens WHERE id = ?').run(id);
     return { id };
   });
 
