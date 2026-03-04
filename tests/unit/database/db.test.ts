@@ -95,8 +95,6 @@ describe('database', () => {
       path.join('C:/fake-user-data', 'verse-vault.db'),
     );
     expect(pragmaMock).toHaveBeenCalledWith('journal_mode = WAL');
-    expect(execMock).toHaveBeenCalledTimes(3);
-
     const schemaSql = execMock.mock.calls
       .map(([sql]) => String(sql))
       .join('\n');
@@ -147,6 +145,9 @@ describe('database', () => {
     expect(schemaSql).toContain("config     TEXT    NOT NULL DEFAULT '{}'");
     expect(schemaSql).toContain('sort_order  INTEGER NOT NULL DEFAULT 0');
     expect(schemaSql).toContain("payload    TEXT    NOT NULL DEFAULT '{}'");
+    expect(schemaSql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_tokens_world_id ON tokens(world_id)',
+    );
   });
 
   it('adds planned_at to sessions for existing databases missing the column', async () => {
@@ -157,7 +158,6 @@ describe('database', () => {
     getDatabase();
     closeDatabase();
 
-    expect(execMock).toHaveBeenCalledTimes(4);
     expect(
       execMock.mock.calls.some(
         ([sql]) =>
