@@ -9,6 +9,7 @@ function buildToken(overrides: Partial<Token> = {}): Token {
     id: 1,
     world_id: 1,
     campaign_id: null,
+    grid_type: 'square',
     name: 'Wolf',
     image_src: null,
     config: '{}',
@@ -60,6 +61,7 @@ function renderPalette(
       placedTokens={[]}
       selectedTokenInstanceId={null}
       showInvisibleTokens
+      activeGridMode="square"
       onShowInvisibleTokensChange={onShowInvisibleTokensChange}
       onSelectCampaign={onSelectCampaign}
       onAddToken={onAddToken}
@@ -132,6 +134,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
+        activeGridMode="square"
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -157,6 +160,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
+        activeGridMode="square"
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -182,6 +186,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
+        activeGridMode="square"
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}

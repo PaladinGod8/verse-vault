@@ -126,6 +126,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
     placedTokens,
     selectedTokenInstanceId,
     showInvisibleTokens,
+    activeGridMode,
     onShowInvisibleTokensChange,
     onSelectCampaign,
     onAddToken,
@@ -145,6 +146,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
     }>;
     selectedTokenInstanceId: string | null;
     showInvisibleTokens: boolean;
+    activeGridMode: BattleMapGridMode;
     onShowInvisibleTokensChange: (nextValue: boolean) => void;
     onSelectCampaign: (campaignId: number | null) => void;
     onAddToken: (token: Token) => void;
@@ -158,6 +160,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
       <p>Campaign Tokens: {tokens.length}</p>
       <p>Placed Tokens: {placedTokens.length}</p>
       <p>Selected Runtime Token: {selectedTokenInstanceId ?? 'none'}</p>
+      <p>Active Grid Mode: {activeGridMode}</p>
       <p>
         First Runtime Token Position:{' '}
         {placedTokens[0] ? `${placedTokens[0].x}:${placedTokens[0].y}` : 'none'}
@@ -274,7 +277,9 @@ function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
 function buildToken(overrides: Partial<Token> = {}): Token {
   return {
     id: 71,
+    world_id: 1,
     campaign_id: 31,
+    grid_type: 'square',
     name: 'Goblin',
     image_src: null,
     config: '{}',
@@ -752,9 +757,9 @@ describe('BattleMapRuntimePage', () => {
     );
     campaignsGetAllByWorldMock.mockResolvedValue([buildCampaign({ id: 31 })]);
     tokensGetAllByCampaignMock.mockResolvedValue([
-      buildToken({ id: 71, name: 'Goblin A' }),
-      buildToken({ id: 72, name: 'Goblin B' }),
-      buildToken({ id: 73, name: 'Goblin C' }),
+      buildToken({ id: 71, name: 'Goblin A', grid_type: 'hex' }),
+      buildToken({ id: 72, name: 'Goblin B', grid_type: 'hex' }),
+      buildToken({ id: 73, name: 'Goblin C', grid_type: 'hex' }),
     ]);
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');

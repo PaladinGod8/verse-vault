@@ -726,6 +726,13 @@ export default function BattleMapRuntimePage() {
       return;
     }
 
+    if (
+      currentRuntimeConfig.grid.mode !== 'none' &&
+      token.grid_type !== currentRuntimeConfig.grid.mode
+    ) {
+      return;
+    }
+
     let nextSelectedTokenInstanceId: string | null = null;
     setRuntimeTokens((currentTokens) => {
       const existingRuntimeToken = currentTokens.find(
@@ -899,6 +906,7 @@ export default function BattleMapRuntimePage() {
               placedTokens={runtimeTokens}
               selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
               showInvisibleTokens={showInvisibleTokens}
+              activeGridMode={runtimeConfig.grid.mode}
               onShowInvisibleTokensChange={setShowInvisibleTokens}
               onSelectCampaign={handleCampaignSelectionChange}
               onAddToken={handleAddRuntimeToken}

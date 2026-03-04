@@ -299,7 +299,10 @@ function ensureTokenConfigJsonText(config: unknown): string {
   return config as string;
 }
 
-function ensureTokenGridType(value: unknown, fieldName = 'grid_type'): TokenGridType {
+function ensureTokenGridType(
+  value: unknown,
+  fieldName = 'grid_type',
+): TokenGridType {
   if (typeof value !== 'string' || !TOKEN_GRID_TYPES.has(value)) {
     throw new Error(`${fieldName} must be 'square' or 'hex'`);
   }
@@ -1156,7 +1159,9 @@ function registerIpcHandlers() {
           ? '{}'
           : ensureTokenConfigJsonText(data.config);
       const gridType =
-        data.grid_type === undefined ? 'square' : ensureTokenGridType(data.grid_type);
+        data.grid_type === undefined
+          ? 'square'
+          : ensureTokenGridType(data.grid_type);
       const isVisible =
         data.is_visible === undefined
           ? 1

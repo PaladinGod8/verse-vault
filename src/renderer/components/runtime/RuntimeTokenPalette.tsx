@@ -15,6 +15,7 @@ type RuntimeTokenPaletteProps = {
   placedTokens: RuntimeSceneToken[];
   selectedTokenInstanceId: string | null;
   showInvisibleTokens: boolean;
+  activeGridMode: BattleMapGridMode;
   onShowInvisibleTokensChange: (nextValue: boolean) => void;
   onSelectCampaign: (campaignId: number | null) => void;
   onAddToken: (token: Token) => void;
@@ -46,6 +47,7 @@ export default function RuntimeTokenPalette({
   placedTokens,
   selectedTokenInstanceId,
   showInvisibleTokens,
+  activeGridMode,
   onShowInvisibleTokensChange,
   onSelectCampaign,
   onAddToken,
@@ -61,18 +63,32 @@ export default function RuntimeTokenPalette({
   );
 
   const filteredWorldTokens = useMemo(() => {
-    const nextTokens = showInvisibleTokens
+    let nextTokens = showInvisibleTokens
       ? worldTokens
       : worldTokens.filter((token) => token.is_visible === 1);
+
+    if (activeGridMode !== 'none') {
+      nextTokens = nextTokens.filter(
+        (token) => token.grid_type === activeGridMode,
+      );
+    }
+
     return [...nextTokens].sort((a, b) => a.name.localeCompare(b.name));
-  }, [showInvisibleTokens, worldTokens]);
+  }, [showInvisibleTokens, worldTokens, activeGridMode]);
 
   const filteredTokens = useMemo(() => {
-    const nextTokens = showInvisibleTokens
+    let nextTokens = showInvisibleTokens
       ? tokens
       : tokens.filter((token) => token.is_visible === 1);
+
+    if (activeGridMode !== 'none') {
+      nextTokens = nextTokens.filter(
+        (token) => token.grid_type === activeGridMode,
+      );
+    }
+
     return [...nextTokens].sort((a, b) => a.name.localeCompare(b.name));
-  }, [showInvisibleTokens, tokens]);
+  }, [showInvisibleTokens, tokens, activeGridMode]);
 
   const placedTokenSourceKeys = useMemo(() => {
     const sourceKeys = new Set<string>();
@@ -171,6 +187,15 @@ export default function RuntimeTokenPalette({
           Show invisible tokens
         </label>
       </div>
+
+      {activeGridMode === 'none' ? (
+        <div className="rounded-lg border border-amber-300/40 bg-amber-900/20 px-3 py-2">
+          <p className="text-xs text-amber-200">
+            Grid mode is <strong>none</strong>. All tokens are available, but
+            grid-type mismatches may affect placement behavior.
+          </p>
+        </div>
+      ) : null}
 
       <div className="space-y-4">
         <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
