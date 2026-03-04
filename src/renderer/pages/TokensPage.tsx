@@ -139,6 +139,7 @@ export default function TokensPage() {
         grid_type: data.grid_type,
         image_src: imageSrc,
         is_visible: data.is_visible,
+        config: data.config,
       });
       await reloadTokens();
       setFormOpen(false);
@@ -162,6 +163,7 @@ export default function TokensPage() {
         grid_type: TokenGridType;
         image_src?: string | null;
         is_visible: number;
+        config?: string;
       } = {
         name: data.name,
         grid_type: data.grid_type,
@@ -179,6 +181,10 @@ export default function TokensPage() {
         updatePayload.image_src = null;
       } else if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
         updatePayload.image_src = data.image_src ?? null;
+      }
+
+      if (data.config !== undefined) {
+        updatePayload.config = data.config;
       }
 
       await window.db.tokens.update(editingToken.id, updatePayload);
