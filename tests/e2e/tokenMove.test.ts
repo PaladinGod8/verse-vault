@@ -12,6 +12,7 @@ import {
   createWorldScopedToken,
   deleteCampaign,
   deleteWorld,
+  ensureWorldsLanding,
   getMoveButton,
   goToTokensPage,
   launchElectronApp,
@@ -244,7 +245,7 @@ test.describe('Token Move Flows', () => {
     ).toBeVisible();
     await expect(
       row.getByRole('button', { name: 'Copy to Campaign' }),
-    ).toHaveCount(0);
+    ).toBeVisible();
     await expect(row.getByRole('button', { name: 'Edit' })).toBeVisible();
     await expect(row.getByRole('button', { name: 'Delete' })).toBeVisible();
   });

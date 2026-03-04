@@ -750,7 +750,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(65);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(67);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);

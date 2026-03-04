@@ -276,4 +276,65 @@ describe('WorldsHomePage renderer behaviors', () => {
       'delete failed',
     );
   });
+
+  it('shows error toast when create world fails with non-Error exception', async () => {
+    const user = userEvent.setup();
+
+    worldsGetAllMock.mockResolvedValue([]);
+    worldsAddMock.mockRejectedValue('Unknown error');
+
+    renderWorldsHomePage();
+
+    await screen.findByText('No worlds yet');
+    await user.click(screen.getByRole('button', { name: 'Create world' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Create world' });
+    await user.type(within(dialog).getByLabelText('Name'), 'Test World');
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Create world' }),
+    );
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to create world.',
+        'Please try again.',
+      );
+    });
+  });
+
+  it('shows error loading worlds', async () => {
+    worldsGetAllMock.mockRejectedValue(new Error('Network error'));
+
+    renderWorldsHomePage();
+
+    expect(
+      await screen.findByText('Unable to load worlds right now.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows delete failure toast when delete fails with non-Error exception', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld();
+
+    worldsGetAllMock.mockResolvedValue([world]);
+    worldsDeleteMock.mockRejectedValue('Delete error');
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirmDialog = await screen.findByRole('dialog', {
+      name: 'Delete "Alpha"?',
+    });
+    await user.click(
+      within(confirmDialog).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to delete world.',
+        'Please try again.',
+      );
+    });
+  });
 });

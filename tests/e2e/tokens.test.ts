@@ -500,9 +500,21 @@ test.describe('Copy to Campaign', () => {
 
     const torchRows = tokenRows(window, 'Torch');
     await expect(torchRows).toHaveCount(2);
-    await expect(torchRows.filter({ hasText: 'World' })).toHaveCount(1);
     await expect(
-      torchRows.filter({ hasText: `Campaign: ${campaignName}` }),
+      torchRows.filter({
+        has: window
+          .locator('td')
+          .nth(2)
+          .filter({ hasText: /^World$/ }),
+      }),
+    ).toHaveCount(1);
+    await expect(
+      torchRows.filter({
+        has: window
+          .locator('td')
+          .nth(2)
+          .filter({ hasText: new RegExp(`^Campaign: ${campaignName}$`) }),
+      }),
     ).toHaveCount(1);
     await expect(window.getByText('Token copied to campaign.')).toBeVisible();
   });
