@@ -102,7 +102,9 @@ export function buildSquareFootprintConfig(
       center_y_cells: roundDeterministic((minRow + maxRow) / 2),
       extent_x_cells: roundDeterministic(extentXCells),
       extent_y_cells: roundDeterministic(extentYCells),
-      max_extent_cells: roundDeterministic(Math.max(extentXCells, extentYCells)),
+      max_extent_cells: roundDeterministic(
+        Math.max(extentXCells, extentYCells),
+      ),
     },
   };
 }

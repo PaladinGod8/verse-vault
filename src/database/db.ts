@@ -420,7 +420,9 @@ function ensureInteger(value: unknown, fieldName: string): number {
   return value as number;
 }
 
-function normalizeSquareFootprintCells(value: unknown): TokenSquareFootprintCell[] {
+function normalizeSquareFootprintCells(
+  value: unknown,
+): TokenSquareFootprintCell[] {
   if (!Array.isArray(value)) {
     throw new Error('Token config footprint.square_cells must be an array');
   }
@@ -428,7 +430,9 @@ function normalizeSquareFootprintCells(value: unknown): TokenSquareFootprintCell
   const deduped = new Map<string, TokenSquareFootprintCell>();
   for (const [index, cell] of value.entries()) {
     if (!isJsonRecord(cell)) {
-      throw new Error(`Token config footprint.square_cells[${index}] must be an object`);
+      throw new Error(
+        `Token config footprint.square_cells[${index}] must be an object`,
+      );
     }
 
     const col = ensureInteger(
@@ -458,7 +462,9 @@ function normalizeHexFootprintCells(value: unknown): TokenHexFootprintCell[] {
   const deduped = new Map<string, TokenHexFootprintCell>();
   for (const [index, cell] of value.entries()) {
     if (!isJsonRecord(cell)) {
-      throw new Error(`Token config footprint.hex_cells[${index}] must be an object`);
+      throw new Error(
+        `Token config footprint.hex_cells[${index}] must be an object`,
+      );
     }
 
     const q = ensureInteger(
@@ -488,7 +494,10 @@ function normalizeTokenFootprintConfig(input: unknown): TokenFootprintConfig {
   const normalized: TokenFootprintConfig = { ...input };
 
   if (Object.prototype.hasOwnProperty.call(input, 'version')) {
-    const version = ensureInteger(input.version, 'Token config footprint.version');
+    const version = ensureInteger(
+      input.version,
+      'Token config footprint.version',
+    );
     if (version !== 1) {
       throw new Error('Token config footprint.version must be 1');
     }
@@ -497,7 +506,9 @@ function normalizeTokenFootprintConfig(input: unknown): TokenFootprintConfig {
 
   if (Object.prototype.hasOwnProperty.call(input, 'grid_type')) {
     if (input.grid_type !== 'square' && input.grid_type !== 'hex') {
-      throw new Error("Token config footprint.grid_type must be 'square' or 'hex'");
+      throw new Error(
+        "Token config footprint.grid_type must be 'square' or 'hex'",
+      );
     }
     normalized.grid_type = input.grid_type;
   }
@@ -566,7 +577,9 @@ function normalizeTokenFramingConfig(input: unknown): TokenFramingConfig {
     normalized.extent_x_cells !== undefined &&
     normalized.extent_x_cells <= 0
   ) {
-    throw new Error('Token config framing.extent_x_cells must be greater than 0');
+    throw new Error(
+      'Token config framing.extent_x_cells must be greater than 0',
+    );
   }
 
   if (
@@ -574,7 +587,9 @@ function normalizeTokenFramingConfig(input: unknown): TokenFramingConfig {
     normalized.extent_y_cells !== undefined &&
     normalized.extent_y_cells <= 0
   ) {
-    throw new Error('Token config framing.extent_y_cells must be greater than 0');
+    throw new Error(
+      'Token config framing.extent_y_cells must be greater than 0',
+    );
   }
 
   if (
@@ -582,7 +597,9 @@ function normalizeTokenFramingConfig(input: unknown): TokenFramingConfig {
     normalized.max_extent_cells !== undefined &&
     normalized.max_extent_cells <= 0
   ) {
-    throw new Error('Token config framing.max_extent_cells must be greater than 0');
+    throw new Error(
+      'Token config framing.max_extent_cells must be greater than 0',
+    );
   }
 
   return normalized;
@@ -603,7 +620,9 @@ export function ensureTokenConfigJsonText(config: unknown): string {
   }
 
   if (Object.prototype.hasOwnProperty.call(parsedConfig, 'framing')) {
-    normalizedConfig.framing = normalizeTokenFramingConfig(parsedConfig.framing);
+    normalizedConfig.framing = normalizeTokenFramingConfig(
+      parsedConfig.framing,
+    );
   }
 
   return JSON.stringify(normalizedConfig);

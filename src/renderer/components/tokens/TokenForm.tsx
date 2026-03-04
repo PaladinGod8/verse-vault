@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import TokenImageDropzone from './TokenImageDropzone';
+import FootprintPainterModal, {
+  type FootprintPainterResult,
+} from './FootprintPainterModal';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 
 const TOKEN_IMAGE_ALLOWED_MIME_TYPES = new Set([
@@ -23,6 +26,7 @@ export type TokenFormValues = {
   is_visible: number;
   image_upload?: TokenImageUploadPayload;
   clear_image?: boolean;
+  config?: string;
 };
 
 type TokenFormProps = {
@@ -65,6 +69,10 @@ export default function TokenForm({
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [clearImage, setClearImage] = useState(false);
   const [hasImageSrcChanged, setHasImageSrcChanged] = useState(false);
+  const [painterModalOpen, setPainterModalOpen] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [footprintResult, setFootprintResult] =
+    useState<FootprintPainterResult | null>(null);
 
   const selectedImagePreviewUrl = useMemo(
     () =>
@@ -72,13 +80,22 @@ export default function TokenForm({
     [selectedImageFile],
   );
 
+  const pendingImagePreviewUrl = useMemo(
+    () =>
+      pendingImageFile ? URL.createObjectURL(pendingImageFile) : undefined,
+    [pendingImageFile],
+  );
+
   useEffect(() => {
     return () => {
       if (selectedImagePreviewUrl) {
         URL.revokeObjectURL(selectedImagePreviewUrl);
       }
+      if (pendingImagePreviewUrl) {
+        URL.revokeObjectURL(pendingImagePreviewUrl);
+      }
     };
-  }, [selectedImagePreviewUrl]);
+  }, [selectedImagePreviewUrl, pendingImagePreviewUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +135,16 @@ export default function TokenForm({
     const shouldSendImageSrc =
       isCreateMode || hasImageSrcChanged || (!clearImage && !!imageUpload);
 
+    // Build config with footprint/framing data if available
+    let config: string | undefined;
+    if (footprintResult) {
+      const configObj: TokenConfigShape = {
+        footprint: footprintResult.footprint,
+        framing: footprintResult.framing,
+      };
+      config = JSON.stringify(configObj);
+    }
+
     await onSave({
       name: trimmedName,
       grid_type: gridType,
@@ -125,7 +152,21 @@ export default function TokenForm({
       is_visible: isVisible,
       image_upload: imageUpload,
       clear_image: clearImage,
+      config,
     });
+  };
+
+  const handleFootprintPainterConfirm = (result: FootprintPainterResult) => {
+    setFootprintResult(result);
+    setSelectedImageFile(pendingImageFile);
+    setPendingImageFile(null);
+    setPainterModalOpen(false);
+    setClearImage(false);
+  };
+
+  const handleFootprintPainterCancel = () => {
+    setPendingImageFile(null);
+    setPainterModalOpen(false);
   };
 
   return (
@@ -221,6 +262,7 @@ export default function TokenForm({
               setImageSrc('');
               setHasImageSrcChanged(true);
               setSelectedImageFile(null);
+              setFootprintResult(null);
               setImageUploadError(null);
             }}
             disabled={isSaving}
@@ -239,12 +281,14 @@ export default function TokenForm({
             setImageUploadError(validationError);
             return;
           }
-          setSelectedImageFile(file);
+          // Open painter modal for footprint definition
+          setPendingImageFile(file);
+          setPainterModalOpen(true);
           setImageUploadError(null);
-          setClearImage(false);
         }}
         onClearFile={() => {
           setSelectedImageFile(null);
+          setFootprintResult(null);
           setImageUploadError(null);
         }}
         error={imageUploadError}
@@ -284,6 +328,16 @@ export default function TokenForm({
           <span>{initialValues ? 'Save' : 'Create'}</span>
         </button>
       </div>
+
+      {painterModalOpen && pendingImageFile && pendingImagePreviewUrl ? (
+        <FootprintPainterModal
+          isOpen={painterModalOpen}
+          onClose={handleFootprintPainterCancel}
+          onConfirm={handleFootprintPainterConfirm}
+          imageSrc={pendingImagePreviewUrl}
+          gridType={gridType}
+        />
+      ) : null}
     </form>
   );
 }
