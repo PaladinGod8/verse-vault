@@ -52,7 +52,9 @@ describe('preload - token move methods', () => {
 
     const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
 
-    await expect(api.tokens.moveToWorld(99999)).rejects.toThrow('Token not found');
+    await expect(api.tokens.moveToWorld(99999)).rejects.toThrow(
+      'Token not found',
+    );
   });
 
   it('should invoke IPC.TOKENS_MOVE_TO_CAMPAIGN channel with correct parameters', async () => {
@@ -82,15 +84,17 @@ describe('preload - token move methods', () => {
   });
 
   it('should propagate main process errors for moveToCampaign', async () => {
-    invokeMock.mockRejectedValueOnce(new Error('Campaign not in the same world'));
+    invokeMock.mockRejectedValueOnce(
+      new Error('Campaign not in the same world'),
+    );
 
     await import('../../../src/preload');
 
     const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
 
-    await expect(
-      api.tokens.moveToCampaign(1, 99999)
-    ).rejects.toThrow('Campaign not in the same world');
+    await expect(api.tokens.moveToCampaign(1, 99999)).rejects.toThrow(
+      'Campaign not in the same world',
+    );
   });
 
   it('should handle campaign not found error for moveToCampaign', async () => {
@@ -100,9 +104,9 @@ describe('preload - token move methods', () => {
 
     const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
 
-    await expect(
-      api.tokens.moveToCampaign(1, 99999)
-    ).rejects.toThrow('Campaign not found');
+    await expect(api.tokens.moveToCampaign(1, 99999)).rejects.toThrow(
+      'Campaign not found',
+    );
   });
 
   it('should handle token not found error for moveToCampaign', async () => {
@@ -112,8 +116,8 @@ describe('preload - token move methods', () => {
 
     const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
 
-    await expect(
-      api.tokens.moveToCampaign(99999, 1)
-    ).rejects.toThrow('Token not found');
+    await expect(api.tokens.moveToCampaign(99999, 1)).rejects.toThrow(
+      'Token not found',
+    );
   });
 });

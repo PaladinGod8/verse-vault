@@ -1,4 +1,9 @@
-import { expect, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import {
+  expect,
+  type ElectronApplication,
+  type Locator,
+  type Page,
+} from '@playwright/test';
 import { closeApp, launchApp } from './helpers/launchApp';
 
 export interface E2EAppContext {
@@ -52,7 +57,9 @@ export async function launchElectronApp(): Promise<E2EAppContext> {
   return { app, page, userDataDir };
 }
 
-export async function cleanupElectronApp(context: E2EAppContext): Promise<void> {
+export async function cleanupElectronApp(
+  context: E2EAppContext,
+): Promise<void> {
   await closeApp(context.app, context.userDataDir);
 }
 
@@ -75,8 +82,12 @@ export async function ensureWorldsLanding(page: Page): Promise<void> {
     }
   }
 
-  await expect(page.getByRole('heading', { name: 'Worlds', level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create world' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Worlds', level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Create world' }),
+  ).toBeVisible();
 }
 
 export async function createWorld(
@@ -122,7 +133,10 @@ export async function createCampaign(
   };
 }
 
-export async function deleteCampaign(page: Page, campaignId: number): Promise<void> {
+export async function deleteCampaign(
+  page: Page,
+  campaignId: number,
+): Promise<void> {
   await page.evaluate(async (id) => {
     await window.db.campaigns.delete(id);
   }, campaignId);
@@ -131,7 +145,9 @@ export async function deleteCampaign(page: Page, campaignId: number): Promise<vo
 function inferWorldIdFromUrl(page: Page): number {
   const match = page.url().match(/#\/world\/(\d+)\//);
   if (!match) {
-    throw new Error('Unable to infer worldId from URL. Pass worldId explicitly.');
+    throw new Error(
+      'Unable to infer worldId from URL. Pass worldId explicitly.',
+    );
   }
   return Number(match[1]);
 }
@@ -146,20 +162,23 @@ export async function createWorldScopedToken(
   },
 ): Promise<{ tokenId: number; tokenName: string }> {
   const worldId = input.worldId ?? inferWorldIdFromUrl(page);
-  const token = await page.evaluate(async (payload) => {
-    return window.db.tokens.add({
-      world_id: payload.worldId,
-      campaign_id: null,
-      name: payload.name,
-      image_src: payload.imageSrc,
-      is_visible: payload.isVisible,
-    });
-  }, {
-    worldId,
-    name: input.name,
-    imageSrc: input.imageSrc ?? null,
-    isVisible: input.isVisible ?? 1,
-  });
+  const token = await page.evaluate(
+    async (payload) => {
+      return window.db.tokens.add({
+        world_id: payload.worldId,
+        campaign_id: null,
+        name: payload.name,
+        image_src: payload.imageSrc,
+        is_visible: payload.isVisible,
+      });
+    },
+    {
+      worldId,
+      name: input.name,
+      imageSrc: input.imageSrc ?? null,
+      isVisible: input.isVisible ?? 1,
+    },
+  );
 
   return { tokenId: token.id, tokenName: token.name };
 }
@@ -175,26 +194,32 @@ export async function createCampaignScopedToken(
   },
 ): Promise<{ tokenId: number; tokenName: string }> {
   const worldId = input.worldId ?? inferWorldIdFromUrl(page);
-  const token = await page.evaluate(async (payload) => {
-    return window.db.tokens.add({
-      world_id: payload.worldId,
-      campaign_id: payload.campaignId,
-      name: payload.name,
-      image_src: payload.imageSrc,
-      is_visible: payload.isVisible,
-    });
-  }, {
-    worldId,
-    campaignId,
-    name: input.name,
-    imageSrc: input.imageSrc ?? null,
-    isVisible: input.isVisible ?? 1,
-  });
+  const token = await page.evaluate(
+    async (payload) => {
+      return window.db.tokens.add({
+        world_id: payload.worldId,
+        campaign_id: payload.campaignId,
+        name: payload.name,
+        image_src: payload.imageSrc,
+        is_visible: payload.isVisible,
+      });
+    },
+    {
+      worldId,
+      campaignId,
+      name: input.name,
+      imageSrc: input.imageSrc ?? null,
+      isVisible: input.isVisible ?? 1,
+    },
+  );
 
   return { tokenId: token.id, tokenName: token.name };
 }
 
-export async function goToTokensPage(page: Page, worldId: number): Promise<void> {
+export async function goToTokensPage(
+  page: Page,
+  worldId: number,
+): Promise<void> {
   const baseUrl = page.url().split('#')[0];
   await page.goto(`${baseUrl}#/world/${worldId}/tokens`);
   await expect(page.getByRole('button', { name: 'New Token' })).toBeVisible();
@@ -217,7 +242,8 @@ export function getMoveButton(
   tokenName: string,
   moveType: 'to-campaign' | 'to-world',
 ): Locator {
-  const label = moveType === 'to-campaign' ? 'Move to Campaign' : 'Move to World';
+  const label =
+    moveType === 'to-campaign' ? 'Move to Campaign' : 'Move to World';
   return tokenRow(page, tokenName).getByRole('button', { name: label });
 }
 

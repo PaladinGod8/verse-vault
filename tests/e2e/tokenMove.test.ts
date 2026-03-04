@@ -1,4 +1,9 @@
-import { test, expect, type ElectronApplication, type Page } from '@playwright/test';
+import {
+  test,
+  expect,
+  type ElectronApplication,
+  type Page,
+} from '@playwright/test';
 import {
   cleanupElectronApp,
   createCampaign,
@@ -35,7 +40,10 @@ test.beforeEach(async () => {
   await ensureWorldsLanding(launched.page);
 
   const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-  const world = await createWorld(launched.page, `E2E Token Move World ${unique}`);
+  const world = await createWorld(
+    launched.page,
+    `E2E Token Move World ${unique}`,
+  );
   worldId = world.worldId;
 });
 
@@ -67,20 +75,29 @@ test.describe('Token Move Flows', () => {
       `Target Campaign ${unique}`,
     );
 
-    await createWorldScopedToken(window, { worldId: targetWorldId, name: tokenName });
+    await createWorldScopedToken(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+    });
     await goToTokensPage(window, targetWorldId);
 
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText('World');
+    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+      'World',
+    );
 
     await getMoveButton(window, tokenName, 'to-campaign').click();
 
-    const dialog = window.getByRole('dialog', { name: 'Move Token to Campaign' });
+    const dialog = window.getByRole('dialog', {
+      name: 'Move Token to Campaign',
+    });
     await expect(dialog).toBeVisible();
 
     await selectCampaignInMoveDialog(window, campaignName);
     await dialog.getByRole('button', { name: 'Move' }).click();
 
-    await expect(window.getByText(`Moved "${tokenName}" to ${campaignName}.`)).toBeVisible();
+    await expect(
+      window.getByText(`Moved "${tokenName}" to ${campaignName}.`),
+    ).toBeVisible();
     await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
       `Campaign: ${campaignName}`,
     );
@@ -113,19 +130,20 @@ test.describe('Token Move Flows', () => {
 
     await dialog.getByRole('button', { name: 'Move' }).click();
 
-    await expect(window.getByText(`Moved "${tokenName}" to World.`)).toBeVisible();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText('World');
+    await expect(
+      window.getByText(`Moved "${tokenName}" to World.`),
+    ).toBeVisible();
+    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+      'World',
+    );
   });
 
   test('should move token between campaigns in same world', async () => {
     const { page: window, worldId: targetWorldId } = requireContext();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tokenName = `Multi-Campaign Token ${unique}`;
-    const { campaignId: campaign1Id, campaignName: campaign1Name } = await createCampaign(
-      window,
-      targetWorldId,
-      `Campaign 1 ${unique}`,
-    );
+    const { campaignId: campaign1Id, campaignName: campaign1Name } =
+      await createCampaign(window, targetWorldId, `Campaign 1 ${unique}`);
     const { campaignName: campaign2Name } = await createCampaign(
       window,
       targetWorldId,
@@ -143,11 +161,15 @@ test.describe('Token Move Flows', () => {
     );
 
     await getMoveButton(window, tokenName, 'to-campaign').click();
-    const dialog = window.getByRole('dialog', { name: 'Move Token to Campaign' });
+    const dialog = window.getByRole('dialog', {
+      name: 'Move Token to Campaign',
+    });
     await selectCampaignInMoveDialog(window, campaign2Name);
     await dialog.getByRole('button', { name: 'Move' }).click();
 
-    await expect(window.getByText(`Moved "${tokenName}" to ${campaign2Name}.`)).toBeVisible();
+    await expect(
+      window.getByText(`Moved "${tokenName}" to ${campaign2Name}.`),
+    ).toBeVisible();
     await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
       `Campaign: ${campaign2Name}`,
     );
@@ -185,16 +207,23 @@ test.describe('Token Move Flows', () => {
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tokenName = `Validation Token ${unique}`;
 
-    await createWorldScopedToken(window, { worldId: targetWorldId, name: tokenName });
+    await createWorldScopedToken(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+    });
     await goToTokensPage(window, targetWorldId);
 
     await getMoveButton(window, tokenName, 'to-campaign').click();
 
-    const dialog = window.getByRole('dialog', { name: 'Move Token to Campaign' });
+    const dialog = window.getByRole('dialog', {
+      name: 'Move Token to Campaign',
+    });
     const confirmButton = dialog.getByRole('button', { name: 'Move' });
 
     await expect(confirmButton).toBeDisabled();
-    await expect(dialog.getByText('No campaigns available in this world.')).toBeVisible();
+    await expect(
+      dialog.getByText('No campaigns available in this world.'),
+    ).toBeVisible();
   });
 
   test('world-scoped token shows Move to Campaign action only', async () => {
@@ -202,13 +231,20 @@ test.describe('Token Move Flows', () => {
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tokenName = `World Token ${unique}`;
 
-    await createWorldScopedToken(window, { worldId: targetWorldId, name: tokenName });
+    await createWorldScopedToken(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+    });
     await goToTokensPage(window, targetWorldId);
 
     const row = tokenRow(window, tokenName);
 
-    await expect(row.getByRole('button', { name: 'Move to Campaign' })).toBeVisible();
-    await expect(row.getByRole('button', { name: 'Copy to Campaign' })).toHaveCount(0);
+    await expect(
+      row.getByRole('button', { name: 'Move to Campaign' }),
+    ).toBeVisible();
+    await expect(
+      row.getByRole('button', { name: 'Copy to Campaign' }),
+    ).toHaveCount(0);
     await expect(row.getByRole('button', { name: 'Edit' })).toBeVisible();
     await expect(row.getByRole('button', { name: 'Delete' })).toBeVisible();
   });
@@ -217,7 +253,11 @@ test.describe('Token Move Flows', () => {
     const { page: window, worldId: targetWorldId } = requireContext();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tokenName = `Campaign Token ${unique}`;
-    const { campaignId } = await createCampaign(window, targetWorldId, `Campaign ${unique}`);
+    const { campaignId } = await createCampaign(
+      window,
+      targetWorldId,
+      `Campaign ${unique}`,
+    );
 
     await createCampaignScopedToken(window, campaignId, {
       worldId: targetWorldId,
@@ -227,8 +267,12 @@ test.describe('Token Move Flows', () => {
 
     const row = tokenRow(window, tokenName);
 
-    await expect(row.getByRole('button', { name: 'Move to World' })).toBeVisible();
-    await expect(row.getByRole('button', { name: 'Move to Campaign' })).toBeVisible();
+    await expect(
+      row.getByRole('button', { name: 'Move to World' }),
+    ).toBeVisible();
+    await expect(
+      row.getByRole('button', { name: 'Move to Campaign' }),
+    ).toBeVisible();
     await expect(row.getByRole('button', { name: 'Edit' })).toBeVisible();
     await expect(row.getByRole('button', { name: 'Delete' })).toBeVisible();
   });
@@ -243,11 +287,16 @@ test.describe('Token Move Flows', () => {
       `Temp Campaign ${unique}`,
     );
 
-    await createWorldScopedToken(window, { worldId: targetWorldId, name: tokenName });
+    await createWorldScopedToken(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+    });
     await goToTokensPage(window, targetWorldId);
 
     await getMoveButton(window, tokenName, 'to-campaign').click();
-    const dialog = window.getByRole('dialog', { name: 'Move Token to Campaign' });
+    const dialog = window.getByRole('dialog', {
+      name: 'Move Token to Campaign',
+    });
     await expect(dialog).toBeVisible();
     await selectCampaignInMoveDialog(window, campaignName);
 
@@ -257,30 +306,45 @@ test.describe('Token Move Flows', () => {
 
     await expect(window.getByText('Failed to move token.')).toBeVisible();
     await expect(window.getByText('Campaign not found')).toBeVisible();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText('World');
+    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+      'World',
+    );
   });
 
   test('token table refreshes immediately after successful move', async () => {
     const { page: window, worldId: targetWorldId } = requireContext();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tokenName = `Refresh Token ${unique}`;
-    const { campaignName } = await createCampaign(window, targetWorldId, `Campaign ${unique}`);
+    const { campaignName } = await createCampaign(
+      window,
+      targetWorldId,
+      `Campaign ${unique}`,
+    );
 
-    await createWorldScopedToken(window, { worldId: targetWorldId, name: tokenName });
+    await createWorldScopedToken(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+    });
     await goToTokensPage(window, targetWorldId);
 
     const scopeCell = tokenRow(window, tokenName).locator('td').nth(2);
     await expect(scopeCell).toHaveText('World');
 
     await getMoveButton(window, tokenName, 'to-campaign').click();
-    const dialog = window.getByRole('dialog', { name: 'Move Token to Campaign' });
+    const dialog = window.getByRole('dialog', {
+      name: 'Move Token to Campaign',
+    });
     await selectCampaignInMoveDialog(window, campaignName);
     await dialog.getByRole('button', { name: 'Move' }).click();
 
-    await expect(window.getByText(new RegExp(`Moved "${tokenName}"`))).toBeVisible({
+    await expect(
+      window.getByText(new RegExp(`Moved "${tokenName}"`)),
+    ).toBeVisible({
       timeout: 5000,
     });
     await expect(scopeCell).toHaveText(`Campaign: ${campaignName}`);
-    await expect(window).toHaveURL(new RegExp(`/world/${targetWorldId}/tokens$`));
+    await expect(window).toHaveURL(
+      new RegExp(`/world/${targetWorldId}/tokens$`),
+    );
   });
 });
