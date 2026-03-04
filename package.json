@@ -88,6 +88,7 @@
     "cli-progress-bar": "^1.0.1",
     "electron-squirrel-startup": "^1.0.1",
     "electron-util": "^1.0.0",
+    "pixi.js": "8.14.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.13.1",
