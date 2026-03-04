@@ -70,7 +70,8 @@ function initializeSchema(db: Database.Database): void {
 
     CREATE TABLE IF NOT EXISTS tokens (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      world_id    INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
       name        TEXT    NOT NULL,
       image_src   TEXT,
       config      TEXT    NOT NULL DEFAULT '{}',
@@ -81,6 +82,9 @@ function initializeSchema(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id
       ON tokens(campaign_id);
+
+    CREATE INDEX IF NOT EXISTS idx_tokens_world_id
+      ON tokens(world_id);
 
     CREATE TABLE IF NOT EXISTS arcs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,6 +157,7 @@ function initializeSchema(db: Database.Database): void {
 
   runArcActMigration(db);
   runSessionPlannedAtMigration(db);
+  runTokenWorldIdMigration(db);
 }
 
 function runArcActMigration(db: Database.Database): void {
@@ -236,6 +241,25 @@ function runArcActMigration(db: Database.Database): void {
       ALTER TABLE sessions_new RENAME TO sessions;
     `);
   })();
+}
+
+function runTokenWorldIdMigration(db: Database.Database): void {
+  const cols = db.pragma('table_info(tokens)') as { name: string }[];
+  if (cols.some((c) => c.name === 'world_id')) return;
+
+  db.exec(
+    `ALTER TABLE tokens ADD COLUMN world_id INTEGER REFERENCES worlds(id) ON DELETE CASCADE`,
+  );
+
+  db.exec(`
+    UPDATE tokens
+    SET world_id = (
+      SELECT world_id FROM campaigns WHERE campaigns.id = tokens.campaign_id
+    )
+    WHERE world_id IS NULL AND campaign_id IS NOT NULL
+  `);
+
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tokens_world_id ON tokens(world_id)`);
 }
 
 function runSessionPlannedAtMigration(db: Database.Database): void {

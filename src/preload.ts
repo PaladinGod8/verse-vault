@@ -116,12 +116,15 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.BATTLEMAPS_DELETE, id),
   },
   tokens: {
+    getAllByWorld: (worldId: number): Promise<Token[]> =>
+      ipcRenderer.invoke(IPC.TOKENS_GET_ALL_BY_WORLD, worldId),
     getAllByCampaign: (campaignId: number): Promise<Token[]> =>
       ipcRenderer.invoke(IPC.TOKENS_GET_ALL_BY_CAMPAIGN, campaignId),
     getById: (id: number): Promise<Token | null> =>
       ipcRenderer.invoke(IPC.TOKENS_GET_BY_ID, id),
     add: (data: {
-      campaign_id: number;
+      world_id: number;
+      campaign_id?: number | null;
       name: string;
       image_src?: string | null;
       config?: string;

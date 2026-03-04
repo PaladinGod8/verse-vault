@@ -38,6 +38,7 @@ export const IPC = {
   TOKENS_ADD: 'db:tokens:add',
   TOKENS_UPDATE: 'db:tokens:update',
   TOKENS_DELETE: 'db:tokens:delete',
+  TOKENS_GET_ALL_BY_WORLD: 'db:tokens:getAllByWorld',
   ARCS_GET_ALL_BY_CAMPAIGN: 'db:arcs:getAllByCampaign',
   ARCS_GET_BY_ID: 'db:arcs:getById',
   ARCS_ADD: 'db:arcs:add',

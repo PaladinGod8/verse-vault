@@ -117,7 +117,8 @@ declare global {
 
   interface Token {
     id: number;
-    campaign_id: number;
+    world_id: number;
+    campaign_id: number | null;
     name: string;
     image_src: string | null;
     config: string;
@@ -292,10 +293,12 @@ declare global {
       delete(id: number): Promise<{ id: number }>;
     };
     tokens: {
+      getAllByWorld(worldId: number): Promise<Token[]>;
       getAllByCampaign(campaignId: number): Promise<Token[]>;
       getById(id: number): Promise<Token | null>;
       add(data: {
-        campaign_id: number;
+        world_id: number;
+        campaign_id?: number | null;
         name: string;
         image_src?: string | null;
         config?: string;
