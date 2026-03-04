@@ -66,17 +66,17 @@ Indexes:
 
 ## 4. IPC Contract
 
-| Channel                      | Signature                                                                       | Notes                                                                                                            |
-| ---------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `db:tokens:getAllByWorld`    | `(worldId: number) => Token[]`                                                  | Returns tokens for `world_id` (includes world-scoped and campaign-scoped rows).                                  |
-| `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                               | Returns rows where `campaign_id = campaignId`.                                                                   |
-| `db:tokens:getById`          | `(id: number) => Token \| null`                                                 | Returns matching row or `null`.                                                                                  |
-| `db:tokens:importImage`      | `({ fileName, mimeType, bytes }) => { image_src: string }`                      | Validates and persists image bytes in main, then returns persisted `vv-media://token-images/...` URL.            |
-| `db:tokens:add`              | `({ world_id, campaign_id?, grid_type?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional; `grid_type` defaults to `square` when omitted.          |
-| `db:tokens:update`           | `(id, { grid_type?, name?, image_src?, config?, is_visible? }) => Token`        | `world_id` and `campaign_id` are immutable after insert. `grid_type` is editable (`square`/`hex`).             |
-| `db:tokens:delete`           | `(id: number) => { id: number }`                                                | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.                                    |
-| `db:tokens:moveToWorld`      | `(id: number) => Token`                                                         | Moves a token to world scope (`campaign_id` -> `null`); requires token to exist; returns updated `Token`.        |
-| `db:tokens:moveToCampaign`   | `(id: number, targetCampaignId: number) => Token`                               | Moves a token to a campaign; requires token and campaign to exist and be in same world; returns updated `Token`. |
+| Channel                      | Signature                                                                                   | Notes                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `db:tokens:getAllByWorld`    | `(worldId: number) => Token[]`                                                              | Returns tokens for `world_id` (includes world-scoped and campaign-scoped rows).                                  |
+| `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                                           | Returns rows where `campaign_id = campaignId`.                                                                   |
+| `db:tokens:getById`          | `(id: number) => Token \| null`                                                             | Returns matching row or `null`.                                                                                  |
+| `db:tokens:importImage`      | `({ fileName, mimeType, bytes }) => { image_src: string }`                                  | Validates and persists image bytes in main, then returns persisted `vv-media://token-images/...` URL.            |
+| `db:tokens:add`              | `({ world_id, campaign_id?, grid_type?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional; `grid_type` defaults to `square` when omitted.                      |
+| `db:tokens:update`           | `(id, { grid_type?, name?, image_src?, config?, is_visible? }) => Token`                    | `world_id` and `campaign_id` are immutable after insert. `grid_type` is editable (`square`/`hex`).               |
+| `db:tokens:delete`           | `(id: number) => { id: number }`                                                            | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.                                    |
+| `db:tokens:moveToWorld`      | `(id: number) => Token`                                                                     | Moves a token to world scope (`campaign_id` -> `null`); requires token to exist; returns updated `Token`.        |
+| `db:tokens:moveToCampaign`   | `(id: number, targetCampaignId: number) => Token`                                           | Moves a token to a campaign; requires token and campaign to exist and be in same world; returns updated `Token`. |
 
 ## 5. Grid Variants + Footprint Painter
 
@@ -204,17 +204,17 @@ The `MoveTokenDialog` component handles UX:
 
 Move operations preserve all token fields except `campaign_id`:
 
-| Field         | Mutable | Notes                                                         |
-| ------------- | ------- | ------------------------------------------------------------- |
-| `id`          | No      | Primary key; never changes                                    |
-| `world_id`    | No      | FK to world; set at creation; immutable                       |
-| `campaign_id` | Yes     | Scoped by move; set to null (world) or campaign_id (campaign) |
-| `name`        | No      | User edit only, not touched by move                           |
-| `image_src`   | No      | User edit only, not touched by move                           |
+| Field         | Mutable | Notes                                                               |
+| ------------- | ------- | ------------------------------------------------------------------- |
+| `id`          | No      | Primary key; never changes                                          |
+| `world_id`    | No      | FK to world; set at creation; immutable                             |
+| `campaign_id` | Yes     | Scoped by move; set to null (world) or campaign_id (campaign)       |
+| `name`        | No      | User edit only, not touched by move                                 |
+| `image_src`   | No      | User edit only, not touched by move                                 |
 | `config`      | No      | User edit only; may contain additive `footprint`/`framing` metadata |
-| `is_visible`  | No      | User edit only, not touched by move                           |
-| `created_at`  | No      | Never changes                                                 |
-| `updated_at`  | Yes     | Updated by move operation (`datetime('now')`)                 |
+| `is_visible`  | No      | User edit only, not touched by move                                 |
+| `created_at`  | No      | Never changes                                                       |
+| `updated_at`  | Yes     | Updated by move operation (`datetime('now')`)                       |
 
 ### Component Hierarchy
 
