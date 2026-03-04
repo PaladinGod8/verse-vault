@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
-import { getDatabase, closeDatabase, db as dbHandlers } from './database/db';
+import {
+  getDatabase,
+  closeDatabase,
+  db as dbHandlers,
+  ensureTokenConfigJsonText,
+} from './database/db';
 import { IPC } from './shared/ipcChannels';
 
 function isAbilityChildDuplicateError(error: unknown): boolean {
@@ -288,15 +293,6 @@ function ensureBattleMapConfigJsonText(config: unknown): string {
   );
 
   return JSON.stringify(normalizedConfig);
-}
-
-function ensureTokenConfigJsonText(config: unknown): string {
-  const parsedConfig = parseJsonText(config, 'Token config');
-  if (!isJsonRecord(parsedConfig)) {
-    throw new Error('Token config must be a JSON object');
-  }
-
-  return config as string;
 }
 
 function ensureTokenGridType(

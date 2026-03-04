@@ -127,7 +127,21 @@ declare global {
 
   type TokenGridType = 'square' | 'hex';
 
+  interface TokenSquareFootprintCell {
+    col: number;
+    row: number;
+  }
+
+  interface TokenHexFootprintCell {
+    q: number;
+    r: number;
+  }
+
   interface TokenFootprintConfig {
+    version?: 1;
+    grid_type?: TokenGridType;
+    square_cells?: TokenSquareFootprintCell[];
+    hex_cells?: TokenHexFootprintCell[];
     width_cells?: number;
     height_cells?: number;
     radius_cells?: number;
@@ -135,6 +149,11 @@ declare global {
   }
 
   interface TokenFramingConfig {
+    center_x_cells?: number;
+    center_y_cells?: number;
+    extent_x_cells?: number;
+    extent_y_cells?: number;
+    max_extent_cells?: number;
     anchor_x?: number;
     anchor_y?: number;
     offset_x_px?: number;
