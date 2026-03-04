@@ -107,6 +107,67 @@ describe('RuntimeTokenPalette', () => {
     expect(screen.queryByText('Invisible Token')).not.toBeInTheDocument();
   });
 
+  it('filters world and campaign tokens by active grid mode when mode is square or hex', () => {
+    renderPalette({
+      activeGridMode: 'hex',
+      worldTokens: [
+        buildToken({ id: 1, name: 'Square World', grid_type: 'square' }),
+        buildToken({ id: 2, name: 'Hex World', grid_type: 'hex' }),
+      ],
+      tokens: [
+        buildToken({
+          id: 3,
+          campaign_id: 10,
+          name: 'Square Campaign',
+          grid_type: 'square',
+        }),
+        buildToken({
+          id: 4,
+          campaign_id: 10,
+          name: 'Hex Campaign',
+          grid_type: 'hex',
+        }),
+      ],
+      selectedCampaignId: 10,
+    });
+
+    expect(screen.getByText('Hex World')).toBeInTheDocument();
+    expect(screen.queryByText('Square World')).not.toBeInTheDocument();
+    expect(screen.getByText('Hex Campaign')).toBeInTheDocument();
+    expect(screen.queryByText('Square Campaign')).not.toBeInTheDocument();
+  });
+
+  it("does not filter by grid type when active grid mode is 'none'", () => {
+    renderPalette({
+      activeGridMode: 'none',
+      worldTokens: [
+        buildToken({ id: 1, name: 'Square World', grid_type: 'square' }),
+        buildToken({ id: 2, name: 'Hex World', grid_type: 'hex' }),
+      ],
+      tokens: [
+        buildToken({
+          id: 3,
+          campaign_id: 10,
+          name: 'Square Campaign',
+          grid_type: 'square',
+        }),
+        buildToken({
+          id: 4,
+          campaign_id: 10,
+          name: 'Hex Campaign',
+          grid_type: 'hex',
+        }),
+      ],
+      selectedCampaignId: 10,
+    });
+
+    expect(screen.getByText('Square World')).toBeInTheDocument();
+    expect(screen.getByText('Hex World')).toBeInTheDocument();
+    expect(screen.getByText('Square Campaign')).toBeInTheDocument();
+    expect(screen.getByText('Hex Campaign')).toBeInTheDocument();
+    expect(screen.getByText(/Grid mode is/i)).toBeInTheDocument();
+  });
+
   it('notifies when show invisible tokens toggle changes', () => {
     const { onShowInvisibleTokensChange } = renderPalette({
       showInvisibleTokens: false,
