@@ -7,6 +7,7 @@ import TokenForm from '../components/tokens/TokenForm';
 import type { TokenFormValues } from '../components/tokens/TokenForm';
 import CopyTokenToCampaignDialog from '../components/tokens/CopyTokenToCampaignDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 function scopeLabel(token: Token, campaigns: Campaign[]): string {
   if (token.campaign_id === null) return 'World';
@@ -113,7 +114,7 @@ export default function TokensPage() {
         const importResult = await window.db.tokens.importImage(
           data.image_upload,
         );
-        imageSrc = importResult.image_src;
+        imageSrc = normalizeTokenImageSrc(importResult.image_src);
       }
 
       await window.db.tokens.add({
@@ -152,7 +153,9 @@ export default function TokensPage() {
         const importResult = await window.db.tokens.importImage(
           data.image_upload,
         );
-        updatePayload.image_src = importResult.image_src;
+        updatePayload.image_src = normalizeTokenImageSrc(
+          importResult.image_src,
+        );
       } else if (data.clear_image) {
         updatePayload.image_src = null;
       } else if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
@@ -297,69 +300,72 @@ export default function TokensPage() {
                 </tr>
               </thead>
               <tbody>
-                {tokens.map((token) => (
-                  <tr
-                    key={token.id}
-                    className="border-b border-slate-100 last:border-0"
-                  >
-                    <td className="px-4 py-3">
-                      {token.image_src ? (
-                        <img
-                          src={token.image_src}
-                          alt={token.name}
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-slate-200" />
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-medium">{token.name}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {scopeLabel(token, campaigns)}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {new Date(token.updated_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {new Date(token.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormOpen(false);
-                            setEditingToken(token);
-                          }}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingToken?.id === token.id}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPendingDeleteToken(token)}
-                          className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingToken?.id === token.id}
-                        >
-                          {deletingToken?.id === token.id
-                            ? 'Deleting...'
-                            : 'Delete'}
-                        </button>
-                        {token.campaign_id === null ? (
+                {tokens.map((token) => {
+                  const tokenImageSrc = normalizeTokenImageSrc(token.image_src);
+                  return (
+                    <tr
+                      key={token.id}
+                      className="border-b border-slate-100 last:border-0"
+                    >
+                      <td className="px-4 py-3">
+                        {tokenImageSrc ? (
+                          <img
+                            src={tokenImageSrc}
+                            alt={token.name}
+                            className="h-10 w-10 rounded object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-slate-200" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium">{token.name}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {scopeLabel(token, campaigns)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {new Date(token.updated_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {new Date(token.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-3">
                           <button
                             type="button"
-                            onClick={() => setCopyingToken(token)}
-                            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            onClick={() => {
+                              setFormOpen(false);
+                              setEditingToken(token);
+                            }}
+                            className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                             disabled={deletingToken?.id === token.id}
                           >
-                            Copy to Campaign
+                            Edit
                           </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button
+                            type="button"
+                            onClick={() => setPendingDeleteToken(token)}
+                            className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={deletingToken?.id === token.id}
+                          >
+                            {deletingToken?.id === token.id
+                              ? 'Deleting...'
+                              : 'Delete'}
+                          </button>
+                          {token.campaign_id === null ? (
+                            <button
+                              type="button"
+                              onClick={() => setCopyingToken(token)}
+                              className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={deletingToken?.id === token.id}
+                            >
+                              Copy to Campaign
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </section>
@@ -403,7 +409,7 @@ export default function TokensPage() {
           <TokenForm
             initialValues={{
               name: editingToken.name,
-              image_src: editingToken.image_src,
+              image_src: normalizeTokenImageSrc(editingToken.image_src),
               is_visible: editingToken.is_visible,
             }}
             onSave={(data) => void handleUpdate(data)}

@@ -12,6 +12,8 @@ const appOnMock = vi.fn((event: string, handler: EventHandler) => {
 });
 const appQuitMock = vi.fn();
 const appGetPathMock = vi.fn(() => 'C:\\mock-user-data');
+const protocolHandleMock = vi.fn();
+const netFetchMock = vi.fn();
 const ipcHandleMock = vi.fn((channel: string, handler: IpcHandler) => {
   registeredIpcHandlers[channel] = handler;
 });
@@ -84,6 +86,12 @@ async function importMainWithMocks() {
     BrowserWindow: BrowserWindowMock,
     ipcMain: {
       handle: ipcHandleMock,
+    },
+    protocol: {
+      handle: protocolHandleMock,
+    },
+    net: {
+      fetch: netFetchMock,
     },
   }));
   vi.doMock('node:crypto', () => ({
@@ -247,6 +255,8 @@ describe('token IPC handlers', () => {
     prepareMock.mockReset();
     appGetPathMock.mockReset();
     appGetPathMock.mockReturnValue('C:\\mock-user-data');
+    protocolHandleMock.mockReset();
+    netFetchMock.mockReset();
     randomUUIDMock.mockReset();
     randomUUIDMock.mockReturnValue('mock-uuid');
     mkdirMock.mockReset();
@@ -455,8 +465,9 @@ describe('token IPC handlers', () => {
     expect(savedPath).toContain('C:\\mock-user-data\\token-images\\');
     expect(savedPath.endsWith('-mock-uuid.png')).toBe(true);
     expect(savedBytes).toBe(validBytes);
-    expect(importResult.image_src).toContain('C:/mock-user-data/token-images/');
-    expect(importResult.image_src.endsWith('-mock-uuid.png')).toBe(true);
+    expect(importResult.image_src).toMatch(
+      /^vv-media:\/\/token-images\/\d+-mock-uuid\.png$/i,
+    );
 
     await expect(
       handler(

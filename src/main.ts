@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, net, protocol } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -35,6 +35,8 @@ const TOKEN_IMAGE_MIME_TO_EXTENSION = {
   'image/gif': 'gif',
 } as const;
 const TOKEN_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const TOKEN_IMAGE_PROTOCOL = 'vv-media';
+const TOKEN_IMAGE_HOST = 'token-images';
 
 const DEFAULT_BATTLEMAP_RUNTIME_CONFIG = {
   grid: {
@@ -335,6 +337,50 @@ function ensureTokenImageImportPayload(payload: TokenImageImportPayload): {
     mimeType: mimeType as keyof typeof TOKEN_IMAGE_MIME_TO_EXTENSION,
     bytes: payload.bytes,
   };
+}
+
+function tokenImagesDirectoryPath(): string {
+  return path.join(app.getPath('userData'), 'token-images');
+}
+
+function buildTokenImageMediaUrl(fileName: string): string {
+  return `${TOKEN_IMAGE_PROTOCOL}://${TOKEN_IMAGE_HOST}/${encodeURIComponent(fileName)}`;
+}
+
+function registerTokenImageProtocol(): void {
+  protocol.handle(TOKEN_IMAGE_PROTOCOL, async (request) => {
+    let requestUrl: URL;
+    try {
+      requestUrl = new URL(request.url);
+    } catch {
+      return new Response('Invalid token image request URL', { status: 400 });
+    }
+
+    if (requestUrl.hostname !== TOKEN_IMAGE_HOST) {
+      return new Response('Token image not found', { status: 404 });
+    }
+
+    const requestedPath = decodeURIComponent(requestUrl.pathname).replace(
+      /^\/+/,
+      '',
+    );
+    const fileName = path.basename(requestedPath);
+    if (!fileName || fileName !== requestedPath) {
+      return new Response('Invalid token image path', { status: 400 });
+    }
+
+    const tokenImagesDir = path.resolve(tokenImagesDirectoryPath());
+    const filePath = path.resolve(path.join(tokenImagesDir, fileName));
+    if (path.dirname(filePath) !== tokenImagesDir) {
+      return new Response('Invalid token image path', { status: 400 });
+    }
+
+    try {
+      return await net.fetch(pathToFileURL(filePath).toString());
+    } catch {
+      return new Response('Token image not found', { status: 404 });
+    }
+  });
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -1055,7 +1101,7 @@ function registerIpcHandlers() {
     ): Promise<TokenImageImportResult> => {
       const { mimeType, bytes } = ensureTokenImageImportPayload(payload);
 
-      const tokenImagesDir = path.join(app.getPath('userData'), 'token-images');
+      const tokenImagesDir = tokenImagesDirectoryPath();
       await mkdir(tokenImagesDir, { recursive: true });
 
       const extension = TOKEN_IMAGE_MIME_TO_EXTENSION[mimeType];
@@ -1064,7 +1110,7 @@ function registerIpcHandlers() {
       await writeFile(savedAbsolutePath, bytes);
 
       return {
-        image_src: pathToFileURL(savedAbsolutePath).toString(),
+        image_src: buildTokenImageMediaUrl(uniqueFileName),
       };
     },
   );
@@ -2055,6 +2101,7 @@ function registerIpcHandlers() {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   registerIpcHandlers();
+  registerTokenImageProtocol();
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     const { installExtension, REACT_DEVELOPER_TOOLS } =

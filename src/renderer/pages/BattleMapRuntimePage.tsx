@@ -17,6 +17,7 @@ import {
   serializeRuntimeConfig,
 } from '../lib/battlemapRuntimeState';
 import { clampGridCellSize } from '../lib/runtimeMath';
+import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 const RUNTIME_SAVE_DEBOUNCE_MS = 220;
 const UNSAVED_RUNTIME_CONFIRMATION_MESSAGE =
@@ -415,9 +416,12 @@ export default function BattleMapRuntimePage() {
           return;
         }
 
-        const scopedWorldTokens = tokens.filter(
-          (token) => token.campaign_id === null,
-        );
+        const scopedWorldTokens = tokens
+          .filter((token) => token.campaign_id === null)
+          .map((token) => ({
+            ...token,
+            image_src: normalizeTokenImageSrc(token.image_src),
+          }));
         setWorldTokens(scopedWorldTokens);
         setRuntimeTokens((currentTokens) => {
           const tokenById = new Map(
@@ -442,7 +446,7 @@ export default function BattleMapRuntimePage() {
             return {
               ...runtimeToken,
               name: sourceToken.name,
-              imageSrc: sourceToken.image_src,
+              imageSrc: normalizeTokenImageSrc(sourceToken.image_src),
               isVisible: sourceToken.is_visible === 1,
               sourceMissing: false,
             };
@@ -507,7 +511,12 @@ export default function BattleMapRuntimePage() {
           return;
         }
 
-        setCampaignTokens(tokens);
+        setCampaignTokens(
+          tokens.map((token) => ({
+            ...token,
+            image_src: normalizeTokenImageSrc(token.image_src),
+          })),
+        );
         setRuntimeTokens((currentTokens) => {
           const tokenById = new Map(tokens.map((token) => [token.id, token]));
           return currentTokens.map((runtimeToken) => {
@@ -529,7 +538,7 @@ export default function BattleMapRuntimePage() {
             return {
               ...runtimeToken,
               name: sourceToken.name,
-              imageSrc: sourceToken.image_src,
+              imageSrc: normalizeTokenImageSrc(sourceToken.image_src),
               isVisible: sourceToken.is_visible === 1,
               sourceMissing: false,
             };
@@ -745,7 +754,7 @@ export default function BattleMapRuntimePage() {
           sourceTokenId: token.id,
           campaignId: token.campaign_id,
           name: token.name,
-          imageSrc: token.image_src,
+          imageSrc: normalizeTokenImageSrc(token.image_src),
           isVisible: token.is_visible === 1,
           sourceMissing: false,
           x: placement.x,

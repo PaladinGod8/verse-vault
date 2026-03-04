@@ -21,6 +21,8 @@ Tokens Step 01 (2026-03-04) adds `TOKENS_GET_ALL_BY_WORLD` constant; wires world
 
 Tokens Image DnD Step 01 (2026-03-04) adds `TOKENS_IMPORT_IMAGE` (`db:tokens:importImage`), with main-process validation for payload shape/mime/size and app-owned persistence under `app.getPath('userData')/token-images`; preload exposes `window.db.tokens.importImage(payload)` with shared `TokenImageImportPayload`/`TokenImageImportResult` typing.
 
+Tokens Image Protocol Step 02 (2026-03-05) keeps the same IPC channel and payload/response shapes, but changes `TOKENS_IMPORT_IMAGE` response semantics: `image_src` now uses app-local `vv-media://token-images/<encoded-file-name>` URLs instead of direct `file://` URLs. Main process registers a `vv-media` protocol handler that serves files from the app-owned `token-images` directory with path traversal guards.
+
 Runtime Step 01 (2026-03-04) also hardens BattleMap config validation in `main` so `config` is a JSON object with runtime-ready defaults at `runtime.grid`, `runtime.map`, and `runtime.camera`; scene payload validation remains backward-compatible while validating optional runtime linkage field `payload.runtime.battlemap_id`.
 
 Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
@@ -505,7 +507,8 @@ interface DbApi {
 - Token main handlers are wired for `TOKENS_GET_ALL_BY_WORLD`, `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_IMPORT_IMAGE`, `TOKENS_ADD`, `TOKENS_UPDATE`, and `TOKENS_DELETE`.
 - `TOKENS_GET_ALL_BY_WORLD` is scoped by `world_id` (validated positive integer) and returns tokens ordered by `name ASC`; added in Tokens Step 01 (2026-03-04).
 - `TOKENS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns deterministic order (`updated_at DESC, id DESC`); `TOKENS_GET_BY_ID` returns a row or `null`.
-- `TOKENS_IMPORT_IMAGE` accepts `{ fileName, mimeType, bytes }`, requires `bytes` to be a non-empty `Uint8Array`, accepts only `image/png`, `image/jpeg`, `image/webp`, or `image/gif`, enforces a 5 MB size limit, writes under `app.getPath('userData')/token-images` using a unique filename (`timestamp-random.ext`), and returns `{ image_src }` as a file URL.
+- `TOKENS_IMPORT_IMAGE` accepts `{ fileName, mimeType, bytes }`, requires `bytes` to be a non-empty `Uint8Array`, accepts only `image/png`, `image/jpeg`, `image/webp`, or `image/gif`, enforces a 5 MB size limit, writes under `app.getPath('userData')/token-images` using a unique filename (`timestamp-random.ext`), and returns `{ image_src }` as `vv-media://token-images/<encoded-file-name>`.
+- `vv-media` is registered in main via `protocol.handle(...)` and serves only files inside `app.getPath('userData')/token-images`; invalid host/path traversal requests return 400/404 and are rejected.
 - `TOKENS_ADD` requires `world_id` (positive integer), accepts optional `campaign_id` (positive integer or null), validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as a JSON object, validates `is_visible` as `0|1`, inserts (`world_id`, `campaign_id`, `name`, `image_src`, `config`, `is_visible`), and returns the inserted row.
 - `TOKENS_UPDATE` updates only explicitly provided fields (`name`, `image_src`, `config`, `is_visible`) using `hasOwnProperty` checks, validates trimmed `name`, object JSON `config`, and `is_visible` as `0|1` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'Token not found'` when missing).
 - `TOKENS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
