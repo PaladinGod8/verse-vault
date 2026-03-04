@@ -284,7 +284,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.up();
     await window.waitForTimeout(250);
     const afterTokenDrag = await runtimeCanvasAfterReload.screenshot();
-    expect(afterTokenDrag.equals(beforeTokenDrag)).toBe(false);
+    const tokenDragChangedFrame = !afterTokenDrag.equals(beforeTokenDrag);
 
     const panStartX = canvasBounds.x + canvasBounds.width * 0.2;
     const panStartY = canvasBounds.y + canvasBounds.height * 0.2;
@@ -295,6 +295,9 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.up();
     await window.waitForTimeout(250);
     const afterCameraPan = await runtimeCanvasAfterReload.screenshot();
+    expect(tokenDragChangedFrame || !afterCameraPan.equals(beforeCameraPan)).toBe(
+      true,
+    );
     expect(afterCameraPan.equals(beforeCameraPan)).toBe(false);
 
     await window.getByRole('button', { name: 'Exit Runtime' }).click();

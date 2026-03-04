@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import 'pixi.js/unsafe-eval';
 import {
   Application,
   Assets,

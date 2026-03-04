@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Link,
   useBeforeUnload,
-  useBlocker,
   useNavigate,
   useParams,
 } from 'react-router-dom';
@@ -173,7 +172,6 @@ export default function BattleMapRuntimePage() {
   const runtimeSaveRequestIdRef = useRef(0);
   const runtimeSaveTimerRef = useRef<number | null>(null);
   const activeRuntimeSavePromiseRef = useRef<Promise<boolean> | null>(null);
-  const isResolvingBlockedNavigationRef = useRef(false);
   const lastPersistedRuntimeConfigKeyRef = useRef<string | null>(null);
   const runtimeTokenInstanceIdCounterRef = useRef(0);
 
@@ -338,68 +336,6 @@ export default function BattleMapRuntimePage() {
       [hasPendingRuntimeChanges],
     ),
   );
-
-  const runtimeExitBlocker = useBlocker(
-    useCallback(
-      ({ currentLocation, nextLocation }) => {
-        if (!hasPendingRuntimeChanges()) {
-          return false;
-        }
-
-        return (
-          currentLocation.pathname !== nextLocation.pathname ||
-          currentLocation.search !== nextLocation.search ||
-          currentLocation.hash !== nextLocation.hash
-        );
-      },
-      [hasPendingRuntimeChanges],
-    ),
-  );
-
-  useEffect(() => {
-    if (runtimeExitBlocker.state !== 'blocked') {
-      return;
-    }
-    if (isResolvingBlockedNavigationRef.current) {
-      return;
-    }
-
-    isResolvingBlockedNavigationRef.current = true;
-    let isActive = true;
-
-    const resolveBlockedNavigation = async () => {
-      const didPersist = await flushRuntimePersistence();
-      if (!isActive) {
-        return;
-      }
-
-      if (didPersist || !hasPendingRuntimeChanges()) {
-        runtimeExitBlocker.proceed();
-        return;
-      }
-
-      const shouldDiscardChanges = window.confirm(
-        UNSAVED_RUNTIME_CONFIRMATION_MESSAGE,
-      );
-      if (shouldDiscardChanges) {
-        runtimeExitBlocker.proceed();
-        return;
-      }
-
-      runtimeExitBlocker.reset();
-    };
-
-    void resolveBlockedNavigation().finally(() => {
-      if (isActive) {
-        isResolvingBlockedNavigationRef.current = false;
-      }
-    });
-
-    return () => {
-      isActive = false;
-      isResolvingBlockedNavigationRef.current = false;
-    };
-  }, [flushRuntimePersistence, hasPendingRuntimeChanges, runtimeExitBlocker]);
 
   useEffect(() => {
     battleMapConfigRef.current = battleMapConfig;
@@ -773,7 +709,16 @@ export default function BattleMapRuntimePage() {
     );
   };
 
-  const handleExitRuntime = () => {
+  const handleExitRuntime = async () => {
+    const didPersist = await flushRuntimePersistence();
+    if (!didPersist && hasPendingRuntimeChanges()) {
+      const shouldDiscardChanges = window.confirm(
+        UNSAVED_RUNTIME_CONFIRMATION_MESSAGE,
+      );
+      if (!shouldDiscardChanges) {
+        return;
+      }
+    }
     navigate(battleMapsRoute);
   };
 
@@ -783,6 +728,10 @@ export default function BattleMapRuntimePage() {
         <div className="space-y-2">
           <Link
             to={battleMapsRoute}
+            onClick={(event) => {
+              event.preventDefault();
+              void handleExitRuntime();
+            }}
             className="inline-flex items-center text-sm font-medium text-slate-300 transition hover:text-white"
           >
             Back to BattleMaps
@@ -794,7 +743,9 @@ export default function BattleMapRuntimePage() {
 
         <button
           type="button"
-          onClick={handleExitRuntime}
+          onClick={() => {
+            void handleExitRuntime();
+          }}
           className="shrink-0 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white"
         >
           Exit Runtime
@@ -814,7 +765,9 @@ export default function BattleMapRuntimePage() {
             <p className="text-sm">{error}</p>
             <button
               type="button"
-              onClick={handleExitRuntime}
+              onClick={() => {
+                void handleExitRuntime();
+              }}
               className="inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-950"
             >
               Exit Runtime
@@ -823,7 +776,7 @@ export default function BattleMapRuntimePage() {
         ) : null}
 
         {!isLoading && !error ? (
-          <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-sm">
             <div className="border-b border-slate-800 px-6 py-4">
               <h2 className="text-lg font-semibold text-white">
                 Runtime Canvas
@@ -873,7 +826,7 @@ export default function BattleMapRuntimePage() {
                 />
               ) : null}
             </div>
-          </section>
+          </div>
         ) : null}
       </main>
     </div>
