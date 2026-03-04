@@ -155,6 +155,8 @@ function initializeSchema(db: Database.Database): void {
   runArcActMigration(db);
   runSessionPlannedAtMigration(db);
   runTokenWorldIdMigration(db);
+  runTokenCampaignNullableMigration(db);
+  ensureTokenCampaignIdIndex(db);
   ensureTokenWorldIdIndex(db);
 }
 
@@ -255,6 +257,77 @@ function runTokenWorldIdMigration(db: Database.Database): void {
       SELECT world_id FROM campaigns WHERE campaigns.id = tokens.campaign_id
     )
     WHERE world_id IS NULL AND campaign_id IS NOT NULL
+  `);
+}
+
+function runTokenCampaignNullableMigration(db: Database.Database): void {
+  const cols = db.pragma('table_info(tokens)') as Array<{
+    name: string;
+    notnull: number;
+  }>;
+  const campaignIdColumn = cols.find((c) => c.name === 'campaign_id');
+  if (!campaignIdColumn || campaignIdColumn.notnull === 0) {
+    return;
+  }
+
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE tokens_new (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        world_id    INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+        campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+        name        TEXT    NOT NULL,
+        image_src   TEXT,
+        config      TEXT    NOT NULL DEFAULT '{}',
+        is_visible  INTEGER NOT NULL DEFAULT 1 CHECK (is_visible IN (0, 1)),
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    // Skip orphaned legacy rows that cannot be mapped to a world.
+    db.exec(`
+      INSERT INTO tokens_new (
+        id,
+        world_id,
+        campaign_id,
+        name,
+        image_src,
+        config,
+        is_visible,
+        created_at,
+        updated_at
+      )
+      SELECT
+        id,
+        COALESCE(
+          world_id,
+          (SELECT world_id FROM campaigns WHERE campaigns.id = tokens.campaign_id)
+        ) AS world_id,
+        campaign_id,
+        name,
+        image_src,
+        config,
+        is_visible,
+        created_at,
+        updated_at
+      FROM tokens
+      WHERE COALESCE(
+        world_id,
+        (SELECT world_id FROM campaigns WHERE campaigns.id = tokens.campaign_id)
+      ) IS NOT NULL
+    `);
+
+    db.exec(`
+      DROP TABLE tokens;
+      ALTER TABLE tokens_new RENAME TO tokens;
+    `);
+  })();
+}
+
+function ensureTokenCampaignIdIndex(db: Database.Database): void {
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id ON tokens(campaign_id)
   `);
 }
 

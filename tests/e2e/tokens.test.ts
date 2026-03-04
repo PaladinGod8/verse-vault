@@ -155,8 +155,16 @@ async function createTokenRecord(
   }, input);
 }
 
+async function navigateToHashRoute(window: Page, hashPath: string) {
+  const baseUrl = window.url().split('#')[0];
+  const normalizedHashPath = hashPath.startsWith('/')
+    ? hashPath
+    : `/${hashPath}`;
+  await window.goto(`${baseUrl}#${normalizedHashPath}`);
+}
+
 async function goToTokensPage(window: Page, targetWorldId: number) {
-  await window.goto(`#/world/${targetWorldId}/tokens`);
+  await navigateToHashRoute(window, `/world/${targetWorldId}/tokens`);
   await expect(window.getByRole('button', { name: 'New Token' })).toBeVisible();
   await window.waitForFunction(() => {
     const bodyText = document.body.textContent ?? '';
@@ -173,8 +181,9 @@ async function goToRuntimePage(
   targetWorldId: number,
   battleMapId: number,
 ) {
-  await window.goto(
-    `#/world/${targetWorldId}/battlemaps/${battleMapId}/runtime`,
+  await navigateToHashRoute(
+    window,
+    `/world/${targetWorldId}/battlemaps/${battleMapId}/runtime`,
   );
   await expect(
     window.getByRole('heading', { name: 'Runtime Canvas' }),
