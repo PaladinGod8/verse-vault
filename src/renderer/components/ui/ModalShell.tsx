@@ -78,7 +78,10 @@ export default function ModalShell({
         aria-modal="true"
         aria-labelledby={labelledBy}
         aria-label={labelledBy ? undefined : (ariaLabel ?? 'Dialog')}
-        className={joinClasses('modal-box w-11/12 max-w-2xl p-6', boxClassName)}
+        className={joinClasses(
+          'modal-box bg-base-100 text-base-content w-11/12 max-w-2xl p-6',
+          boxClassName,
+        )}
         onMouseDown={(event) => event.stopPropagation()}
       >
         {children}
