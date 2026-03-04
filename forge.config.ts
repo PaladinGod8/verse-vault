@@ -6,6 +6,7 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { isIgnoredFromPackage } from './forge.ignore';
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -14,13 +15,7 @@ const config: ForgeConfig = {
       unpack: '*.{node,dylib}',
       unpackDir: '{better-sqlite3}',
     },
-    ignore: (path) => {
-      if (path == '') return false;
-      const include = ['/.vite', '/node_modules', '/package.json', '/static'];
-      const isIgnored =
-        !include.some((i) => path.startsWith(i)) || path.includes('.bin');
-      return isIgnored;
-    },
+    ignore: isIgnoredFromPackage,
   },
   rebuildConfig: {
     // Force rebuild better-sqlite3

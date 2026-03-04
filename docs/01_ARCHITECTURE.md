@@ -56,7 +56,9 @@ flowchart LR
 
 10. **Fuses are compile-time.** Security fuses in `forge.config.ts` are baked at `yarn make`, not `yarn start`.
 
-11. **Offline-first is a hard requirement.** New domain features must work without network access and persist locally first.
+11. **Defensive asar filtering.** Package-time ignore rules live in `forge.ignore.ts` and enumerate only the runtime-required node_modules (currently `better-sqlite3` and `electron-squirrel-startup`). This defensive stance prevents accidental dep misclassifications from inflating the asar, even if `prune: true` fails to strip devDependencies.
+
+12. **Offline-first is a hard requirement.** New domain features must work without network access and persist locally first.
 
 ## Current Data Bootstrap Notes
 
