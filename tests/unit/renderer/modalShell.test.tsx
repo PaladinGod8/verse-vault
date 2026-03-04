@@ -55,6 +55,19 @@ describe('ModalShell', () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it('renders modal panel with DaisyUI light-mode classes', () => {
+    const onClose = vi.fn();
+    render(
+      <ModalShell isOpen onClose={onClose} ariaLabel="Light mode dialog">
+        <p>Content</p>
+      </ModalShell>,
+    );
+
+    const panel = screen.getByRole('dialog');
+    expect(panel).toHaveClass('bg-base-100');
+    expect(panel).toHaveClass('text-base-content');
+  });
+
   it('does not close on backdrop when closeOnBackdrop is false', () => {
     const onClose = vi.fn();
     render(
