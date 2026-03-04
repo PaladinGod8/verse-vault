@@ -4,6 +4,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import TokenForm from '../components/tokens/TokenForm';
+import type { TokenFormValues } from '../components/tokens/TokenForm';
 import CopyTokenToCampaignDialog from '../components/tokens/CopyTokenToCampaignDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
@@ -103,18 +104,22 @@ export default function TokensPage() {
     setTokens(tokensList);
   };
 
-  const handleCreate = async (data: {
-    name: string;
-    image_src: string | null;
-    is_visible: number;
-  }) => {
+  const handleCreate = async (data: TokenFormValues) => {
     if (worldId === null) return;
     setIsSaving(true);
     try {
+      let imageSrc = data.image_src;
+      if (data.image_upload) {
+        const importResult = await window.db.tokens.importImage(
+          data.image_upload,
+        );
+        imageSrc = importResult.image_src;
+      }
+
       await window.db.tokens.add({
         world_id: worldId,
         name: data.name,
-        image_src: data.image_src,
+        image_src: imageSrc,
         is_visible: data.is_visible,
       });
       await reloadTokens();
@@ -130,11 +135,7 @@ export default function TokensPage() {
     }
   };
 
-  const handleUpdate = async (data: {
-    name: string;
-    image_src: string | null;
-    is_visible: number;
-  }) => {
+  const handleUpdate = async (data: TokenFormValues) => {
     if (!editingToken) return;
     setIsSaving(true);
     try {

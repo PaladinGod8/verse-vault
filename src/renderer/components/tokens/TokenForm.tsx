@@ -1,17 +1,47 @@
 import { useState } from 'react';
+import TokenImageDropzone from './TokenImageDropzone';
 
-type TokenFormValues = {
+const TOKEN_IMAGE_ALLOWED_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]);
+const TOKEN_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+
+export type TokenImageUploadPayload = {
+  fileName: string;
+  mimeType: string;
+  bytes: Uint8Array;
+};
+
+export type TokenFormValues = {
   name: string;
   image_src: string | null;
   is_visible: number;
+  image_upload?: TokenImageUploadPayload;
 };
 
 type TokenFormProps = {
   initialValues?: TokenFormValues;
-  onSave: (data: TokenFormValues) => void;
+  onSave: (data: TokenFormValues) => Promise<void> | void;
   onClose: () => void;
   isSaving: boolean;
 };
+
+function validateTokenImageFile(file: File): string | null {
+  const mimeType = file.type.toLowerCase();
+  if (!TOKEN_IMAGE_ALLOWED_MIME_TYPES.has(mimeType)) {
+    return 'Unsupported image type. Use PNG, JPEG, WEBP, or GIF.';
+  }
+  if (file.size === 0) {
+    return 'Selected file is empty.';
+  }
+  if (file.size > TOKEN_IMAGE_MAX_SIZE_BYTES) {
+    return 'Image exceeds 5 MB limit.';
+  }
+  return null;
+}
 
 export default function TokenForm({
   initialValues,
@@ -19,23 +49,52 @@ export default function TokenForm({
   onClose,
   isSaving,
 }: TokenFormProps) {
+  const isCreateMode = !initialValues;
   const [name, setName] = useState(initialValues?.name ?? '');
   const [imageSrc, setImageSrc] = useState(initialValues?.image_src ?? '');
   const [isVisible, setIsVisible] = useState(initialValues?.is_visible ?? 1);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
       setNameError('Name is required.');
       return;
     }
+
+    let imageUpload: TokenImageUploadPayload | undefined;
+    if (isCreateMode && selectedImageFile) {
+      const validationError = validateTokenImageFile(selectedImageFile);
+      if (validationError) {
+        setImageUploadError(validationError);
+        return;
+      }
+
+      try {
+        const buffer = await selectedImageFile.arrayBuffer();
+        imageUpload = {
+          fileName: selectedImageFile.name,
+          mimeType: selectedImageFile.type.toLowerCase(),
+          bytes: new Uint8Array(buffer),
+        };
+      } catch {
+        setImageUploadError(
+          'Unable to read the selected image file. Try a different image.',
+        );
+        return;
+      }
+    }
+
     setNameError(null);
-    onSave({
+    setImageUploadError(null);
+    await onSave({
       name: trimmedName,
       image_src: imageSrc.trim() === '' ? null : imageSrc.trim(),
       is_visible: isVisible,
+      image_upload: imageUpload,
     });
   };
 
@@ -82,6 +141,28 @@ export default function TokenForm({
           disabled={isSaving}
         />
       </div>
+
+      {isCreateMode ? (
+        <TokenImageDropzone
+          selectedFile={selectedImageFile}
+          onFileSelect={(file) => {
+            const validationError = validateTokenImageFile(file);
+            if (validationError) {
+              setSelectedImageFile(null);
+              setImageUploadError(validationError);
+              return;
+            }
+            setSelectedImageFile(file);
+            setImageUploadError(null);
+          }}
+          onClearFile={() => {
+            setSelectedImageFile(null);
+            setImageUploadError(null);
+          }}
+          error={imageUploadError}
+          disabled={isSaving}
+        />
+      ) : null}
 
       <div className="flex items-center gap-2">
         <input
