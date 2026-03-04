@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { Application, Assets, Container, Graphics, Sprite } from 'pixi.js';
+import {
+  clampGridCellSize,
+  getPointyHexRangeForBounds,
+  getPointyHexVertexOffsets,
+  getSquareGridLinePositions,
+  getWorldViewportBounds,
+  pointyHexCenterFromAxial,
+} from '../../lib/runtimeMath';
 
 type BattleMapRuntimeCanvasProps = {
   runtimeConfig: BattleMapRuntimeConfig;
@@ -16,6 +24,7 @@ type StageGraph = {
   uiContainer: Container;
   backgroundLayer: Graphics;
   mapLayer: Graphics;
+  gridLayer: Graphics;
 };
 
 const MAP_BORDER_STYLE = {
@@ -23,6 +32,15 @@ const MAP_BORDER_STYLE = {
   width: 1,
   alpha: 0.2,
 } as const;
+
+const GRID_LINE_STYLE = {
+  color: 0xffffff,
+  width: 1,
+  alpha: 0.28,
+} as const;
+
+const FALLBACK_BACKGROUND_COLOR = '#000000';
+const GRID_HEX_DRAW_LIMIT = 3200;
 
 export default function BattleMapRuntimeCanvas({
   runtimeConfig,
@@ -83,11 +101,15 @@ export default function BattleMapRuntimeCanvas({
     const halfWidth = viewportWidth * 0.5;
     const halfHeight = viewportHeight * 0.5;
     const { map } = runtimeConfigRef.current;
+    const hasMapImage = mapSpriteRef.current !== null;
+    const fillColor = hasMapImage
+      ? map.backgroundColor
+      : FALLBACK_BACKGROUND_COLOR;
 
     stageGraph.backgroundLayer
       .clear()
       .rect(-halfWidth, -halfHeight, viewportWidth, viewportHeight)
-      .fill(map.backgroundColor);
+      .fill(fillColor);
 
     stageGraph.mapLayer
       .clear()
@@ -100,6 +122,111 @@ export default function BattleMapRuntimeCanvas({
       mapSprite.position.set(0, 0);
       mapSprite.width = viewportWidth;
       mapSprite.height = viewportHeight;
+    }
+  };
+
+  const syncGridLayer = () => {
+    const app = appRef.current;
+    const stageGraph = stageGraphRef.current;
+    if (!app || !stageGraph) {
+      return;
+    }
+
+    const gridLayer = stageGraph.gridLayer;
+    const { grid, camera } = runtimeConfigRef.current;
+    gridLayer.clear();
+
+    if (grid.mode === 'none') {
+      return;
+    }
+
+    const cellSize = clampGridCellSize(grid.cellSize);
+    const bounds = getWorldViewportBounds(
+      app.screen.width,
+      app.screen.height,
+      camera,
+    );
+    const linePadding = cellSize * 2;
+
+    if (grid.mode === 'square') {
+      const verticals = getSquareGridLinePositions(
+        bounds.left,
+        bounds.right,
+        grid.originX,
+        cellSize,
+      );
+      const horizontals = getSquareGridLinePositions(
+        bounds.top,
+        bounds.bottom,
+        grid.originY,
+        cellSize,
+      );
+
+      for (const x of verticals) {
+        gridLayer.moveTo(x, bounds.top - linePadding);
+        gridLayer.lineTo(x, bounds.bottom + linePadding);
+      }
+
+      for (const y of horizontals) {
+        gridLayer.moveTo(bounds.left - linePadding, y);
+        gridLayer.lineTo(bounds.right + linePadding, y);
+      }
+
+      if (verticals.length > 0 || horizontals.length > 0) {
+        gridLayer.stroke(GRID_LINE_STYLE);
+      }
+      return;
+    }
+
+    const vertexOffsets = getPointyHexVertexOffsets(cellSize);
+    const axialRange = getPointyHexRangeForBounds(
+      bounds,
+      grid.originX,
+      grid.originY,
+      cellSize,
+      2,
+    );
+    let renderedHexCount = 0;
+
+    for (let q = axialRange.qMin; q <= axialRange.qMax; q += 1) {
+      for (let r = axialRange.rMin; r <= axialRange.rMax; r += 1) {
+        if (renderedHexCount >= GRID_HEX_DRAW_LIMIT) {
+          break;
+        }
+
+        const center = pointyHexCenterFromAxial(
+          q,
+          r,
+          grid.originX,
+          grid.originY,
+          cellSize,
+        );
+        if (
+          center.x < bounds.left - linePadding ||
+          center.x > bounds.right + linePadding ||
+          center.y < bounds.top - linePadding ||
+          center.y > bounds.bottom + linePadding
+        ) {
+          continue;
+        }
+
+        const firstVertex = vertexOffsets[0];
+        gridLayer.moveTo(center.x + firstVertex.x, center.y + firstVertex.y);
+        for (let index = 1; index < vertexOffsets.length; index += 1) {
+          const vertex = vertexOffsets[index];
+          gridLayer.lineTo(center.x + vertex.x, center.y + vertex.y);
+        }
+        gridLayer.closePath();
+        renderedHexCount += 1;
+      }
+
+      if (renderedHexCount >= GRID_HEX_DRAW_LIMIT) {
+        break;
+      }
+    }
+
+    if (renderedHexCount > 0) {
+      gridLayer.stroke(GRID_LINE_STYLE);
     }
   };
 
@@ -118,6 +245,7 @@ export default function BattleMapRuntimeCanvas({
     imageLoadIdRef.current += 1;
     const loadId = imageLoadIdRef.current;
     removeMapSprite();
+    syncBaseLayers();
 
     if (!imageSrc) {
       return;
@@ -139,6 +267,7 @@ export default function BattleMapRuntimeCanvas({
       syncBaseLayers();
     } catch {
       mapImageSrcRef.current = null;
+      syncBaseLayers();
     }
   };
 
@@ -146,6 +275,7 @@ export default function BattleMapRuntimeCanvas({
     runtimeConfigRef.current = runtimeConfig;
     syncBaseLayers();
     syncCameraTransform();
+    syncGridLayer();
   }, [runtimeConfig]);
 
   useEffect(() => {
@@ -188,9 +318,11 @@ export default function BattleMapRuntimeCanvas({
       const uiContainer = new Container();
       const backgroundLayer = new Graphics();
       const mapLayer = new Graphics();
+      const gridLayer = new Graphics();
 
       backgroundContainer.addChild(backgroundLayer);
       mapContainer.addChild(mapLayer);
+      gridContainer.addChild(gridLayer);
       worldContainer.addChild(backgroundContainer);
       worldContainer.addChild(mapContainer);
       worldContainer.addChild(imageContainer);
@@ -209,15 +341,18 @@ export default function BattleMapRuntimeCanvas({
         uiContainer,
         backgroundLayer,
         mapLayer,
+        gridLayer,
       };
 
       syncBaseLayers();
       syncCameraTransform();
+      syncGridLayer();
       void syncMapImage();
 
       resizeObserver = new ResizeObserver(() => {
         syncBaseLayers();
         syncCameraTransform();
+        syncGridLayer();
       });
       resizeObserver.observe(hostElement);
     };
