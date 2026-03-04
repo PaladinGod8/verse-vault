@@ -23,7 +23,7 @@ Tokens Image DnD Step 01 (2026-03-04) adds `TOKENS_IMPORT_IMAGE` (`db:tokens:imp
 
 Tokens Image Protocol Step 02 (2026-03-05) keeps the same IPC channel and payload/response shapes, but changes `TOKENS_IMPORT_IMAGE` response semantics: `image_src` now uses app-local `vv-media://token-images/<encoded-file-name>` URLs instead of direct `file://` URLs. Main process registers a `vv-media` protocol handler that serves files from the app-owned `token-images` directory with path traversal guards.
 
-Token Move Step 01 (2026-03-05) adds token move channels `TOKENS_MOVE_TO_WORLD` and `TOKENS_MOVE_TO_CAMPAIGN`, wires main-process handlers, and extends `DbApi.tokens` signatures with `moveToWorld(tokenId)` and `moveToCampaign(tokenId, targetCampaignId)`.
+Token Move Step 01 (2026-03-05) adds token move channels `TOKENS_MOVE_TO_WORLD` and `TOKENS_MOVE_TO_CAMPAIGN`, wires main-process handlers, and extends `DbApi.tokens` signatures with `moveToWorld(tokenId)` and `moveToCampaign(tokenId, targetCampaignId)`. Token Move Step 02 (2026-03-05) wires both methods in preload via `window.db.tokens.moveToWorld(tokenId)` and `window.db.tokens.moveToCampaign(tokenId, targetCampaignId)`.
 
 Runtime Step 01 (2026-03-04) also hardens BattleMap config validation in `main` so `config` is a JSON object with runtime-ready defaults at `runtime.grid`, `runtime.map`, and `runtime.camera`; scene payload validation remains backward-compatible while validating optional runtime linkage field `payload.runtime.battlemap_id`.
 
