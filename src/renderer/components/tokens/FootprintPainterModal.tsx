@@ -373,7 +373,7 @@ export default function FootprintPainterModal({
       isOpen={isOpen}
       onClose={onClose}
       ariaLabel="Footprint Painter"
-      className="z-[1100] px-0 pointer-events-none"
+      className="pointer-events-none z-[1100] px-0"
       boxClassName="max-w-6xl w-full h-[90vh] flex flex-col p-0 pointer-events-auto"
       closeOnBackdrop={false}
     >
