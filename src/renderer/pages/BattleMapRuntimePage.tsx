@@ -6,18 +6,105 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
-import BattleMapRuntimeCanvas from '../components/runtime/BattleMapRuntimeCanvas';
+import BattleMapRuntimeCanvas, {
+  type RuntimeSceneToken,
+} from '../components/runtime/BattleMapRuntimeCanvas';
 import RuntimeGridControls from '../components/runtime/RuntimeGridControls';
+import RuntimeTokenPalette from '../components/runtime/RuntimeTokenPalette';
 import {
   mergeBattleMapConfigWithRuntime,
   normalizeRuntimeGridConfig,
   parseBattleMapRuntimeState,
   serializeRuntimeConfig,
 } from '../lib/battlemapRuntimeState';
+import { clampGridCellSize } from '../lib/runtimeMath';
 
 const RUNTIME_SAVE_DEBOUNCE_MS = 220;
 const UNSAVED_RUNTIME_CONFIRMATION_MESSAGE =
   'Some runtime changes are still unsaved. Exit runtime and discard those changes?';
+const TOKEN_PLACEMENT_COLUMNS = 5;
+const TOKEN_PLACEMENT_OFFSET_FACTOR = 0.35;
+const SQRT_3 = Math.sqrt(3);
+
+function roundPointyHexAxial(
+  q: number,
+  r: number,
+): { roundedQ: number; roundedR: number } {
+  const x = q;
+  const z = r;
+  const y = -x - z;
+
+  let roundedX = Math.round(x);
+  let roundedY = Math.round(y);
+  let roundedZ = Math.round(z);
+
+  const xDiff = Math.abs(roundedX - x);
+  const yDiff = Math.abs(roundedY - y);
+  const zDiff = Math.abs(roundedZ - z);
+
+  if (xDiff > yDiff && xDiff > zDiff) {
+    roundedX = -roundedY - roundedZ;
+  } else if (yDiff > zDiff) {
+    roundedY = -roundedX - roundedZ;
+  } else {
+    roundedZ = -roundedX - roundedY;
+  }
+
+  return { roundedQ: roundedX, roundedR: roundedZ };
+}
+
+function snapTokenPositionToGrid(
+  x: number,
+  y: number,
+  gridConfig: BattleMapRuntimeGridConfig,
+): { x: number; y: number } {
+  if (gridConfig.mode === 'none') {
+    return { x, y };
+  }
+
+  const cellSize = clampGridCellSize(gridConfig.cellSize);
+  if (gridConfig.mode === 'square') {
+    return {
+      x:
+        gridConfig.originX +
+        (Math.floor((x - gridConfig.originX) / cellSize) + 0.5) * cellSize,
+      y:
+        gridConfig.originY +
+        (Math.floor((y - gridConfig.originY) / cellSize) + 0.5) * cellSize,
+    };
+  }
+
+  const radius = cellSize * 0.5;
+  const shiftedX = x - gridConfig.originX;
+  const shiftedY = y - gridConfig.originY;
+  const q = ((SQRT_3 / 3) * shiftedX - shiftedY / 3) / radius;
+  const r = ((2 / 3) * shiftedY) / radius;
+  const { roundedQ, roundedR } = roundPointyHexAxial(q, r);
+  return {
+    x: gridConfig.originX + radius * SQRT_3 * (roundedQ + roundedR * 0.5),
+    y: gridConfig.originY + radius * 1.5 * roundedR,
+  };
+}
+
+function getTokenPlacementPosition(
+  existingCount: number,
+  runtimeConfig: BattleMapRuntimeConfig,
+): { x: number; y: number } {
+  const cellSize = clampGridCellSize(runtimeConfig.grid.cellSize);
+  const row = Math.floor(existingCount / TOKEN_PLACEMENT_COLUMNS);
+  const column = existingCount % TOKEN_PLACEMENT_COLUMNS;
+  const offsetX =
+    (column - Math.floor(TOKEN_PLACEMENT_COLUMNS / 2)) *
+    cellSize *
+    TOKEN_PLACEMENT_OFFSET_FACTOR;
+  const offsetY = row * cellSize * TOKEN_PLACEMENT_OFFSET_FACTOR;
+
+  return snapTokenPositionToGrid(
+    runtimeConfig.camera.x + offsetX,
+    runtimeConfig.camera.y + offsetY,
+    runtimeConfig.grid,
+  );
+}
 
 export default function BattleMapRuntimePage() {
   const navigate = useNavigate();
@@ -63,6 +150,23 @@ export default function BattleMapRuntimePage() {
   const [error, setError] = useState<string | null>(null);
   const [isSavingRuntimeConfig, setIsSavingRuntimeConfig] = useState(false);
   const [runtimeSaveError, setRuntimeSaveError] = useState<string | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+  const [campaignLoadError, setCampaignLoadError] = useState<string | null>(
+    null,
+  );
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(
+    null,
+  );
+  const [campaignTokens, setCampaignTokens] = useState<Token[]>([]);
+  const [isLoadingCampaignTokens, setIsLoadingCampaignTokens] = useState(false);
+  const [campaignTokenLoadError, setCampaignTokenLoadError] = useState<
+    string | null
+  >(null);
+  const [runtimeTokens, setRuntimeTokens] = useState<RuntimeSceneToken[]>([]);
+  const [selectedRuntimeTokenInstanceId, setSelectedRuntimeTokenInstanceId] =
+    useState<string | null>(null);
+  const [showInvisibleTokens, setShowInvisibleTokens] = useState(true);
 
   const battleMapConfigRef = useRef<Record<string, unknown> | null>(null);
   const runtimeConfigRef = useRef<BattleMapRuntimeConfig | null>(null);
@@ -71,6 +175,7 @@ export default function BattleMapRuntimePage() {
   const activeRuntimeSavePromiseRef = useRef<Promise<boolean> | null>(null);
   const isResolvingBlockedNavigationRef = useRef(false);
   const lastPersistedRuntimeConfigKeyRef = useRef<string | null>(null);
+  const runtimeTokenInstanceIdCounterRef = useRef(0);
 
   const clearRuntimeSaveTimer = useCallback(() => {
     if (runtimeSaveTimerRef.current !== null) {
@@ -306,12 +411,158 @@ export default function BattleMapRuntimePage() {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (worldId === null) {
+      setCampaigns([]);
+      setSelectedCampaignId(null);
+      setCampaignLoadError(null);
+      setIsLoadingCampaigns(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const loadCampaigns = async () => {
+      setIsLoadingCampaigns(true);
+      setCampaignLoadError(null);
+
+      try {
+        const worldCampaigns = await window.db.campaigns.getAllByWorld(worldId);
+        if (!isMounted) {
+          return;
+        }
+        setCampaigns(worldCampaigns);
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+        setCampaigns([]);
+        setCampaignLoadError('Unable to load campaigns for runtime tokens.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingCampaigns(false);
+        }
+      }
+    };
+
+    void loadCampaigns();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [worldId]);
+
+  useEffect(() => {
+    if (campaigns.length === 0) {
+      setSelectedCampaignId(null);
+      return;
+    }
+
+    const hasSelectedCampaign =
+      selectedCampaignId !== null &&
+      campaigns.some((campaign) => campaign.id === selectedCampaignId);
+    if (hasSelectedCampaign) {
+      return;
+    }
+
+    setSelectedCampaignId(campaigns[0].id);
+  }, [campaigns, selectedCampaignId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (selectedCampaignId === null) {
+      setCampaignTokens([]);
+      setCampaignTokenLoadError(null);
+      setIsLoadingCampaignTokens(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const loadCampaignTokens = async () => {
+      setIsLoadingCampaignTokens(true);
+      setCampaignTokenLoadError(null);
+
+      try {
+        const tokens =
+          await window.db.tokens.getAllByCampaign(selectedCampaignId);
+        if (!isMounted) {
+          return;
+        }
+
+        setCampaignTokens(tokens);
+        setRuntimeTokens((currentTokens) => {
+          const tokenById = new Map(tokens.map((token) => [token.id, token]));
+          return currentTokens.map((runtimeToken) => {
+            if (
+              runtimeToken.campaignId !== selectedCampaignId ||
+              runtimeToken.sourceTokenId === null
+            ) {
+              return runtimeToken;
+            }
+
+            const sourceToken = tokenById.get(runtimeToken.sourceTokenId);
+            if (!sourceToken) {
+              return {
+                ...runtimeToken,
+                sourceMissing: true,
+              };
+            }
+
+            return {
+              ...runtimeToken,
+              name: sourceToken.name,
+              imageSrc: sourceToken.image_src,
+              isVisible: sourceToken.is_visible === 1,
+              sourceMissing: false,
+            };
+          });
+        });
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+        setCampaignTokens([]);
+        setCampaignTokenLoadError('Unable to load tokens for this campaign.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingCampaignTokens(false);
+        }
+      }
+    };
+
+    void loadCampaignTokens();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCampaignId]);
+
+  useEffect(() => {
+    if (selectedRuntimeTokenInstanceId === null) {
+      return;
+    }
+
+    const hasSelectedToken = runtimeTokens.some(
+      (token) => token.instanceId === selectedRuntimeTokenInstanceId,
+    );
+    if (!hasSelectedToken) {
+      setSelectedRuntimeTokenInstanceId(null);
+    }
+  }, [runtimeTokens, selectedRuntimeTokenInstanceId]);
+
+  useEffect(() => {
+    let isMounted = true;
     clearRuntimeSaveTimer();
     setIsSavingRuntimeConfig(false);
     setRuntimeSaveError(null);
     activeRuntimeSavePromiseRef.current = null;
     runtimeSaveRequestIdRef.current += 1;
     lastPersistedRuntimeConfigKeyRef.current = null;
+    runtimeTokenInstanceIdCounterRef.current = 0;
+    setRuntimeTokens([]);
+    setSelectedRuntimeTokenInstanceId(null);
 
     if (worldId === null || parsedBattleMapId === null) {
       setBattleMap(null);
@@ -319,6 +570,7 @@ export default function BattleMapRuntimePage() {
       battleMapConfigRef.current = null;
       setRuntimeConfig(null);
       runtimeConfigRef.current = null;
+      setCampaignTokens([]);
       setError('Invalid world or BattleMap id.');
       setIsLoading(false);
       return () => {
@@ -340,6 +592,8 @@ export default function BattleMapRuntimePage() {
             battleMapConfigRef.current = null;
             setRuntimeConfig(null);
             runtimeConfigRef.current = null;
+            setRuntimeTokens([]);
+            setSelectedRuntimeTokenInstanceId(null);
             setError('BattleMap not found.');
           }
           return;
@@ -356,6 +610,8 @@ export default function BattleMapRuntimePage() {
             battleMapConfigRef.current = parsedRuntimeState.battleMapConfig;
             setRuntimeConfig(parsedRuntimeState.runtimeConfig);
             runtimeConfigRef.current = parsedRuntimeState.runtimeConfig;
+            setRuntimeTokens([]);
+            setSelectedRuntimeTokenInstanceId(null);
             lastPersistedRuntimeConfigKeyRef.current =
               parsedRuntimeState.runtimeConfigKey;
           }
@@ -366,6 +622,8 @@ export default function BattleMapRuntimePage() {
             battleMapConfigRef.current = null;
             setRuntimeConfig(null);
             runtimeConfigRef.current = null;
+            setRuntimeTokens([]);
+            setSelectedRuntimeTokenInstanceId(null);
             lastPersistedRuntimeConfigKeyRef.current = null;
             setError(
               'Invalid runtime config JSON. Update this BattleMap config before entering runtime.',
@@ -380,6 +638,8 @@ export default function BattleMapRuntimePage() {
           battleMapConfigRef.current = null;
           setRuntimeConfig(null);
           runtimeConfigRef.current = null;
+          setRuntimeTokens([]);
+          setSelectedRuntimeTokenInstanceId(null);
           lastPersistedRuntimeConfigKeyRef.current = null;
           setError('Unable to load BattleMap runtime right now.');
         }
@@ -429,6 +689,88 @@ export default function BattleMapRuntimePage() {
 
     clearRuntimeSaveTimer();
     setIsSavingRuntimeConfig(false);
+  };
+
+  const handleCampaignSelectionChange = (campaignId: number | null) => {
+    setSelectedCampaignId(campaignId);
+  };
+
+  const handleAddRuntimeToken = (token: Token) => {
+    const currentRuntimeConfig = runtimeConfigRef.current;
+    if (!currentRuntimeConfig) {
+      return;
+    }
+
+    let nextSelectedTokenInstanceId: string | null = null;
+    setRuntimeTokens((currentTokens) => {
+      const existingRuntimeToken = currentTokens.find(
+        (runtimeToken) =>
+          runtimeToken.campaignId === token.campaign_id &&
+          runtimeToken.sourceTokenId === token.id &&
+          !runtimeToken.sourceMissing,
+      );
+      if (existingRuntimeToken) {
+        nextSelectedTokenInstanceId = existingRuntimeToken.instanceId;
+        return currentTokens;
+      }
+
+      runtimeTokenInstanceIdCounterRef.current += 1;
+      const instanceId = `runtime-token-${token.id}-${runtimeTokenInstanceIdCounterRef.current}`;
+      const placement = getTokenPlacementPosition(
+        currentTokens.length,
+        currentRuntimeConfig,
+      );
+      nextSelectedTokenInstanceId = instanceId;
+
+      return [
+        ...currentTokens,
+        {
+          instanceId,
+          sourceTokenId: token.id,
+          campaignId: token.campaign_id,
+          name: token.name,
+          imageSrc: token.image_src,
+          isVisible: token.is_visible === 1,
+          sourceMissing: false,
+          x: placement.x,
+          y: placement.y,
+        },
+      ];
+    });
+
+    if (nextSelectedTokenInstanceId) {
+      setSelectedRuntimeTokenInstanceId(nextSelectedTokenInstanceId);
+    }
+  };
+
+  const handleSelectRuntimeToken = (tokenInstanceId: string | null) => {
+    setSelectedRuntimeTokenInstanceId(tokenInstanceId);
+  };
+
+  const handleMoveRuntimeToken = (
+    tokenInstanceId: string,
+    position: { x: number; y: number },
+  ) => {
+    setRuntimeTokens((currentTokens) =>
+      currentTokens.map((runtimeToken) =>
+        runtimeToken.instanceId === tokenInstanceId
+          ? { ...runtimeToken, x: position.x, y: position.y }
+          : runtimeToken,
+      ),
+    );
+  };
+
+  const handleRemoveRuntimeToken = (tokenInstanceId: string) => {
+    setRuntimeTokens((currentTokens) =>
+      currentTokens.filter(
+        (runtimeToken) => runtimeToken.instanceId !== tokenInstanceId,
+      ),
+    );
+    setSelectedRuntimeTokenInstanceId((currentSelectedTokenInstanceId) =>
+      currentSelectedTokenInstanceId === tokenInstanceId
+        ? null
+        : currentSelectedTokenInstanceId,
+    );
   };
 
   const handleExitRuntime = () => {
@@ -487,8 +829,8 @@ export default function BattleMapRuntimePage() {
                 Runtime Canvas
               </h2>
               <p className="text-sm text-slate-300">
-                Grid mode, cell size, and origin offsets update instantly and
-                persist to BattleMap config.
+                Grid settings persist automatically. Token placement and
+                movement are runtime-only for this session.
               </p>
             </div>
 
@@ -501,10 +843,32 @@ export default function BattleMapRuntimePage() {
               />
             ) : null}
 
+            <RuntimeTokenPalette
+              campaigns={campaigns}
+              selectedCampaignId={selectedCampaignId}
+              isLoadingCampaigns={isLoadingCampaigns}
+              campaignLoadError={campaignLoadError}
+              tokens={campaignTokens}
+              isLoadingTokens={isLoadingCampaignTokens}
+              tokenLoadError={campaignTokenLoadError}
+              placedTokens={runtimeTokens}
+              selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
+              showInvisibleTokens={showInvisibleTokens}
+              onShowInvisibleTokensChange={setShowInvisibleTokens}
+              onSelectCampaign={handleCampaignSelectionChange}
+              onAddToken={handleAddRuntimeToken}
+              onSelectPlacedToken={handleSelectRuntimeToken}
+              onRemovePlacedToken={handleRemoveRuntimeToken}
+            />
+
             <div className="h-[55vh] min-h-[320px]">
               {runtimeConfig ? (
                 <BattleMapRuntimeCanvas
                   runtimeConfig={runtimeConfig}
+                  tokens={runtimeTokens}
+                  selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
+                  onTokenSelect={handleSelectRuntimeToken}
+                  onTokenMove={handleMoveRuntimeToken}
                   className="h-full w-full"
                 />
               ) : null}
