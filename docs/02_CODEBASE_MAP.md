@@ -595,6 +595,17 @@
 - **Preload bridge**: unchanged in this step
 - **Storage**: renderer-only interaction update; runtime canvas now keeps local camera state for pan/focus, converts pointer screen deltas to world-space camera shifts, blocks camera pan while token drag is active, interpolates camera center toward selected tokens, and immediately cancels focus animation when manual pan begins.
 
+### Runtime Wheel Zoom (Step 02)
+
+- **Purpose**: add pointer-centered mouse wheel zoom on the runtime Pixi canvas, clamped to fit-to-edges minimum and configured maximum.
+- **Status**: added on 2026-03-05
+- **UI**: `src/renderer/components/runtime/BattleMapRuntimeCanvas.tsx`
+- **Store**: none yet
+- **IPC**: unchanged in this step
+- **Main handler**: unchanged in this step
+- **Preload bridge**: unchanged in this step
+- **Storage**: renderer-only; native `wheel` DOM listener (non-passive) on the Pixi canvas normalises `deltaY` across DOM delta modes (pixel/line/page), scales zoom by `1.001^delta`, adjusts camera position to keep the world point under the cursor fixed, clamps via `clampCameraZoom`/`getEffectiveMinZoom`, cancels any active camera focus animation, and blocks zoom during active token drag.
+
 ### Campaign Main CRUD Handlers (Step 07)
 
 - **Purpose**: add campaign CRUD handlers in main process scoped by world with explicit partial-update behavior

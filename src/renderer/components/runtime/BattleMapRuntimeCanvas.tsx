@@ -114,6 +114,9 @@ const TOKEN_MISSING_TINT = 0xf97316;
 const SQRT_3 = Math.sqrt(3);
 const CAMERA_FOCUS_SMOOTHING = 0.18;
 const CAMERA_FOCUS_SNAP_DISTANCE = 0.5;
+const WHEEL_ZOOM_BASE = 1.001;
+const WHEEL_LINE_HEIGHT = 16;
+const WHEEL_PAGE_HEIGHT = 400;
 
 const TOKEN_FALLBACK_COLORS = [
   0x22c55e, 0x0ea5e9, 0xf59e0b, 0xec4899, 0xeab308, 0x14b8a6, 0x8b5cf6,
@@ -244,6 +247,7 @@ export default function BattleMapRuntimeCanvas({
   const cameraFocusAnimationRef = useRef<CameraFocusAnimation | null>(null);
   const removeDragListenersRef = useRef<(() => void) | null>(null);
   const removeCameraPanListenersRef = useRef<(() => void) | null>(null);
+  const removeWheelListenerRef = useRef<(() => void) | null>(null);
 
   const removeMapSprite = () => {
     const sprite = mapSpriteRef.current;
@@ -270,6 +274,11 @@ export default function BattleMapRuntimeCanvas({
   const removeCameraPanListeners = () => {
     removeCameraPanListenersRef.current?.();
     removeCameraPanListenersRef.current = null;
+  };
+
+  const removeWheelListener = () => {
+    removeWheelListenerRef.current?.();
+    removeWheelListenerRef.current = null;
   };
 
   const getTokenByInstanceId = (tokenInstanceId: string) => {
@@ -1140,6 +1149,58 @@ export default function BattleMapRuntimeCanvas({
         startCameraPan(event);
       });
 
+      const wheelCanvas = app.canvas as HTMLCanvasElement;
+      const handleWheel = (event: WheelEvent) => {
+        if (activeTokenDragRef.current) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const normalizedDelta =
+          event.deltaMode === 1
+            ? event.deltaY * WHEEL_LINE_HEIGHT
+            : event.deltaMode === 2
+              ? event.deltaY * WHEEL_PAGE_HEIGHT
+              : event.deltaY;
+
+        const factor = Math.pow(WHEEL_ZOOM_BASE, normalizedDelta);
+        const camera = cameraStateRef.current;
+        const oldZoom = getSafeCameraZoom(camera.zoom);
+        const minZoom = getEffectiveMinZoom();
+        const newZoom = clampCameraZoom(oldZoom * factor, minZoom);
+
+        if (newZoom === oldZoom) {
+          return;
+        }
+
+        const rect = wheelCanvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+          return;
+        }
+
+        const screenX =
+          ((event.clientX - rect.left) / rect.width) * app.screen.width;
+        const screenY =
+          ((event.clientY - rect.top) / rect.height) * app.screen.height;
+        const halfVpW = app.screen.width * 0.5;
+        const halfVpH = app.screen.height * 0.5;
+
+        // Keep the world point under the cursor fixed while zooming.
+        const worldX = camera.x + (screenX - halfVpW) / oldZoom;
+        const worldY = camera.y + (screenY - halfVpH) / oldZoom;
+        const newCameraX = worldX - (screenX - halfVpW) / newZoom;
+        const newCameraY = worldY - (screenY - halfVpH) / newZoom;
+
+        stopCameraFocusAnimation();
+        applyCameraState({ x: newCameraX, y: newCameraY, zoom: newZoom });
+      };
+
+      wheelCanvas.addEventListener('wheel', handleWheel, { passive: false });
+      removeWheelListenerRef.current = () => {
+        wheelCanvas.removeEventListener('wheel', handleWheel);
+      };
+
       stageGraphRef.current = {
         worldContainer,
         backgroundContainer,
@@ -1185,6 +1246,7 @@ export default function BattleMapRuntimeCanvas({
       stopCameraFocusAnimation();
       removeDragListeners();
       removeCameraPanListeners();
+      removeWheelListener();
       clearTokenDisplays();
       removeMapSprite();
       stageGraphRef.current = null;
