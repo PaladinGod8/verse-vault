@@ -4,11 +4,55 @@ import path from 'path';
 
 const mainJs = path.join(__dirname, '../../.vite/build/main.js');
 
+async function getMainWindow(
+  app: import('playwright').ElectronApplication,
+): Promise<import('@playwright/test').Page> {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const windows = app.windows();
+    const mainWindow = windows.find(
+      (candidate) => !candidate.url().startsWith('devtools://'),
+    );
+    if (mainWindow) {
+      return mainWindow;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  throw new Error('Unable to find Electron main window for E2E test.');
+}
+
 function battleMapRow(
   window: import('@playwright/test').Page,
   battleMapName: string,
 ) {
   return window.locator('tbody tr').filter({ hasText: battleMapName }).first();
+}
+
+async function ensureWorldsLanding(window: import('@playwright/test').Page) {
+  if (await window.getByRole('button', { name: 'Create world' }).isVisible()) {
+    return;
+  }
+
+  const backToWorldsLink = window.getByRole('link', { name: 'Back to worlds' });
+  if (await backToWorldsLink.isVisible().catch(() => false)) {
+    await backToWorldsLink.click();
+  } else {
+    const backToWorldLink = window.getByRole('link', { name: 'Back to world' });
+    if (await backToWorldLink.isVisible().catch(() => false)) {
+      await backToWorldLink.click();
+    }
+
+    if (await backToWorldsLink.isVisible().catch(() => false)) {
+      await backToWorldsLink.click();
+    }
+  }
+
+  await expect(
+    window.getByRole('heading', { name: 'Worlds', level: 1 }),
+  ).toBeVisible();
+  await expect(
+    window.getByRole('button', { name: 'Create world' }),
+  ).toBeVisible();
 }
 
 test('battlemaps CRUD flow works end to end', async () => {
@@ -18,9 +62,13 @@ test('battlemaps CRUD flow works end to end', async () => {
   const app = await electron.launch({ args: [mainJs], env });
 
   try {
-    const window = await app.firstWindow();
+    const window = await getMainWindow(app);
     await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0];
+      const win =
+        BrowserWindow.getAllWindows().find((candidate) => {
+          const url = candidate.webContents.getURL();
+          return !url.startsWith('devtools://');
+        }) ?? BrowserWindow.getAllWindows()[0];
       if (!win) {
         return;
       }
@@ -30,6 +78,7 @@ test('battlemaps CRUD flow works end to end', async () => {
     });
     await window.bringToFront();
     await window.waitForLoadState('domcontentloaded');
+    await ensureWorldsLanding(window);
 
     const unique = Date.now().toString();
     const worldName = `E2E BattleMap World ${unique}`;
@@ -65,6 +114,19 @@ test('battlemaps CRUD flow works end to end', async () => {
     await createDialog
       .getByRole('button', { name: 'Create BattleMap' })
       .click();
+    await expect(battleMapRow(window, battleMapName)).toBeVisible();
+    await expect(
+      battleMapRow(window, battleMapName).getByRole('link', { name: 'Play' }),
+    ).toBeVisible();
+
+    await battleMapRow(window, battleMapName)
+      .getByRole('link', { name: 'Play' })
+      .click();
+    await expect(window.getByText('Runtime Canvas')).toBeVisible();
+    await expect(
+      window.getByRole('button', { name: 'Exit Runtime' }),
+    ).toBeVisible();
+    await window.getByRole('button', { name: 'Exit Runtime' }).click();
     await expect(battleMapRow(window, battleMapName)).toBeVisible();
 
     await battleMapRow(window, battleMapName)
