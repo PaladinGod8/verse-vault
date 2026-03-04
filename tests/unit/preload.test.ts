@@ -32,6 +32,7 @@ describe('preload', () => {
         worlds: expect.any(Object),
         campaigns: expect.any(Object),
         battlemaps: expect.any(Object),
+        tokens: expect.any(Object),
         arcs: expect.any(Object),
         acts: expect.any(Object),
         sessions: expect.any(Object),
@@ -106,6 +107,15 @@ describe('preload', () => {
     await api.scenes.update(51, { payload: '{}' });
     await api.scenes.delete(51);
     await api.scenes.moveTo(51, 42);
+    await api.tokens.getAllByCampaign(1);
+    await api.tokens.getById(71);
+    await api.tokens.add({
+      campaign_id: 1,
+      name: 'Token',
+      image_src: 'token.png',
+    });
+    await api.tokens.update(71, { is_visible: 0 });
+    await api.tokens.delete(71);
 
     expect(invokeMock).toHaveBeenNthCalledWith(1, IPC.VERSES_GET_ALL);
     expect(invokeMock).toHaveBeenNthCalledWith(2, IPC.VERSES_ADD, {
@@ -268,5 +278,20 @@ describe('preload', () => {
       51,
       42,
     );
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      54,
+      IPC.TOKENS_GET_ALL_BY_CAMPAIGN,
+      1,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(55, IPC.TOKENS_GET_BY_ID, 71);
+    expect(invokeMock).toHaveBeenNthCalledWith(56, IPC.TOKENS_ADD, {
+      campaign_id: 1,
+      name: 'Token',
+      image_src: 'token.png',
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(57, IPC.TOKENS_UPDATE, 71, {
+      is_visible: 0,
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(58, IPC.TOKENS_DELETE, 71);
   });
 });
