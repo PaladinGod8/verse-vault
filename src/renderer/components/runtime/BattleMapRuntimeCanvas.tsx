@@ -11,11 +11,14 @@ import {
 import type { FederatedPointerEvent } from 'pixi.js';
 import {
   clampGridCellSize,
+  getSafeCameraZoom,
   getPointyHexRangeForBounds,
   getPointyHexVertexOffsets,
   getSquareGridLinePositions,
   getWorldViewportBounds,
   pointyHexCenterFromAxial,
+  stepCameraCenterTowardTarget,
+  worldDeltaFromScreenDelta,
 } from '../../lib/runtimeMath';
 
 export type RuntimeSceneToken = {
@@ -69,6 +72,17 @@ type ActiveTokenDrag = {
   pointerId: number;
   offsetX: number;
   offsetY: number;
+  didMove: boolean;
+};
+
+type ActiveCameraPan = {
+  pointerId: number;
+  lastClientX: number;
+  lastClientY: number;
+};
+
+type CameraFocusAnimation = {
+  tick: () => void;
 };
 
 const MAP_BORDER_STYLE = {
@@ -92,6 +106,8 @@ const SELECTED_TOKEN_RING_COLOR = 0x38bdf8;
 const MISSING_TOKEN_RING_COLOR = 0xf97316;
 const TOKEN_MISSING_TINT = 0xf97316;
 const SQRT_3 = Math.sqrt(3);
+const CAMERA_FOCUS_SMOOTHING = 0.18;
+const CAMERA_FOCUS_SNAP_DISTANCE = 0.5;
 
 const TOKEN_FALLBACK_COLORS = [
   0x22c55e, 0x0ea5e9, 0xf59e0b, 0xec4899, 0xeab308, 0x14b8a6, 0x8b5cf6,
@@ -185,6 +201,12 @@ function snapTokenPositionToGrid(
   return snapHexTokenPosition(x, y, gridConfig);
 }
 
+function getCameraConfigKey(
+  camera: Pick<BattleMapRuntimeCameraConfig, 'x' | 'y' | 'zoom'>,
+): string {
+  return `${camera.x}:${camera.y}:${camera.zoom}`;
+}
+
 export default function BattleMapRuntimeCanvas({
   runtimeConfig,
   tokens,
@@ -202,11 +224,20 @@ export default function BattleMapRuntimeCanvas({
   const runtimeConfigRef = useRef(runtimeConfig);
   const tokensRef = useRef(tokens);
   const selectedTokenInstanceIdRef = useRef(selectedTokenInstanceId);
+  const cameraStateRef = useRef<BattleMapRuntimeCameraConfig>({
+    x: runtimeConfig.camera.x,
+    y: runtimeConfig.camera.y,
+    zoom: getSafeCameraZoom(runtimeConfig.camera.zoom),
+  });
+  const runtimeCameraKeyRef = useRef(getCameraConfigKey(runtimeConfig.camera));
   const onTokenSelectRef = useRef(onTokenSelect);
   const onTokenMoveRef = useRef(onTokenMove);
   const tokenDisplaysRef = useRef<Map<string, TokenDisplay>>(new Map());
   const activeTokenDragRef = useRef<ActiveTokenDrag | null>(null);
+  const activeCameraPanRef = useRef<ActiveCameraPan | null>(null);
+  const cameraFocusAnimationRef = useRef<CameraFocusAnimation | null>(null);
   const removeDragListenersRef = useRef<(() => void) | null>(null);
+  const removeCameraPanListenersRef = useRef<(() => void) | null>(null);
 
   const removeMapSprite = () => {
     const sprite = mapSpriteRef.current;
@@ -228,6 +259,11 @@ export default function BattleMapRuntimeCanvas({
   const removeDragListeners = () => {
     removeDragListenersRef.current?.();
     removeDragListenersRef.current = null;
+  };
+
+  const removeCameraPanListeners = () => {
+    removeCameraPanListenersRef.current?.();
+    removeCameraPanListenersRef.current = null;
   };
 
   const getTokenByInstanceId = (tokenInstanceId: string) => {
@@ -426,6 +462,63 @@ export default function BattleMapRuntimeCanvas({
     tokenDisplaysRef.current.clear();
   };
 
+  const stopCameraFocusAnimation = () => {
+    const app = appRef.current;
+    const animation = cameraFocusAnimationRef.current;
+    if (!app || !animation) {
+      cameraFocusAnimationRef.current = null;
+      return;
+    }
+
+    app.ticker.remove(animation.tick);
+    cameraFocusAnimationRef.current = null;
+  };
+
+  const applyCameraState = (
+    nextCamera: Pick<BattleMapRuntimeCameraConfig, 'x' | 'y' | 'zoom'>,
+  ) => {
+    cameraStateRef.current = {
+      x: nextCamera.x,
+      y: nextCamera.y,
+      zoom: getSafeCameraZoom(nextCamera.zoom),
+    };
+    syncCameraTransform();
+    syncGridLayer();
+  };
+
+  const startCameraFocusAnimation = (targetX: number, targetY: number) => {
+    const app = appRef.current;
+    if (!app) {
+      return;
+    }
+
+    stopCameraFocusAnimation();
+
+    const tick = () => {
+      const currentCamera = cameraStateRef.current;
+      const step = stepCameraCenterTowardTarget(
+        currentCamera.x,
+        currentCamera.y,
+        targetX,
+        targetY,
+        CAMERA_FOCUS_SMOOTHING,
+        CAMERA_FOCUS_SNAP_DISTANCE,
+      );
+      applyCameraState({
+        x: step.x,
+        y: step.y,
+        zoom: currentCamera.zoom,
+      });
+
+      if (step.isComplete) {
+        stopCameraFocusAnimation();
+      }
+    };
+
+    cameraFocusAnimationRef.current = { tick };
+    app.ticker.add(tick);
+  };
+
   const getWorldPointFromClient = (clientX: number, clientY: number) => {
     const app = appRef.current;
     if (!app) {
@@ -440,8 +533,8 @@ export default function BattleMapRuntimeCanvas({
 
     const screenX = ((clientX - rect.left) / rect.width) * app.screen.width;
     const screenY = ((clientY - rect.top) / rect.height) * app.screen.height;
-    const { camera } = runtimeConfigRef.current;
-    const zoom = camera.zoom > 0 ? camera.zoom : 1;
+    const camera = cameraStateRef.current;
+    const zoom = getSafeCameraZoom(camera.zoom);
 
     return {
       x: camera.x + (screenX - app.screen.width * 0.5) / zoom,
@@ -489,12 +582,90 @@ export default function BattleMapRuntimeCanvas({
         display.container.position.set(snappedPosition.x, snappedPosition.y);
       }
       onTokenMoveRef.current(activeDrag.tokenInstanceId, snappedPosition);
+      if (!activeDrag.didMove) {
+        startCameraFocusAnimation(snappedPosition.x, snappedPosition.y);
+      }
       return;
     }
 
     const display = tokenDisplaysRef.current.get(activeDrag.tokenInstanceId);
     if (display) {
       display.container.position.set(nextX, nextY);
+    }
+  };
+
+  const finalizeActiveCameraPan = () => {
+    if (!activeCameraPanRef.current) {
+      return;
+    }
+
+    activeCameraPanRef.current = null;
+    removeCameraPanListeners();
+  };
+
+  const startCameraPan = (event: FederatedPointerEvent) => {
+    if (event.pointerType !== 'touch' && event.button !== 0) {
+      return;
+    }
+
+    if (activeTokenDragRef.current) {
+      return;
+    }
+
+    stopCameraFocusAnimation();
+    finalizeActiveCameraPan();
+
+    activeCameraPanRef.current = {
+      pointerId: event.pointerId,
+      lastClientX: event.clientX,
+      lastClientY: event.clientY,
+    };
+
+    const handlePointerMove = (pointerEvent: PointerEvent) => {
+      const activePan = activeCameraPanRef.current;
+      if (!activePan || pointerEvent.pointerId !== activePan.pointerId) {
+        return;
+      }
+
+      const deltaX = pointerEvent.clientX - activePan.lastClientX;
+      const deltaY = pointerEvent.clientY - activePan.lastClientY;
+      activePan.lastClientX = pointerEvent.clientX;
+      activePan.lastClientY = pointerEvent.clientY;
+
+      if (deltaX === 0 && deltaY === 0) {
+        return;
+      }
+
+      const camera = cameraStateRef.current;
+      const deltaWorld = worldDeltaFromScreenDelta(deltaX, deltaY, camera.zoom);
+      applyCameraState({
+        x: camera.x - deltaWorld.x,
+        y: camera.y - deltaWorld.y,
+        zoom: camera.zoom,
+      });
+    };
+
+    const handlePointerUp = (pointerEvent: PointerEvent) => {
+      const activePan = activeCameraPanRef.current;
+      if (!activePan || pointerEvent.pointerId !== activePan.pointerId) {
+        return;
+      }
+
+      finalizeActiveCameraPan();
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    removeCameraPanListenersRef.current = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+
+    event.stopPropagation();
+    if (event.nativeEvent instanceof PointerEvent) {
+      event.nativeEvent.preventDefault();
     }
   };
 
@@ -517,12 +688,15 @@ export default function BattleMapRuntimeCanvas({
     );
     onTokenSelectRef.current(tokenInstanceId);
     finalizeActiveTokenDrag();
+    finalizeActiveCameraPan();
+    stopCameraFocusAnimation();
 
     activeTokenDragRef.current = {
       tokenInstanceId,
       pointerId: event.pointerId,
       offsetX: pointerWorldPosition.x - token.x,
       offsetY: pointerWorldPosition.y - token.y,
+      didMove: false,
     };
 
     const handlePointerMove = (pointerEvent: PointerEvent) => {
@@ -541,6 +715,12 @@ export default function BattleMapRuntimeCanvas({
 
       const nextX = pointerPosition.x - activeDrag.offsetX;
       const nextY = pointerPosition.y - activeDrag.offsetY;
+      if (
+        Math.abs(nextX - token.x) > 0.01 ||
+        Math.abs(nextY - token.y) > 0.01
+      ) {
+        activeDrag.didMove = true;
+      }
       const display = tokenDisplaysRef.current.get(activeDrag.tokenInstanceId);
       if (display) {
         display.container.position.set(nextX, nextY);
@@ -628,14 +808,15 @@ export default function BattleMapRuntimeCanvas({
       return;
     }
 
-    const { camera } = runtimeConfigRef.current;
+    const camera = cameraStateRef.current;
+    const zoom = getSafeCameraZoom(camera.zoom);
     const viewportWidth = app.screen.width;
     const viewportHeight = app.screen.height;
 
-    stageGraph.worldContainer.scale.set(camera.zoom);
+    stageGraph.worldContainer.scale.set(zoom);
     stageGraph.worldContainer.position.set(
-      viewportWidth * 0.5 - camera.x * camera.zoom,
-      viewportHeight * 0.5 - camera.y * camera.zoom,
+      viewportWidth * 0.5 - camera.x * zoom,
+      viewportHeight * 0.5 - camera.y * zoom,
     );
   };
 
@@ -683,7 +864,8 @@ export default function BattleMapRuntimeCanvas({
     }
 
     const gridLayer = stageGraph.gridLayer;
-    const { grid, camera } = runtimeConfigRef.current;
+    const { grid } = runtimeConfigRef.current;
+    const camera = cameraStateRef.current;
     gridLayer.clear();
 
     if (grid.mode === 'none') {
@@ -831,13 +1013,43 @@ export default function BattleMapRuntimeCanvas({
 
   useEffect(() => {
     runtimeConfigRef.current = runtimeConfig;
-    tokensRef.current = tokens;
-    selectedTokenInstanceIdRef.current = selectedTokenInstanceId;
+    const nextCameraKey = getCameraConfigKey(runtimeConfig.camera);
+    if (nextCameraKey !== runtimeCameraKeyRef.current) {
+      runtimeCameraKeyRef.current = nextCameraKey;
+      stopCameraFocusAnimation();
+      applyCameraState(runtimeConfig.camera);
+    }
+
     syncBaseLayers();
     syncCameraTransform();
     syncGridLayer();
+  }, [runtimeConfig]);
+
+  useEffect(() => {
+    tokensRef.current = tokens;
     syncTokenLayer();
-  }, [runtimeConfig, selectedTokenInstanceId, tokens]);
+  }, [tokens]);
+
+  useEffect(() => {
+    selectedTokenInstanceIdRef.current = selectedTokenInstanceId;
+    syncTokenLayer();
+
+    if (!selectedTokenInstanceId) {
+      stopCameraFocusAnimation();
+      return;
+    }
+
+    if (activeTokenDragRef.current || activeCameraPanRef.current) {
+      return;
+    }
+
+    const selectedToken = getTokenByInstanceId(selectedTokenInstanceId);
+    if (!selectedToken) {
+      return;
+    }
+
+    startCameraFocusAnimation(selectedToken.x, selectedToken.y);
+  }, [selectedTokenInstanceId]);
 
   useEffect(() => {
     void syncMapImage();
@@ -899,8 +1111,12 @@ export default function BattleMapRuntimeCanvas({
         app.screen.width,
         app.screen.height,
       );
-      app.stage.on('pointerdown', () => {
+      app.stage.on('pointerdown', (event: FederatedPointerEvent) => {
+        if (activeTokenDragRef.current) {
+          return;
+        }
         onTokenSelectRef.current(null);
+        startCameraPan(event);
       });
 
       stageGraphRef.current = {
@@ -944,7 +1160,10 @@ export default function BattleMapRuntimeCanvas({
       imageLoadIdRef.current += 1;
       resizeObserver?.disconnect();
       finalizeActiveTokenDrag(undefined, undefined, false);
+      finalizeActiveCameraPan();
+      stopCameraFocusAnimation();
       removeDragListeners();
+      removeCameraPanListeners();
       clearTokenDisplays();
       removeMapSprite();
       stageGraphRef.current = null;

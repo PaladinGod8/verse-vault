@@ -22,6 +22,20 @@ const SQRT_3 = Math.sqrt(3);
 export const DEFAULT_GRID_CELL_SIZE = 50;
 export const MIN_GRID_CELL_SIZE = 12;
 export const MAX_GRID_CELL_SIZE = 240;
+const DEFAULT_CAMERA_ZOOM = 1;
+const DEFAULT_CAMERA_FOCUS_SMOOTHING = 0.18;
+const DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE = 0.5;
+
+export function getSafeCameraZoom(
+  zoom: number,
+  fallback = DEFAULT_CAMERA_ZOOM,
+): number {
+  if (!Number.isFinite(zoom) || zoom <= 0) {
+    return fallback;
+  }
+
+  return zoom;
+}
 
 export function clampGridCellSize(
   value: number,
@@ -39,8 +53,7 @@ export function getWorldViewportBounds(
   viewportHeight: number,
   camera: Pick<BattleMapRuntimeCameraConfig, 'x' | 'y' | 'zoom'>,
 ): WorldViewportBounds {
-  const safeZoom =
-    Number.isFinite(camera.zoom) && camera.zoom > 0 ? camera.zoom : 1;
+  const safeZoom = getSafeCameraZoom(camera.zoom);
   const halfWorldWidth = viewportWidth / (2 * safeZoom);
   const halfWorldHeight = viewportHeight / (2 * safeZoom);
 
@@ -49,6 +62,52 @@ export function getWorldViewportBounds(
     right: camera.x + halfWorldWidth,
     top: camera.y - halfWorldHeight,
     bottom: camera.y + halfWorldHeight,
+  };
+}
+
+export function worldDeltaFromScreenDelta(
+  deltaX: number,
+  deltaY: number,
+  zoom: number,
+): Point2d {
+  const safeZoom = getSafeCameraZoom(zoom);
+  return {
+    x: deltaX / safeZoom,
+    y: deltaY / safeZoom,
+  };
+}
+
+export function stepCameraCenterTowardTarget(
+  currentX: number,
+  currentY: number,
+  targetX: number,
+  targetY: number,
+  smoothing = DEFAULT_CAMERA_FOCUS_SMOOTHING,
+  snapDistance = DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE,
+): { x: number; y: number; isComplete: boolean } {
+  const safeSmoothing =
+    Number.isFinite(smoothing) && smoothing > 0
+      ? Math.min(1, smoothing)
+      : DEFAULT_CAMERA_FOCUS_SMOOTHING;
+  const safeSnapDistance =
+    Number.isFinite(snapDistance) && snapDistance >= 0
+      ? snapDistance
+      : DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE;
+  const deltaX = targetX - currentX;
+  const deltaY = targetY - currentY;
+
+  if (Math.hypot(deltaX, deltaY) <= safeSnapDistance) {
+    return {
+      x: targetX,
+      y: targetY,
+      isComplete: true,
+    };
+  }
+
+  return {
+    x: currentX + deltaX * safeSmoothing,
+    y: currentY + deltaY * safeSmoothing,
+    isComplete: false,
   };
 }
 
