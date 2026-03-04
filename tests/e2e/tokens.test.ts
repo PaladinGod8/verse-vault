@@ -275,7 +275,7 @@ test.describe('Token CRUD - World-Level', () => {
     await expect(image).toBeVisible();
     await expect(image).toHaveAttribute(
       'src',
-      /file:\/\/\/.+\/token-images\/.+\.png$/i,
+      /vv-media:\/\/token-images\/.+\.png$/i,
     );
     await expect(window.getByText('Token created.')).toBeVisible();
   });

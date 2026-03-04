@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import TokenImageDropzone from './TokenImageDropzone';
+import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 
 const TOKEN_IMAGE_ALLOWED_MIME_TYPES = new Set([
   'image/png',
@@ -51,9 +52,9 @@ export default function TokenForm({
   isSaving,
 }: TokenFormProps) {
   const isCreateMode = !initialValues;
-  const initialImageSrc = initialValues?.image_src ?? null;
+  const initialImageSrc = normalizeTokenImageSrc(initialValues?.image_src);
   const [name, setName] = useState(initialValues?.name ?? '');
-  const [imageSrc, setImageSrc] = useState(initialValues?.image_src ?? '');
+  const [imageSrc, setImageSrc] = useState(initialImageSrc ?? '');
   const [isVisible, setIsVisible] = useState(initialValues?.is_visible ?? 1);
   const [nameError, setNameError] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);

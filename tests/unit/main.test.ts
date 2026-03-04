@@ -11,6 +11,9 @@ const appOnMock = vi.fn((event: string, handler: EventHandler) => {
   registeredEvents[event] = handler;
 });
 const appQuitMock = vi.fn();
+const appGetPathMock = vi.fn(() => 'C:\\mock-user-data');
+const protocolHandleMock = vi.fn();
+const netFetchMock = vi.fn();
 const ipcHandleMock = vi.fn((channel: string, handler: IpcHandler) => {
   registeredIpcHandlers[channel] = handler;
 });
@@ -73,10 +76,17 @@ async function importMainWithMocks() {
     app: {
       on: appOnMock,
       quit: appQuitMock,
+      getPath: appGetPathMock,
     },
     BrowserWindow: BrowserWindowMock,
     ipcMain: {
       handle: ipcHandleMock,
+    },
+    protocol: {
+      handle: protocolHandleMock,
+    },
+    net: {
+      fetch: netFetchMock,
     },
   }));
   vi.doMock('../../src/database/db', () => ({
