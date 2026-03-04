@@ -62,6 +62,20 @@ function renderBattleMapsPage(path: string) {
   );
 }
 
+function renderBattleMapsPageWithRuntimeRoute(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
+        <Route
+          path="/world/:id/battlemaps/:battleMapId/runtime"
+          element={<div>Runtime Route</div>}
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 describe('BattleMapsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -201,6 +215,20 @@ describe('BattleMapsPage', () => {
 
     expect(await screen.findByText('Dungeon Grid')).toBeInTheDocument();
     expect(screen.getByText('Forest Ambush')).toBeInTheDocument();
+  });
+
+  it('opens the runtime route when Play action is clicked', async () => {
+    const user = userEvent.setup();
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    battlemapsGetAllByWorldMock.mockResolvedValue([buildBattleMap()]);
+
+    renderBattleMapsPageWithRuntimeRoute('/world/1/battlemaps');
+
+    await screen.findByText('Dungeon Grid');
+    await user.click(screen.getByRole('link', { name: 'Play' }));
+
+    expect(await screen.findByText('Runtime Route')).toBeInTheDocument();
   });
 
   it('creates a battlemap through the create dialog', async () => {

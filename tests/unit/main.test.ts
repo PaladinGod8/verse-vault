@@ -233,6 +233,35 @@ describe('main process', () => {
     const battlemapsInsertRunMock = vi.fn(() => ({ lastInsertRowid: 61 }));
     const battlemapsUpdateRunMock = vi.fn();
     const battlemapsDeleteRunMock = vi.fn();
+    const tokensSelectAllByCampaignMock = vi.fn(() => [
+      {
+        id: 71,
+        campaign_id: 31,
+        name: 'Goblin',
+        image_src: null,
+        config: '{}',
+        is_visible: 1,
+      },
+    ]);
+    const tokensSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) {
+        return null;
+      }
+
+      return {
+        id,
+        campaign_id: 31,
+        name: `Token ${id}`,
+        image_src: null,
+        config: '{}',
+        is_visible: 1,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+    const tokensInsertRunMock = vi.fn(() => ({ lastInsertRowid: 71 }));
+    const tokensUpdateRunMock = vi.fn();
+    const tokensDeleteRunMock = vi.fn();
 
     const arcsSelectAllByCampaignMock = vi.fn(() => [
       { id: 10, campaign_id: 1, name: 'Arc One', sort_order: 0 },
@@ -486,6 +515,30 @@ describe('main process', () => {
 
       if (
         sql.includes(
+          'SELECT * FROM tokens WHERE campaign_id = ? ORDER BY updated_at DESC, id DESC',
+        )
+      ) {
+        return { all: tokensSelectAllByCampaignMock };
+      }
+      if (sql.includes('SELECT * FROM tokens WHERE id = ?')) {
+        return { get: tokensSelectByIdGetMock };
+      }
+      if (
+        sql.includes(
+          'INSERT INTO tokens (campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?)',
+        )
+      ) {
+        return { run: tokensInsertRunMock };
+      }
+      if (sql.includes('UPDATE tokens SET')) {
+        return { run: tokensUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM tokens WHERE id = ?')) {
+        return { run: tokensDeleteRunMock };
+      }
+
+      if (
+        sql.includes(
           'SELECT * FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
         )
       ) {
@@ -685,7 +738,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(58);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(63);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -1158,11 +1211,33 @@ describe('main process', () => {
       {},
       { world_id: 1, name: '  New BattleMap  ' },
     );
+    const addedBattleMapConfig = JSON.parse(
+      battlemapsInsertRunMock.mock.calls[0][2] as string,
+    );
     expect(battlemapsInsertRunMock).toHaveBeenCalledWith(
       1,
       'New BattleMap',
-      '{}',
+      expect.any(String),
     );
+    expect(addedBattleMapConfig).toEqual({
+      runtime: {
+        grid: {
+          mode: 'square',
+          cellSize: 50,
+          originX: 0,
+          originY: 0,
+        },
+        map: {
+          imageSrc: null,
+          backgroundColor: '#000000',
+        },
+        camera: {
+          x: 0,
+          y: 0,
+          zoom: 1,
+        },
+      },
+    });
     expect(battlemapsSelectByIdGetMock).toHaveBeenCalledWith(61);
     expect(battlemapAddResult).toMatchObject({ id: 61 });
 
@@ -1204,11 +1279,34 @@ describe('main process', () => {
         sql.includes('config = ?'),
     )?.[0];
     expect(battlemapUpdateSql).toContain("updated_at = datetime('now')");
+    const updatedBattleMapConfig = JSON.parse(
+      battlemapsUpdateRunMock.mock.calls[0][1] as string,
+    );
     expect(battlemapsUpdateRunMock).toHaveBeenCalledWith(
       'Updated BattleMap',
-      '{"size":40}',
+      expect.any(String),
       61,
     );
+    expect(updatedBattleMapConfig).toEqual({
+      size: 40,
+      runtime: {
+        grid: {
+          mode: 'square',
+          cellSize: 50,
+          originX: 0,
+          originY: 0,
+        },
+        map: {
+          imageSrc: null,
+          backgroundColor: '#000000',
+        },
+        camera: {
+          x: 0,
+          y: 0,
+          zoom: 1,
+        },
+      },
+    });
     expect(battlemapUpdateResult).toMatchObject({ id: 61 });
 
     expect(() =>
@@ -1233,6 +1331,40 @@ describe('main process', () => {
       }),
     ).toThrowError('BattleMap not found');
 
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
+        {},
+        {
+          world_id: 1,
+          name: 'Invalid Runtime Grid Mode',
+          config: '{"runtime":{"grid":{"mode":"triangle"}}}',
+        },
+      ),
+    ).toThrowError(
+      "BattleMap config runtime.grid.mode must be one of: 'square', 'hex', 'none'",
+    );
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
+        {},
+        {
+          world_id: 1,
+          name: 'Invalid Runtime Zoom',
+          config: '{"runtime":{"camera":{"zoom":0}}}',
+        },
+      ),
+    ).toThrowError(
+      'BattleMap config runtime.camera.zoom must be greater than 0',
+    );
+
+    expect(() =>
+      registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, {
+        config: '{"runtime":{"map":{"backgroundColor":"   "}}}',
+      }),
+    ).toThrowError(
+      'BattleMap config runtime.map.backgroundColor cannot be empty',
+    );
+
     const battlemapTimestampOnlyUpdateResult = registeredIpcHandlers[
       IPC.BATTLEMAPS_UPDATE
     ]({}, 62, {});
@@ -1253,6 +1385,137 @@ describe('main process', () => {
     );
     expect(battlemapsDeleteRunMock).toHaveBeenCalledWith(63);
     expect(battlemapDeleteResult).toEqual({ id: 63 });
+
+    // TOKENS
+    const tokensGetAllByCampaignResult = registeredIpcHandlers[
+      IPC.TOKENS_GET_ALL_BY_CAMPAIGN
+    ]({}, 31);
+    expect(tokensSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(tokensSelectAllByCampaignMock).toHaveBeenCalledWith(31);
+    expect(tokensGetAllByCampaignResult).toEqual([
+      {
+        id: 71,
+        campaign_id: 31,
+        name: 'Goblin',
+        image_src: null,
+        config: '{}',
+        is_visible: 1,
+      },
+    ]);
+
+    const tokenByIdResult = registeredIpcHandlers[IPC.TOKENS_GET_BY_ID]({}, 71);
+    expect(tokensSelectByIdGetMock).toHaveBeenCalledWith(71);
+    expect(tokenByIdResult).toMatchObject({ id: 71 });
+
+    const missingTokenResult = registeredIpcHandlers[IPC.TOKENS_GET_BY_ID](
+      {},
+      404,
+    );
+    expect(missingTokenResult).toBeNull();
+
+    const tokenAddResult = registeredIpcHandlers[IPC.TOKENS_ADD](
+      {},
+      { campaign_id: 31, name: '  Orc Brute  ', image_src: 'orc.png' },
+    );
+    expect(tokensInsertRunMock).toHaveBeenCalledWith(
+      31,
+      'Orc Brute',
+      'orc.png',
+      '{}',
+      1,
+    );
+    expect(tokensSelectByIdGetMock).toHaveBeenCalledWith(71);
+    expect(tokenAddResult).toMatchObject({ id: 71 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_ADD](
+        {},
+        { campaign_id: 31, name: '   ' },
+      ),
+    ).toThrowError('Token name is required');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_ADD](
+        {},
+        {
+          campaign_id: 31,
+          name: 'Invalid Config',
+          config: 'not-json',
+        },
+      ),
+    ).toThrowError('Token config must be valid JSON text');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_ADD](
+        {},
+        {
+          campaign_id: 31,
+          name: 'Invalid Visibility',
+          is_visible: 2,
+        },
+      ),
+    ).toThrowError('Token visibility must be 0 or 1');
+
+    const tokenUpdateResult = registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, {
+      name: ' Updated Orc ',
+      config: '{"size":"large"}',
+      is_visible: 0,
+    });
+    const tokenUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE tokens SET') &&
+        sql.includes('name = ?') &&
+        sql.includes('config = ?') &&
+        sql.includes('is_visible = ?'),
+    )?.[0];
+    expect(tokenUpdateSql).toContain("updated_at = datetime('now')");
+    expect(tokensUpdateRunMock).toHaveBeenCalledWith(
+      'Updated Orc',
+      '{"size":"large"}',
+      0,
+      71,
+    );
+    expect(tokenUpdateResult).toMatchObject({ id: 71 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, { name: '   ' }),
+    ).toThrowError('Token name cannot be empty');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, {
+        config: 'not-json',
+      }),
+    ).toThrowError('Token config must be valid JSON text');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, {
+        is_visible: 7,
+      }),
+    ).toThrowError('Token visibility must be 0 or 1');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 404, {
+        name: 'Missing token',
+      }),
+    ).toThrowError('Token not found');
+
+    const tokenTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.TOKENS_UPDATE
+    ]({}, 72, {});
+    const tokenTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql === "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(tokenTimestampOnlySql).toBe(
+      "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(tokensUpdateRunMock).toHaveBeenLastCalledWith(72);
+    expect(tokenTimestampOnlyUpdateResult).toMatchObject({ id: 72 });
+
+    const tokenDeleteResult = registeredIpcHandlers[IPC.TOKENS_DELETE]({}, 73);
+    expect(tokensDeleteRunMock).toHaveBeenCalledWith(73);
+    expect(tokenDeleteResult).toEqual({ id: 73 });
 
     // ARCS
     const arcsGetAllByCampaignResult = registeredIpcHandlers[
@@ -1578,6 +1841,49 @@ describe('main process', () => {
       ),
     ).toThrowError('Scene payload must be a JSON string');
 
+    const sceneWithRuntimeBattleMapIdResult = registeredIpcHandlers[
+      IPC.SCENES_ADD
+    ](
+      {},
+      {
+        session_id: 40,
+        name: 'Runtime Scene',
+        payload: '{"runtime":{"battlemap_id":61}}',
+      },
+    );
+    expect(scenesInsertRunMock).toHaveBeenCalledWith(
+      40,
+      'Runtime Scene',
+      null,
+      '{"runtime":{"battlemap_id":61}}',
+      9,
+    );
+    expect(sceneWithRuntimeBattleMapIdResult).toMatchObject({ id: 50 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_ADD](
+        {},
+        {
+          session_id: 40,
+          name: 'Invalid Runtime Payload',
+          payload: '{"runtime":[]}',
+        },
+      ),
+    ).toThrowError('Scene payload runtime must be a JSON object');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_ADD](
+        {},
+        {
+          session_id: 40,
+          name: 'Invalid BattleMap Ref',
+          payload: '{"runtime":{"battlemap_id":0}}',
+        },
+      ),
+    ).toThrowError(
+      'Scene payload runtime.battlemap_id must be a positive integer or null',
+    );
+
     const sceneUpdateResult = registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, {
       payload: '{"key":"value"}',
       sort_order: 1,
@@ -1600,6 +1906,14 @@ describe('main process', () => {
     expect(() =>
       registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { payload: 'not-json' }),
     ).toThrowError('Scene payload must be valid JSON text');
+
+    expect(() =>
+      registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, {
+        payload: '{"runtime":{"battlemap_id":-1}}',
+      }),
+    ).toThrowError(
+      'Scene payload runtime.battlemap_id must be a positive integer or null',
+    );
 
     const sceneTimestampOnlyUpdateResult = registeredIpcHandlers[
       IPC.SCENES_UPDATE
