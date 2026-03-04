@@ -532,6 +532,19 @@
 - **Storage**: `tokens` schema now includes `grid_type TEXT NOT NULL DEFAULT 'square' CHECK (grid_type IN ('square', 'hex'))`; additive migration `runTokenGridTypeMigration()` adds the column when missing and backfills/normalizes legacy values to `'square'`; nullable-campaign rebuild path (`runTokenCampaignNullableMigration`) also preserves the new grid column with default `'square'`.
 - **Types**: `forge.env.d.ts` adds `TokenGridType` plus additive `TokenFootprintConfig`, `TokenFramingConfig`, and `TokenConfigShape` contracts for future grid-specific token metadata.
 
+### Token Grid Variants IPC & Main/Preload Wiring (Step 02)
+
+- **Purpose**: wire `grid_type` field through token add/update IPC contracts, main-process handlers, and preload bridge to enable grid-aware token creation and editing.
+- **Status**: added on 2026-03-05
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `TOKENS_ADD` payload updated to accept optional `grid_type?: TokenGridType`, defaulting to `'square'` when omitted; `TOKENS_UPDATE` payload updated to accept optional `grid_type?: TokenGridType` for selective grid-type updates.
+- **Main handler**: `TOKENS_ADD` handler adds `ensureTokenGridType()` validation function and includes `grid_type` field in INSERT SQL; `TOKENS_UPDATE` handler adds `hasGridType` check and conditional update clause for `grid_type` when present.
+- **Preload bridge**: `window.db.tokens.add()` and `window.db.tokens.update()` method signatures updated to accept optional `grid_type: TokenGridType` parameter.
+- **Storage**: no schema change; existing `grid_type` column used with validation logic.
+- **Types**: `forge.env.d.ts` requires `grid_type: TokenGridType` on returned `Token` interface; add and update payload types in `DbApi.tokens` accept optional `grid_type?: TokenGridType`.
+- **Helpers**: `TOKEN_GRID_TYPES` constant (`new Set(['square', 'hex'])`) defines valid values; `ensureTokenGridType(value, fieldName)` validates and returns type-safe grid type or throws.
+
 ### Tokens Image Import IPC Pipeline (Step 01)
 
 - **Purpose**: add a safe main-process image import pipeline so renderer can upload dropped desktop image files through IPC without direct filesystem access.
