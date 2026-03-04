@@ -116,7 +116,7 @@ async function importMainWithMocks() {
       pathToFileURL: pathToFileURLMock,
     },
   }));
-  
+
   // Mock the db module to export both getDatabase and db handlers
   vi.doMock('../../../src/database/db', () => {
     const mockHandlers = {
@@ -125,7 +125,7 @@ async function importMainWithMocks() {
         moveToCampaign: vi.fn(),
       },
     };
-    
+
     return {
       getDatabase: getDatabaseMock,
       closeDatabase: closeDatabaseMock,
@@ -176,14 +176,14 @@ function setupTokenMoveSqlMocks() {
 
   const tokenGetByIdSelectIdWorldMock = vi.fn((id: number) => {
     const token = tokenRows.get(id);
-    return token
-      ? { id: token.id, world_id: token.world_id }
-      : undefined;
+    return token ? { id: token.id, world_id: token.world_id } : undefined;
   });
 
   const campaignGetMock = vi.fn((id: number) => {
     const campaign = campaignRows.get(id);
-    return campaign ? { id: campaign.id, world_id: campaign.world_id } : undefined;
+    return campaign
+      ? { id: campaign.id, world_id: campaign.world_id }
+      : undefined;
   });
 
   const tokenUpdateMock = vi.fn((campaignId: number | null, id: number) => {
@@ -195,34 +195,32 @@ function setupTokenMoveSqlMocks() {
   });
 
   prepareMock.mockImplementation((sql: string) => {
-    if (
-      sql === 'SELECT * FROM tokens WHERE id = ?'
-    ) {
+    if (sql === 'SELECT * FROM tokens WHERE id = ?') {
       return { get: tokenGetByIdSelectAllMock };
     }
-    if (
-      sql === 'SELECT id, world_id FROM tokens WHERE id = ?'
-    ) {
+    if (sql === 'SELECT id, world_id FROM tokens WHERE id = ?') {
       return { get: tokenGetByIdSelectIdWorldMock };
     }
-    if (
-      sql === 'SELECT id, world_id FROM campaigns WHERE id = ?'
-    ) {
+    if (sql === 'SELECT id, world_id FROM campaigns WHERE id = ?') {
       return { get: campaignGetMock };
     }
     if (
-      sql === "UPDATE tokens SET campaign_id = NULL, updated_at = datetime('now') WHERE id = ?"
+      sql ===
+      "UPDATE tokens SET campaign_id = NULL, updated_at = datetime('now') WHERE id = ?"
     ) {
-      return { run: (id: number) => {
-        const token = tokenRows.get(id);
-        if (token) {
-          token.campaign_id = null;
-          token.updated_at = '2026-03-04 00:00:00';
-        }
-      }};
+      return {
+        run: (id: number) => {
+          const token = tokenRows.get(id);
+          if (token) {
+            token.campaign_id = null;
+            token.updated_at = '2026-03-04 00:00:00';
+          }
+        },
+      };
     }
     if (
-      sql === "UPDATE tokens SET campaign_id = ?, updated_at = datetime('now') WHERE id = ?"
+      sql ===
+      "UPDATE tokens SET campaign_id = ?, updated_at = datetime('now') WHERE id = ?"
     ) {
       return { run: tokenUpdateMock };
     }
@@ -261,7 +259,7 @@ describe('token move IPC handlers', () => {
   it('should register TOKENS_MOVE_TO_WORLD handler', async () => {
     setupTokenMoveSqlMocks();
     await importMainWithMocks();
-    
+
     expect(ipcHandleMock).toHaveBeenCalled();
     const channels = ipcHandleMock.mock.calls.map((call) => call[0]);
     expect(channels).toContain('db:tokens:moveToWorld');
@@ -270,7 +268,7 @@ describe('token move IPC handlers', () => {
   it('should register TOKENS_MOVE_TO_CAMPAIGN handler', async () => {
     setupTokenMoveSqlMocks();
     await importMainWithMocks();
-    
+
     expect(ipcHandleMock).toHaveBeenCalled();
     const channels = ipcHandleMock.mock.calls.map((call) => call[0]);
     expect(channels).toContain('db:tokens:moveToCampaign');
@@ -292,7 +290,7 @@ describe('token move IPC handlers', () => {
 
     // Clear mock calls from previous operations
     transactionMock.mockClear();
-    
+
     // Verify transaction was called during setup
     expect(transactionMock).toHaveBeenCalledTimes(0);
   });
@@ -306,7 +304,7 @@ describe('token move IPC handlers', () => {
 
     const handler = registeredIpcHandlers['db:tokens:moveToWorld'];
     expect(handler).toBeTypeOf('function');
-    
+
     // The handler should exist and be callable
     expect(handler).toBeDefined();
   });
@@ -317,7 +315,7 @@ describe('token move IPC handlers', () => {
 
     const handler = registeredIpcHandlers['db:tokens:moveToCampaign'];
     expect(handler).toBeTypeOf('function');
-    
+
     // The handler should exist and be callable
     expect(handler).toBeDefined();
   });
@@ -331,9 +329,11 @@ describe('token move IPC handlers', () => {
 
     const handler = registeredIpcHandlers['db:tokens:moveToWorld'];
     expect(handler).toBeTypeOf('function');
-    
+
     // Verify the preparation was called for SELECT
-    expect(prepareMock).toHaveBeenCalledWith('SELECT * FROM tokens WHERE id = ?');
+    expect(prepareMock).toHaveBeenCalledWith(
+      'SELECT * FROM tokens WHERE id = ?',
+    );
   });
 
   it('should verify moveToCampaign validates campaign in same world', async () => {
@@ -345,7 +345,7 @@ describe('token move IPC handlers', () => {
 
     await importMainWithMocks();
 
-    // Verify the preparation was called 
+    // Verify the preparation was called
     expect(prepareMock).toHaveBeenCalled();
   });
 
@@ -358,4 +358,3 @@ describe('token move IPC handlers', () => {
     expect(registeredIpcHandlers['db:tokens:moveToCampaign']).toBeDefined();
   });
 });
-

@@ -53,8 +53,8 @@ export default function MoveTokenDialog({
     () =>
       selectedCampaignId === null
         ? null
-        : campaigns.find((campaign) => campaign.id === selectedCampaignId) ??
-          null,
+        : (campaigns.find((campaign) => campaign.id === selectedCampaignId) ??
+          null),
     [campaigns, selectedCampaignId],
   );
 
@@ -65,7 +65,7 @@ export default function MoveTokenDialog({
 
     try {
       const campaignId =
-        mode === 'toCampaign' ? selectedCampaignId ?? undefined : undefined;
+        mode === 'toCampaign' ? (selectedCampaignId ?? undefined) : undefined;
       await onConfirm(token, campaignId);
     } catch (caughtError) {
       setError(toErrorMessage(caughtError));

@@ -42,9 +42,9 @@ export default function TokensPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-  const [moveDialogMode, setMoveDialogMode] = useState<'toWorld' | 'toCampaign' | null>(
-    null,
-  );
+  const [moveDialogMode, setMoveDialogMode] = useState<
+    'toWorld' | 'toCampaign' | null
+  >(null);
   const [movingToken, setMovingToken] = useState<Token | null>(null);
   const [isMoveDialogPending, setIsMoveDialogPending] = useState(false);
 
@@ -245,17 +245,14 @@ export default function TokensPage() {
     setMoveDialogOpen(true);
   };
 
-  const handleConfirmMove = async (
-    token: Token,
-    targetCampaignId?: number,
-  ) => {
+  const handleConfirmMove = async (token: Token, targetCampaignId?: number) => {
     if (!movingToken) return;
     setIsMoveDialogPending(true);
     try {
       if (moveDialogMode === 'toWorld') {
         const updated = await window.db.tokens.moveToWorld(movingToken.id);
         setTokens((prev) =>
-          prev.map((t) => (t.id === updated.id ? updated : t))
+          prev.map((t) => (t.id === updated.id ? updated : t)),
         );
         toast.success(`Moved "${movingToken.name}" to World.`);
       } else if (moveDialogMode === 'toCampaign' && targetCampaignId) {
@@ -264,13 +261,11 @@ export default function TokensPage() {
           targetCampaignId,
         );
         setTokens((prev) =>
-          prev.map((t) => (t.id === updated.id ? updated : t))
+          prev.map((t) => (t.id === updated.id ? updated : t)),
         );
         const campaignName =
           campaigns.find((c) => c.id === targetCampaignId)?.name || 'Unknown';
-        toast.success(
-          `Moved "${movingToken.name}" to ${campaignName}.`,
-        );
+        toast.success(`Moved "${movingToken.name}" to ${campaignName}.`);
       }
       setMoveDialogOpen(false);
       setMovingToken(null);
@@ -397,7 +392,8 @@ export default function TokensPage() {
                             }}
                             className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                             disabled={
-                              deletingToken?.id === token.id || isMoveDialogPending
+                              deletingToken?.id === token.id ||
+                              isMoveDialogPending
                             }
                           >
                             Edit
@@ -430,9 +426,7 @@ export default function TokensPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  handleMoveToCampaign(token)
-                                }
+                                onClick={() => handleMoveToCampaign(token)}
                                 className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
                                 disabled={
                                   deletingToken?.id === token.id ||
@@ -449,7 +443,8 @@ export default function TokensPage() {
                             onClick={() => setPendingDeleteToken(token)}
                             className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
                             disabled={
-                              deletingToken?.id === token.id || isMoveDialogPending
+                              deletingToken?.id === token.id ||
+                              isMoveDialogPending
                             }
                           >
                             {deletingToken?.id === token.id
