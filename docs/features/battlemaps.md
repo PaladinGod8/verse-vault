@@ -120,9 +120,15 @@ Also not in scope:
 - Runtime token palette supports:
   - campaign selection for token source
   - optional filtering of invisible source tokens (`Show invisible tokens`)
+  - active grid-mode filtering of source tokens by `token.grid_type` when mode is `square` or `hex`
   - add/remove runtime token instances (single placed instance per source token)
   - placed-token selection list with source status (`Visible`, `Invisible`, `Source missing`)
 - Runtime token behavior:
+  - token variant selection rules:
+    - grid mode `square`: only square tokens are listed and addable;
+    - grid mode `hex`: only hex tokens are listed and addable;
+    - grid mode `none`: both square and hex tokens are listed (with compatibility notice).
+  - add-token handler applies a defensive runtime check that rejects mismatched token/grid combinations unless mode is `none`.
   - tokens can be dragged on the Pixi canvas.
   - token positions snap to active grid mode (`square`/`hex`) and stay freeform in `none`.
   - token placement/movement is runtime-only for the current session (not persisted to BattleMap config).

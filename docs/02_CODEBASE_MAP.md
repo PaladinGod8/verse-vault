@@ -562,6 +562,17 @@
 - **Preload bridge**: unchanged in this step
 - **Storage**: no schema change; create/update payloads now include `grid_type` from renderer form state (`square` default, `hex` selectable), edit flow seeds form `grid_type` from existing token row, and token table renders a grid badge per row (`Square`/`Hex`) for at-a-glance differentiation.
 
+### Token Grid Variants Runtime Grid Filtering (Step 04)
+
+- **Purpose**: enforce runtime token compatibility by active BattleMap grid mode so token variants presented/added in runtime match grid geometry.
+- **Status**: added on 2026-03-05
+- **UI**: `src/renderer/pages/BattleMapRuntimePage.tsx`, `src/renderer/components/runtime/RuntimeTokenPalette.tsx`
+- **Store**: none yet
+- **IPC**: unchanged in this step (uses existing world/campaign token reads)
+- **Main handler**: unchanged in this step
+- **Preload bridge**: unchanged in this step
+- **Storage**: no schema change; runtime palette filters both world and selected-campaign token lists by `token.grid_type` when grid mode is `square`/`hex`, shows all variants when mode is `none`, and add-token handler guards against mismatched grid/token combinations.
+
 ### Token Grid Variants Footprint Geometry + Config Serialization (Step 05)
 
 - **Purpose**: add deterministic square/hex footprint geometry helpers and enforce persisted token config shape for additive footprint/framing metadata.
@@ -574,6 +585,17 @@
 - **Storage**: no schema change; token config JSON validation now accepts legacy object configs and validates/normalizes optional `footprint` (`version`, `grid_type`, canonicalized `square_cells`/`hex_cells`, extents) plus optional `framing` (`center_*`, `extent_*`, `max_extent_*`, plus legacy anchor/offset fields).
 - **Types**: `forge.env.d.ts` token contracts expanded with cell-coordinate interfaces and finalized footprint/framing fields for deterministic serialization.
 - **Helpers**: `src/renderer/lib/tokenFootprintGeometry.ts` adds pure helpers for occupancy normalization, framing derivation, and stable config JSON serialization.
+
+### Token Grid Variants Footprint Painter UX (Step 06)
+
+- **Purpose**: capture token occupancy/framing during image selection using a modal painter and persist additive footprint metadata in token config JSON.
+- **Status**: added on 2026-03-05
+- **UI**: `src/renderer/components/tokens/TokenForm.tsx`, `src/renderer/components/tokens/FootprintPainterModal.tsx`, `src/renderer/pages/TokensPage.tsx`
+- **Store**: none yet
+- **IPC**: unchanged channels; create/edit continue using existing token image import and token add/update contracts, now with optional `config` payload carrying painter output.
+- **Main handler**: unchanged in this step (continues validating `config` through shared db helper)
+- **Preload bridge**: unchanged in this step
+- **Storage**: no schema change; painter emits square/hex occupied-cell sets and derived framing extents, `TokenForm` serializes to `TokenConfigShape`, and token add/update persist normalized additive `footprint`/`framing` config JSON.
 
 ### Tokens Image Import IPC Pipeline (Step 01)
 
