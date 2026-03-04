@@ -89,22 +89,31 @@ describe('RuntimeTokenPalette', () => {
     expect(screen.getByText('Visible Guard')).toBeInTheDocument();
     expect(screen.queryByText('Hidden Scout')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Show invisible tokens' }));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Show invisible tokens' }),
+    );
     expect(onShowInvisibleTokensChange).toHaveBeenCalledWith(true);
   });
 
   it('sorts available tokens by name and adds unplaced tokens', () => {
     const { onAddToken } = renderPalette({
-      tokens: [buildToken({ id: 2, name: 'Zulu' }), buildToken({ id: 1, name: 'Alpha' })],
+      tokens: [
+        buildToken({ id: 2, name: 'Zulu' }),
+        buildToken({ id: 1, name: 'Alpha' }),
+      ],
     });
 
-    const labels = screen.getAllByText(/Alpha|Zulu/).map((node) => node.textContent);
+    const labels = screen
+      .getAllByText(/Alpha|Zulu/)
+      .map((node) => node.textContent);
     expect(labels).toEqual(expect.arrayContaining(['Alpha', 'Zulu']));
 
     const addButtons = screen.getAllByRole('button', { name: 'Add' });
     fireEvent.click(addButtons[0]);
     expect(onAddToken).toHaveBeenCalledTimes(1);
-    expect(onAddToken).toHaveBeenCalledWith(expect.objectContaining({ id: 1, name: 'Alpha' }));
+    expect(onAddToken).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, name: 'Alpha' }),
+    );
   });
 
   it('disables add for already placed source tokens', () => {

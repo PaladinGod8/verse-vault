@@ -7,9 +7,8 @@ const routerMockState = vi.hoisted(() => ({
   blockerState: 'unblocked' as 'unblocked' | 'blocked',
   proceedMock: vi.fn(),
   resetMock: vi.fn(),
-  blockerPredicate:
-    null as ((
-      args: {
+  blockerPredicate: null as
+    | ((args: {
         currentLocation: {
           pathname: string;
           search: string;
@@ -20,9 +19,11 @@ const routerMockState = vi.hoisted(() => ({
           search: string;
           hash: string;
         };
-      },
-    ) => boolean) | null,
-  beforeUnloadHandler: null as ((event: { preventDefault: () => void; returnValue?: string }) => void) | null,
+      }) => boolean)
+    | null,
+  beforeUnloadHandler: null as
+    | ((event: { preventDefault: () => void; returnValue?: string }) => void)
+    | null,
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -34,7 +35,10 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useBeforeUnload: (
-      callback: (event: { preventDefault: () => void; returnValue?: string }) => void,
+      callback: (event: {
+        preventDefault: () => void;
+        returnValue?: string;
+      }) => void,
     ) => {
       routerMockState.beforeUnloadHandler = callback;
     },
@@ -191,9 +195,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
       <p>Selected Campaign: {selectedCampaignId ?? 'none'}</p>
       <p>Campaign Tokens: {tokens.length}</p>
       <p>Placed Tokens: {placedTokens.length}</p>
-      <p>
-        Selected Runtime Token: {selectedTokenInstanceId ?? 'none'}
-      </p>
+      <p>Selected Runtime Token: {selectedTokenInstanceId ?? 'none'}</p>
       <p>
         First Runtime Token Position:{' '}
         {placedTokens[0] ? `${placedTokens[0].x}:${placedTokens[0].y}` : 'none'}
@@ -531,9 +533,9 @@ describe('BattleMapRuntimePage', () => {
   });
 
   it('shows not found when battlemaps id is missing or belongs to another world', async () => {
-    battlemapsGetByIdMock.mockResolvedValueOnce(null).mockResolvedValueOnce(
-      buildBattleMap({ world_id: 2 }),
-    );
+    battlemapsGetByIdMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(buildBattleMap({ world_id: 2 }));
 
     const { unmount } = renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('BattleMap not found.')).toBeInTheDocument();
@@ -560,21 +562,27 @@ describe('BattleMapRuntimePage', () => {
       buildCampaign({ id: 31, name: 'Campaign 31' }),
       buildCampaign({ id: 32, name: 'Campaign 32' }),
     ]);
-    tokensGetAllByCampaignMock.mockImplementation(async (campaignId: number) => {
-      if (campaignId === 32) {
-        throw new Error('token load failed');
-      }
-      return [buildToken({ campaign_id: campaignId })];
-    });
+    tokensGetAllByCampaignMock.mockImplementation(
+      async (campaignId: number) => {
+        if (campaignId === 32) {
+          throw new Error('token load failed');
+        }
+        return [buildToken({ campaign_id: campaignId })];
+      },
+    );
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
 
-    expect(await screen.findByText('Selected Campaign: 31')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Selected Campaign: 31'),
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(tokensGetAllByCampaignMock).toHaveBeenCalledWith(31);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select Second Campaign' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select Second Campaign' }),
+    );
     await waitFor(() => {
       expect(tokensGetAllByCampaignMock).toHaveBeenCalledWith(32);
     });
@@ -583,7 +591,9 @@ describe('BattleMapRuntimePage', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear Campaign' }));
-    expect(await screen.findByText('Selected Campaign: 31')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Selected Campaign: 31'),
+    ).toBeInTheDocument();
   });
 
   it('adds, selects, moves, and removes runtime tokens through callbacks', async () => {
@@ -596,7 +606,9 @@ describe('BattleMapRuntimePage', () => {
     expect(await screen.findByText('Campaign Tokens: 1')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Add First Token' }));
     expect(await screen.findByText('Placed Tokens: 1')).toBeInTheDocument();
-    expect(screen.getByText('Selected Runtime Token: none')).toBeInTheDocument();
+    expect(
+      screen.getByText('Selected Runtime Token: none'),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add First Token' }));
     expect(screen.getByText('Placed Tokens: 1')).toBeInTheDocument();
@@ -656,7 +668,9 @@ describe('BattleMapRuntimePage', () => {
     routerMockState.beforeUnloadHandler?.(idleEvent);
     expect(idleEvent.preventDefault).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger Grid Change' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger Grid Change' }),
+    );
     const pendingEvent = {
       preventDefault: vi.fn(),
       returnValue: undefined as string | undefined,
@@ -691,7 +705,9 @@ describe('BattleMapRuntimePage', () => {
       }),
     ).toBe(false);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger Grid Change' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger Grid Change' }),
+    );
     expect(
       routerMockState.blockerPredicate?.({
         currentLocation: unchangedLocation,
@@ -713,7 +729,9 @@ describe('BattleMapRuntimePage', () => {
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger Grid Change' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger Grid Change' }),
+    );
 
     routerMockState.blockerState = 'blocked';
     fireEvent.click(
@@ -732,7 +750,9 @@ describe('BattleMapRuntimePage', () => {
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger Grid Change' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger Grid Change' }),
+    );
 
     routerMockState.blockerState = 'blocked';
     fireEvent.click(
@@ -764,7 +784,9 @@ describe('BattleMapRuntimePage', () => {
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger Grid Change' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger Grid Change' }),
+    );
 
     expect(
       await screen.findByText('Unable to persist runtime settings right now.'),
@@ -778,7 +800,9 @@ describe('BattleMapRuntimePage', () => {
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger Grid Change' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger Grid Change' }),
+    );
 
     routerMockState.blockerState = 'blocked';
     fireEvent.click(
@@ -815,7 +839,9 @@ describe('BattleMapRuntimePage', () => {
 
     await waitFor(() => {
       expect(tokensGetAllByCampaignMock).toHaveBeenCalledTimes(2);
-      expect(screen.getByText('First Runtime Token Missing: true')).toBeInTheDocument();
+      expect(
+        screen.getByText('First Runtime Token Missing: true'),
+      ).toBeInTheDocument();
     });
   });
 
