@@ -4,9 +4,9 @@
 
 The test suite has two independent runners:
 
-| Runner | Config file | Parallelism mechanism |
-|---|---|---|
-| Vitest (unit) | `vitest.config.ts` | Thread pool — each file runs in its own worker thread |
+| Runner           | Config file            | Parallelism mechanism                                       |
+| ---------------- | ---------------------- | ----------------------------------------------------------- |
+| Vitest (unit)    | `vitest.config.ts`     | Thread pool — each file runs in its own worker thread       |
 | Playwright (E2E) | `playwright.config.ts` | Worker processes — each worker runs one test file at a time |
 
 ---
@@ -44,13 +44,13 @@ ensures at least two files run concurrently even on dual-core machines.
 
 All 47 unit test files are parallel-safe at the file level. The breakdown:
 
-| Category | Files | Reason |
-|---|---|---|
-| Pure functions | `runtimeMath.test.ts`, `ipcChannels.test.ts` | No mocks, no state — fully isolated |
-| Renderer components | All `renderer/*.test.tsx` files | Mock `window.db` in `beforeEach`; jsdom is per-file |
-| Store | `exampleStore.test.ts` | `beforeEach` resets Zustand state |
-| Preload | `preload.test.ts` | `beforeEach` calls `vi.resetModules()` + `vi.clearAllMocks()` |
-| DB layer | `db.test.ts`, `tokens.test.ts`, `main.test.ts` | Use `vi.resetModules()` / `importMainWithMocks()` per test within the file |
+| Category            | Files                                          | Reason                                                                     |
+| ------------------- | ---------------------------------------------- | -------------------------------------------------------------------------- |
+| Pure functions      | `runtimeMath.test.ts`, `ipcChannels.test.ts`   | No mocks, no state — fully isolated                                        |
+| Renderer components | All `renderer/*.test.tsx` files                | Mock `window.db` in `beforeEach`; jsdom is per-file                        |
+| Store               | `exampleStore.test.ts`                         | `beforeEach` resets Zustand state                                          |
+| Preload             | `preload.test.ts`                              | `beforeEach` calls `vi.resetModules()` + `vi.clearAllMocks()`              |
+| DB layer            | `db.test.ts`, `tokens.test.ts`, `main.test.ts` | Use `vi.resetModules()` / `importMainWithMocks()` per test within the file |
 
 Within each file, tests run sequentially (Vitest always does this). Tests that call
 `vi.resetModules()` between cases are safe because the reset only touches the current worker's
@@ -99,20 +99,22 @@ Cleanup is handled by `closeApp(app, userDataDir)`:
 ```ts
 export async function closeApp(app, userDataDir): Promise<void> {
   await app.close().catch(() => undefined);
-  await fs.rm(userDataDir, { recursive: true, force: true }).catch(() => undefined);
+  await fs
+    .rm(userDataDir, { recursive: true, force: true })
+    .catch(() => undefined);
 }
 ```
 
 ### Which E2E files run in parallel?
 
-| File | Parallel-safe? | Notes |
-|---|---|---|
-| `app.test.ts` | Yes | Single test, fresh app per run |
-| `battlemaps.test.ts` | Yes | Fresh app + unique world name per run |
-| `abilities.test.ts` | Yes | Fresh app + unique world name per run |
-| `battlemap-runtime-play.test.ts` | Yes | Fresh app per run |
-| `tokens.test.ts` | Yes | Fresh app + fresh world in `beforeEach`; `afterEach` cleans up |
-| `arc-act.test.ts` | **Serial within file** | Uses `test.describe.configure({ mode: 'serial' })` — tests depend on each other's state. Runs in its own Playwright worker sequentially. |
+| File                             | Parallel-safe?         | Notes                                                                                                                                    |
+| -------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `app.test.ts`                    | Yes                    | Single test, fresh app per run                                                                                                           |
+| `battlemaps.test.ts`             | Yes                    | Fresh app + unique world name per run                                                                                                    |
+| `abilities.test.ts`              | Yes                    | Fresh app + unique world name per run                                                                                                    |
+| `battlemap-runtime-play.test.ts` | Yes                    | Fresh app per run                                                                                                                        |
+| `tokens.test.ts`                 | Yes                    | Fresh app + fresh world in `beforeEach`; `afterEach` cleans up                                                                           |
+| `arc-act.test.ts`                | **Serial within file** | Uses `test.describe.configure({ mode: 'serial' })` — tests depend on each other's state. Runs in its own Playwright worker sequentially. |
 
 ### Adding new E2E tests
 
