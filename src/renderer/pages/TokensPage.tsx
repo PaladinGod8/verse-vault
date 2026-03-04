@@ -6,6 +6,7 @@ import { useToast } from '../components/ui/ToastProvider';
 import TokenForm from '../components/tokens/TokenForm';
 import type { TokenFormValues } from '../components/tokens/TokenForm';
 import CopyTokenToCampaignDialog from '../components/tokens/CopyTokenToCampaignDialog';
+import MoveTokenDialog from '../components/tokens/MoveTokenDialog';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
@@ -39,6 +40,13 @@ export default function TokensPage() {
   );
   const [copyingToken, setCopyingToken] = useState<Token | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveDialogMode, setMoveDialogMode] = useState<'toWorld' | 'toCampaign' | null>(
+    null,
+  );
+  const [movingToken, setMovingToken] = useState<Token | null>(null);
+  const [isMoveDialogPending, setIsMoveDialogPending] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -225,6 +233,57 @@ export default function TokensPage() {
     }
   };
 
+  const handleMoveToWorld = (token: Token) => {
+    setMoveDialogMode('toWorld');
+    setMovingToken(token);
+    setMoveDialogOpen(true);
+  };
+
+  const handleMoveToCampaign = (token: Token) => {
+    setMoveDialogMode('toCampaign');
+    setMovingToken(token);
+    setMoveDialogOpen(true);
+  };
+
+  const handleConfirmMove = async (
+    token: Token,
+    targetCampaignId?: number,
+  ) => {
+    if (!movingToken) return;
+    setIsMoveDialogPending(true);
+    try {
+      if (moveDialogMode === 'toWorld') {
+        const updated = await window.db.tokens.moveToWorld(movingToken.id);
+        setTokens((prev) =>
+          prev.map((t) => (t.id === updated.id ? updated : t))
+        );
+        toast.success(`Moved "${movingToken.name}" to World.`);
+      } else if (moveDialogMode === 'toCampaign' && targetCampaignId) {
+        const updated = await window.db.tokens.moveToCampaign(
+          movingToken.id,
+          targetCampaignId,
+        );
+        setTokens((prev) =>
+          prev.map((t) => (t.id === updated.id ? updated : t))
+        );
+        const campaignName =
+          campaigns.find((c) => c.id === targetCampaignId)?.name || 'Unknown';
+        toast.success(
+          `Moved "${movingToken.name}" to ${campaignName}.`,
+        );
+      }
+      setMoveDialogOpen(false);
+      setMovingToken(null);
+    } catch (err) {
+      toast.error(
+        'Failed to move token.',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setIsMoveDialogPending(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       <WorldSidebar worldId={worldId} />
@@ -337,30 +396,66 @@ export default function TokensPage() {
                               setEditingToken(token);
                             }}
                             className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                            disabled={deletingToken?.id === token.id}
+                            disabled={
+                              deletingToken?.id === token.id || isMoveDialogPending
+                            }
                           >
                             Edit
                           </button>
+
+                          {token.campaign_id === null ? (
+                            <button
+                              type="button"
+                              onClick={() => handleMoveToCampaign(token)}
+                              className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={
+                                deletingToken?.id === token.id ||
+                                isMoveDialogPending
+                              }
+                            >
+                              Move to Campaign
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveToWorld(token)}
+                                className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={
+                                  deletingToken?.id === token.id ||
+                                  isMoveDialogPending
+                                }
+                              >
+                                Move to World
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleMoveToCampaign(token)
+                                }
+                                className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={
+                                  deletingToken?.id === token.id ||
+                                  isMoveDialogPending
+                                }
+                              >
+                                Move to Campaign
+                              </button>
+                            </>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => setPendingDeleteToken(token)}
                             className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                            disabled={deletingToken?.id === token.id}
+                            disabled={
+                              deletingToken?.id === token.id || isMoveDialogPending
+                            }
                           >
                             {deletingToken?.id === token.id
                               ? 'Deleting...'
                               : 'Delete'}
                           </button>
-                          {token.campaign_id === null ? (
-                            <button
-                              type="button"
-                              onClick={() => setCopyingToken(token)}
-                              className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={deletingToken?.id === token.id}
-                            >
-                              Copy to Campaign
-                            </button>
-                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -436,6 +531,21 @@ export default function TokensPage() {
           onConfirm={(campaignId) => void handleCopyToCampaign(campaignId)}
           onClose={() => setCopyingToken(null)}
           isSaving={isSaving}
+        />
+      ) : null}
+
+      {movingToken !== null ? (
+        <MoveTokenDialog
+          token={movingToken}
+          mode={moveDialogMode || 'toWorld'}
+          campaigns={campaigns}
+          isOpen={moveDialogOpen}
+          isPending={isMoveDialogPending}
+          onConfirm={handleConfirmMove}
+          onCancel={() => {
+            setMoveDialogOpen(false);
+            setMovingToken(null);
+          }}
         />
       ) : null}
     </div>

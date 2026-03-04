@@ -7,7 +7,7 @@ type MoveTokenDialogProps = {
   campaigns: Campaign[];
   isOpen: boolean;
   isPending: boolean;
-  onConfirm: (token: Token) => Promise<void>;
+  onConfirm: (token: Token, targetCampaignId?: number) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -63,13 +63,10 @@ export default function MoveTokenDialog({
   const handleConfirm = async () => {
     setError(null);
 
-    const nextToken: Token =
-      mode === 'toWorld'
-        ? { ...token, campaign_id: null }
-        : { ...token, campaign_id: selectedCampaignId };
-
     try {
-      await onConfirm(nextToken);
+      const campaignId =
+        mode === 'toCampaign' ? selectedCampaignId ?? undefined : undefined;
+      await onConfirm(token, campaignId);
     } catch (caughtError) {
       setError(toErrorMessage(caughtError));
     }
