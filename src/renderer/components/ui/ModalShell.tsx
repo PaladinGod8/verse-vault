@@ -1,4 +1,5 @@
 import { type MouseEvent, type ReactNode, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 type ModalShellProps = {
   isOpen: boolean;
@@ -66,7 +67,7 @@ export default function ModalShell({
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       className={joinClasses('modal modal-open p-4', className)}
       onMouseDown={handleBackdropMouseDown}
@@ -86,6 +87,7 @@ export default function ModalShell({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

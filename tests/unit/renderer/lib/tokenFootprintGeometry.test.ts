@@ -29,7 +29,9 @@ describe('tokenFootprintGeometry', () => {
       'Square occupancy must include at least one occupied cell',
     );
     expect(() =>
-      normalizeSquareOccupancy([{ col: 0.5, row: 1 } as TokenSquareFootprintCell]),
+      normalizeSquareOccupancy([
+        { col: 0.5, row: 1 } as TokenSquareFootprintCell,
+      ]),
     ).toThrowError('Square occupancy cell 0.col must be an integer');
   });
 

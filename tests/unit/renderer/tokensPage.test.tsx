@@ -446,7 +446,9 @@ describe('TokensPage', () => {
     const painterDialog = await screen.findByRole('dialog', {
       name: 'Footprint Painter',
     });
-    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
     await user.type(within(dialog).getByLabelText('Name *'), 'Uploaded Wolf');
     await user.click(within(dialog).getByRole('button', { name: 'Create' }));
 
@@ -573,7 +575,9 @@ describe('TokensPage', () => {
     const painterDialog = await screen.findByRole('dialog', {
       name: 'Footprint Painter',
     });
-    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(tokensImportImageMock).toHaveBeenCalledTimes(1));
@@ -686,7 +690,9 @@ describe('TokensPage', () => {
     const painterDialog = await screen.findByRole('dialog', {
       name: 'Footprint Painter',
     });
-    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
     await user.type(within(dialog).getByLabelText('Name *'), 'Upload Fail');
     await user.click(within(dialog).getByRole('button', { name: 'Create' }));
 
@@ -732,7 +738,9 @@ describe('TokensPage', () => {
     const painterDialog = await screen.findByRole('dialog', {
       name: 'Footprint Painter',
     });
-    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {

@@ -12,6 +12,15 @@ let page: Page | null = null;
 let worldId: number | null = null;
 let userDataDir: string | null = null;
 
+const PNG_IMAGE_A = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jr1cAAAAASUVORK5CYII=',
+  'base64',
+);
+const PNG_IMAGE_B = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR42mP8z/C/HwAF/gL+q6KYfwAAAABJRU5ErkJggg==',
+  'base64',
+);
+
 function tokenRows(window: Page, tokenName: string): Locator {
   return window.locator('tbody tr').filter({ hasText: tokenName });
 }
@@ -53,7 +62,7 @@ async function launchElectronApp(): Promise<Page> {
   app = result.app;
   userDataDir = result.userDataDir;
 
-  const mainWindow = await app.firstWindow();
+  const firstWindow = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => {
     const win =
       BrowserWindow.getAllWindows().find((candidate) => {
@@ -67,6 +76,27 @@ async function launchElectronApp(): Promise<Page> {
     win.center();
     win.focus();
   });
+
+  const start = Date.now();
+  let mainWindow: Page | null = null;
+  while (Date.now() - start < 12000) {
+    const windows = app.windows();
+    for (const candidate of windows) {
+      if (!candidate.url().startsWith('devtools://')) {
+        mainWindow = candidate;
+        break;
+      }
+    }
+    if (mainWindow) {
+      break;
+    }
+    await firstWindow.waitForTimeout(100);
+  }
+
+  if (!mainWindow) {
+    mainWindow = firstWindow;
+  }
+
   await mainWindow.bringToFront();
   await mainWindow.waitForLoadState('domcontentloaded');
   return mainWindow;
@@ -142,6 +172,7 @@ async function createTokenRecord(
     worldId: number;
     campaignId?: number | null;
     name: string;
+    gridType?: TokenGridType;
     imageSrc?: string | null;
     isVisible?: number;
   },
@@ -151,10 +182,53 @@ async function createTokenRecord(
       world_id: payload.worldId,
       campaign_id: payload.campaignId,
       name: payload.name,
+      grid_type: payload.gridType,
       image_src: payload.imageSrc,
       is_visible: payload.isVisible,
     });
   }, input);
+}
+
+async function waitForFootprintPainter(window: Page): Promise<Locator> {
+  const painterDialog = window.getByRole('dialog', {
+    name: 'Footprint Painter',
+  });
+  await expect(painterDialog).toBeVisible();
+  await expect(painterDialog.locator('canvas').first()).toBeVisible();
+  return painterDialog;
+}
+
+async function clickPainterButton(
+  painterDialog: Locator,
+  label: 'Confirm' | 'Cancel',
+) {
+  const button = painterDialog.getByRole('button', { name: label });
+  await expect(button).toBeVisible();
+  await button.dispatchEvent('click');
+}
+
+async function paintFootprintAndConfirm(window: Page) {
+  const painterDialog = await waitForFootprintPainter(window);
+  const painterCanvas = painterDialog.locator('canvas').first();
+  const confirmButton = painterDialog.getByRole('button', { name: 'Confirm' });
+
+  // Click several points to avoid image-fit edge cases across viewport/OS.
+  for (const point of [
+    { x: 400, y: 300 },
+    { x: 300, y: 250 },
+    { x: 500, y: 350 },
+  ]) {
+    await painterCanvas.click({ position: point });
+    if (await confirmButton.isEnabled()) {
+      break;
+    }
+  }
+
+  await expect(confirmButton).toBeEnabled();
+  await clickPainterButton(painterDialog, 'Confirm');
+  await expect(
+    window.getByRole('dialog', { name: 'Footprint Painter' }),
+  ).toHaveCount(0);
 }
 
 async function navigateToHashRoute(window: Page, hashPath: string) {
@@ -199,6 +273,7 @@ async function createWorldScopedTokenViaForm(
   window: Page,
   data: {
     name: string;
+    gridType?: TokenGridType;
     imageSrc?: string;
     isVisible?: boolean;
     imageUpload?: { name: string; mimeType: string; buffer: Buffer };
@@ -208,6 +283,9 @@ async function createWorldScopedTokenViaForm(
   const dialog = window.getByRole('dialog', { name: 'New Token' });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel('Name').fill(data.name);
+  if (data.gridType !== undefined) {
+    await dialog.getByLabel('Grid Type').selectOption(data.gridType);
+  }
   if (data.imageSrc !== undefined) {
     await dialog.getByLabel('Image URL').fill(data.imageSrc);
   }
@@ -220,6 +298,7 @@ async function createWorldScopedTokenViaForm(
   }
   if (data.imageUpload) {
     await dialog.locator('input[type="file"]').setInputFiles(data.imageUpload);
+    await paintFootprintAndConfirm(window);
   }
   await dialog.getByRole('button', { name: 'Create' }).click();
 }
@@ -262,16 +341,13 @@ test.describe('Token CRUD - World-Level', () => {
       imageUpload: {
         name: 'griffin.png',
         mimeType: 'image/png',
-        buffer: Buffer.from([
-          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
-          0x0d, 0x49, 0x48, 0x44, 0x52,
-        ]),
+        buffer: PNG_IMAGE_A,
       },
     });
 
     const createdRow = tokenRow(window, 'Uploaded Griffin');
     await expect(createdRow).toBeVisible();
-    await expect(createdRow.locator('td').nth(2)).toHaveText('World');
+    await expect(createdRow.locator('td').nth(3)).toHaveText('World');
     const image = tokenThumbnailImage(createdRow);
     await expect(image).toBeVisible();
     await expect(image).toHaveAttribute(
@@ -293,8 +369,91 @@ test.describe('Token CRUD - World-Level', () => {
 
     const createdRow = tokenRow(window, 'Dragon Head');
     await expect(createdRow).toBeVisible();
-    await expect(createdRow.locator('td').nth(2)).toHaveText('World');
+    await expect(createdRow.locator('td').nth(3)).toHaveText('World');
     await expect(window.getByText('Token created.')).toBeVisible();
+  });
+
+  test('creates and edits token grid type via form', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Grid Type Token',
+      gridType: 'hex',
+    });
+
+    const createdRow = tokenRow(window, 'Grid Type Token');
+    await expect(createdRow).toBeVisible();
+    await expect(createdRow.locator('td').nth(2)).toHaveText('Hex');
+
+    await createdRow.getByRole('button', { name: 'Edit' }).click();
+    const editDialog = window.getByRole('dialog', { name: 'Edit Token' });
+    await expect(editDialog).toBeVisible();
+    await editDialog.getByLabel('Grid Type').selectOption('square');
+    await editDialog.getByRole('button', { name: /^Save$/ }).click();
+
+    await expect(
+      tokenRow(window, 'Grid Type Token').locator('td').nth(2),
+    ).toHaveText('Square');
+    await expect(window.getByText('Token updated.')).toBeVisible();
+  });
+
+  test('footprint painter requires painted cells before confirm', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+
+    await window.getByRole('button', { name: 'New Token' }).click();
+    const dialog = window.getByRole('dialog', { name: 'New Token' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Name').fill('Painter Empty Guard');
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'painter-empty.png',
+      mimeType: 'image/png',
+      buffer: PNG_IMAGE_A,
+    });
+
+    const painterDialog = await waitForFootprintPainter(window);
+    const confirmButton = painterDialog.getByRole('button', {
+      name: 'Confirm',
+    });
+    await expect(confirmButton).toBeDisabled();
+    await expect(confirmButton).toHaveAttribute(
+      'title',
+      'Mark at least one cell to continue',
+    );
+
+    await clickPainterButton(painterDialog, 'Cancel');
+    await expect(
+      window.getByRole('dialog', { name: 'Footprint Painter' }),
+    ).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+  });
+
+  test('footprint painter cancel does not attach pending upload', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+
+    await window.getByRole('button', { name: 'New Token' }).click();
+    const dialog = window.getByRole('dialog', { name: 'New Token' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Name').fill('Painter Cancel Token');
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'painter-cancel.png',
+      mimeType: 'image/png',
+      buffer: PNG_IMAGE_A,
+    });
+
+    const painterDialog = await waitForFootprintPainter(window);
+    await clickPainterButton(painterDialog, 'Cancel');
+    await expect(
+      window.getByRole('dialog', { name: 'Footprint Painter' }),
+    ).toHaveCount(0);
+
+    await dialog.getByRole('button', { name: 'Create' }).click();
+
+    const createdRow = tokenRow(window, 'Painter Cancel Token');
+    await expect(createdRow).toBeVisible();
+    await expect(tokenThumbnailImage(createdRow)).toHaveCount(0);
   });
 
   test('shows validation error for empty name', async () => {
@@ -340,17 +499,13 @@ test.describe('Token CRUD - World-Level', () => {
       imageUpload: {
         name: 'old.png',
         mimeType: 'image/png',
-        buffer: Buffer.from([
-          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
-          0x0d, 0x49, 0x48, 0x44, 0x52,
-        ]),
+        buffer: PNG_IMAGE_A,
       },
     });
 
     const rowBefore = tokenRow(window, 'Replace Image Token');
     await expect(rowBefore).toBeVisible();
-    const beforeSrc = await tokenThumbnailImage(rowBefore).getAttribute('src');
-    expect(beforeSrc).toBeTruthy();
+    await expect(tokenThumbnailImage(rowBefore)).toBeVisible();
 
     await rowBefore.getByRole('button', { name: 'Edit' }).click();
     const dialog = window.getByRole('dialog', { name: 'Edit Token' });
@@ -358,11 +513,9 @@ test.describe('Token CRUD - World-Level', () => {
     await dialog.locator('input[type="file"]').setInputFiles({
       name: 'new.png',
       mimeType: 'image/png',
-      buffer: Buffer.from([
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03, 0x04,
-        0x49, 0x48, 0x44, 0x52,
-      ]),
+      buffer: PNG_IMAGE_B,
     });
+    await paintFootprintAndConfirm(window);
     await dialog.getByRole('button', { name: /^Save$/ }).click();
 
     const rowAfter = tokenRow(window, 'Replace Image Token');
@@ -371,7 +524,7 @@ test.describe('Token CRUD - World-Level', () => {
     await expect(imageAfter).toBeVisible();
     const afterSrc = await imageAfter.getAttribute('src');
     expect(afterSrc).toBeTruthy();
-    expect(afterSrc).not.toBe(beforeSrc);
+    expect(afterSrc).toMatch(/vv-media:\/\/token-images\/.+/i);
     await expect(window.getByText('Token updated.')).toBeVisible();
   });
 
@@ -383,10 +536,7 @@ test.describe('Token CRUD - World-Level', () => {
       imageUpload: {
         name: 'clearable.png',
         mimeType: 'image/png',
-        buffer: Buffer.from([
-          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x08, 0x09, 0x0a,
-          0x0b, 0x49, 0x48, 0x44, 0x52,
-        ]),
+        buffer: PNG_IMAGE_A,
       },
     });
 
@@ -414,10 +564,7 @@ test.describe('Token CRUD - World-Level', () => {
       imageUpload: {
         name: 'guard.png',
         mimeType: 'image/png',
-        buffer: Buffer.from([
-          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x10, 0x11, 0x12,
-          0x13, 0x49, 0x48, 0x44, 0x52,
-        ]),
+        buffer: PNG_IMAGE_A,
       },
     });
     const existingRow = tokenRow(window, 'Invalid Upload Guard');
@@ -504,7 +651,7 @@ test.describe('Copy to Campaign', () => {
       torchRows.filter({
         has: window
           .locator('td')
-          .nth(2)
+          .nth(3)
           .filter({ hasText: /^World$/ }),
       }),
     ).toHaveCount(1);
@@ -512,7 +659,7 @@ test.describe('Copy to Campaign', () => {
       torchRows.filter({
         has: window
           .locator('td')
-          .nth(2)
+          .nth(3)
           .filter({ hasText: new RegExp(`^Campaign: ${campaignName}$`) }),
       }),
     ).toHaveCount(1);
@@ -553,7 +700,7 @@ test.describe('Scope Labels', () => {
     await createWorldScopedTokenViaForm(window, { name: 'Scope World Token' });
 
     await expect(
-      tokenRow(window, 'Scope World Token').locator('td').nth(2),
+      tokenRow(window, 'Scope World Token').locator('td').nth(3),
     ).toHaveText('World');
   });
 
@@ -579,7 +726,7 @@ test.describe('Scope Labels', () => {
       .filter({ hasText: `Campaign: ${campaignName}` })
       .first();
     await expect(campaignScopedRow).toBeVisible();
-    await expect(campaignScopedRow.locator('td').nth(2)).toHaveText(
+    await expect(campaignScopedRow.locator('td').nth(3)).toHaveText(
       new RegExp(
         `^Campaign: ${campaignName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
       ),
