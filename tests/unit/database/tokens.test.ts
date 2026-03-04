@@ -221,7 +221,9 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
         valueIndex += 1;
       }
       if (lastTokenUpdateSql.includes('grid_type = ?')) {
-        existing.grid_type = String(args[valueIndex] ?? 'square') as TokenGridType;
+        existing.grid_type = String(
+          args[valueIndex] ?? 'square',
+        ) as TokenGridType;
         valueIndex += 1;
       }
       if (lastTokenUpdateSql.includes('is_visible = ?')) {

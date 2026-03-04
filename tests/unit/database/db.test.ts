@@ -343,7 +343,9 @@ describe('database', () => {
           },
         }),
       ),
-    ).toThrowError("Token config footprint.grid_type must be 'square' or 'hex'");
+    ).toThrowError(
+      "Token config footprint.grid_type must be 'square' or 'hex'",
+    );
 
     expect(() =>
       ensureTokenConfigJsonText(
@@ -353,7 +355,9 @@ describe('database', () => {
           },
         }),
       ),
-    ).toThrowError('Token config footprint.square_cells[0].col must be an integer');
+    ).toThrowError(
+      'Token config footprint.square_cells[0].col must be an integer',
+    );
 
     expect(() =>
       ensureTokenConfigJsonText(
@@ -363,6 +367,8 @@ describe('database', () => {
           },
         }),
       ),
-    ).toThrowError('Token config footprint.radius_cells must be greater than 0');
+    ).toThrowError(
+      'Token config footprint.radius_cells must be greater than 0',
+    );
   });
 });

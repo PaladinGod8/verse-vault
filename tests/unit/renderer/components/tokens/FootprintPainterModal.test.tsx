@@ -62,8 +62,8 @@ beforeEach(() => {
   };
 });
 
-function setCanvasRects(container: HTMLElement) {
-  const canvases = Array.from(container.querySelectorAll('canvas'));
+function setCanvasRects() {
+  const canvases = Array.from(document.body.querySelectorAll('canvas'));
   for (const canvas of canvases) {
     canvas.getBoundingClientRect = () =>
       ({
@@ -114,7 +114,7 @@ describe('FootprintPainterModal', () => {
 
   it('blocks confirm until a cell is painted, then emits square footprint payload', async () => {
     const onConfirm = vi.fn();
-    const { container } = render(
+    render(
       <FootprintPainterModal
         isOpen
         onClose={vi.fn()}
@@ -128,7 +128,7 @@ describe('FootprintPainterModal', () => {
       expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled();
     });
 
-    const [mainCanvas] = setCanvasRects(container);
+    const [mainCanvas] = setCanvasRects();
     fireEvent.mouseDown(mainCanvas, { clientX: 130, clientY: 30 });
     fireEvent.mouseDown(mainCanvas, { clientX: 170, clientY: 30 });
 
@@ -159,7 +159,7 @@ describe('FootprintPainterModal', () => {
   });
 
   it('supports eraser mode and re-blocks confirm when all cells are removed', async () => {
-    const { container } = render(
+    render(
       <FootprintPainterModal
         isOpen
         onClose={vi.fn()}
@@ -173,7 +173,7 @@ describe('FootprintPainterModal', () => {
       expect(screen.getByText(/Paint Token Footprint/i)).toBeInTheDocument();
     });
 
-    const [mainCanvas] = setCanvasRects(container);
+    const [mainCanvas] = setCanvasRects();
     fireEvent.mouseDown(mainCanvas, { clientX: 130, clientY: 30 });
     expect(screen.getByText('Occupied: 1 cell')).toBeInTheDocument();
 
@@ -186,7 +186,7 @@ describe('FootprintPainterModal', () => {
 
   it('emits hex footprint payload with radius and max extent', async () => {
     const onConfirm = vi.fn();
-    const { container } = render(
+    render(
       <FootprintPainterModal
         isOpen
         onClose={vi.fn()}
@@ -200,7 +200,7 @@ describe('FootprintPainterModal', () => {
       expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled();
     });
 
-    const [mainCanvas] = setCanvasRects(container);
+    const [mainCanvas] = setCanvasRects();
     fireEvent.mouseDown(mainCanvas, { clientX: 130, clientY: 30 });
     fireEvent.mouseDown(mainCanvas, { clientX: 190, clientY: 30 });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));

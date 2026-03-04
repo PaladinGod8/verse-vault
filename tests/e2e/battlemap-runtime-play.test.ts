@@ -4,7 +4,9 @@ import { launchApp, closeApp } from './helpers/launchApp';
 async function getMainWindow(
   app: import('playwright').ElectronApplication,
 ): Promise<import('@playwright/test').Page> {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+  const firstWindow = await app.firstWindow();
+
+  for (let attempt = 0; attempt < 120; attempt += 1) {
     const windows = app.windows();
     const mainWindow = windows.find(
       (candidate) => !candidate.url().startsWith('devtools://'),
@@ -12,10 +14,10 @@ async function getMainWindow(
     if (mainWindow) {
       return mainWindow;
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await firstWindow.waitForTimeout(100);
   }
 
-  throw new Error('Unable to find Electron main window for E2E test.');
+  return firstWindow;
 }
 
 function battleMapRow(
@@ -79,6 +81,8 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     const campaignName = `E2E Runtime Campaign ${unique}`;
     const battleMapName = `E2E Runtime BattleMap ${unique}`;
     const tokenName = `E2E Runtime Token ${unique}`;
+    const squareWorldTokenName = `E2E Runtime Square World Token ${unique}`;
+    const hexWorldTokenName = `E2E Runtime Hex World Token ${unique}`;
 
     await window.getByRole('button', { name: 'Create world' }).click();
     const worldDialog = window.getByRole('dialog', { name: 'Create world' });
@@ -133,6 +137,8 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
         nextCampaignName,
         nextBattleMapName,
         nextTokenName,
+        nextSquareWorldTokenName,
+        nextHexWorldTokenName,
       }) => {
         const worlds = await window.db.worlds.getAll();
         const world = worlds.find(
@@ -162,6 +168,21 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
           world_id: world.id,
           campaign_id: campaign.id,
           name: nextTokenName,
+          grid_type: 'square',
+          is_visible: 1,
+        });
+
+        await window.db.tokens.add({
+          world_id: world.id,
+          name: nextSquareWorldTokenName,
+          grid_type: 'square',
+          is_visible: 1,
+        });
+
+        await window.db.tokens.add({
+          world_id: world.id,
+          name: nextHexWorldTokenName,
+          grid_type: 'hex',
           is_visible: 1,
         });
 
@@ -175,6 +196,8 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
         nextCampaignName: campaignName,
         nextBattleMapName: battleMapName,
         nextTokenName: tokenName,
+        nextSquareWorldTokenName: squareWorldTokenName,
+        nextHexWorldTokenName: hexWorldTokenName,
       },
     );
 
@@ -192,6 +215,17 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
       .first();
     const gridModeSelect = gridControls.locator('select').first();
     await expect(gridModeSelect).toHaveValue('square');
+
+    const worldTokensSection = window
+      .locator('section')
+      .filter({ hasText: 'World Tokens' })
+      .first();
+    await expect(
+      worldTokensSection.getByText(squareWorldTokenName),
+    ).toBeVisible();
+    await expect(worldTokensSection.getByText(hexWorldTokenName)).toHaveCount(
+      0,
+    );
 
     const squareGridSnapshot = await runtimeCanvas.screenshot();
     await gridModeSelect.selectOption('none');
@@ -215,6 +249,20 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.waitForTimeout(250);
     const noGridSnapshot = await runtimeCanvas.screenshot();
     expect(noGridSnapshot.equals(squareGridSnapshot)).toBe(false);
+    await expect(
+      worldTokensSection.getByText(squareWorldTokenName),
+    ).toBeVisible();
+    await expect(worldTokensSection.getByText(hexWorldTokenName)).toBeVisible();
+
+    await gridModeSelect.selectOption('hex');
+    await expect(gridModeSelect).toHaveValue('hex');
+    await expect(
+      worldTokensSection.getByText(squareWorldTokenName),
+    ).toHaveCount(0);
+    await expect(worldTokensSection.getByText(hexWorldTokenName)).toBeVisible();
+
+    await gridModeSelect.selectOption('none');
+    await expect(gridModeSelect).toHaveValue('none');
 
     await window.getByRole('button', { name: 'Exit Runtime' }).click();
     await expect(

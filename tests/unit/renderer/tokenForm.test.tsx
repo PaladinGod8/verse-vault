@@ -216,7 +216,9 @@ describe('TokenForm', () => {
     const painterDialog = await screen.findByRole('dialog', {
       name: 'Footprint Painter',
     });
-    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
     expect(screen.getByText('token.png')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Name *'), 'Wolf');
@@ -377,7 +379,9 @@ describe('TokenForm', () => {
     const painterDialog = await screen.findByRole('dialog', {
       name: 'Footprint Painter',
     });
-    await user.click(within(painterDialog).getByRole('button', { name: 'Confirm' }));
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
     const replacePayload = onSave.mock.calls[1][0] as TokenFormValues;

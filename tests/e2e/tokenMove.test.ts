@@ -82,7 +82,7 @@ test.describe('Token Move Flows', () => {
     });
     await goToTokensPage(window, targetWorldId);
 
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       'World',
     );
 
@@ -99,7 +99,7 @@ test.describe('Token Move Flows', () => {
     await expect(
       window.getByText(`Moved "${tokenName}" to ${campaignName}.`),
     ).toBeVisible();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       `Campaign: ${campaignName}`,
     );
   });
@@ -120,7 +120,7 @@ test.describe('Token Move Flows', () => {
     });
     await goToTokensPage(window, targetWorldId);
 
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       `Campaign: ${campaignName}`,
     );
 
@@ -134,7 +134,7 @@ test.describe('Token Move Flows', () => {
     await expect(
       window.getByText(`Moved "${tokenName}" to World.`),
     ).toBeVisible();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       'World',
     );
   });
@@ -157,7 +157,7 @@ test.describe('Token Move Flows', () => {
     });
     await goToTokensPage(window, targetWorldId);
 
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       `Campaign: ${campaign1Name}`,
     );
 
@@ -171,7 +171,7 @@ test.describe('Token Move Flows', () => {
     await expect(
       window.getByText(`Moved "${tokenName}" to ${campaign2Name}.`),
     ).toBeVisible();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       `Campaign: ${campaign2Name}`,
     );
   });
@@ -198,7 +198,7 @@ test.describe('Token Move Flows', () => {
     await dialog.getByRole('button', { name: 'Cancel' }).click();
 
     await expect(dialog).toBeHidden();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       `Campaign: ${campaignName}`,
     );
   });
@@ -307,7 +307,7 @@ test.describe('Token Move Flows', () => {
 
     await expect(window.getByText('Failed to move token.')).toBeVisible();
     await expect(window.getByText('Campaign not found')).toBeVisible();
-    await expect(tokenRow(window, tokenName).locator('td').nth(2)).toHaveText(
+    await expect(tokenRow(window, tokenName).locator('td').nth(3)).toHaveText(
       'World',
     );
   });
@@ -328,7 +328,7 @@ test.describe('Token Move Flows', () => {
     });
     await goToTokensPage(window, targetWorldId);
 
-    const scopeCell = tokenRow(window, tokenName).locator('td').nth(2);
+    const scopeCell = tokenRow(window, tokenName).locator('td').nth(3);
     await expect(scopeCell).toHaveText('World');
 
     await getMoveButton(window, tokenName, 'to-campaign').click();
