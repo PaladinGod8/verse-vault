@@ -120,6 +120,17 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.TOKENS_GET_ALL_BY_WORLD, worldId),
     getAllByCampaign: (campaignId: number): Promise<Token[]> =>
       ipcRenderer.invoke(IPC.TOKENS_GET_ALL_BY_CAMPAIGN, campaignId),
+    moveToWorld: (tokenId: number): Promise<Token> =>
+      ipcRenderer.invoke(IPC.TOKENS_MOVE_TO_WORLD, tokenId),
+    moveToCampaign: (
+      tokenId: number,
+      targetCampaignId: number,
+    ): Promise<Token> =>
+      ipcRenderer.invoke(
+        IPC.TOKENS_MOVE_TO_CAMPAIGN,
+        tokenId,
+        targetCampaignId,
+      ),
     getById: (id: number): Promise<Token | null> =>
       ipcRenderer.invoke(IPC.TOKENS_GET_BY_ID, id),
     importImage: (
