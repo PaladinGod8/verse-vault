@@ -87,6 +87,27 @@ function MapIcon() {
   );
 }
 
+function TokensIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="10" r="3" />
+      <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+    </svg>
+  );
+}
+
 export default function WorldSidebar({ worldId }: WorldSidebarProps) {
   return (
     <aside className="flex w-16 flex-col items-center gap-2 border-r border-slate-200 bg-white py-4 shadow-sm">
@@ -145,6 +166,20 @@ export default function WorldSidebar({ worldId }: WorldSidebarProps) {
       >
         <MapIcon />
         <span>BattleMaps</span>
+      </NavLink>
+      <NavLink
+        to={`/world/${worldId}/tokens`}
+        className={({ isActive }) =>
+          [
+            'flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-xs leading-tight font-medium transition',
+            isActive
+              ? 'bg-slate-100 text-slate-900'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
+          ].join(' ')
+        }
+      >
+        <TokensIcon />
+        <span>Tokens</span>
       </NavLink>
     </aside>
   );
