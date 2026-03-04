@@ -349,8 +349,11 @@ export default function BattleMapRuntimePage() {
     ),
   );
 
-  const { state: blockerState, proceed: blockerProceed, reset: blockerReset } =
-    blocker;
+  const {
+    state: blockerState,
+    proceed: blockerProceed,
+    reset: blockerReset,
+  } = blocker;
 
   useEffect(() => {
     if (blockerState !== 'blocked') {
@@ -363,7 +366,9 @@ export default function BattleMapRuntimePage() {
         blockerProceed?.();
         return;
       }
-      const shouldDiscard = window.confirm(UNSAVED_RUNTIME_CONFIRMATION_MESSAGE);
+      const shouldDiscard = window.confirm(
+        UNSAVED_RUNTIME_CONFIRMATION_MESSAGE,
+      );
       if (shouldDiscard) {
         blockerProceed?.();
       } else {
