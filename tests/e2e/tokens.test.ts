@@ -22,6 +22,10 @@ function tokenRow(window: Page, tokenName: string): Locator {
   return tokenRows(window, tokenName).first();
 }
 
+function tokenThumbnailImage(row: Locator): Locator {
+  return row.locator('td').first().locator('img');
+}
+
 function runtimePalette(window: Page): Locator {
   return window
     .locator('section')
@@ -195,7 +199,12 @@ async function goToRuntimePage(
 
 async function createWorldScopedTokenViaForm(
   window: Page,
-  data: { name: string; imageSrc?: string; isVisible?: boolean },
+  data: {
+    name: string;
+    imageSrc?: string;
+    isVisible?: boolean;
+    imageUpload?: { name: string; mimeType: string; buffer: Buffer };
+  },
 ) {
   await window.getByRole('button', { name: 'New Token' }).click();
   const dialog = window.getByRole('dialog', { name: 'New Token' });
@@ -210,6 +219,9 @@ async function createWorldScopedTokenViaForm(
     if (isChecked !== data.isVisible) {
       await visibleCheckbox.click();
     }
+  }
+  if (data.imageUpload) {
+    await dialog.locator('input[type="file"]').setInputFiles(data.imageUpload);
   }
   await dialog.getByRole('button', { name: 'Create' }).click();
 }
@@ -240,6 +252,34 @@ test.afterEach(async () => {
 });
 
 test.describe('Token CRUD - World-Level', () => {
+  test('creates a world-scoped token with uploaded image', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Uploaded Griffin',
+      imageUpload: {
+        name: 'griffin.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from([
+          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
+          0x0d, 0x49, 0x48, 0x44, 0x52,
+        ]),
+      },
+    });
+
+    const createdRow = tokenRow(window, 'Uploaded Griffin');
+    await expect(createdRow).toBeVisible();
+    await expect(createdRow.locator('td').nth(2)).toHaveText('World');
+    const image = tokenThumbnailImage(createdRow);
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute(
+      'src',
+      /file:\/\/\/.+\/token-images\/.+\.png$/i,
+    );
+    await expect(window.getByText('Token created.')).toBeVisible();
+  });
+
   test('creates a world-scoped token', async () => {
     const { page: window, worldId: targetWorldId } = requirePageAndWorld();
     await goToTokensPage(window, targetWorldId);
@@ -289,6 +329,123 @@ test.describe('Token CRUD - World-Level', () => {
     await expect(tokenRow(window, 'Renamed Token')).toBeVisible();
     await expect(tokenRows(window, 'Test Edit Token')).toHaveCount(0);
     await expect(window.getByText('Token updated.')).toBeVisible();
+  });
+
+  test('replaces token image during edit', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Replace Image Token',
+      imageUpload: {
+        name: 'old.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from([
+          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
+          0x0d, 0x49, 0x48, 0x44, 0x52,
+        ]),
+      },
+    });
+
+    const rowBefore = tokenRow(window, 'Replace Image Token');
+    await expect(rowBefore).toBeVisible();
+    const beforeSrc = await tokenThumbnailImage(rowBefore).getAttribute('src');
+    expect(beforeSrc).toBeTruthy();
+
+    await rowBefore.getByRole('button', { name: 'Edit' }).click();
+    const dialog = window.getByRole('dialog', { name: 'Edit Token' });
+    await expect(dialog).toBeVisible();
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'new.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03, 0x04,
+        0x49, 0x48, 0x44, 0x52,
+      ]),
+    });
+    await dialog.getByRole('button', { name: /^Save$/ }).click();
+
+    const rowAfter = tokenRow(window, 'Replace Image Token');
+    await expect(rowAfter).toBeVisible();
+    const imageAfter = tokenThumbnailImage(rowAfter);
+    await expect(imageAfter).toBeVisible();
+    const afterSrc = await imageAfter.getAttribute('src');
+    expect(afterSrc).toBeTruthy();
+    expect(afterSrc).not.toBe(beforeSrc);
+    await expect(window.getByText('Token updated.')).toBeVisible();
+  });
+
+  test('clears token image during edit and shows placeholder', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Clear Image Token',
+      imageUpload: {
+        name: 'clearable.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from([
+          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x08, 0x09, 0x0a,
+          0x0b, 0x49, 0x48, 0x44, 0x52,
+        ]),
+      },
+    });
+
+    const rowBefore = tokenRow(window, 'Clear Image Token');
+    await expect(tokenThumbnailImage(rowBefore)).toHaveCount(1);
+
+    await rowBefore.getByRole('button', { name: 'Edit' }).click();
+    const dialog = window.getByRole('dialog', { name: 'Edit Token' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Clear image on save' }).click();
+    await dialog.getByRole('button', { name: /^Save$/ }).click();
+
+    const rowAfter = tokenRow(window, 'Clear Image Token');
+    const imageCell = rowAfter.locator('td').first();
+    await expect(imageCell.locator('img')).toHaveCount(0);
+    await expect(imageCell.locator('div')).toBeVisible();
+    await expect(window.getByText('Token updated.')).toBeVisible();
+  });
+
+  test('shows inline validation for invalid upload and keeps token unchanged', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Invalid Upload Guard',
+      imageUpload: {
+        name: 'guard.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from([
+          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x10, 0x11, 0x12,
+          0x13, 0x49, 0x48, 0x44, 0x52,
+        ]),
+      },
+    });
+    const existingRow = tokenRow(window, 'Invalid Upload Guard');
+    const stableSrc =
+      await tokenThumbnailImage(existingRow).getAttribute('src');
+    expect(stableSrc).toBeTruthy();
+
+    await existingRow.getByRole('button', { name: 'Edit' }).click();
+    const dialog = window.getByRole('dialog', { name: 'Edit Token' });
+    await expect(dialog).toBeVisible();
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'invalid.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('not-an-image', 'utf-8'),
+    });
+    await expect(
+      dialog.getByText('Unsupported image type. Use PNG, JPEG, WEBP, or GIF.'),
+    ).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+    const rowAfter = tokenRow(window, 'Invalid Upload Guard');
+    await expect(rowAfter).toBeVisible();
+    if (!stableSrc) {
+      throw new Error('Expected initial thumbnail src to exist.');
+    }
+    await expect(tokenThumbnailImage(rowAfter)).toHaveAttribute(
+      'src',
+      stableSrc,
+    );
   });
 
   test('deletes a token', async () => {
