@@ -83,9 +83,6 @@ function initializeSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id
       ON tokens(campaign_id);
 
-    CREATE INDEX IF NOT EXISTS idx_tokens_world_id
-      ON tokens(world_id);
-
     CREATE TABLE IF NOT EXISTS arcs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -158,6 +155,7 @@ function initializeSchema(db: Database.Database): void {
   runArcActMigration(db);
   runSessionPlannedAtMigration(db);
   runTokenWorldIdMigration(db);
+  ensureTokenWorldIdIndex(db);
 }
 
 function runArcActMigration(db: Database.Database): void {
@@ -258,6 +256,13 @@ function runTokenWorldIdMigration(db: Database.Database): void {
     )
     WHERE world_id IS NULL AND campaign_id IS NOT NULL
   `);
+}
+
+function ensureTokenWorldIdIndex(db: Database.Database): void {
+  const cols = db.pragma('table_info(tokens)') as { name: string }[];
+  if (!cols.some((c) => c.name === 'world_id')) {
+    return;
+  }
 
   db.exec(`CREATE INDEX IF NOT EXISTS idx_tokens_world_id ON tokens(world_id)`);
 }
