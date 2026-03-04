@@ -283,6 +283,12 @@ export default function BattleMapsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-3">
+                        <Link
+                          to={`/world/${worldId}/battlemaps/${battleMap.id}/runtime`}
+                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                        >
+                          Play
+                        </Link>
                         <button
                           type="button"
                           onClick={() => {
