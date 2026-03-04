@@ -292,6 +292,19 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.up();
     await window.waitForTimeout(250);
 
+    // Wheel zoom smoke test: zoom in then zoom out; canvas must remain functional.
+    await window.mouse.move(centerX, centerY);
+    const preZoomSnapshot = await runtimeCanvasAfterReload.screenshot();
+    // Scroll down (positive deltaY) → zoom in toward MAX_CAMERA_ZOOM (8)
+    await window.mouse.wheel(0, 5000);
+    await window.waitForTimeout(300);
+    const postZoomInSnapshot = await runtimeCanvasAfterReload.screenshot();
+    expect(postZoomInSnapshot.equals(preZoomSnapshot)).toBe(false);
+    // Scroll up (negative deltaY) → zoom out toward effective min
+    await window.mouse.wheel(0, -20000);
+    await window.waitForTimeout(300);
+    await expect(runtimeCanvasAfterReload).toBeVisible();
+
     await window.getByRole('button', { name: 'Exit Runtime' }).click();
     await expect(
       window.getByRole('heading', { name: worldName, level: 1 }),

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clampCameraZoom,
   clampGridCellSize,
   DEFAULT_GRID_CELL_SIZE,
+  getMinZoomForScene,
   getPointyHexRangeForBounds,
   getPointyHexVertexOffsets,
+  getRuntimeSceneBounds,
   getSafeCameraZoom,
   getSquareGridLinePositions,
   getWorldViewportBounds,
+  MAX_CAMERA_ZOOM,
+  MIN_CAMERA_ZOOM,
   pointyHexCenterFromAxial,
   stepCameraCenterTowardTarget,
   worldDeltaFromScreenDelta,
@@ -65,6 +70,53 @@ describe('runtimeMath', () => {
     expect(vertices).toHaveLength(6);
     expect(vertices[0]).toEqual({ x: 0, y: -20 });
     expect(vertices[3]).toEqual({ x: 0, y: 20 });
+  });
+
+  it('returns viewport dimensions as scene bounds and guards against non-positive inputs', () => {
+    expect(getRuntimeSceneBounds(1000, 600)).toEqual({
+      width: 1000,
+      height: 600,
+    });
+    expect(getRuntimeSceneBounds(0, 600)).toEqual({ width: 1, height: 600 });
+    expect(getRuntimeSceneBounds(1000, -5)).toEqual({ width: 1000, height: 1 });
+    expect(getRuntimeSceneBounds(0, 0)).toEqual({ width: 1, height: 1 });
+  });
+
+  it('returns fit-to-edges zoom for scene, floored to MIN_CAMERA_ZOOM', () => {
+    // Equal viewport and scene → fitZoom = 1.0
+    expect(getMinZoomForScene(1000, 600, { width: 1000, height: 600 })).toBe(1);
+    // Scene larger than viewport → fitZoom < 1 but above MIN_CAMERA_ZOOM
+    expect(
+      getMinZoomForScene(400, 300, { width: 1000, height: 600 }),
+    ).toBeCloseTo(0.4, 8);
+    // Very large scene → fitZoom < MIN_CAMERA_ZOOM → clamped to MIN_CAMERA_ZOOM
+    expect(getMinZoomForScene(100, 50, { width: 10000, height: 6000 })).toBe(
+      MIN_CAMERA_ZOOM,
+    );
+    // Invalid viewport → returns MIN_CAMERA_ZOOM
+    expect(getMinZoomForScene(0, 600, { width: 1000, height: 600 })).toBe(
+      MIN_CAMERA_ZOOM,
+    );
+    expect(getMinZoomForScene(1000, 0, { width: 1000, height: 600 })).toBe(
+      MIN_CAMERA_ZOOM,
+    );
+  });
+
+  it('clamps camera zoom to [minZoom, MAX_CAMERA_ZOOM] with MIN_CAMERA_ZOOM as absolute floor', () => {
+    // Within range
+    expect(clampCameraZoom(2, 0.5)).toBe(2);
+    // Below minZoom → clamps up to minZoom
+    expect(clampCameraZoom(0.1, 0.5)).toBe(0.5);
+    // Above MAX_CAMERA_ZOOM → clamps down
+    expect(clampCameraZoom(100, 0.5)).toBe(MAX_CAMERA_ZOOM);
+    // minZoom below absolute MIN_CAMERA_ZOOM floor → floor applies
+    expect(clampCameraZoom(0.1, 0.01)).toBe(MIN_CAMERA_ZOOM);
+    // Custom maxZoom
+    expect(clampCameraZoom(5, 0.5, 4)).toBe(4);
+    // Invalid zoom (zero) → getSafeCameraZoom fallback = 1, then clamped within range
+    expect(clampCameraZoom(0, 0.5)).toBe(1);
+    // Invalid minZoom (NaN) → safeMin = MIN_CAMERA_ZOOM
+    expect(clampCameraZoom(2, Number.NaN)).toBe(2);
   });
 
   it('computes pointy-hex centers and visible axial ranges', () => {
