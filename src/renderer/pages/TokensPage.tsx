@@ -16,6 +16,10 @@ function scopeLabel(token: Token, campaigns: Campaign[]): string {
   return campaign ? `Campaign: ${campaign.name}` : 'Campaign';
 }
 
+function gridTypeLabel(gridType: TokenGridType): string {
+  return gridType === 'hex' ? 'Hex' : 'Square';
+}
+
 export default function TokensPage() {
   const toast = useToast();
   const { id } = useParams();
@@ -132,6 +136,7 @@ export default function TokensPage() {
       await window.db.tokens.add({
         world_id: worldId,
         name: data.name,
+        grid_type: data.grid_type,
         image_src: imageSrc,
         is_visible: data.is_visible,
       });
@@ -154,10 +159,12 @@ export default function TokensPage() {
     try {
       const updatePayload: {
         name: string;
+        grid_type: TokenGridType;
         image_src?: string | null;
         is_visible: number;
       } = {
         name: data.name,
+        grid_type: data.grid_type,
         is_visible: data.is_visible,
       };
 
@@ -344,6 +351,9 @@ export default function TokensPage() {
                     Name
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-slate-500">
+                    Grid
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">
                     Scope
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-slate-500">
@@ -377,6 +387,17 @@ export default function TokensPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 font-medium">{token.name}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                            token.grid_type === 'hex'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {gridTypeLabel(token.grid_type)}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-slate-500">
                         {scopeLabel(token, campaigns)}
                       </td>
@@ -515,6 +536,7 @@ export default function TokensPage() {
           <TokenForm
             initialValues={{
               name: editingToken.name,
+              grid_type: editingToken.grid_type,
               image_src: normalizeTokenImageSrc(editingToken.image_src),
               is_visible: editingToken.is_visible,
             }}

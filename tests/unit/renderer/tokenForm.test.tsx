@@ -54,6 +54,7 @@ describe('TokenForm', () => {
     render(<TokenForm onSave={vi.fn()} onClose={vi.fn()} isSaving={false} />);
 
     expect(screen.getByLabelText('Name *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Grid Type *')).toHaveValue('square');
     expect(screen.getByLabelText('Image URL')).toBeInTheDocument();
     expect(screen.getByText('Token Image Upload')).toBeInTheDocument();
     expect(
@@ -68,6 +69,7 @@ describe('TokenForm', () => {
       <TokenForm
         initialValues={{
           name: 'Existing Token',
+          grid_type: 'hex',
           image_src: 'https://assets.example/token.png',
           is_visible: 1,
         }}
@@ -78,6 +80,7 @@ describe('TokenForm', () => {
     );
 
     expect(screen.getByLabelText('Name *')).toHaveValue('Existing Token');
+    expect(screen.getByLabelText('Grid Type *')).toHaveValue('hex');
     expect(screen.getByLabelText('Image URL')).toHaveValue(
       'https://assets.example/token.png',
     );
@@ -105,6 +108,7 @@ describe('TokenForm', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     const payload = onSave.mock.calls[0][0] as TokenFormValues;
     expect(payload.name).toBe('Wolf');
+    expect(payload.grid_type).toBe('square');
     expect(payload.image_src).toBeNull();
     expect(payload.is_visible).toBe(1);
     expect(payload.clear_image).toBe(false);
@@ -191,6 +195,7 @@ describe('TokenForm', () => {
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave).toHaveBeenCalledWith({
       name: 'Arc Wolf',
+      grid_type: 'square',
       image_src: null,
       is_visible: 0,
       image_upload: undefined,
@@ -206,6 +211,7 @@ describe('TokenForm', () => {
       <TokenForm
         initialValues={{
           name: 'Existing Token',
+          grid_type: 'hex',
           image_src: 'https://assets.example/current.png',
           is_visible: 1,
         }}
@@ -219,6 +225,7 @@ describe('TokenForm', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     expect(onSave).toHaveBeenLastCalledWith({
       name: 'Existing Token',
+      grid_type: 'hex',
       image_src: undefined,
       is_visible: 1,
       image_upload: undefined,
@@ -229,6 +236,7 @@ describe('TokenForm', () => {
       <TokenForm
         initialValues={{
           name: 'Existing Token',
+          grid_type: 'hex',
           image_src: 'https://assets.example/current.png',
           is_visible: 1,
         }}
@@ -256,6 +264,7 @@ describe('TokenForm', () => {
       <TokenForm
         initialValues={{
           name: 'Existing Token',
+          grid_type: 'hex',
           image_src: 'https://assets.example/current.png',
           is_visible: 1,
         }}
@@ -271,6 +280,7 @@ describe('TokenForm', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(3));
     expect(onSave).toHaveBeenLastCalledWith({
       name: 'Existing Token',
+      grid_type: 'hex',
       image_src: null,
       is_visible: 1,
       image_upload: undefined,
