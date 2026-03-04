@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Link,
   useBeforeUnload,
-  useBlocker,
   useNavigate,
   useParams,
 } from 'react-router-dom';
@@ -337,53 +336,6 @@ export default function BattleMapRuntimePage() {
       [hasPendingRuntimeChanges],
     ),
   );
-
-  const blocker = useBlocker(
-    useCallback(
-      ({ currentLocation, nextLocation }) =>
-        hasPendingRuntimeChanges() &&
-        (currentLocation.pathname !== nextLocation.pathname ||
-          currentLocation.search !== nextLocation.search ||
-          currentLocation.hash !== nextLocation.hash),
-      [hasPendingRuntimeChanges],
-    ),
-  );
-
-  const {
-    state: blockerState,
-    proceed: blockerProceed,
-    reset: blockerReset,
-  } = blocker;
-
-  useEffect(() => {
-    if (blockerState !== 'blocked') {
-      return;
-    }
-
-    const handleBlockedNavigation = async () => {
-      const didPersist = await flushRuntimePersistence();
-      if (didPersist || !hasPendingRuntimeChanges()) {
-        blockerProceed?.();
-        return;
-      }
-      const shouldDiscard = window.confirm(
-        UNSAVED_RUNTIME_CONFIRMATION_MESSAGE,
-      );
-      if (shouldDiscard) {
-        blockerProceed?.();
-      } else {
-        blockerReset?.();
-      }
-    };
-
-    void handleBlockedNavigation();
-  }, [
-    blockerState,
-    blockerProceed,
-    blockerReset,
-    flushRuntimePersistence,
-    hasPendingRuntimeChanges,
-  ]);
 
   useEffect(() => {
     battleMapConfigRef.current = battleMapConfig;

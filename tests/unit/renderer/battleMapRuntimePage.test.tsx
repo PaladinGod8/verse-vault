@@ -4,23 +4,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import BattleMapRuntimePage from '../../../src/renderer/pages/BattleMapRuntimePage';
 
 const routerMockState = vi.hoisted(() => ({
-  blockerState: 'unblocked' as 'unblocked' | 'blocked',
-  proceedMock: vi.fn(),
-  resetMock: vi.fn(),
-  blockerPredicate: null as
-    | ((args: {
-        currentLocation: {
-          pathname: string;
-          search: string;
-          hash: string;
-        };
-        nextLocation: {
-          pathname: string;
-          search: string;
-          hash: string;
-        };
-      }) => boolean)
-    | null,
   beforeUnloadHandler: null as
     | ((event: { preventDefault: () => void; returnValue?: string }) => void)
     | null,
@@ -41,27 +24,6 @@ vi.mock('react-router-dom', async () => {
       }) => void,
     ) => {
       routerMockState.beforeUnloadHandler = callback;
-    },
-    useBlocker: (
-      callback: (args: {
-        currentLocation: {
-          pathname: string;
-          search: string;
-          hash: string;
-        };
-        nextLocation: {
-          pathname: string;
-          search: string;
-          hash: string;
-        };
-      }) => boolean,
-    ) => {
-      routerMockState.blockerPredicate = callback;
-      return {
-        state: routerMockState.blockerState,
-        proceed: routerMockState.proceedMock,
-        reset: routerMockState.resetMock,
-      };
     },
   };
 });
@@ -344,10 +306,6 @@ function renderRuntimePage(path: string) {
 describe('BattleMapRuntimePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    routerMockState.blockerState = 'unblocked';
-    routerMockState.proceedMock.mockReset();
-    routerMockState.resetMock.mockReset();
-    routerMockState.blockerPredicate = null;
     routerMockState.beforeUnloadHandler = null;
     vi.restoreAllMocks();
 
@@ -680,90 +638,6 @@ describe('BattleMapRuntimePage', () => {
     expect(pendingEvent.returnValue).toBe('');
   });
 
-  it('uses blocker predicate to allow or block route transitions', async () => {
-    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
-
-    renderRuntimePage('/world/1/battlemaps/61/runtime');
-    expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    expect(routerMockState.blockerPredicate).not.toBeNull();
-
-    const unchangedLocation = {
-      pathname: '/world/1/battlemaps/61/runtime',
-      search: '',
-      hash: '',
-    };
-    const changedLocation = {
-      pathname: '/world/1/battlemaps',
-      search: '?tab=all',
-      hash: '#a',
-    };
-
-    expect(
-      routerMockState.blockerPredicate?.({
-        currentLocation: unchangedLocation,
-        nextLocation: changedLocation,
-      }),
-    ).toBe(false);
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Trigger Grid Change' }),
-    );
-    expect(
-      routerMockState.blockerPredicate?.({
-        currentLocation: unchangedLocation,
-        nextLocation: unchangedLocation,
-      }),
-    ).toBe(false);
-    expect(
-      routerMockState.blockerPredicate?.({
-        currentLocation: unchangedLocation,
-        nextLocation: changedLocation,
-      }),
-    ).toBe(true);
-  });
-
-  it('resets blocked navigation when save fails and discard is cancelled', async () => {
-    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
-    battlemapsUpdateMock.mockRejectedValue(new Error('save failed'));
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-
-    renderRuntimePage('/world/1/battlemaps/61/runtime');
-    expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Trigger Grid Change' }),
-    );
-
-    routerMockState.blockerState = 'blocked';
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Toggle Invisible Tokens' }),
-    );
-
-    await waitFor(() => {
-      expect(confirmSpy).toHaveBeenCalled();
-      expect(routerMockState.resetMock).toHaveBeenCalled();
-    });
-  });
-
-  it('proceeds blocked navigation when changes are persisted or discarded', async () => {
-    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
-    battlemapsUpdateMock.mockResolvedValue(buildBattleMap());
-
-    renderRuntimePage('/world/1/battlemaps/61/runtime');
-    expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Trigger Grid Change' }),
-    );
-
-    routerMockState.blockerState = 'blocked';
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Toggle Invisible Tokens' }),
-    );
-
-    await waitFor(() => {
-      expect(routerMockState.proceedMock).toHaveBeenCalled();
-    });
-  });
-
   it('does not persist runtime config when the grid update is unchanged', async () => {
     battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
 
@@ -793,25 +667,46 @@ describe('BattleMapRuntimePage', () => {
     ).toBeInTheDocument();
   });
 
-  it('proceeds blocked navigation when save fails but user confirms discard', async () => {
+  it('exits runtime via the Back to BattleMaps link', async () => {
     battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
-    battlemapsUpdateMock.mockRejectedValue(new Error('save failed'));
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Back to BattleMaps' }));
+
+    expect(await screen.findByText('BattleMaps List')).toBeInTheDocument();
+  });
+
+  it('stays on runtime page when user cancels exit with unsaved changes', async () => {
+    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
+    battlemapsUpdateMock.mockRejectedValue(new Error('save failed'));
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    renderRuntimePage('/world/1/battlemaps/61/runtime');
+    expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
+
     fireEvent.click(
       screen.getByRole('button', { name: 'Trigger Grid Change' }),
     );
-
-    routerMockState.blockerState = 'blocked';
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Toggle Invisible Tokens' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Exit Runtime' }));
 
     await waitFor(() => {
-      expect(routerMockState.proceedMock).toHaveBeenCalled();
+      expect(confirmSpy).toHaveBeenCalled();
     });
+    expect(screen.getByText('Runtime Canvas')).toBeInTheDocument();
+  });
+
+  it('exits runtime from the error section exit button', async () => {
+    battlemapsGetByIdMock.mockRejectedValue(new Error('db offline'));
+
+    renderRuntimePage('/world/1/battlemaps/61/runtime');
+    expect(await screen.findByText('Runtime unavailable')).toBeInTheDocument();
+
+    const exitButtons = screen.getAllByRole('button', { name: 'Exit Runtime' });
+    fireEvent.click(exitButtons[exitButtons.length - 1]);
+
+    expect(await screen.findByText('BattleMaps List')).toBeInTheDocument();
   });
 
   it('marks placed token source as missing when campaign reload no longer includes it', async () => {
