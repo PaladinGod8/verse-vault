@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+// eslint-disable-next-line import/no-unresolved -- pixi.js exposes this via package exports; eslint-import resolver flags a false positive.
 import 'pixi.js/unsafe-eval';
 import {
   Application,
