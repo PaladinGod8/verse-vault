@@ -7,8 +7,9 @@ import type { RuntimeSceneToken } from '../../../src/renderer/components/runtime
 function buildToken(overrides: Partial<Token> = {}): Token {
   return {
     id: 1,
-    campaign_id: 10,
-    name: 'Goblin',
+    world_id: 1,
+    campaign_id: null,
+    name: 'Wolf',
     image_src: null,
     config: '{}',
     is_visible: 1,
@@ -22,15 +23,15 @@ function buildPlacedToken(
   overrides: Partial<RuntimeSceneToken> = {},
 ): RuntimeSceneToken {
   return {
-    instanceId: 'runtime-token-1-1',
+    instanceId: 'runtime-token-1',
     sourceTokenId: 1,
     campaignId: 10,
-    name: 'Goblin',
+    name: 'Placed Token',
     imageSrc: null,
     isVisible: true,
     sourceMissing: false,
-    x: 10,
-    y: 20,
+    x: 8,
+    y: 12,
     ...overrides,
   };
 }
@@ -46,16 +47,19 @@ function renderPalette(
 
   render(
     <RuntimeTokenPalette
-      campaigns={[{ id: 10, world_id: 1, name: 'Main Campaign' } as Campaign]}
-      selectedCampaignId={10}
+      campaigns={[]}
+      selectedCampaignId={null}
       isLoadingCampaigns={false}
       campaignLoadError={null}
-      tokens={[buildToken()]}
+      worldTokens={[]}
+      isLoadingWorldTokens={false}
+      worldTokenLoadError={null}
+      tokens={[]}
       isLoadingTokens={false}
       tokenLoadError={null}
       placedTokens={[]}
       selectedTokenInstanceId={null}
-      showInvisibleTokens={true}
+      showInvisibleTokens
       onShowInvisibleTokensChange={onShowInvisibleTokensChange}
       onSelectCampaign={onSelectCampaign}
       onAddToken={onAddToken}
@@ -75,19 +79,36 @@ function renderPalette(
 }
 
 describe('RuntimeTokenPalette', () => {
-  it('filters invisible tokens when toggle is off and notifies on checkbox changes', () => {
-    const invisibleToken = buildToken({
-      id: 2,
-      name: 'Hidden Scout',
-      is_visible: 0,
-    });
-    const { onShowInvisibleTokensChange } = renderPalette({
-      showInvisibleTokens: false,
-      tokens: [buildToken({ name: 'Visible Guard' }), invisibleToken],
+  it('renders world tokens section and world token rows', () => {
+    renderPalette({
+      worldTokens: [
+        buildToken({ id: 1, campaign_id: null, name: 'World Wolf' }),
+        buildToken({ id: 2, campaign_id: null, name: 'World Guard' }),
+      ],
     });
 
-    expect(screen.getByText('Visible Guard')).toBeInTheDocument();
-    expect(screen.queryByText('Hidden Scout')).not.toBeInTheDocument();
+    expect(screen.getByText('World Tokens')).toBeInTheDocument();
+    expect(screen.getByText('World Wolf')).toBeInTheDocument();
+    expect(screen.getByText('World Guard')).toBeInTheDocument();
+  });
+
+  it('filters invisible world tokens when showInvisibleTokens is false', () => {
+    renderPalette({
+      showInvisibleTokens: false,
+      worldTokens: [
+        buildToken({ id: 1, name: 'Visible Token', is_visible: 1 }),
+        buildToken({ id: 2, name: 'Invisible Token', is_visible: 0 }),
+      ],
+    });
+
+    expect(screen.getByText('Visible Token')).toBeInTheDocument();
+    expect(screen.queryByText('Invisible Token')).not.toBeInTheDocument();
+  });
+
+  it('notifies when show invisible tokens toggle changes', () => {
+    const { onShowInvisibleTokensChange } = renderPalette({
+      showInvisibleTokens: false,
+    });
 
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'Show invisible tokens' }),
@@ -95,38 +116,84 @@ describe('RuntimeTokenPalette', () => {
     expect(onShowInvisibleTokensChange).toHaveBeenCalledWith(true);
   });
 
-  it('sorts available tokens by name and adds unplaced tokens', () => {
-    const { onAddToken } = renderPalette({
-      tokens: [
-        buildToken({ id: 2, name: 'Zulu' }),
-        buildToken({ id: 1, name: 'Alpha' }),
-      ],
-    });
-
-    const labels = screen
-      .getAllByText(/Alpha|Zulu/)
-      .map((node) => node.textContent);
-    expect(labels).toEqual(expect.arrayContaining(['Alpha', 'Zulu']));
-
-    const addButtons = screen.getAllByRole('button', { name: 'Add' });
-    fireEvent.click(addButtons[0]);
-    expect(onAddToken).toHaveBeenCalledTimes(1);
-    expect(onAddToken).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, name: 'Alpha' }),
+  it('shows world token empty, loading, and error states', () => {
+    const { rerender } = render(
+      <RuntimeTokenPalette
+        campaigns={[]}
+        selectedCampaignId={null}
+        isLoadingCampaigns={false}
+        campaignLoadError={null}
+        worldTokens={[]}
+        isLoadingWorldTokens={true}
+        worldTokenLoadError={null}
+        tokens={[]}
+        isLoadingTokens={false}
+        tokenLoadError={null}
+        placedTokens={[]}
+        selectedTokenInstanceId={null}
+        showInvisibleTokens
+        onShowInvisibleTokensChange={vi.fn()}
+        onSelectCampaign={vi.fn()}
+        onAddToken={vi.fn()}
+        onSelectPlacedToken={vi.fn()}
+        onRemovePlacedToken={vi.fn()}
+      />,
     );
+
+    expect(screen.getByText('Loading world tokens...')).toBeInTheDocument();
+
+    rerender(
+      <RuntimeTokenPalette
+        campaigns={[]}
+        selectedCampaignId={null}
+        isLoadingCampaigns={false}
+        campaignLoadError={null}
+        worldTokens={[]}
+        isLoadingWorldTokens={false}
+        worldTokenLoadError="World token load failed"
+        tokens={[]}
+        isLoadingTokens={false}
+        tokenLoadError={null}
+        placedTokens={[]}
+        selectedTokenInstanceId={null}
+        showInvisibleTokens
+        onShowInvisibleTokensChange={vi.fn()}
+        onSelectCampaign={vi.fn()}
+        onAddToken={vi.fn()}
+        onSelectPlacedToken={vi.fn()}
+        onRemovePlacedToken={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('World token load failed')).toBeInTheDocument();
+
+    rerender(
+      <RuntimeTokenPalette
+        campaigns={[]}
+        selectedCampaignId={null}
+        isLoadingCampaigns={false}
+        campaignLoadError={null}
+        worldTokens={[]}
+        isLoadingWorldTokens={false}
+        worldTokenLoadError={null}
+        tokens={[]}
+        isLoadingTokens={false}
+        tokenLoadError={null}
+        placedTokens={[]}
+        selectedTokenInstanceId={null}
+        showInvisibleTokens
+        onShowInvisibleTokensChange={vi.fn()}
+        onSelectCampaign={vi.fn()}
+        onAddToken={vi.fn()}
+        onSelectPlacedToken={vi.fn()}
+        onRemovePlacedToken={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('No world tokens available.')).toBeInTheDocument();
   });
 
-  it('disables add for already placed source tokens', () => {
-    renderPalette({
-      tokens: [buildToken({ id: 1, campaign_id: 10, name: 'Goblin' })],
-      placedTokens: [buildPlacedToken({ sourceTokenId: 1, campaignId: 10 })],
-    });
-
-    const placedButton = screen.getByRole('button', { name: 'Placed' });
-    expect(placedButton).toBeDisabled();
-  });
-
-  it('changes selected campaign and handles empty selection', () => {
+  it('changes selected campaign and handles empty campaign selection', () => {
     const { onSelectCampaign } = renderPalette({
       campaigns: [
         { id: 10, world_id: 1, name: 'Main Campaign' } as Campaign,
@@ -146,19 +213,22 @@ describe('RuntimeTokenPalette', () => {
     expect(onSelectCampaign).toHaveBeenCalledWith(null);
   });
 
-  it('renders loading, error, and empty states', () => {
+  it('renders campaign loading, error, and empty states', () => {
     const { rerender } = render(
       <RuntimeTokenPalette
         campaigns={[]}
         selectedCampaignId={null}
         isLoadingCampaigns={true}
         campaignLoadError={null}
+        worldTokens={[]}
+        isLoadingWorldTokens={false}
+        worldTokenLoadError={null}
         tokens={[]}
         isLoadingTokens={true}
         tokenLoadError={null}
         placedTokens={[]}
         selectedTokenInstanceId={null}
-        showInvisibleTokens={true}
+        showInvisibleTokens
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -175,12 +245,15 @@ describe('RuntimeTokenPalette', () => {
         selectedCampaignId={null}
         isLoadingCampaigns={false}
         campaignLoadError="Campaign load failed"
+        worldTokens={[]}
+        isLoadingWorldTokens={false}
+        worldTokenLoadError={null}
         tokens={[]}
         isLoadingTokens={false}
         tokenLoadError="Token load failed"
         placedTokens={[]}
         selectedTokenInstanceId={null}
-        showInvisibleTokens={true}
+        showInvisibleTokens
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -198,12 +271,15 @@ describe('RuntimeTokenPalette', () => {
         selectedCampaignId={null}
         isLoadingCampaigns={false}
         campaignLoadError={null}
+        worldTokens={[]}
+        isLoadingWorldTokens={false}
+        worldTokenLoadError={null}
         tokens={[]}
         isLoadingTokens={false}
         tokenLoadError={null}
         placedTokens={[]}
         selectedTokenInstanceId={null}
-        showInvisibleTokens={true}
+        showInvisibleTokens
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -215,12 +291,69 @@ describe('RuntimeTokenPalette', () => {
     expect(
       screen.getByText('No tokens available for this campaign.'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Add tokens from a campaign to place them in runtime.'),
-    ).toBeInTheDocument();
   });
 
-  it('sorts placed tokens, selects token, and removes token', () => {
+  it('sorts campaign tokens by name and adds an unplaced campaign token', () => {
+    const { onAddToken } = renderPalette({
+      selectedCampaignId: 10,
+      tokens: [
+        buildToken({
+          id: 2,
+          campaign_id: 10,
+          name: 'Zulu',
+        }),
+        buildToken({
+          id: 1,
+          campaign_id: 10,
+          name: 'Alpha',
+        }),
+      ],
+    });
+
+    const labels = screen
+      .getAllByText(/Alpha|Zulu/)
+      .map((element) => element.textContent);
+    expect(labels).toEqual(expect.arrayContaining(['Alpha', 'Zulu']));
+
+    const addButtons = screen.getAllByRole('button', { name: 'Add' });
+    fireEvent.click(addButtons[0]);
+    expect(onAddToken).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, name: 'Alpha' }),
+    );
+  });
+
+  it('disables add button when token source is already placed', () => {
+    renderPalette({
+      selectedCampaignId: 10,
+      tokens: [buildToken({ id: 6, campaign_id: 10, name: 'Goblin' })],
+      placedTokens: [
+        buildPlacedToken({
+          sourceTokenId: 6,
+          campaignId: 10,
+          name: 'Goblin',
+        }),
+      ],
+    });
+
+    expect(screen.getByRole('button', { name: 'Placed' })).toBeDisabled();
+  });
+
+  it('adds world token when Add button is clicked', () => {
+    const worldToken = buildToken({
+      id: 9,
+      campaign_id: null,
+      name: 'World Knight',
+    });
+    const { onAddToken } = renderPalette({
+      worldTokens: [worldToken],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onAddToken).toHaveBeenCalledTimes(1);
+    expect(onAddToken).toHaveBeenCalledWith(worldToken);
+  });
+
+  it('renders scene tokens list and supports select/remove callbacks', () => {
     const { onSelectPlacedToken, onRemovePlacedToken } = renderPalette({
       placedTokens: [
         buildPlacedToken({
@@ -230,9 +363,10 @@ describe('RuntimeTokenPalette', () => {
         }),
         buildPlacedToken({
           instanceId: 'runtime-token-b',
+          sourceTokenId: 999,
           name: 'Alpha Missing',
           sourceMissing: true,
-          sourceTokenId: 999,
+          isVisible: false,
         }),
       ],
       selectedTokenInstanceId: 'runtime-token-a',
@@ -245,6 +379,43 @@ describe('RuntimeTokenPalette', () => {
     expect(onSelectPlacedToken).toHaveBeenCalledWith('runtime-token-a');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
-    expect(onRemovePlacedToken).toHaveBeenCalledTimes(1);
+    expect(onRemovePlacedToken).toHaveBeenCalledWith('runtime-token-b');
+  });
+
+  it('shows and hides hover image preview for world tokens', () => {
+    const imageToken = buildToken({
+      id: 12,
+      campaign_id: null,
+      name: 'Image Token',
+      image_src: 'https://assets.example/token.png',
+    });
+    renderPalette({
+      worldTokens: [imageToken],
+    });
+
+    const listItem = screen.getByText('Image Token').closest('li');
+    expect(listItem).not.toBeNull();
+
+    fireEvent.mouseEnter(listItem as HTMLLIElement);
+    expect(
+      document.querySelector('img[src="https://assets.example/token.png"]'),
+    ).toBeInTheDocument();
+
+    fireEvent.mouseLeave(listItem as HTMLLIElement);
+    expect(
+      document.querySelector('img[src="https://assets.example/token.png"]'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not show hover preview for tokens without an image source', () => {
+    renderPalette({
+      worldTokens: [buildToken({ id: 30, name: 'No Image', image_src: null })],
+    });
+
+    const listItem = screen.getByText('No Image').closest('li');
+    expect(listItem).not.toBeNull();
+
+    fireEvent.mouseEnter(listItem as HTMLLIElement);
+    expect(document.querySelector('img')).not.toBeInTheDocument();
   });
 });

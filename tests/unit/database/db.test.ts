@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 async function loadDbModule(options?: {
   tableInfoRows?: Array<{ name: string }>;
+  tokenTableInfoRows?: Array<{ name: string }>;
   prepareImplementation?: (sql: string) => {
     all?: (...args: unknown[]) => unknown;
     get?: (...args: unknown[]) => unknown;
@@ -10,7 +11,16 @@ async function loadDbModule(options?: {
   };
 }) {
   const appGetPathMock = vi.fn(() => 'C:/fake-user-data');
-  const pragmaMock = vi.fn();
+  const tokenTableInfoRows = options?.tokenTableInfoRows ?? [
+    { name: 'world_id' },
+    { name: 'campaign_id' },
+  ];
+  const pragmaMock = vi.fn((command: string) => {
+    if (command === 'table_info(tokens)') {
+      return tokenTableInfoRows;
+    }
+    return undefined;
+  });
   const execMock = vi.fn();
   const closeMock = vi.fn();
   const databaseCtorMock = vi.fn();
