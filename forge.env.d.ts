@@ -115,6 +115,16 @@ declare global {
     [key: string]: unknown;
   }
 
+  interface TokenImageImportPayload {
+    fileName: string;
+    mimeType: string;
+    bytes: Uint8Array;
+  }
+
+  interface TokenImageImportResult {
+    image_src: string;
+  }
+
   interface Token {
     id: number;
     world_id: number;
@@ -296,6 +306,9 @@ declare global {
       getAllByWorld(worldId: number): Promise<Token[]>;
       getAllByCampaign(campaignId: number): Promise<Token[]>;
       getById(id: number): Promise<Token | null>;
+      importImage(
+        payload: TokenImageImportPayload,
+      ): Promise<TokenImageImportResult>;
       add(data: {
         world_id: number;
         campaign_id?: number | null;

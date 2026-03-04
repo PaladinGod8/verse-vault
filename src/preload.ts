@@ -122,6 +122,18 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.TOKENS_GET_ALL_BY_CAMPAIGN, campaignId),
     getById: (id: number): Promise<Token | null> =>
       ipcRenderer.invoke(IPC.TOKENS_GET_BY_ID, id),
+    importImage: (
+      payload: TokenImageImportPayload,
+    ): Promise<TokenImageImportResult> => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('Token image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.TOKENS_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: new Uint8Array(payload.bytes),
+      });
+    },
     add: (data: {
       world_id: number;
       campaign_id?: number | null;

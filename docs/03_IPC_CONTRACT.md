@@ -5,7 +5,7 @@
 
 ## Scope Note
 
-Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, campaign-scoped token CRUD handlers, session CRUD handlers, and scene CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, and scene CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
@@ -18,6 +18,8 @@ BattleMap Step 01 (2026-03-03) adds shared constants for planned battlemaps CRUD
 Runtime Step 01 (2026-03-04) adds token CRUD constants (`TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, `TOKENS_DELETE`), wires all 5 token handlers in `main`, and exposes `window.db.tokens.getAllByCampaign/getById/add/update/delete` in preload with shared `Token` and `DbApi.tokens` signatures.
 
 Tokens Step 01 (2026-03-04) adds `TOKENS_GET_ALL_BY_WORLD` constant; wires world-scoped read handler in `main`; updates `TOKENS_ADD` to require `world_id` and accept optional `campaign_id`; adds `window.db.tokens.getAllByWorld(worldId)` preload bridge; updates `Token` interface (`world_id: number`, `campaign_id: number | null`) and `DbApi.tokens.add` signature.
+
+Tokens Image DnD Step 01 (2026-03-04) adds `TOKENS_IMPORT_IMAGE` (`db:tokens:importImage`), with main-process validation for payload shape/mime/size and app-owned persistence under `app.getPath('userData')/token-images`; preload exposes `window.db.tokens.importImage(payload)` with shared `TokenImageImportPayload`/`TokenImageImportResult` typing.
 
 Runtime Step 01 (2026-03-04) also hardens BattleMap config validation in `main` so `config` is a JSON object with runtime-ready defaults at `runtime.grid`, `runtime.map`, and `runtime.camera`; scene payload validation remains backward-compatible while validating optional runtime linkage field `payload.runtime.battlemap_id`.
 
@@ -72,9 +74,11 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.BATTLEMAPS_ADD`              | `db:battlemaps:add`           | renderer -> main | `{ world_id: number; name: string; config?: string }`                                                                                                                                                                                                                                                                       | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }`         | `src/main.ts:registerIpcHandlers` |
 | `IPC.BATTLEMAPS_UPDATE`           | `db:battlemaps:update`        | renderer -> main | `id: number, data: { name?: string; config?: string }`                                                                                                                                                                                                                                                                      | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }`         | `src/main.ts:registerIpcHandlers` |
 | `IPC.BATTLEMAPS_DELETE`           | `db:battlemaps:delete`        | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                                                                                                 | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_GET_ALL_BY_WORLD`     | `db:tokens:getAllByWorld`     | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                           | `Token[]`                                                                                                        | `src/main.ts:registerIpcHandlers` |
 | `IPC.TOKENS_GET_ALL_BY_CAMPAIGN`  | `db:tokens:getAllByCampaign`  | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                        | `Token[]`                                                                                                        | `src/main.ts:registerIpcHandlers` |
 | `IPC.TOKENS_GET_BY_ID`            | `db:tokens:getById`           | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `Token \| null`                                                                                                  | `src/main.ts:registerIpcHandlers` |
-| `IPC.TOKENS_ADD`                  | `db:tokens:add`               | renderer -> main | `{ campaign_id: number; name: string; image_src?: string \| null; config?: string; is_visible?: number }`                                                                                                                                                                                                                   | `Token`                                                                                                          | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_IMPORT_IMAGE`         | `db:tokens:importImage`       | renderer -> main | `{ fileName: string; mimeType: string; bytes: Uint8Array }`                                                                                                                                                                                                                                                                 | `{ image_src: string }`                                                                                          | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_ADD`                  | `db:tokens:add`               | renderer -> main | `{ world_id: number; campaign_id?: number \| null; name: string; image_src?: string \| null; config?: string; is_visible?: number }`                                                                                                                                                                                        | `Token`                                                                                                          | `src/main.ts:registerIpcHandlers` |
 | `IPC.TOKENS_UPDATE`               | `db:tokens:update`            | renderer -> main | `id: number, data: { name?: string; image_src?: string \| null; config?: string; is_visible?: number }`                                                                                                                                                                                                                     | `Token`                                                                                                          | `src/main.ts:registerIpcHandlers` |
 | `IPC.TOKENS_DELETE`               | `db:tokens:delete`            | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                                                                                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.ARCS_GET_ALL_BY_CAMPAIGN`    | `db:arcs:getAllByCampaign`    | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                        | `Arc[]`                                                                                                          | `src/main.ts:registerIpcHandlers` |
@@ -221,6 +225,16 @@ interface ScenePayload {
   [key: string]: unknown;
 }
 
+interface TokenImageImportPayload {
+  fileName: string;
+  mimeType: string;
+  bytes: Uint8Array;
+}
+
+interface TokenImageImportResult {
+  image_src: string;
+}
+
 interface Token {
   id: number;
   world_id: number;
@@ -355,6 +369,9 @@ interface DbApi {
     getAllByWorld(worldId: number): Promise<Token[]>;
     getAllByCampaign(campaignId: number): Promise<Token[]>;
     getById(id: number): Promise<Token | null>;
+    importImage(
+      payload: TokenImageImportPayload,
+    ): Promise<TokenImageImportResult>;
     add(data: {
       world_id: number;
       campaign_id?: number | null;
@@ -485,13 +502,14 @@ interface DbApi {
 - `BATTLEMAPS_UPDATE` updates only explicitly provided fields (`name`, `config`) using `hasOwnProperty` checks, validates trimmed `name` and object JSON `config` when present, normalizes runtime defaults for `config`, always refreshes `updated_at`, and returns the refreshed row (throws `'BattleMap not found'` when missing).
 - `BATTLEMAPS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - BattleMap channels are wired end-to-end in Step 03 via `window.db.battlemaps.getAllByWorld/getById/add/update/delete` and shared `BattleMap` + `DbApi.battlemaps` signatures in `forge.env.d.ts`.
-- Token main handlers are wired for `TOKENS_GET_ALL_BY_WORLD`, `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, and `TOKENS_DELETE`.
+- Token main handlers are wired for `TOKENS_GET_ALL_BY_WORLD`, `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_IMPORT_IMAGE`, `TOKENS_ADD`, `TOKENS_UPDATE`, and `TOKENS_DELETE`.
 - `TOKENS_GET_ALL_BY_WORLD` is scoped by `world_id` (validated positive integer) and returns tokens ordered by `name ASC`; added in Tokens Step 01 (2026-03-04).
 - `TOKENS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns deterministic order (`updated_at DESC, id DESC`); `TOKENS_GET_BY_ID` returns a row or `null`.
+- `TOKENS_IMPORT_IMAGE` accepts `{ fileName, mimeType, bytes }`, requires `bytes` to be a non-empty `Uint8Array`, accepts only `image/png`, `image/jpeg`, `image/webp`, or `image/gif`, enforces a 5 MB size limit, writes under `app.getPath('userData')/token-images` using a unique filename (`timestamp-random.ext`), and returns `{ image_src }` as a file URL.
 - `TOKENS_ADD` requires `world_id` (positive integer), accepts optional `campaign_id` (positive integer or null), validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as a JSON object, validates `is_visible` as `0|1`, inserts (`world_id`, `campaign_id`, `name`, `image_src`, `config`, `is_visible`), and returns the inserted row.
 - `TOKENS_UPDATE` updates only explicitly provided fields (`name`, `image_src`, `config`, `is_visible`) using `hasOwnProperty` checks, validates trimmed `name`, object JSON `config`, and `is_visible` as `0|1` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'Token not found'` when missing).
 - `TOKENS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Token channels are wired end-to-end via `window.db.tokens.getAllByWorld/getAllByCampaign/getById/add/update/delete` and shared `Token` + `DbApi.tokens` signatures in `forge.env.d.ts`.
+- Token channels are wired end-to-end via `window.db.tokens.getAllByWorld/getAllByCampaign/getById/importImage/add/update/delete` and shared `Token` + `TokenImageImportPayload` + `TokenImageImportResult` + `DbApi.tokens` signatures in `forge.env.d.ts`.
 - Arc main handlers are wired for `ARCS_GET_ALL_BY_CAMPAIGN`, `ARCS_GET_BY_ID`, `ARCS_ADD`, `ARCS_UPDATE`, and `ARCS_DELETE`.
 - `ARCS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns arcs ordered by `sort_order ASC, id ASC`.
 - `ARCS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted, inserts (`campaign_id`, `name`, `sort_order`), and returns the inserted row.
