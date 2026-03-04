@@ -151,6 +151,7 @@ contextBridge.exposeInMainWorld('db', {
       name: string;
       image_src?: string | null;
       config?: string;
+      grid_type?: TokenGridType;
       is_visible?: number;
     }): Promise<Token> => ipcRenderer.invoke(IPC.TOKENS_ADD, data),
     update: (
@@ -159,6 +160,7 @@ contextBridge.exposeInMainWorld('db', {
         name?: string;
         image_src?: string | null;
         config?: string;
+        grid_type?: TokenGridType;
         is_visible?: number;
       },
     ): Promise<Token> => ipcRenderer.invoke(IPC.TOKENS_UPDATE, id, data),

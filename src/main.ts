@@ -28,6 +28,7 @@ function isAbilityChildDuplicateError(error: unknown): boolean {
 type JsonRecord = Record<string, unknown>;
 
 const BATTLEMAP_GRID_MODES = new Set(['square', 'hex', 'none']);
+const TOKEN_GRID_TYPES = new Set(['square', 'hex']);
 const TOKEN_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -296,6 +297,13 @@ function ensureTokenConfigJsonText(config: unknown): string {
   }
 
   return config as string;
+}
+
+function ensureTokenGridType(value: unknown, fieldName = 'grid_type'): TokenGridType {
+  if (typeof value !== 'string' || !TOKEN_GRID_TYPES.has(value)) {
+    throw new Error(`${fieldName} must be 'square' or 'hex'`);
+  }
+  return value as TokenGridType;
 }
 
 function ensureTokenImageImportPayload(payload: TokenImageImportPayload): {
@@ -1125,6 +1133,7 @@ function registerIpcHandlers() {
         name: string;
         image_src?: string | null;
         config?: string;
+        grid_type?: TokenGridType;
         is_visible?: number;
       },
     ): Token => {
@@ -1146,6 +1155,8 @@ function registerIpcHandlers() {
         data.config === undefined
           ? '{}'
           : ensureTokenConfigJsonText(data.config);
+      const gridType =
+        data.grid_type === undefined ? 'square' : ensureTokenGridType(data.grid_type);
       const isVisible =
         data.is_visible === undefined
           ? 1
@@ -1154,7 +1165,7 @@ function registerIpcHandlers() {
 
       const result = db
         .prepare(
-          'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, grid_type, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?)',
         )
         .run(
           data.world_id,
@@ -1162,6 +1173,7 @@ function registerIpcHandlers() {
           name,
           data.image_src ?? null,
           config,
+          gridType,
           isVisible,
         );
 
@@ -1184,6 +1196,7 @@ function registerIpcHandlers() {
         name?: string;
         image_src?: string | null;
         config?: string;
+        grid_type?: TokenGridType;
         is_visible?: number;
       },
     ): Token => {
@@ -1193,6 +1206,10 @@ function registerIpcHandlers() {
         'image_src',
       );
       const hasConfig = Object.prototype.hasOwnProperty.call(data, 'config');
+      const hasGridType = Object.prototype.hasOwnProperty.call(
+        data,
+        'grid_type',
+      );
       const hasIsVisible = Object.prototype.hasOwnProperty.call(
         data,
         'is_visible',
@@ -1219,6 +1236,11 @@ function registerIpcHandlers() {
       if (hasConfig && data.config !== undefined) {
         setClauses.push('config = ?');
         values.push(ensureTokenConfigJsonText(data.config));
+      }
+
+      if (hasGridType && data.grid_type !== undefined) {
+        setClauses.push('grid_type = ?');
+        values.push(ensureTokenGridType(data.grid_type));
       }
 
       if (hasIsVisible && data.is_visible !== undefined) {

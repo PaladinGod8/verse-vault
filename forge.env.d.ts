@@ -152,7 +152,7 @@ declare global {
     id: number;
     world_id: number;
     campaign_id: number | null;
-    grid_type?: TokenGridType;
+    grid_type: TokenGridType;
     name: string;
     image_src: string | null;
     config: string;

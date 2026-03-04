@@ -537,7 +537,7 @@ describe('main process', () => {
       }
       if (
         sql.includes(
-          'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, grid_type, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?)',
         )
       ) {
         return { run: tokensInsertRunMock };
@@ -1441,6 +1441,7 @@ describe('main process', () => {
       'Orc Brute',
       'orc.png',
       '{}',
+      'square',
       1,
     );
     expect(tokensSelectByIdGetMock).toHaveBeenCalledWith(71);
