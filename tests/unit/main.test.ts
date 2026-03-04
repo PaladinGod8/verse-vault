@@ -236,6 +236,7 @@ describe('main process', () => {
     const tokensSelectAllByCampaignMock = vi.fn(() => [
       {
         id: 71,
+        world_id: 1,
         campaign_id: 31,
         name: 'Goblin',
         image_src: null,
@@ -250,6 +251,7 @@ describe('main process', () => {
 
       return {
         id,
+        world_id: 1,
         campaign_id: 31,
         name: `Token ${id}`,
         image_src: null,
@@ -525,7 +527,7 @@ describe('main process', () => {
       }
       if (
         sql.includes(
-          'INSERT INTO tokens (campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?)',
+          'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?, ?)',
         )
       ) {
         return { run: tokensInsertRunMock };
@@ -738,7 +740,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(63);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(64);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -1395,6 +1397,7 @@ describe('main process', () => {
     expect(tokensGetAllByCampaignResult).toEqual([
       {
         id: 71,
+        world_id: 1,
         campaign_id: 31,
         name: 'Goblin',
         image_src: null,
@@ -1415,9 +1418,15 @@ describe('main process', () => {
 
     const tokenAddResult = registeredIpcHandlers[IPC.TOKENS_ADD](
       {},
-      { campaign_id: 31, name: '  Orc Brute  ', image_src: 'orc.png' },
+      {
+        world_id: 1,
+        campaign_id: 31,
+        name: '  Orc Brute  ',
+        image_src: 'orc.png',
+      },
     );
     expect(tokensInsertRunMock).toHaveBeenCalledWith(
+      1,
       31,
       'Orc Brute',
       'orc.png',
@@ -1430,7 +1439,7 @@ describe('main process', () => {
     expect(() =>
       registeredIpcHandlers[IPC.TOKENS_ADD](
         {},
-        { campaign_id: 31, name: '   ' },
+        { world_id: 1, campaign_id: 31, name: '   ' },
       ),
     ).toThrowError('Token name is required');
 
@@ -1438,6 +1447,7 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.TOKENS_ADD](
         {},
         {
+          world_id: 1,
           campaign_id: 31,
           name: 'Invalid Config',
           config: 'not-json',
@@ -1449,6 +1459,7 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.TOKENS_ADD](
         {},
         {
+          world_id: 1,
           campaign_id: 31,
           name: 'Invalid Visibility',
           is_visible: 2,
