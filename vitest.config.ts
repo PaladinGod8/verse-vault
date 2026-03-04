@@ -1,6 +1,8 @@
 import os from 'os';
 import { defineConfig } from 'vitest/config';
 
+const isCoverageRun = process.argv.includes('--coverage');
+
 export default defineConfig({
   test: {
     environment: 'jsdom',
@@ -13,7 +15,7 @@ export default defineConfig({
     // Threads start faster and share the V8 heap, which is safe here because
     // every test file mocks all native modules (electron, better-sqlite3).
     // Vitest still isolates each file's module registry (isolate: true default).
-    pool: 'threads',
+    pool: isCoverageRun ? 'forks' : 'threads',
     minWorkers: 2,
     maxWorkers: Math.max(2, os.cpus().length - 1),
 
@@ -21,8 +23,8 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
-      clean: true,
-      cleanOnRerun: true,
+      clean: false,
+      cleanOnRerun: false,
       all: true,
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/test-setup.ts'],
