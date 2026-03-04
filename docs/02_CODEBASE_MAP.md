@@ -794,6 +794,18 @@
 - **Preload bridge**: unchanged in this step
 - **Storage**: renderer-only feedback wiring change; mutation payloads/state transitions remain unchanged while success/failure feedback now flows through `useToast` (with bounded queue + auto-dismiss/manual close), and mutation-only inline banners were removed where toast coverage exists
 
+### Modal Light-Mode Fix
+
+- **Purpose**: force all CRUD create/edit/move/confirm modal dialogs to render with the light theme background and text, pinning DaisyUI theme so OS dark mode cannot override modal-box colors
+- **Status**: added on 2026-03-04
+- **UI**: `src/renderer/components/ui/ModalShell.tsx`
+- **Config**: `index.html` (added `data-theme="versevault"` on `<html>`)
+- **Store**: none
+- **IPC**: unchanged
+- **Main handler**: unchanged
+- **Preload bridge**: unchanged
+- **Storage**: renderer-only presentation change; `bg-base-100 text-base-content` DaisyUI semantic classes added to `modal-box` div; `data-theme` pins the custom light theme on `<html>` so all 13+ modal surfaces inherit correct light-mode appearance without per-form changes
+
 ### App Shell / Routing
 
 - **UI**: `src/renderer/App.tsx` (routes), `src/renderer/index.tsx` (HashRouter)
