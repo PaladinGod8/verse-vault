@@ -125,10 +125,34 @@ declare global {
     image_src: string;
   }
 
+  type TokenGridType = 'square' | 'hex';
+
+  interface TokenFootprintConfig {
+    width_cells?: number;
+    height_cells?: number;
+    radius_cells?: number;
+    [key: string]: unknown;
+  }
+
+  interface TokenFramingConfig {
+    anchor_x?: number;
+    anchor_y?: number;
+    offset_x_px?: number;
+    offset_y_px?: number;
+    [key: string]: unknown;
+  }
+
+  interface TokenConfigShape {
+    footprint?: TokenFootprintConfig;
+    framing?: TokenFramingConfig;
+    [key: string]: unknown;
+  }
+
   interface Token {
     id: number;
     world_id: number;
     campaign_id: number | null;
+    grid_type?: TokenGridType;
     name: string;
     image_src: string | null;
     config: string;

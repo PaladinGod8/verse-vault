@@ -19,6 +19,8 @@ Runtime Step 01 (2026-03-04) adds token CRUD constants (`TOKENS_GET_ALL_BY_CAMPA
 
 Tokens Step 01 (2026-03-04) adds `TOKENS_GET_ALL_BY_WORLD` constant; wires world-scoped read handler in `main`; updates `TOKENS_ADD` to require `world_id` and accept optional `campaign_id`; adds `window.db.tokens.getAllByWorld(worldId)` preload bridge; updates `Token` interface (`world_id: number`, `campaign_id: number | null`) and `DbApi.tokens.add` signature.
 
+Token Grid Variants Step 01 (2026-03-05) adds no new IPC channels, but extends shared token contracts used by existing token channels: `Token.grid_type?: TokenGridType` plus additive `TokenFootprintConfig`, `TokenFramingConfig`, and `TokenConfigShape` for grid-aware footprint/framing metadata.
+
 Tokens Image DnD Step 01 (2026-03-04) adds `TOKENS_IMPORT_IMAGE` (`db:tokens:importImage`), with main-process validation for payload shape/mime/size and app-owned persistence under `app.getPath('userData')/token-images`; preload exposes `window.db.tokens.importImage(payload)` with shared `TokenImageImportPayload`/`TokenImageImportResult` typing.
 
 Tokens Image Protocol Step 02 (2026-03-05) keeps the same IPC channel and payload/response shapes, but changes `TOKENS_IMPORT_IMAGE` response semantics: `image_src` now uses app-local `vv-media://token-images/<encoded-file-name>` URLs instead of direct `file://` URLs. Main process registers a `vv-media` protocol handler that serves files from the app-owned `token-images` directory with path traversal guards.
@@ -243,10 +245,34 @@ interface TokenImageImportResult {
   image_src: string;
 }
 
+type TokenGridType = 'square' | 'hex';
+
+interface TokenFootprintConfig {
+  width_cells?: number;
+  height_cells?: number;
+  radius_cells?: number;
+  [key: string]: unknown;
+}
+
+interface TokenFramingConfig {
+  anchor_x?: number;
+  anchor_y?: number;
+  offset_x_px?: number;
+  offset_y_px?: number;
+  [key: string]: unknown;
+}
+
+interface TokenConfigShape {
+  footprint?: TokenFootprintConfig;
+  framing?: TokenFramingConfig;
+  [key: string]: unknown;
+}
+
 interface Token {
   id: number;
   world_id: number;
   campaign_id: number | null;
+  grid_type?: TokenGridType;
   name: string;
   image_src: string | null;
   config: string;
