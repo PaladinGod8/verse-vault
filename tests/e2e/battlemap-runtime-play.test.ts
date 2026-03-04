@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import path from 'path';
-
-const mainJs = path.join(__dirname, '../../.vite/build/main.js');
+import { launchApp, closeApp } from './helpers/launchApp';
 
 async function getMainWindow(
   app: import('playwright').ElectronApplication,
@@ -56,10 +53,7 @@ async function ensureWorldsLanding(window: import('@playwright/test').Page) {
 }
 
 test('battlemap play runtime flow supports render, grid, token, camera, and exit', async () => {
-  const env = { ...process.env };
-  delete env.ELECTRON_RUN_AS_NODE;
-
-  const app = await electron.launch({ args: [mainJs], env });
+  const { app, userDataDir } = await launchApp();
 
   try {
     const window = await getMainWindow(app);
@@ -314,6 +308,6 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
       battleMapRow(window, battleMapName).getByRole('link', { name: 'Play' }),
     ).toBeVisible();
   } finally {
-    await app.close();
+    await closeApp(app, userDataDir);
   }
 });

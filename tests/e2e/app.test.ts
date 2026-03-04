@@ -1,18 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import path from 'path';
+import { launchApp, closeApp } from './helpers/launchApp';
 
 // Requires `yarn package` to have been run first so that
 // .vite/build/main.js and .vite/renderer/main_window/ exist.
-const mainJs = path.join(__dirname, '../../.vite/build/main.js');
 
 test('app launches and shows worlds landing shell', async () => {
-  // Unset ELECTRON_RUN_AS_NODE (inherited from VS Code/terminals) so Electron
-  // initializes as a proper GUI app rather than a plain Node.js process.
-  const env = { ...process.env };
-  delete env.ELECTRON_RUN_AS_NODE;
-
-  const app = await electron.launch({ args: [mainJs], env });
+  const { app, userDataDir } = await launchApp();
 
   const window = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => {
@@ -58,5 +51,5 @@ test('app launches and shows worlds landing shell', async () => {
     await expect(firstWorldCard).toBeVisible();
   }
 
-  await app.close();
+  await closeApp(app, userDataDir);
 });

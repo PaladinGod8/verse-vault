@@ -5,14 +5,12 @@ import {
   type Locator,
   type Page,
 } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import path from 'path';
-
-const mainJs = path.join(__dirname, '../../.vite/build/main.js');
+import { launchApp, closeApp } from './helpers/launchApp';
 
 let app: ElectronApplication | null = null;
 let page: Page | null = null;
 let worldId: number | null = null;
+let userDataDir: string | null = null;
 
 function tokenRows(window: Page, tokenName: string): Locator {
   return window.locator('tbody tr').filter({ hasText: tokenName });
@@ -51,10 +49,10 @@ function requirePageAndWorld(): { page: Page; worldId: number } {
 }
 
 async function launchElectronApp(): Promise<Page> {
-  const env = { ...process.env };
-  delete env.ELECTRON_RUN_AS_NODE;
+  const result = await launchApp();
+  app = result.app;
+  userDataDir = result.userDataDir;
 
-  app = await electron.launch({ args: [mainJs], env });
   const mainWindow = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => {
     const win =
@@ -242,13 +240,16 @@ test.afterEach(async () => {
       .catch(() => undefined);
   }
 
-  if (app) {
+  if (app && userDataDir) {
+    await closeApp(app, userDataDir);
+  } else if (app) {
     await app.close().catch(() => undefined);
   }
 
   app = null;
   page = null;
   worldId = null;
+  userDataDir = null;
 });
 
 test.describe('Token CRUD - World-Level', () => {
