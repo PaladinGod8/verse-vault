@@ -22,9 +22,10 @@ interface Token {
   id: number;
   world_id: number; // always set - token always belongs to a world
   campaign_id: number | null; // null = world-scoped; set = campaign-scoped copy
+  grid_type: TokenGridType; // runtime compatibility shape: 'square' | 'hex'
   name: string;
   image_src: string | null; // URL or local path; null if no image
-  config: string; // JSON string, reserved for future use (defaults to '{}')
+  config: string; // JSON object text; may include additive footprint/framing metadata
   is_visible: number; // 1 = visible in runtime palette, 0 = hidden
   created_at: string; // ISO datetime string (SQLite datetime('now'))
   updated_at: string;
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS tokens (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   world_id    INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
   campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+  grid_type   TEXT    NOT NULL DEFAULT 'square' CHECK (grid_type IN ('square', 'hex')),
   name        TEXT    NOT NULL,
   image_src   TEXT,
   config      TEXT    NOT NULL DEFAULT '{}',
@@ -70,13 +72,67 @@ Indexes:
 | `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                               | Returns rows where `campaign_id = campaignId`.                                                                   |
 | `db:tokens:getById`          | `(id: number) => Token \| null`                                                 | Returns matching row or `null`.                                                                                  |
 | `db:tokens:importImage`      | `({ fileName, mimeType, bytes }) => { image_src: string }`                      | Validates and persists image bytes in main, then returns persisted `vv-media://token-images/...` URL.            |
-| `db:tokens:add`              | `({ world_id, campaign_id?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional.                                                                     |
-| `db:tokens:update`           | `(id, { name?, image_src?, config?, is_visible? }) => Token`                    | `world_id` and `campaign_id` are immutable after insert.                                                         |
+| `db:tokens:add`              | `({ world_id, campaign_id?, grid_type?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional; `grid_type` defaults to `square` when omitted.          |
+| `db:tokens:update`           | `(id, { grid_type?, name?, image_src?, config?, is_visible? }) => Token`        | `world_id` and `campaign_id` are immutable after insert. `grid_type` is editable (`square`/`hex`).             |
 | `db:tokens:delete`           | `(id: number) => { id: number }`                                                | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.                                    |
 | `db:tokens:moveToWorld`      | `(id: number) => Token`                                                         | Moves a token to world scope (`campaign_id` -> `null`); requires token to exist; returns updated `Token`.        |
 | `db:tokens:moveToCampaign`   | `(id: number, targetCampaignId: number) => Token`                               | Moves a token to a campaign; requires token and campaign to exist and be in same world; returns updated `Token`. |
 
-## 5. Move Actions and User Flows
+## 5. Grid Variants + Footprint Painter
+
+### Token Identity and Runtime Compatibility
+
+- Every token has `grid_type: 'square' | 'hex'` persisted in the `tokens` row.
+- Runtime palette behavior is grid-aware:
+  - when BattleMap runtime grid mode is `square` or `hex`, palette lists only tokens with matching `token.grid_type`;
+  - when runtime grid mode is `none`, all token grid variants are shown.
+- Runtime add logic has a guard that blocks mismatched placement when mode is not `none`.
+
+### Painter Flow (Create/Edit)
+
+- `TokenForm` opens `FootprintPainterModal` immediately after a valid image file is selected in the dropzone.
+- Painter supports both grid families, based on the token's selected `grid_type`:
+  - `square`: cartesian cell painting (`col`, `row`)
+  - `hex`: axial cell painting (`q`, `r`)
+- Painter UX constraints:
+  - brush/eraser tools only;
+  - click-drag painting supported;
+  - overview/navigator panel shown in the upper-right;
+  - `Confirm` is disabled until at least one occupied cell is painted.
+- On confirm, painter returns deterministic `footprint` + `framing`; this is serialized into `TokenForm` submit payload `config`.
+
+### Occupancy and Framing Config Shape
+
+Stored in `Token.config` JSON (additive, backward-compatible):
+
+```ts
+interface TokenConfigShape {
+  footprint?: {
+    version?: 1;
+    grid_type?: 'square' | 'hex';
+    square_cells?: Array<{ col: number; row: number }>;
+    hex_cells?: Array<{ q: number; r: number }>;
+    width_cells?: number;
+    height_cells?: number;
+    radius_cells?: number;
+  };
+  framing?: {
+    center_x_cells?: number;
+    center_y_cells?: number;
+    extent_x_cells?: number;
+    extent_y_cells?: number;
+    max_extent_cells?: number;
+  };
+}
+```
+
+Normalization/persistence constraints:
+
+- `ensureTokenConfigJsonText()` validates `config` as a JSON object and normalizes occupancy arrays.
+- Occupied-cell arrays are deduped and canonically sorted before persistence.
+- Numeric footprint/framing fields are validated as finite values; extent/radius fields must be greater than `0` when present.
+
+## 6. Move Actions and User Flows
 
 ### Problem Solved
 
@@ -155,7 +211,7 @@ Move operations preserve all token fields except `campaign_id`:
 | `campaign_id` | Yes     | Scoped by move; set to null (world) or campaign_id (campaign) |
 | `name`        | No      | User edit only, not touched by move                           |
 | `image_src`   | No      | User edit only, not touched by move                           |
-| `config`      | No      | Reserved for future use; not touched by move                  |
+| `config`      | No      | User edit only; may contain additive `footprint`/`framing` metadata |
 | `is_visible`  | No      | User edit only, not touched by move                           |
 | `created_at`  | No      | Never changes                                                 |
 | `updated_at`  | Yes     | Updated by move operation (`datetime('now')`)                 |
@@ -256,7 +312,7 @@ Move advantages:
 - Move history: track scope transitions in audit log.
 - Cross-world move: if world hierarchy changes, allow reparenting tokens across worlds.
 
-## 6. Token Desktop Image Upload
+## 7. Token Desktop Image Upload
 
 ### Overview
 
@@ -274,12 +330,15 @@ Token create/edit now supports desktop image upload through drag-and-drop or fil
 
 - Create flow:
   - user can drag-and-drop an image or use picker in `New Token`;
+  - selecting a valid file opens `FootprintPainterModal` before save;
+  - user must paint at least one occupied cell and confirm;
   - on save, upload happens before `tokens.add`;
-  - add payload uses returned `image_src`.
+  - add payload uses returned `image_src` and includes `config` footprint/framing JSON from painter.
 - Edit replace flow:
   - user can select a new image in `Edit Token`;
+  - selecting a valid file opens `FootprintPainterModal` before save;
   - on save, upload happens before `tokens.update`;
-  - updated row thumbnail uses new persisted `image_src`.
+  - updated row thumbnail uses new persisted `image_src`, and save payload includes updated `config` footprint/framing JSON.
 - Edit clear flow:
   - user selects `Clear image on save`;
   - save sends `image_src: null` without import call;
@@ -322,7 +381,7 @@ Token create/edit now supports desktop image upload through drag-and-drop or fil
 - No drag-and-drop palette-to-canvas workflow; runtime placement remains click-to-add.
 - No cross-world move action.
 
-## 7. Migration Notes
+## 8. Migration Notes
 
 `runTokenWorldIdMigration` in `src/database/db.ts` handles pre-world-scope token tables:
 
