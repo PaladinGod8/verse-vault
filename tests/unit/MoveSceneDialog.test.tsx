@@ -188,6 +188,50 @@ describe('MoveSceneDialog', () => {
     expect(sessionsGetAllByActMock).toHaveBeenCalledWith(10);
   });
 
+  it('skips acts without matching arcs and sorts session options by campaign structure', async () => {
+    arcsGetAllByCampaignMock.mockResolvedValue([
+      buildArc({ id: 1, name: 'Arc Z', sort_order: 2 }),
+      buildArc({ id: 2, name: 'Arc A', sort_order: 1 }),
+    ]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      buildAct({ id: 10, arc_id: 1, name: 'Act Z', sort_order: 0 }),
+      buildAct({ id: 11, arc_id: 999, name: 'Act Missing Arc', sort_order: 0 }),
+      buildAct({ id: 12, arc_id: 2, name: 'Act A', sort_order: 1 }),
+    ]);
+    sessionsGetAllByActMock.mockImplementation(async (actId: number) => {
+      if (actId === 10) {
+        return [
+          buildSession({ id: 7, name: 'Session Z-2', act_id: 10, sort_order: 1 }),
+          buildSession({ id: 6, name: 'Session Z-1', act_id: 10, sort_order: 0 }),
+        ];
+      }
+      if (actId === 11) {
+        return [buildSession({ id: 8, name: 'Should Not Render', act_id: 11 })];
+      }
+      if (actId === 12) {
+        return [buildSession({ id: 5, name: 'Session A-1', act_id: 12, sort_order: 0 })];
+      }
+      return [];
+    });
+
+    renderDialog({ currentSessionId: 1 });
+
+    expect(await screen.findByRole('radio', { name: /Session A-1/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('radio', { name: /Should Not Render/i }),
+    ).not.toBeInTheDocument();
+
+    const optionOrder = screen.getAllByRole('radio').map((radio) => {
+      const label = radio.closest('label');
+      return label ? label.textContent ?? '' : '';
+    });
+    expect(optionOrder).toEqual([
+      expect.stringContaining('Session A-1'),
+      expect.stringContaining('Session Z-1'),
+      expect.stringContaining('Session Z-2'),
+    ]);
+  });
+
   it('keeps Move disabled until a target session is selected', async () => {
     const user = userEvent.setup();
     arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
