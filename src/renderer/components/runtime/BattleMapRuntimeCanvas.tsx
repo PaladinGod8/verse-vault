@@ -12,12 +12,16 @@ import {
 } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import {
+  clampCameraZoom,
   clampGridCellSize,
-  getSafeCameraZoom,
+  getMinZoomForScene,
   getPointyHexRangeForBounds,
   getPointyHexVertexOffsets,
+  getRuntimeSceneBounds,
+  getSafeCameraZoom,
   getSquareGridLinePositions,
   getWorldViewportBounds,
+  MIN_CAMERA_ZOOM,
   pointyHexCenterFromAxial,
   stepCameraCenterTowardTarget,
   worldDeltaFromScreenDelta,
@@ -476,13 +480,28 @@ export default function BattleMapRuntimeCanvas({
     cameraFocusAnimationRef.current = null;
   };
 
+  // Returns the effective minimum zoom for the current viewport, derived from
+  // scene bounds. Scene bounds use viewport dimensions because the background
+  // and map layers are drawn to fill the viewport in world space (see
+  // getRuntimeSceneBounds in runtimeMath.ts for the full contract).
+  // Falls back to MIN_CAMERA_ZOOM when the Pixi app is not yet initialized.
+  const getEffectiveMinZoom = () => {
+    const app = appRef.current;
+    if (!app || app.screen.width <= 0 || app.screen.height <= 0) {
+      return MIN_CAMERA_ZOOM;
+    }
+
+    const scene = getRuntimeSceneBounds(app.screen.width, app.screen.height);
+    return getMinZoomForScene(app.screen.width, app.screen.height, scene);
+  };
+
   const applyCameraState = (
     nextCamera: Pick<BattleMapRuntimeCameraConfig, 'x' | 'y' | 'zoom'>,
   ) => {
     cameraStateRef.current = {
       x: nextCamera.x,
       y: nextCamera.y,
-      zoom: getSafeCameraZoom(nextCamera.zoom),
+      zoom: clampCameraZoom(nextCamera.zoom, getEffectiveMinZoom()),
     };
     syncCameraTransform();
     syncGridLayer();

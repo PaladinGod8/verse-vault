@@ -26,6 +26,22 @@ const DEFAULT_CAMERA_ZOOM = 1;
 const DEFAULT_CAMERA_FOCUS_SMOOTHING = 0.18;
 const DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE = 0.5;
 
+// Absolute zoom bounds enforced across all runtime camera interactions.
+// MIN_CAMERA_ZOOM prevents the scene from shrinking to a useless sliver;
+// MAX_CAMERA_ZOOM prevents runaway zoom-in that loses spatial context.
+export const MIN_CAMERA_ZOOM = 0.25;
+export const MAX_CAMERA_ZOOM = 8;
+
+// Scene bounds describe the world-space extent of the rendered content area
+// (the map/background layer). Used to compute the minimum zoom that keeps the
+// scene visible within the viewport.
+export type RuntimeSceneBounds = {
+  /** Scene width in world units — the same coordinate space as camera.x. */
+  width: number;
+  /** Scene height in world units — the same coordinate space as camera.y. */
+  height: number;
+};
+
 export function getSafeCameraZoom(
   zoom: number,
   fallback = DEFAULT_CAMERA_ZOOM,
@@ -35,6 +51,79 @@ export function getSafeCameraZoom(
   }
 
   return zoom;
+}
+
+/**
+ * Returns scene bounds in world units for the current rendering model.
+ *
+ * Contract:
+ * - The background and map layers are drawn as a viewport-sized rect centered
+ *   at world origin (0, 0). In world coordinates, the scene spans:
+ *     x: [-viewportWidth / 2, viewportWidth / 2]
+ *     y: [-viewportHeight / 2, viewportHeight / 2]
+ * - This applies whether or not a map image is present: the fallback
+ *   background covers the same world-space area as the map sprite.
+ * - If the rendering model changes to use natural map image dimensions
+ *   instead of always filling the viewport, update this function to accept
+ *   and use those dimensions as the scene extent.
+ */
+export function getRuntimeSceneBounds(
+  viewportWidth: number,
+  viewportHeight: number,
+): RuntimeSceneBounds {
+  return {
+    width: viewportWidth > 0 ? viewportWidth : 1,
+    height: viewportHeight > 0 ? viewportHeight : 1,
+  };
+}
+
+/**
+ * Returns the minimum camera zoom at which the scene fits entirely within
+ * the viewport without empty margins on either axis.
+ *
+ * Below this zoom the scene is smaller than the viewport and empty space
+ * appears around it. Always returns at least MIN_CAMERA_ZOOM.
+ */
+export function getMinZoomForScene(
+  viewportWidth: number,
+  viewportHeight: number,
+  scene: RuntimeSceneBounds,
+): number {
+  if (
+    viewportWidth <= 0 ||
+    viewportHeight <= 0 ||
+    scene.width <= 0 ||
+    scene.height <= 0
+  ) {
+    return MIN_CAMERA_ZOOM;
+  }
+
+  const fitZoom = Math.min(
+    viewportWidth / scene.width,
+    viewportHeight / scene.height,
+  );
+  return Math.max(MIN_CAMERA_ZOOM, fitZoom);
+}
+
+/**
+ * Clamps zoom to [minZoom, maxZoom], guarding against non-positive or
+ * non-finite inputs. Always enforces MIN_CAMERA_ZOOM as the absolute floor.
+ */
+export function clampCameraZoom(
+  zoom: number,
+  minZoom: number,
+  maxZoom = MAX_CAMERA_ZOOM,
+): number {
+  const safeZoom = getSafeCameraZoom(zoom);
+  const safeMin =
+    Number.isFinite(minZoom) && minZoom > 0
+      ? Math.max(MIN_CAMERA_ZOOM, minZoom)
+      : MIN_CAMERA_ZOOM;
+  const safeMax =
+    Number.isFinite(maxZoom) && maxZoom > 0
+      ? Math.max(safeMin, maxZoom)
+      : Math.max(safeMin, MAX_CAMERA_ZOOM);
+  return Math.min(safeMax, Math.max(safeMin, safeZoom));
 }
 
 export function clampGridCellSize(
