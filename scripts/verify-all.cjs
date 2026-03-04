@@ -104,10 +104,6 @@ steps.push(
     run: () => runCommand(yarnCmd, ['postinstall']),
   },
   {
-    name: 'Run lint (strict, no warnings)',
-    run: () => runCommand(yarnCmd, ['lint']),
-  },
-  {
     name: 'Check formatting and auto-fix if needed',
     run: () => {
       const formatIsClean = runCommand(yarnCmd, ['format:check'], {
@@ -128,6 +124,10 @@ steps.push(
 
       return runCommand(yarnCmd, ['format:check']);
     },
+  },
+  {
+    name: 'Run lint (strict, no warnings)',
+    run: () => runCommand(yarnCmd, ['lint']),
   },
   {
     name: 'Run unit tests with V8 coverage (minimum 80%)',
