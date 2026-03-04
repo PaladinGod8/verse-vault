@@ -18,6 +18,7 @@ export type TokenImageUploadPayload = {
 
 export type TokenFormValues = {
   name: string;
+  grid_type: TokenGridType;
   image_src?: string | null;
   is_visible: number;
   image_upload?: TokenImageUploadPayload;
@@ -54,6 +55,9 @@ export default function TokenForm({
   const isCreateMode = !initialValues;
   const initialImageSrc = normalizeTokenImageSrc(initialValues?.image_src);
   const [name, setName] = useState(initialValues?.name ?? '');
+  const [gridType, setGridType] = useState<TokenGridType>(
+    initialValues?.grid_type ?? 'square',
+  );
   const [imageSrc, setImageSrc] = useState(initialImageSrc ?? '');
   const [isVisible, setIsVisible] = useState(initialValues?.is_visible ?? 1);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -116,6 +120,7 @@ export default function TokenForm({
 
     await onSave({
       name: trimmedName,
+      grid_type: gridType,
       image_src: shouldSendImageSrc ? normalizedImageSrc : undefined,
       is_visible: isVisible,
       image_upload: imageUpload,
@@ -147,6 +152,25 @@ export default function TokenForm({
         {nameError ? (
           <p className="mt-1 text-xs text-rose-600">{nameError}</p>
         ) : null}
+      </div>
+
+      <div>
+        <label
+          htmlFor="token-grid-type"
+          className="mb-1 block text-sm font-medium text-slate-700"
+        >
+          Grid Type <span className="text-rose-500">*</span>
+        </label>
+        <select
+          id="token-grid-type"
+          value={gridType}
+          onChange={(e) => setGridType(e.target.value as TokenGridType)}
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+          disabled={isSaving}
+        >
+          <option value="square">Square</option>
+          <option value="hex">Hex</option>
+        </select>
       </div>
 
       <div>

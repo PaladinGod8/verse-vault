@@ -80,6 +80,7 @@ function buildToken(overrides: Partial<Token> = {}): Token {
     id: 1,
     world_id: 1,
     campaign_id: null,
+    grid_type: 'square',
     name: 'Wolf',
     image_src: null,
     config: '{}',
@@ -212,6 +213,7 @@ describe('TokensPage', () => {
 
     expect(screen.getByText('Image')).toBeInTheDocument();
     expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Grid')).toBeInTheDocument();
     expect(screen.getByText('Scope')).toBeInTheDocument();
     expect(screen.getByText('Updated')).toBeInTheDocument();
     expect(screen.getByText('Created')).toBeInTheDocument();
@@ -286,6 +288,7 @@ describe('TokensPage', () => {
     expect(tokensAddMock).toHaveBeenCalledWith({
       world_id: 1,
       name: 'Arc Wolf',
+      grid_type: 'square',
       image_src: null,
       is_visible: 1,
     });
@@ -344,6 +347,7 @@ describe('TokensPage', () => {
     expect(tokensAddMock).toHaveBeenCalledWith({
       world_id: 1,
       name: 'Uploaded Wolf',
+      grid_type: 'square',
       image_src: 'file:///a.png',
       is_visible: 1,
     });
@@ -398,6 +402,7 @@ describe('TokensPage', () => {
 
     expect(tokensUpdateMock).toHaveBeenCalledWith(3, {
       name: 'Scout Prime',
+      grid_type: 'square',
       image_src: null,
       is_visible: 1,
     });
@@ -457,6 +462,7 @@ describe('TokensPage', () => {
     );
     expect(tokensUpdateMock).toHaveBeenCalledWith(300, {
       name: 'Scout',
+      grid_type: 'square',
       image_src: 'file:///new.png',
       is_visible: 1,
     });
@@ -494,6 +500,7 @@ describe('TokensPage', () => {
     expect(tokensImportImageMock).not.toHaveBeenCalled();
     expect(tokensUpdateMock).toHaveBeenCalledWith(301, {
       name: 'Scout',
+      grid_type: 'square',
       image_src: null,
       is_visible: 1,
     });
