@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import TokenImageDropzone from './TokenImageDropzone';
 
 const TOKEN_IMAGE_ALLOWED_MIME_TYPES = new Set([
@@ -17,9 +17,10 @@ export type TokenImageUploadPayload = {
 
 export type TokenFormValues = {
   name: string;
-  image_src: string | null;
+  image_src?: string | null;
   is_visible: number;
   image_upload?: TokenImageUploadPayload;
+  clear_image?: boolean;
 };
 
 type TokenFormProps = {
@@ -50,12 +51,29 @@ export default function TokenForm({
   isSaving,
 }: TokenFormProps) {
   const isCreateMode = !initialValues;
+  const initialImageSrc = initialValues?.image_src ?? null;
   const [name, setName] = useState(initialValues?.name ?? '');
   const [imageSrc, setImageSrc] = useState(initialValues?.image_src ?? '');
   const [isVisible, setIsVisible] = useState(initialValues?.is_visible ?? 1);
   const [nameError, setNameError] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [clearImage, setClearImage] = useState(false);
+  const [hasImageSrcChanged, setHasImageSrcChanged] = useState(false);
+
+  const selectedImagePreviewUrl = useMemo(
+    () =>
+      selectedImageFile ? URL.createObjectURL(selectedImageFile) : undefined,
+    [selectedImageFile],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (selectedImagePreviewUrl) {
+        URL.revokeObjectURL(selectedImagePreviewUrl);
+      }
+    };
+  }, [selectedImagePreviewUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +84,7 @@ export default function TokenForm({
     }
 
     let imageUpload: TokenImageUploadPayload | undefined;
-    if (isCreateMode && selectedImageFile) {
+    if (selectedImageFile) {
       const validationError = validateTokenImageFile(selectedImageFile);
       if (validationError) {
         setImageUploadError(validationError);
@@ -90,11 +108,17 @@ export default function TokenForm({
 
     setNameError(null);
     setImageUploadError(null);
+    const trimmedImageSrc = imageSrc.trim();
+    const normalizedImageSrc = trimmedImageSrc === '' ? null : trimmedImageSrc;
+    const shouldSendImageSrc =
+      isCreateMode || hasImageSrcChanged || (!clearImage && !!imageUpload);
+
     await onSave({
       name: trimmedName,
-      image_src: imageSrc.trim() === '' ? null : imageSrc.trim(),
+      image_src: shouldSendImageSrc ? normalizedImageSrc : undefined,
       is_visible: isVisible,
       image_upload: imageUpload,
+      clear_image: clearImage,
     });
   };
 
@@ -135,34 +159,72 @@ export default function TokenForm({
           id="token-image-src"
           type="text"
           value={imageSrc}
-          onChange={(e) => setImageSrc(e.target.value)}
+          onChange={(e) => {
+            setImageSrc(e.target.value);
+            setHasImageSrcChanged(true);
+            if (clearImage) setClearImage(false);
+          }}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
           placeholder="https://... or /path/to/image.png"
           disabled={isSaving}
         />
       </div>
 
-      {isCreateMode ? (
-        <TokenImageDropzone
-          selectedFile={selectedImageFile}
-          onFileSelect={(file) => {
-            const validationError = validateTokenImageFile(file);
-            if (validationError) {
+      {!isCreateMode && initialImageSrc ? (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">
+            Current Image
+          </label>
+          {clearImage ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              Image will be cleared when you save.
+            </div>
+          ) : (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <img
+                src={selectedImagePreviewUrl ?? initialImageSrc}
+                alt="Current token"
+                className="h-20 w-20 rounded object-cover"
+              />
+            </div>
+          )}
+          <button
+            type="button"
+            className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => {
+              setClearImage(true);
+              setImageSrc('');
+              setHasImageSrcChanged(true);
               setSelectedImageFile(null);
-              setImageUploadError(validationError);
-              return;
-            }
-            setSelectedImageFile(file);
-            setImageUploadError(null);
-          }}
-          onClearFile={() => {
-            setSelectedImageFile(null);
-            setImageUploadError(null);
-          }}
-          error={imageUploadError}
-          disabled={isSaving}
-        />
+              setImageUploadError(null);
+            }}
+            disabled={isSaving}
+          >
+            Clear image on save
+          </button>
+        </div>
       ) : null}
+
+      <TokenImageDropzone
+        selectedFile={selectedImageFile}
+        onFileSelect={(file) => {
+          const validationError = validateTokenImageFile(file);
+          if (validationError) {
+            setSelectedImageFile(null);
+            setImageUploadError(validationError);
+            return;
+          }
+          setSelectedImageFile(file);
+          setImageUploadError(null);
+          setClearImage(false);
+        }}
+        onClearFile={() => {
+          setSelectedImageFile(null);
+          setImageUploadError(null);
+        }}
+        error={imageUploadError}
+        disabled={isSaving}
+      />
 
       <div className="flex items-center gap-2">
         <input
