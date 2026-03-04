@@ -1,8 +1,110 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import BattleMapRuntimeCanvas from '../components/runtime/BattleMapRuntimeCanvas';
 
-function isJsonObject(value: unknown): boolean {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
+const DEFAULT_RUNTIME_CONFIG: BattleMapRuntimeConfig = {
+  grid: {
+    mode: 'square',
+    cellSize: 50,
+    originX: 0,
+    originY: 0,
+  },
+  map: {
+    imageSrc: null,
+    backgroundColor: '#000000',
+  },
+  camera: {
+    x: 0,
+    y: 0,
+    zoom: 1,
+  },
+};
+
+const BATTLEMAP_GRID_MODES = new Set<BattleMapGridMode>([
+  'square',
+  'hex',
+  'none',
+]);
+
+function asJsonRecord(value: unknown): Record<string, unknown> | null {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function asFiniteNumber(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return value;
+}
+
+function asPositiveFiniteNumber(value: unknown, fallback: number): number {
+  const normalized = asFiniteNumber(value, fallback);
+  if (normalized <= 0) {
+    return fallback;
+  }
+  return normalized;
+}
+
+function normalizeBattleMapRuntimeConfig(
+  parsedConfig: Record<string, unknown>,
+): BattleMapRuntimeConfig {
+  const runtime = asJsonRecord(parsedConfig.runtime) ?? {};
+  const grid = asJsonRecord(runtime.grid) ?? {};
+  const map = asJsonRecord(runtime.map) ?? {};
+  const camera = asJsonRecord(runtime.camera) ?? {};
+
+  const gridModeCandidate = grid.mode;
+  const normalizedGridMode: BattleMapGridMode =
+    typeof gridModeCandidate === 'string' &&
+    BATTLEMAP_GRID_MODES.has(gridModeCandidate as BattleMapGridMode)
+      ? (gridModeCandidate as BattleMapGridMode)
+      : DEFAULT_RUNTIME_CONFIG.grid.mode;
+
+  const backgroundColorCandidate = map.backgroundColor;
+  const normalizedBackgroundColor =
+    typeof backgroundColorCandidate === 'string' &&
+    backgroundColorCandidate.trim().length > 0
+      ? backgroundColorCandidate.trim()
+      : DEFAULT_RUNTIME_CONFIG.map.backgroundColor;
+
+  const imageSrcCandidate = map.imageSrc;
+  const normalizedImageSrc =
+    typeof imageSrcCandidate === 'string' && imageSrcCandidate.trim().length > 0
+      ? imageSrcCandidate.trim()
+      : null;
+
+  return {
+    grid: {
+      mode: normalizedGridMode,
+      cellSize: asPositiveFiniteNumber(
+        grid.cellSize,
+        DEFAULT_RUNTIME_CONFIG.grid.cellSize,
+      ),
+      originX: asFiniteNumber(
+        grid.originX,
+        DEFAULT_RUNTIME_CONFIG.grid.originX,
+      ),
+      originY: asFiniteNumber(
+        grid.originY,
+        DEFAULT_RUNTIME_CONFIG.grid.originY,
+      ),
+    },
+    map: {
+      imageSrc: normalizedImageSrc,
+      backgroundColor: normalizedBackgroundColor,
+    },
+    camera: {
+      x: asFiniteNumber(camera.x, DEFAULT_RUNTIME_CONFIG.camera.x),
+      y: asFiniteNumber(camera.y, DEFAULT_RUNTIME_CONFIG.camera.y),
+      zoom: asPositiveFiniteNumber(
+        camera.zoom,
+        DEFAULT_RUNTIME_CONFIG.camera.zoom,
+      ),
+    },
+  };
 }
 
 export default function BattleMapRuntimePage() {
@@ -39,6 +141,8 @@ export default function BattleMapRuntimePage() {
     worldId !== null ? `/world/${worldId}/battlemaps` : '/';
 
   const [battleMap, setBattleMap] = useState<BattleMap | null>(null);
+  const [runtimeConfig, setRuntimeConfig] =
+    useState<BattleMapRuntimeConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +151,7 @@ export default function BattleMapRuntimePage() {
 
     if (worldId === null || parsedBattleMapId === null) {
       setBattleMap(null);
+      setRuntimeConfig(null);
       setError('Invalid world or BattleMap id.');
       setIsLoading(false);
       return () => {
@@ -64,6 +169,7 @@ export default function BattleMapRuntimePage() {
         if (!existingBattleMap || existingBattleMap.world_id !== worldId) {
           if (isMounted) {
             setBattleMap(null);
+            setRuntimeConfig(null);
             setError('BattleMap not found.');
           }
           return;
@@ -71,25 +177,31 @@ export default function BattleMapRuntimePage() {
 
         try {
           const parsedConfig = JSON.parse(existingBattleMap.config);
-          if (!isJsonObject(parsedConfig)) {
+          const parsedConfigObject = asJsonRecord(parsedConfig);
+          if (!parsedConfigObject) {
             throw new Error('BattleMap config must be a JSON object.');
+          }
+
+          const normalizedRuntimeConfig =
+            normalizeBattleMapRuntimeConfig(parsedConfigObject);
+          if (isMounted) {
+            setBattleMap(existingBattleMap);
+            setRuntimeConfig(normalizedRuntimeConfig);
           }
         } catch {
           if (isMounted) {
             setBattleMap(existingBattleMap);
+            setRuntimeConfig(null);
             setError(
               'Invalid runtime config JSON. Update this BattleMap config before entering runtime.',
             );
           }
           return;
         }
-
-        if (isMounted) {
-          setBattleMap(existingBattleMap);
-        }
       } catch {
         if (isMounted) {
           setBattleMap(null);
+          setRuntimeConfig(null);
           setError('Unable to load BattleMap runtime right now.');
         }
       } finally {
@@ -152,17 +264,23 @@ export default function BattleMapRuntimePage() {
         ) : null}
 
         {!isLoading && !error ? (
-          <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
-            <div className="space-y-2">
+          <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-sm">
+            <div className="border-b border-slate-800 px-6 py-4">
               <h2 className="text-lg font-semibold text-white">
-                Runtime Shell
+                Runtime Canvas
               </h2>
               <p className="text-sm text-slate-300">
-                Pixi renderer is not mounted in this step. Runtime canvas and
-                controls will be added in the next runtime steps.
+                Pixi stage bootstrap is active for background and map layers.
               </p>
             </div>
-            <div className="mt-6 h-[55vh] rounded-lg border border-slate-700 bg-black" />
+            <div className="h-[55vh] min-h-[320px]">
+              {runtimeConfig ? (
+                <BattleMapRuntimeCanvas
+                  runtimeConfig={runtimeConfig}
+                  className="h-full w-full"
+                />
+              ) : null}
+            </div>
           </section>
         ) : null}
       </main>
