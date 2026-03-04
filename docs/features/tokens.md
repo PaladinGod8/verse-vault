@@ -56,59 +56,207 @@ Indexes:
 
 - World-scoped token: `campaign_id = NULL`. These are available in runtime for that world.
 - Campaign-scoped token: `campaign_id IS NOT NULL`. These are independent copied rows.
-- Copy flow is one-way: world -> campaign.
-- There is no "promote campaign token to world" action.
+- Copy flow is one-way: world -> campaign (creates a new row).
+- Move flow is bidirectional: world <-> campaign, and campaign <-> campaign (updates existing row).
+  - Move to world: `campaign_id` -> `NULL`
+  - Move to campaign: `campaign_id` -> new target campaign ID (must be in same world)
+  - All other fields immutable; only scope changes.
 
 ## 4. IPC Contract
 
-| Channel                      | Signature                                                                       | Notes                                                                             |
-| ---------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `db:tokens:getAllByWorld`    | `(worldId: number) => Token[]`                                                  | Returns tokens for `world_id` (includes world-scoped and campaign-scoped rows).   |
-| `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                               | Returns rows where `campaign_id = campaignId`.                                    |
-| `db:tokens:getById`          | `(id: number) => Token \| null`                                                 | Returns matching row or `null`.                                                   |
-| `db:tokens:importImage`      | `({ fileName, mimeType, bytes }) => { image_src: string }`                      | Validates and persists image bytes in main, then returns persisted `file://` URL. |
-| `db:tokens:add`              | `({ world_id, campaign_id?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional.                                      |
-| `db:tokens:update`           | `(id, { name?, image_src?, config?, is_visible? }) => Token`                    | `world_id` and `campaign_id` are immutable after insert.                          |
-| `db:tokens:delete`           | `(id: number) => { id: number }`                                                | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.     |
+| Channel                      | Signature                                                                       | Notes                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `db:tokens:getAllByWorld`    | `(worldId: number) => Token[]`                                                  | Returns tokens for `world_id` (includes world-scoped and campaign-scoped rows).                                  |
+| `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                               | Returns rows where `campaign_id = campaignId`.                                                                   |
+| `db:tokens:getById`          | `(id: number) => Token \| null`                                                 | Returns matching row or `null`.                                                                                  |
+| `db:tokens:importImage`      | `({ fileName, mimeType, bytes }) => { image_src: string }`                      | Validates and persists image bytes in main, then returns persisted `vv-media://token-images/...` URL.            |
+| `db:tokens:add`              | `({ world_id, campaign_id?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional.                                                                     |
+| `db:tokens:update`           | `(id, { name?, image_src?, config?, is_visible? }) => Token`                    | `world_id` and `campaign_id` are immutable after insert.                                                         |
+| `db:tokens:delete`           | `(id: number) => { id: number }`                                                | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.                                    |
+| `db:tokens:moveToWorld`      | `(id: number) => Token`                                                         | Moves a token to world scope (`campaign_id` -> `null`); requires token to exist; returns updated `Token`.        |
+| `db:tokens:moveToCampaign`   | `(id: number, targetCampaignId: number) => Token`                               | Moves a token to a campaign; requires token and campaign to exist and be in same world; returns updated `Token`. |
 
-## 5. User-Facing Behavior
+## 5. Move Actions and User Flows
 
-### World-Level Tokens Page (`/world/:id/tokens`)
+### Problem Solved
 
-- Accessible from the `Tokens` entry in the world sidebar.
-- Table shows thumbnail, name, scope label, updated date, created date, and actions.
-- `New Token` always inserts a world-scoped row (`campaign_id = null`) and supports image upload by desktop drag-and-drop or file picker.
-- `Edit` updates name, visibility, and image via three paths: replace with uploaded file, clear image, or keep/adjust text `image_src`.
-- `Delete` requires confirmation (`Delete "<name>"? This cannot be undone.`) and removes that token row.
-- `Copy to Campaign` is shown only for world-scoped rows; it creates an independent campaign-scoped copy with the same `name`, `image_src`, `config`, and `is_visible`.
+Previously, tokens were immutable in scope:
 
-### Runtime Palette (BattleMap Runtime)
+- World tokens could only be copied (new row) to campaigns.
+- Campaign tokens could not be moved to other campaigns or back to world.
+- Scope changes required manual deletion + recreation.
 
-- Two source sections: `World Tokens` and campaign tokens (for selected campaign).
-- `Show invisible tokens` toggle applies to both sections.
-- Hovering a token row with `image_src` shows an image tooltip preview.
-- Clicking `Add` places a runtime token instance at a default/snap-aware position in the scene.
-- Runtime token instances are session-only and are not persisted to DB.
+Token Move adds in-place scope transitions via two new actions:
 
-## 6. Validation Rules
+- Move to World: campaign-scoped -> world-scoped
+- Move to Campaign: world-scoped -> campaign-scoped (or campaign -> different campaign)
 
-- `name`: required; trimmed; must not be empty.
-- `world_id`: required positive integer; validated in main handler.
-- `campaign_id`: optional; if provided, must be a positive integer.
-- Same-world campaign copy is enforced by UI flow (campaign picker is scoped to the world). DB FKs enforce existence of `world_id` and `campaign_id` targets.
-- `image_src`: optional string; renderer normalizes empty/whitespace text input to `null`.
-- `image_upload` (renderer submit payload): optional `{ fileName, mimeType, bytes }`; when present, renderer and main both validate image type and 5 MB size before persistence.
-- upload precedence in edit save path: `image_upload` replace > `clear_image` -> `image_src: null` > explicit/manual `image_src` update > omitted image field (leave unchanged).
-- `config`: defaults to `'{}'`; when provided, must be JSON object text.
-- `is_visible`: `1` (default) or `0`.
+### Starting State: TokensPage at `/world/:id/tokens`
 
-## 7. Cascade Behavior
+Table displays all tokens (world + campaign-scoped) with context-aware actions per row.
 
-- Deleting a world deletes all rows in `tokens` for that world via `tokens.world_id -> worlds.id ON DELETE CASCADE`.
-- Deleting a campaign deletes only campaign-scoped token copies tied to that campaign via `tokens.campaign_id -> campaigns.id ON DELETE CASCADE`.
-- World-scoped rows (`campaign_id = NULL`) are unaffected by campaign deletion.
+### Scenario 1: Move World Token to Campaign
 
-## 8. Token Desktop Image Upload
+1. User clicks "Move to Campaign" button on a world-scoped row.
+2. Dialog opens: `MoveTokenDialog` in `toCampaign` mode.
+3. Campaign dropdown populated with campaigns in the token's world.
+4. User selects target campaign + clicks Confirm.
+5. IPC calls `window.db.tokens.moveToCampaign(tokenId, campaignId)`.
+6. On success:
+   - Token row updates: `campaign_id` set to new campaign.
+   - Scope label changes: `World` -> `Campaign: <name>`.
+   - Toast: `Moved '<name>' to <campaign>.`
+   - Dialog closes; table refreshes.
+
+### Scenario 2: Move Campaign Token to World
+
+1. User clicks "Move to World" button on a campaign-scoped row.
+2. Dialog opens: `MoveTokenDialog` in `toWorld` mode.
+3. Simple confirmation message (no campaign picker).
+4. User clicks Confirm.
+5. IPC calls `window.db.tokens.moveToWorld(tokenId)`.
+6. On success:
+   - Token row updates: `campaign_id` set to `null`.
+   - Scope label changes: `Campaign: <name>` -> `World`.
+   - Toast: `Moved '<name>' to World.`
+   - Dialog closes; table refreshes.
+
+### Scenario 3: Move Campaign Token to Different Campaign
+
+1. User clicks "Move to Campaign" button on a campaign-scoped row.
+2. Dialog opens: `MoveTokenDialog` in `toCampaign` mode.
+3. Campaign dropdown populated (excludes current campaign).
+4. User selects different campaign + clicks Confirm.
+5. IPC calls `window.db.tokens.moveToCampaign(tokenId, newCampaignId)`.
+6. On success:
+   - Token row updates: `campaign_id` changed.
+   - Scope label updates to new campaign name.
+   - Toast: `Moved '<name>' to <new-campaign>.`
+
+### Dialog Behavior
+
+The `MoveTokenDialog` component handles UX:
+
+- Two modes: `toWorld` (simple confirmation) and `toCampaign` (with campaign picker).
+- Campaign picker is filtered to token parent world; FKs prevent cross-world moves.
+- Confirm button disabled until campaign is selected (in `toCampaign` mode).
+- Pending state disables button text and form controls during async call.
+- Errors display inline or as toast.
+- Cancel closes dialog without changes.
+
+### Token Data Model and Immutability
+
+Move operations preserve all token fields except `campaign_id`:
+
+| Field         | Mutable | Notes                                                         |
+| ------------- | ------- | ------------------------------------------------------------- |
+| `id`          | No      | Primary key; never changes                                    |
+| `world_id`    | No      | FK to world; set at creation; immutable                       |
+| `campaign_id` | Yes     | Scoped by move; set to null (world) or campaign_id (campaign) |
+| `name`        | No      | User edit only, not touched by move                           |
+| `image_src`   | No      | User edit only, not touched by move                           |
+| `config`      | No      | Reserved for future use; not touched by move                  |
+| `is_visible`  | No      | User edit only, not touched by move                           |
+| `created_at`  | No      | Never changes                                                 |
+| `updated_at`  | Yes     | Updated by move operation (`datetime('now')`)                 |
+
+### Component Hierarchy
+
+```text
+TokensPage
+  |- MoveTokenDialog (mounted with dialog state)
+  |  |- ModalShell (DaisyUI modal)
+  |  |- Campaign select (toCampaign mode only)
+  |  \- Confirm/Cancel buttons
+  \- Table row actions
+     |- Edit (existing)
+     |- Move to Campaign (new for world + campaign tokens)
+     |- Move to World (new for campaign tokens)
+     \- Delete (existing)
+```
+
+### Validation and Error Handling
+
+#### Validation Rules
+
+- Move target validation: campaigns must exist and be in the same world as the token.
+- Idempotent: moving a world-scoped token to world again succeeds (no-op).
+- Atomic: all-or-nothing transactional semantics (rollback on error).
+- Token exists: `moveToWorld` and `moveToCampaign` throw if token ID not found.
+- Campaign exists: `moveToCampaign` throws if campaign ID not found.
+- Same world: `moveToCampaign` validates target campaign is in same world as token `world_id`.
+- Transactional: both move handlers wrap updates in SQLite transactions.
+
+#### Error Messages and UX
+
+| Error              | Condition                                             | User Feedback                                                       |
+| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------- |
+| Token not found    | `moveToWorld` or `moveToCampaign` on invalid token ID | Toast error: `Failed to move token: Token not found`                |
+| Campaign not found | `moveToCampaign` on invalid campaign ID               | Toast error: `Failed to move token: Campaign not found`             |
+| Wrong world        | `moveToCampaign` to campaign in different world       | Toast error: `Failed to move token: Campaign not in the same world` |
+| Generic error      | Unexpected DB error                                   | Toast error: `Failed to move token: <error>`                        |
+
+### Testing Coverage
+
+#### Unit Tests
+
+- `tests/unit/database/tokenMove.test.ts`: 10+ test cases
+  - Happy paths (world->campaign, campaign->world, campaign->campaign)
+  - Validation errors (not found, world mismatch)
+  - Data preservation (immutable fields)
+  - Transactional semantics
+
+- `tests/unit/preload/tokenMove.test.ts`: 4+ test cases
+  - IPC channel invocation
+  - Error propagation
+
+#### E2E Tests
+
+- `tests/e2e/tokenMove.test.ts`: 9+ test cases
+  - UI flow (dialog open/close, campaign selection)
+  - Scope label updates
+  - Toast feedback
+  - Action button visibility
+  - Cancel behavior
+
+#### Coverage
+
+- Combined unit + E2E coverage: 80%+ for all move-related code.
+
+### Design Decisions
+
+#### Why In-Place Move vs. Copy + Delete?
+
+Move advantages:
+
+- Single operation; no orphaning old rows.
+- Preserves token ID (important if external systems reference the token).
+- Atomic; no partial states.
+- Simpler UI (single action vs. multi-step).
+
+#### Why World ID Immutable?
+
+- Tokens are world-first scoped.
+- Moving a token to a different world would require:
+  - remapping campaign FK (new world's campaign hierarchy might differ)
+  - potentially breaking runtime battlemap linkages
+  - complicating validation logic
+- Solution: keep move restricted to same-world transitions; cross-world use case remains copy + delete.
+
+#### Why Separate Dialog Component?
+
+- Reusable pattern (like `MoveSceneDialog`, `MoveSessionDialog`).
+- Isolates move UX from TokensPage UI complexity.
+- Can be extended in future (for example, batch moves, move with copy).
+
+### Future Enhancements
+
+- Batch move: move multiple tokens at once.
+- Move with copy: optionally keep a copy in source campaign after move.
+- Move history: track scope transitions in audit log.
+- Cross-world move: if world hierarchy changes, allow reparenting tokens across worlds.
+
+## 6. Token Desktop Image Upload
 
 ### Overview
 
@@ -120,7 +268,7 @@ Token create/edit now supports desktop image upload through drag-and-drop or fil
 - Renderer form (`TokenForm`) builds `image_upload` payload (`fileName`, normalized lowercase `mimeType`, `Uint8Array` bytes) and sends it through `window.db.tokens.importImage(...)`.
 - Preload forwards `db:tokens:importImage` (`IPC.TOKENS_IMPORT_IMAGE`) and preserves the security boundary (renderer never touches Node APIs).
 - Main handler validates payload and writes file bytes under `path.join(app.getPath('userData'), 'token-images')` with unique filename format `<timestamp>-<randomUUID>.<ext>`.
-- Main returns `{ image_src }`, where `image_src` is a persisted `file://` URL built with `pathToFileURL(...)`.
+- Main returns `{ image_src }`, where `image_src` is a persisted `vv-media://token-images/...` URL.
 
 ### UX Behavior
 
@@ -159,7 +307,7 @@ Token create/edit now supports desktop image upload through drag-and-drop or fil
   - `TokenForm`: valid upload payload, invalid type/size validation, create/edit submit payload variants, clear-image path.
   - `TokensPage`: create/edit import ordering, create/edit failure handling, clear-image update behavior.
 - E2E coverage (`tests/e2e/tokens.test.ts`):
-  - create token with uploaded image and thumbnail `file:///.../token-images/...`;
+  - create token with uploaded image and thumbnail `vv-media://token-images/...`;
   - edit replace image and assert thumbnail source changes;
   - edit clear image and assert placeholder;
   - invalid upload type shows inline error and does not mutate stored token image.
@@ -172,9 +320,9 @@ Token create/edit now supports desktop image upload through drag-and-drop or fil
 - No typed character/item/entity model; tokens remain generic.
 - No runtime token persistence; placement remains session-only.
 - No drag-and-drop palette-to-canvas workflow; runtime placement remains click-to-add.
-- No campaign-to-world promotion action.
+- No cross-world move action.
 
-## 9. Migration Notes
+## 7. Migration Notes
 
 `runTokenWorldIdMigration` in `src/database/db.ts` handles pre-world-scope token tables:
 
