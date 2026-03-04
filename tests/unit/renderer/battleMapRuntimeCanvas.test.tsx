@@ -15,6 +15,19 @@ const resizeObserverState = {
   instances: [] as ResizeObserverMock[],
 };
 
+type MockDisplayNode = {
+  children: MockDisplayNode[];
+  emit: (event: string, payload: unknown) => void;
+};
+
+type MockPixiApp = {
+  stage: MockDisplayNode & { hitArea: unknown };
+  ticker: {
+    add: (...args: unknown[]) => void;
+  };
+  destroy: (...args: unknown[]) => void;
+};
+
 vi.mock('pixi.js', () => {
   type Listener = (event: unknown) => void;
 
@@ -93,27 +106,40 @@ vi.mock('pixi.js', () => {
       return this;
     }
 
-    circle(_x: number, _y: number, _radius: number): this {
+    circle(x: number, y: number, radius: number): this {
+      void x;
+      void y;
+      void radius;
       return this;
     }
 
-    fill(_style: unknown): this {
+    fill(style: unknown): this {
+      void style;
       return this;
     }
 
-    stroke(_style: unknown): this {
+    stroke(style: unknown): this {
+      void style;
       return this;
     }
 
-    rect(_x: number, _y: number, _w: number, _h: number): this {
+    rect(x: number, y: number, w: number, h: number): this {
+      void x;
+      void y;
+      void w;
+      void h;
       return this;
     }
 
-    moveTo(_x: number, _y: number): this {
+    moveTo(x: number, y: number): this {
+      void x;
+      void y;
       return this;
     }
 
-    lineTo(_x: number, _y: number): this {
+    lineTo(x: number, y: number): this {
+      void x;
+      void y;
       return this;
     }
 
@@ -313,13 +339,20 @@ function buildRuntimeToken(
   };
 }
 
-function getApp(): any {
-  return pixiState.appInstances[0] as any;
+function getApp(): MockPixiApp {
+  return pixiState.appInstances[0] as MockPixiApp;
 }
 
-function getTokenLayer(app: any): any {
+function getTokenLayer(app: MockPixiApp): MockDisplayNode {
   const worldContainer = app.stage.children[0];
-  return worldContainer.children[4];
+  if (!worldContainer) {
+    throw new Error('Expected world container to be initialized');
+  }
+  const tokenLayer = worldContainer.children[4];
+  if (!tokenLayer) {
+    throw new Error('Expected token layer to be initialized');
+  }
+  return tokenLayer;
 }
 
 describe('BattleMapRuntimeCanvas', () => {
