@@ -157,6 +157,11 @@ export default function BattleMapRuntimePage() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(
     null,
   );
+  const [worldTokens, setWorldTokens] = useState<Token[]>([]);
+  const [isLoadingWorldTokens, setIsLoadingWorldTokens] = useState(true);
+  const [worldTokenLoadError, setWorldTokenLoadError] = useState<string | null>(
+    null,
+  );
   const [campaignTokens, setCampaignTokens] = useState<Token[]>([]);
   const [isLoadingCampaignTokens, setIsLoadingCampaignTokens] = useState(false);
   const [campaignTokenLoadError, setCampaignTokenLoadError] = useState<
@@ -382,6 +387,81 @@ export default function BattleMapRuntimePage() {
     };
 
     void loadCampaigns();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [worldId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (worldId === null) {
+      setWorldTokens([]);
+      setWorldTokenLoadError(null);
+      setIsLoadingWorldTokens(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const loadWorldTokens = async () => {
+      setIsLoadingWorldTokens(true);
+      setWorldTokenLoadError(null);
+
+      try {
+        const tokens = await window.db.tokens.getAllByWorld(worldId);
+        if (!isMounted) {
+          return;
+        }
+
+        const scopedWorldTokens = tokens.filter(
+          (token) => token.campaign_id === null,
+        );
+        setWorldTokens(scopedWorldTokens);
+        setRuntimeTokens((currentTokens) => {
+          const tokenById = new Map(
+            scopedWorldTokens.map((token) => [token.id, token]),
+          );
+          return currentTokens.map((runtimeToken) => {
+            if (
+              runtimeToken.campaignId !== null ||
+              runtimeToken.sourceTokenId === null
+            ) {
+              return runtimeToken;
+            }
+
+            const sourceToken = tokenById.get(runtimeToken.sourceTokenId);
+            if (!sourceToken) {
+              return {
+                ...runtimeToken,
+                sourceMissing: true,
+              };
+            }
+
+            return {
+              ...runtimeToken,
+              name: sourceToken.name,
+              imageSrc: sourceToken.image_src,
+              isVisible: sourceToken.is_visible === 1,
+              sourceMissing: false,
+            };
+          });
+        });
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+        setWorldTokens([]);
+        setWorldTokenLoadError('Unable to load world tokens.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingWorldTokens(false);
+        }
+      }
+    };
+
+    void loadWorldTokens();
 
     return () => {
       isMounted = false;
@@ -801,6 +881,9 @@ export default function BattleMapRuntimePage() {
               selectedCampaignId={selectedCampaignId}
               isLoadingCampaigns={isLoadingCampaigns}
               campaignLoadError={campaignLoadError}
+              worldTokens={worldTokens}
+              isLoadingWorldTokens={isLoadingWorldTokens}
+              worldTokenLoadError={worldTokenLoadError}
               tokens={campaignTokens}
               isLoadingTokens={isLoadingCampaignTokens}
               tokenLoadError={campaignTokenLoadError}
