@@ -1,4 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import path from 'path';
 import { getDatabase, closeDatabase } from './database/db';
 import { IPC } from './shared/ipcChannels';
@@ -25,6 +28,13 @@ function isAbilityChildDuplicateError(error: unknown): boolean {
 type JsonRecord = Record<string, unknown>;
 
 const BATTLEMAP_GRID_MODES = new Set(['square', 'hex', 'none']);
+const TOKEN_IMAGE_MIME_TO_EXTENSION = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+} as const;
+const TOKEN_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 const DEFAULT_BATTLEMAP_RUNTIME_CONFIG = {
   grid: {
@@ -284,6 +294,47 @@ function ensureTokenConfigJsonText(config: unknown): string {
   }
 
   return config as string;
+}
+
+function ensureTokenImageImportPayload(payload: TokenImageImportPayload): {
+  mimeType: keyof typeof TOKEN_IMAGE_MIME_TO_EXTENSION;
+  bytes: Uint8Array;
+} {
+  const fileName =
+    typeof payload.fileName === 'string' ? payload.fileName.trim() : '';
+  if (!fileName) {
+    throw new Error('Token image fileName is required');
+  }
+
+  const mimeType =
+    typeof payload.mimeType === 'string'
+      ? payload.mimeType.trim().toLowerCase()
+      : '';
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      TOKEN_IMAGE_MIME_TO_EXTENSION,
+      mimeType,
+    )
+  ) {
+    throw new Error(
+      'Unsupported token image mimeType. Allowed: image/png, image/jpeg, image/webp, image/gif',
+    );
+  }
+
+  if (!(payload.bytes instanceof Uint8Array)) {
+    throw new Error('Token image bytes must be a Uint8Array');
+  }
+  if (payload.bytes.byteLength === 0) {
+    throw new Error('Token image bytes cannot be empty');
+  }
+  if (payload.bytes.byteLength > TOKEN_IMAGE_MAX_SIZE_BYTES) {
+    throw new Error('Token image exceeds 5 MB limit');
+  }
+
+  return {
+    mimeType: mimeType as keyof typeof TOKEN_IMAGE_MIME_TO_EXTENSION,
+    bytes: payload.bytes,
+  };
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -995,6 +1046,28 @@ function registerIpcHandlers() {
   ipcMain.handle(IPC.TOKENS_GET_BY_ID, (_event, id: number): Token | null => {
     return (getTokenByIdStmt.get(id) as Token | undefined) ?? null;
   });
+
+  ipcMain.handle(
+    IPC.TOKENS_IMPORT_IMAGE,
+    async (
+      _event,
+      payload: TokenImageImportPayload,
+    ): Promise<TokenImageImportResult> => {
+      const { mimeType, bytes } = ensureTokenImageImportPayload(payload);
+
+      const tokenImagesDir = path.join(app.getPath('userData'), 'token-images');
+      await mkdir(tokenImagesDir, { recursive: true });
+
+      const extension = TOKEN_IMAGE_MIME_TO_EXTENSION[mimeType];
+      const uniqueFileName = `${Date.now()}-${randomUUID()}.${extension}`;
+      const savedAbsolutePath = path.join(tokenImagesDir, uniqueFileName);
+      await writeFile(savedAbsolutePath, bytes);
+
+      return {
+        image_src: pathToFileURL(savedAbsolutePath).toString(),
+      };
+    },
+  );
 
   ipcMain.handle(
     IPC.TOKENS_ADD,
