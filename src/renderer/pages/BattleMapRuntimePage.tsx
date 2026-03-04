@@ -1,167 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  Link,
+  useBeforeUnload,
+  useBlocker,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 import BattleMapRuntimeCanvas from '../components/runtime/BattleMapRuntimeCanvas';
 import RuntimeGridControls from '../components/runtime/RuntimeGridControls';
-import { clampGridCellSize, DEFAULT_GRID_CELL_SIZE } from '../lib/runtimeMath';
+import {
+  mergeBattleMapConfigWithRuntime,
+  normalizeRuntimeGridConfig,
+  parseBattleMapRuntimeState,
+  serializeRuntimeConfig,
+} from '../lib/battlemapRuntimeState';
 
-const GRID_SAVE_DEBOUNCE_MS = 220;
-
-const DEFAULT_RUNTIME_CONFIG: BattleMapRuntimeConfig = {
-  grid: {
-    mode: 'square',
-    cellSize: DEFAULT_GRID_CELL_SIZE,
-    originX: 0,
-    originY: 0,
-  },
-  map: {
-    imageSrc: null,
-    backgroundColor: '#000000',
-  },
-  camera: {
-    x: 0,
-    y: 0,
-    zoom: 1,
-  },
-};
-
-const BATTLEMAP_GRID_MODES = new Set<BattleMapGridMode>([
-  'square',
-  'hex',
-  'none',
-]);
-
-function asJsonRecord(value: unknown): Record<string, unknown> | null {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
-
-function asFiniteNumber(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return fallback;
-  }
-  return value;
-}
-
-function asPositiveFiniteNumber(value: unknown, fallback: number): number {
-  const normalized = asFiniteNumber(value, fallback);
-  if (normalized <= 0) {
-    return fallback;
-  }
-  return normalized;
-}
-
-function normalizeGridConfig(
-  grid: BattleMapRuntimeGridConfig,
-): BattleMapRuntimeGridConfig {
-  return {
-    mode: BATTLEMAP_GRID_MODES.has(grid.mode)
-      ? grid.mode
-      : DEFAULT_RUNTIME_CONFIG.grid.mode,
-    cellSize: clampGridCellSize(
-      asPositiveFiniteNumber(
-        grid.cellSize,
-        DEFAULT_RUNTIME_CONFIG.grid.cellSize,
-      ),
-      DEFAULT_RUNTIME_CONFIG.grid.cellSize,
-    ),
-    originX: asFiniteNumber(grid.originX, DEFAULT_RUNTIME_CONFIG.grid.originX),
-    originY: asFiniteNumber(grid.originY, DEFAULT_RUNTIME_CONFIG.grid.originY),
-  };
-}
-
-function normalizeBattleMapRuntimeConfig(
-  parsedConfig: Record<string, unknown>,
-): BattleMapRuntimeConfig {
-  const runtime = asJsonRecord(parsedConfig.runtime) ?? {};
-  const grid = asJsonRecord(runtime.grid) ?? {};
-  const map = asJsonRecord(runtime.map) ?? {};
-  const camera = asJsonRecord(runtime.camera) ?? {};
-
-  const gridModeCandidate = grid.mode;
-  const normalizedGridMode: BattleMapGridMode =
-    typeof gridModeCandidate === 'string' &&
-    BATTLEMAP_GRID_MODES.has(gridModeCandidate as BattleMapGridMode)
-      ? (gridModeCandidate as BattleMapGridMode)
-      : DEFAULT_RUNTIME_CONFIG.grid.mode;
-
-  const backgroundColorCandidate = map.backgroundColor;
-  const normalizedBackgroundColor =
-    typeof backgroundColorCandidate === 'string' &&
-    backgroundColorCandidate.trim().length > 0
-      ? backgroundColorCandidate.trim()
-      : DEFAULT_RUNTIME_CONFIG.map.backgroundColor;
-
-  const imageSrcCandidate = map.imageSrc;
-  const normalizedImageSrc =
-    typeof imageSrcCandidate === 'string' && imageSrcCandidate.trim().length > 0
-      ? imageSrcCandidate.trim()
-      : null;
-
-  return {
-    grid: normalizeGridConfig({
-      mode: normalizedGridMode,
-      cellSize: asPositiveFiniteNumber(
-        grid.cellSize,
-        DEFAULT_RUNTIME_CONFIG.grid.cellSize,
-      ),
-      originX: asFiniteNumber(
-        grid.originX,
-        DEFAULT_RUNTIME_CONFIG.grid.originX,
-      ),
-      originY: asFiniteNumber(
-        grid.originY,
-        DEFAULT_RUNTIME_CONFIG.grid.originY,
-      ),
-    }),
-    map: {
-      imageSrc: normalizedImageSrc,
-      backgroundColor: normalizedBackgroundColor,
-    },
-    camera: {
-      x: asFiniteNumber(camera.x, DEFAULT_RUNTIME_CONFIG.camera.x),
-      y: asFiniteNumber(camera.y, DEFAULT_RUNTIME_CONFIG.camera.y),
-      zoom: asPositiveFiniteNumber(
-        camera.zoom,
-        DEFAULT_RUNTIME_CONFIG.camera.zoom,
-      ),
-    },
-  };
-}
-
-function mergeBattleMapConfigWithRuntime(
-  baseConfig: Record<string, unknown>,
-  runtimeConfig: BattleMapRuntimeConfig,
-): Record<string, unknown> {
-  const runtime = asJsonRecord(baseConfig.runtime) ?? {};
-  const runtimeGrid = asJsonRecord(runtime.grid) ?? {};
-  const runtimeMap = asJsonRecord(runtime.map) ?? {};
-  const runtimeCamera = asJsonRecord(runtime.camera) ?? {};
-
-  return {
-    ...baseConfig,
-    runtime: {
-      ...runtime,
-      grid: {
-        ...runtimeGrid,
-        ...runtimeConfig.grid,
-      },
-      map: {
-        ...runtimeMap,
-        ...runtimeConfig.map,
-      },
-      camera: {
-        ...runtimeCamera,
-        ...runtimeConfig.camera,
-      },
-    },
-  };
-}
-
-function serializeGridConfig(grid: BattleMapRuntimeGridConfig): string {
-  return JSON.stringify(grid);
-}
+const RUNTIME_SAVE_DEBOUNCE_MS = 220;
+const UNSAVED_RUNTIME_CONFIRMATION_MESSAGE =
+  'Some runtime changes are still unsaved. Exit runtime and discard those changes?';
 
 export default function BattleMapRuntimePage() {
   const navigate = useNavigate();
@@ -205,47 +61,64 @@ export default function BattleMapRuntimePage() {
     useState<BattleMapRuntimeConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSavingGridConfig, setIsSavingGridConfig] = useState(false);
-  const [gridSaveError, setGridSaveError] = useState<string | null>(null);
+  const [isSavingRuntimeConfig, setIsSavingRuntimeConfig] = useState(false);
+  const [runtimeSaveError, setRuntimeSaveError] = useState<string | null>(null);
 
   const battleMapConfigRef = useRef<Record<string, unknown> | null>(null);
   const runtimeConfigRef = useRef<BattleMapRuntimeConfig | null>(null);
-  const gridSaveRequestIdRef = useRef(0);
-  const gridSaveTimerRef = useRef<number | null>(null);
-  const lastPersistedGridConfigRef = useRef<string | null>(null);
+  const runtimeSaveRequestIdRef = useRef(0);
+  const runtimeSaveTimerRef = useRef<number | null>(null);
+  const activeRuntimeSavePromiseRef = useRef<Promise<boolean> | null>(null);
+  const isResolvingBlockedNavigationRef = useRef(false);
+  const lastPersistedRuntimeConfigKeyRef = useRef<string | null>(null);
 
-  const clearGridSaveTimer = useCallback(() => {
-    if (gridSaveTimerRef.current !== null) {
-      window.clearTimeout(gridSaveTimerRef.current);
-      gridSaveTimerRef.current = null;
+  const clearRuntimeSaveTimer = useCallback(() => {
+    if (runtimeSaveTimerRef.current !== null) {
+      window.clearTimeout(runtimeSaveTimerRef.current);
+      runtimeSaveTimerRef.current = null;
     }
   }, []);
 
-  const persistRuntimeGridConfig = useCallback(async () => {
+  const hasPendingRuntimeChanges = useCallback(() => {
+    const currentRuntimeConfig = runtimeConfigRef.current;
+    if (!currentRuntimeConfig) {
+      return false;
+    }
+
+    const currentRuntimeKey = serializeRuntimeConfig(currentRuntimeConfig);
+    return (
+      currentRuntimeKey !== lastPersistedRuntimeConfigKeyRef.current ||
+      runtimeSaveTimerRef.current !== null ||
+      activeRuntimeSavePromiseRef.current !== null
+    );
+  }, []);
+
+  const persistRuntimeConfigNow = useCallback(async (): Promise<boolean> => {
     if (parsedBattleMapId === null) {
-      return;
+      return true;
     }
 
     const currentRuntimeConfig = runtimeConfigRef.current;
     const currentBattleMapConfig = battleMapConfigRef.current;
     if (!currentRuntimeConfig || !currentBattleMapConfig) {
-      return;
+      setIsSavingRuntimeConfig(false);
+      return true;
     }
 
-    const nextGridConfigKey = serializeGridConfig(currentRuntimeConfig.grid);
-    if (nextGridConfigKey === lastPersistedGridConfigRef.current) {
-      setIsSavingGridConfig(false);
-      return;
+    const nextRuntimeKey = serializeRuntimeConfig(currentRuntimeConfig);
+    if (nextRuntimeKey === lastPersistedRuntimeConfigKeyRef.current) {
+      setIsSavingRuntimeConfig(false);
+      return true;
     }
 
     const mergedConfig = mergeBattleMapConfigWithRuntime(
       currentBattleMapConfig,
       currentRuntimeConfig,
     );
-    const requestId = gridSaveRequestIdRef.current + 1;
-    gridSaveRequestIdRef.current = requestId;
-    setIsSavingGridConfig(true);
-    setGridSaveError(null);
+    const requestId = runtimeSaveRequestIdRef.current + 1;
+    runtimeSaveRequestIdRef.current = requestId;
+    setIsSavingRuntimeConfig(true);
+    setRuntimeSaveError(null);
 
     try {
       const updatedBattleMap = await window.db.battlemaps.update(
@@ -254,56 +127,174 @@ export default function BattleMapRuntimePage() {
           config: JSON.stringify(mergedConfig),
         },
       );
-      if (requestId !== gridSaveRequestIdRef.current) {
-        return;
+      if (requestId !== runtimeSaveRequestIdRef.current) {
+        return false;
       }
 
-      const parsedUpdatedConfig = JSON.parse(updatedBattleMap.config);
-      const parsedUpdatedConfigObject = asJsonRecord(parsedUpdatedConfig);
-      if (!parsedUpdatedConfigObject) {
-        throw new Error('BattleMap config must be a JSON object.');
-      }
-
-      const normalizedRuntimeConfig = normalizeBattleMapRuntimeConfig(
-        parsedUpdatedConfigObject,
+      const parsedRuntimeState = parseBattleMapRuntimeState(
+        updatedBattleMap.config,
       );
-      battleMapConfigRef.current = parsedUpdatedConfigObject;
-      runtimeConfigRef.current = normalizedRuntimeConfig;
-      lastPersistedGridConfigRef.current = serializeGridConfig(
-        normalizedRuntimeConfig.grid,
-      );
+      battleMapConfigRef.current = parsedRuntimeState.battleMapConfig;
+      runtimeConfigRef.current = parsedRuntimeState.runtimeConfig;
+      lastPersistedRuntimeConfigKeyRef.current =
+        parsedRuntimeState.runtimeConfigKey;
       setBattleMap(updatedBattleMap);
-      setBattleMapConfig(parsedUpdatedConfigObject);
-      setRuntimeConfig(normalizedRuntimeConfig);
-      setIsSavingGridConfig(false);
-      setGridSaveError(null);
+      setBattleMapConfig(parsedRuntimeState.battleMapConfig);
+      setRuntimeConfig(parsedRuntimeState.runtimeConfig);
+      setIsSavingRuntimeConfig(false);
+      setRuntimeSaveError(null);
+      return true;
     } catch (saveError) {
-      if (requestId !== gridSaveRequestIdRef.current) {
-        return;
+      if (requestId !== runtimeSaveRequestIdRef.current) {
+        return false;
       }
 
-      setIsSavingGridConfig(false);
-      setGridSaveError(
+      setIsSavingRuntimeConfig(false);
+      setRuntimeSaveError(
         saveError instanceof Error
           ? saveError.message
-          : 'Unable to persist runtime grid settings right now.',
+          : 'Unable to persist runtime settings right now.',
       );
+      return false;
     }
   }, [parsedBattleMapId]);
 
-  const queueRuntimeGridPersist = useCallback(() => {
-    clearGridSaveTimer();
-    gridSaveTimerRef.current = window.setTimeout(() => {
-      gridSaveTimerRef.current = null;
-      void persistRuntimeGridConfig();
-    }, GRID_SAVE_DEBOUNCE_MS);
-  }, [clearGridSaveTimer, persistRuntimeGridConfig]);
+  const persistRuntimeConfig = useCallback(async (): Promise<boolean> => {
+    if (activeRuntimeSavePromiseRef.current) {
+      return activeRuntimeSavePromiseRef.current;
+    }
+
+    const savePromise = persistRuntimeConfigNow();
+    activeRuntimeSavePromiseRef.current = savePromise;
+
+    try {
+      return await savePromise;
+    } finally {
+      if (activeRuntimeSavePromiseRef.current === savePromise) {
+        activeRuntimeSavePromiseRef.current = null;
+      }
+    }
+  }, [persistRuntimeConfigNow]);
+
+  const queueRuntimePersist = useCallback(() => {
+    clearRuntimeSaveTimer();
+    setIsSavingRuntimeConfig(true);
+    setRuntimeSaveError(null);
+    runtimeSaveTimerRef.current = window.setTimeout(() => {
+      runtimeSaveTimerRef.current = null;
+      void persistRuntimeConfig();
+    }, RUNTIME_SAVE_DEBOUNCE_MS);
+  }, [clearRuntimeSaveTimer, persistRuntimeConfig]);
+
+  const flushRuntimePersistence = useCallback(async (): Promise<boolean> => {
+    clearRuntimeSaveTimer();
+
+    if (activeRuntimeSavePromiseRef.current) {
+      const inFlightSaveSucceeded = await activeRuntimeSavePromiseRef.current;
+      if (!inFlightSaveSucceeded && hasPendingRuntimeChanges()) {
+        return false;
+      }
+    }
+
+    let attempts = 0;
+    while (hasPendingRuntimeChanges() && attempts < 2) {
+      attempts += 1;
+      const didPersist = await persistRuntimeConfig();
+      if (!didPersist && hasPendingRuntimeChanges()) {
+        return false;
+      }
+
+      if (activeRuntimeSavePromiseRef.current) {
+        const inFlightSaveSucceeded = await activeRuntimeSavePromiseRef.current;
+        if (!inFlightSaveSucceeded && hasPendingRuntimeChanges()) {
+          return false;
+        }
+      }
+    }
+
+    if (!hasPendingRuntimeChanges()) {
+      setIsSavingRuntimeConfig(false);
+      return true;
+    }
+
+    return false;
+  }, [clearRuntimeSaveTimer, hasPendingRuntimeChanges, persistRuntimeConfig]);
+
+  useBeforeUnload(
+    useCallback(
+      (event) => {
+        if (!hasPendingRuntimeChanges()) {
+          return;
+        }
+
+        event.preventDefault();
+        event.returnValue = '';
+      },
+      [hasPendingRuntimeChanges],
+    ),
+  );
+
+  const runtimeExitBlocker = useBlocker(
+    useCallback(
+      ({ currentLocation, nextLocation }) => {
+        if (!hasPendingRuntimeChanges()) {
+          return false;
+        }
+
+        return (
+          currentLocation.pathname !== nextLocation.pathname ||
+          currentLocation.search !== nextLocation.search ||
+          currentLocation.hash !== nextLocation.hash
+        );
+      },
+      [hasPendingRuntimeChanges],
+    ),
+  );
 
   useEffect(() => {
-    return () => {
-      clearGridSaveTimer();
+    if (runtimeExitBlocker.state !== 'blocked') {
+      return;
+    }
+    if (isResolvingBlockedNavigationRef.current) {
+      return;
+    }
+
+    isResolvingBlockedNavigationRef.current = true;
+    let isActive = true;
+
+    const resolveBlockedNavigation = async () => {
+      const didPersist = await flushRuntimePersistence();
+      if (!isActive) {
+        return;
+      }
+
+      if (didPersist || !hasPendingRuntimeChanges()) {
+        runtimeExitBlocker.proceed();
+        return;
+      }
+
+      const shouldDiscardChanges = window.confirm(
+        UNSAVED_RUNTIME_CONFIRMATION_MESSAGE,
+      );
+      if (shouldDiscardChanges) {
+        runtimeExitBlocker.proceed();
+        return;
+      }
+
+      runtimeExitBlocker.reset();
     };
-  }, [clearGridSaveTimer]);
+
+    void resolveBlockedNavigation().finally(() => {
+      if (isActive) {
+        isResolvingBlockedNavigationRef.current = false;
+      }
+    });
+
+    return () => {
+      isActive = false;
+      isResolvingBlockedNavigationRef.current = false;
+    };
+  }, [flushRuntimePersistence, hasPendingRuntimeChanges, runtimeExitBlocker]);
 
   useEffect(() => {
     battleMapConfigRef.current = battleMapConfig;
@@ -315,11 +306,12 @@ export default function BattleMapRuntimePage() {
 
   useEffect(() => {
     let isMounted = true;
-    clearGridSaveTimer();
-    setIsSavingGridConfig(false);
-    setGridSaveError(null);
-    gridSaveRequestIdRef.current += 1;
-    lastPersistedGridConfigRef.current = null;
+    clearRuntimeSaveTimer();
+    setIsSavingRuntimeConfig(false);
+    setRuntimeSaveError(null);
+    activeRuntimeSavePromiseRef.current = null;
+    runtimeSaveRequestIdRef.current += 1;
+    lastPersistedRuntimeConfigKeyRef.current = null;
 
     if (worldId === null || parsedBattleMapId === null) {
       setBattleMap(null);
@@ -354,25 +346,18 @@ export default function BattleMapRuntimePage() {
         }
 
         try {
-          const parsedConfig = JSON.parse(existingBattleMap.config);
-          const parsedConfigObject = asJsonRecord(parsedConfig);
-          if (!parsedConfigObject) {
-            throw new Error('BattleMap config must be a JSON object.');
-          }
-
-          const normalizedRuntimeConfig =
-            normalizeBattleMapRuntimeConfig(parsedConfigObject);
-          const normalizedGridConfigKey = serializeGridConfig(
-            normalizedRuntimeConfig.grid,
+          const parsedRuntimeState = parseBattleMapRuntimeState(
+            existingBattleMap.config,
           );
 
           if (isMounted) {
             setBattleMap(existingBattleMap);
-            setBattleMapConfig(parsedConfigObject);
-            battleMapConfigRef.current = parsedConfigObject;
-            setRuntimeConfig(normalizedRuntimeConfig);
-            runtimeConfigRef.current = normalizedRuntimeConfig;
-            lastPersistedGridConfigRef.current = normalizedGridConfigKey;
+            setBattleMapConfig(parsedRuntimeState.battleMapConfig);
+            battleMapConfigRef.current = parsedRuntimeState.battleMapConfig;
+            setRuntimeConfig(parsedRuntimeState.runtimeConfig);
+            runtimeConfigRef.current = parsedRuntimeState.runtimeConfig;
+            lastPersistedRuntimeConfigKeyRef.current =
+              parsedRuntimeState.runtimeConfigKey;
           }
         } catch {
           if (isMounted) {
@@ -381,7 +366,7 @@ export default function BattleMapRuntimePage() {
             battleMapConfigRef.current = null;
             setRuntimeConfig(null);
             runtimeConfigRef.current = null;
-            lastPersistedGridConfigRef.current = null;
+            lastPersistedRuntimeConfigKeyRef.current = null;
             setError(
               'Invalid runtime config JSON. Update this BattleMap config before entering runtime.',
             );
@@ -395,7 +380,7 @@ export default function BattleMapRuntimePage() {
           battleMapConfigRef.current = null;
           setRuntimeConfig(null);
           runtimeConfigRef.current = null;
-          lastPersistedGridConfigRef.current = null;
+          lastPersistedRuntimeConfigKeyRef.current = null;
           setError('Unable to load BattleMap runtime right now.');
         }
       } finally {
@@ -410,7 +395,14 @@ export default function BattleMapRuntimePage() {
     return () => {
       isMounted = false;
     };
-  }, [clearGridSaveTimer, worldId, parsedBattleMapId]);
+  }, [clearRuntimeSaveTimer, worldId, parsedBattleMapId]);
+
+  useEffect(() => {
+    return () => {
+      clearRuntimeSaveTimer();
+      runtimeSaveRequestIdRef.current += 1;
+    };
+  }, [clearRuntimeSaveTimer]);
 
   const handleGridConfigChange = (
     nextGridConfig: BattleMapRuntimeGridConfig,
@@ -420,19 +412,27 @@ export default function BattleMapRuntimePage() {
       return;
     }
 
-    const normalizedGridConfig = normalizeGridConfig(nextGridConfig);
+    const normalizedGridConfig = normalizeRuntimeGridConfig(nextGridConfig);
     const nextRuntimeConfig: BattleMapRuntimeConfig = {
       ...currentRuntimeConfig,
       grid: normalizedGridConfig,
     };
     runtimeConfigRef.current = nextRuntimeConfig;
     setRuntimeConfig(nextRuntimeConfig);
-    setGridSaveError(null);
+    setRuntimeSaveError(null);
 
-    const nextGridConfigKey = serializeGridConfig(normalizedGridConfig);
-    if (nextGridConfigKey !== lastPersistedGridConfigRef.current) {
-      queueRuntimeGridPersist();
+    const nextRuntimeConfigKey = serializeRuntimeConfig(nextRuntimeConfig);
+    if (nextRuntimeConfigKey !== lastPersistedRuntimeConfigKeyRef.current) {
+      queueRuntimePersist();
+      return;
     }
+
+    clearRuntimeSaveTimer();
+    setIsSavingRuntimeConfig(false);
+  };
+
+  const handleExitRuntime = () => {
+    navigate(battleMapsRoute);
   };
 
   return (
@@ -452,7 +452,7 @@ export default function BattleMapRuntimePage() {
 
         <button
           type="button"
-          onClick={() => navigate(battleMapsRoute)}
+          onClick={handleExitRuntime}
           className="shrink-0 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white"
         >
           Exit Runtime
@@ -472,7 +472,7 @@ export default function BattleMapRuntimePage() {
             <p className="text-sm">{error}</p>
             <button
               type="button"
-              onClick={() => navigate(battleMapsRoute)}
+              onClick={handleExitRuntime}
               className="inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-950"
             >
               Exit Runtime
@@ -495,8 +495,8 @@ export default function BattleMapRuntimePage() {
             {runtimeConfig ? (
               <RuntimeGridControls
                 gridConfig={runtimeConfig.grid}
-                isSaving={isSavingGridConfig}
-                saveError={gridSaveError}
+                isSaving={isSavingRuntimeConfig}
+                saveError={runtimeSaveError}
                 onChange={handleGridConfigChange}
               />
             ) : null}
