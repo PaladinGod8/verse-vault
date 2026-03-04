@@ -201,29 +201,48 @@ describe('MoveSceneDialog', () => {
     sessionsGetAllByActMock.mockImplementation(async (actId: number) => {
       if (actId === 10) {
         return [
-          buildSession({ id: 7, name: 'Session Z-2', act_id: 10, sort_order: 1 }),
-          buildSession({ id: 6, name: 'Session Z-1', act_id: 10, sort_order: 0 }),
+          buildSession({
+            id: 7,
+            name: 'Session Z-2',
+            act_id: 10,
+            sort_order: 1,
+          }),
+          buildSession({
+            id: 6,
+            name: 'Session Z-1',
+            act_id: 10,
+            sort_order: 0,
+          }),
         ];
       }
       if (actId === 11) {
         return [buildSession({ id: 8, name: 'Should Not Render', act_id: 11 })];
       }
       if (actId === 12) {
-        return [buildSession({ id: 5, name: 'Session A-1', act_id: 12, sort_order: 0 })];
+        return [
+          buildSession({
+            id: 5,
+            name: 'Session A-1',
+            act_id: 12,
+            sort_order: 0,
+          }),
+        ];
       }
       return [];
     });
 
     renderDialog({ currentSessionId: 1 });
 
-    expect(await screen.findByRole('radio', { name: /Session A-1/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('radio', { name: /Session A-1/i }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('radio', { name: /Should Not Render/i }),
     ).not.toBeInTheDocument();
 
     const optionOrder = screen.getAllByRole('radio').map((radio) => {
       const label = radio.closest('label');
-      return label ? label.textContent ?? '' : '';
+      return label ? (label.textContent ?? '') : '';
     });
     expect(optionOrder).toEqual([
       expect.stringContaining('Session A-1'),

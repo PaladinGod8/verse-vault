@@ -416,9 +416,7 @@ describe('BattleMapRuntimeCanvas', () => {
     await waitFor(() => {
       expect(pixiState.assetsUnloadMock).toHaveBeenCalledWith('map-a.png');
       expect(pixiState.assetsLoadMock).toHaveBeenCalledWith('map-b.png');
-      expect(pixiState.assetsLoadMock).toHaveBeenCalledWith(
-        'broken-token.png',
-      );
+      expect(pixiState.assetsLoadMock).toHaveBeenCalledWith('broken-token.png');
     });
   });
 
@@ -499,10 +497,9 @@ describe('BattleMapRuntimeCanvas', () => {
       }),
     );
 
-    const hexCall = onTokenMove.mock.calls[onTokenMove.mock.calls.length - 1] as [
-      string,
-      { x: number; y: number },
-    ];
+    const hexCall = onTokenMove.mock.calls[
+      onTokenMove.mock.calls.length - 1
+    ] as [string, { x: number; y: number }];
     expect(hexCall[0]).toBe('runtime-token-1');
     expect(hexCall[1].x).toBeCloseTo(21.6506, 3);
     expect(hexCall[1].y).toBeCloseTo(37.5, 3);
