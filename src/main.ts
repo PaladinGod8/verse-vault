@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
-import { getDatabase, closeDatabase } from './database/db';
+import { getDatabase, closeDatabase, db as dbHandlers } from './database/db';
 import { IPC } from './shared/ipcChannels';
 
 function isAbilityChildDuplicateError(error: unknown): boolean {
@@ -1239,6 +1239,17 @@ function registerIpcHandlers() {
         throw new Error('Token not found');
       }
       return token;
+    },
+  );
+
+  ipcMain.handle(IPC.TOKENS_MOVE_TO_WORLD, (_event, tokenId: number) => {
+    return dbHandlers.tokens.moveToWorld(tokenId);
+  });
+
+  ipcMain.handle(
+    IPC.TOKENS_MOVE_TO_CAMPAIGN,
+    (_event, tokenId: number, targetCampaignId: number) => {
+      return dbHandlers.tokens.moveToCampaign(tokenId, targetCampaignId);
     },
   );
 

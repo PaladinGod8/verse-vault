@@ -326,6 +326,8 @@ declare global {
           is_visible?: number;
         },
       ): Promise<Token>;
+      moveToWorld(tokenId: number): Promise<Token>;
+      moveToCampaign(tokenId: number, targetCampaignId: number): Promise<Token>;
       delete(id: number): Promise<{ id: number }>;
     };
     arcs: {

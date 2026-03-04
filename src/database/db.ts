@@ -2,16 +2,16 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { app } from 'electron';
 
-let db: Database.Database | null = null;
+let databaseConnection: Database.Database | null = null;
 
 export function getDatabase(): Database.Database {
-  if (!db) {
+  if (!databaseConnection) {
     const dbPath = path.join(app.getPath('userData'), 'verse-vault.db');
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    initializeSchema(db);
+    databaseConnection = new Database(dbPath);
+    databaseConnection.pragma('journal_mode = WAL');
+    initializeSchema(databaseConnection);
   }
-  return db;
+  return databaseConnection;
 }
 
 function initializeSchema(db: Database.Database): void {
@@ -353,8 +353,93 @@ function runSessionPlannedAtMigration(db: Database.Database): void {
 }
 
 export function closeDatabase(): void {
-  if (db) {
-    db.close();
-    db = null;
+  if (databaseConnection) {
+    databaseConnection.close();
+    databaseConnection = null;
   }
 }
+
+function ensurePositiveInteger(value: number, fieldName: string): void {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`Invalid ${fieldName}`);
+  }
+}
+
+export const db = {
+  tokens: {
+    moveToWorld(tokenId: number): Token {
+      ensurePositiveInteger(tokenId, 'tokenId');
+
+      const database = getDatabase();
+      const moveTokenToWorld = database.transaction((id: number): Token => {
+        const existingToken = database
+          .prepare('SELECT * FROM tokens WHERE id = ?')
+          .get(id) as Token | undefined;
+        if (!existingToken) {
+          throw new Error('Token not found');
+        }
+
+        database
+          .prepare(
+            "UPDATE tokens SET campaign_id = NULL, updated_at = datetime('now') WHERE id = ?",
+          )
+          .run(id);
+
+        const updatedToken = database
+          .prepare('SELECT * FROM tokens WHERE id = ?')
+          .get(id) as Token | undefined;
+        if (!updatedToken) {
+          throw new Error('Token not found');
+        }
+
+        return updatedToken;
+      });
+
+      return moveTokenToWorld(tokenId);
+    },
+    moveToCampaign(tokenId: number, targetCampaignId: number): Token {
+      ensurePositiveInteger(tokenId, 'tokenId');
+      ensurePositiveInteger(targetCampaignId, 'targetCampaignId');
+
+      const database = getDatabase();
+      const moveTokenToCampaign = database.transaction(
+        (id: number, campaignId: number): Token => {
+          const existingToken = database
+            .prepare('SELECT id, world_id FROM tokens WHERE id = ?')
+            .get(id) as { id: number; world_id: number } | undefined;
+          if (!existingToken) {
+            throw new Error('Token not found');
+          }
+
+          const targetCampaign = database
+            .prepare('SELECT id, world_id FROM campaigns WHERE id = ?')
+            .get(campaignId) as { id: number; world_id: number } | undefined;
+          if (!targetCampaign) {
+            throw new Error('Campaign not found');
+          }
+
+          if (targetCampaign.world_id !== existingToken.world_id) {
+            throw new Error('Campaign not in the same world');
+          }
+
+          database
+            .prepare(
+              "UPDATE tokens SET campaign_id = ?, updated_at = datetime('now') WHERE id = ?",
+            )
+            .run(campaignId, id);
+
+          const updatedToken = database
+            .prepare('SELECT * FROM tokens WHERE id = ?')
+            .get(id) as Token | undefined;
+          if (!updatedToken) {
+            throw new Error('Token not found');
+          }
+
+          return updatedToken;
+        },
+      );
+
+      return moveTokenToCampaign(tokenId, targetCampaignId);
+    },
+  },
+};
