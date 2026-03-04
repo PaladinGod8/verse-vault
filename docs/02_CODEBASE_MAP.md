@@ -469,6 +469,17 @@
 - **Preload bridge**: `src/preload.ts` -> `window.db.tokens.getAllByCampaign/getById/add/update/delete`
 - **Storage**: adds `tokens` table (`id`, `campaign_id`, `name`, `image_src`, `config`, `is_visible`, `created_at`, `updated_at`) with `campaign_id` FK -> `campaigns(id)` `ON DELETE CASCADE` and `idx_tokens_campaign_id`; `TOKENS_GET_ALL_BY_CAMPAIGN` reads by `campaign_id` ordered by `updated_at DESC, id DESC`; add/update enforce trimmed `name`, JSON-object `config`, and `is_visible` as 0/1; `BATTLEMAPS_ADD/UPDATE` now validate object JSON and normalize `config.runtime.grid/map/camera` defaults for runtime use; scene payload validation remains backward-compatible (`'{}'`) while validating optional `payload.runtime.battlemap_id`.
 
+### Tokens World-Scope Migration + getAllByWorld (Step 01)
+
+- **Purpose**: extend tokens schema from campaign-only to world-first (world-scoped with optional campaign link) and add a world-scoped read channel.
+- **Status**: added on 2026-03-04
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: adds `IPC.TOKENS_GET_ALL_BY_WORLD`; updates `IPC.TOKENS_ADD` to require `world_id` and accept optional `campaign_id`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()`
+- **Preload bridge**: adds `window.db.tokens.getAllByWorld(worldId)` to `src/preload.ts`; updates `add` bridge signature
+- **Storage**: `tokens` table extended — `world_id INTEGER NOT NULL` (FK -> worlds, `ON DELETE CASCADE`) added; `campaign_id` made nullable; `idx_tokens_world_id` added; additive migration `runTokenWorldIdMigration()` in `db.ts` adds column when missing, backfills `world_id` from parent campaign, creates index; `TOKENS_GET_ALL_BY_WORLD` returns all tokens for a world ordered by `name ASC`; `TOKENS_ADD` now inserts `(world_id, campaign_id, name, image_src, config, is_visible)` where `campaign_id` defaults to `null`; `Token` interface updated: `world_id: number`, `campaign_id: number | null`.
+
 ### BattleMap Renderer Route + CRUD Page (Step 04)
 
 - **Purpose**: add world-level BattleMaps navigation and renderer CRUD UX with table timestamps for created/updated dates

@@ -980,6 +980,18 @@ function registerIpcHandlers() {
     },
   );
 
+  ipcMain.handle(
+    IPC.TOKENS_GET_ALL_BY_WORLD,
+    (_event, worldId: number): Token[] => {
+      if (!Number.isInteger(worldId) || worldId <= 0) {
+        throw new Error('Invalid worldId');
+      }
+      return db
+        .prepare('SELECT * FROM tokens WHERE world_id = ? ORDER BY name ASC')
+        .all(worldId) as Token[];
+    },
+  );
+
   ipcMain.handle(IPC.TOKENS_GET_BY_ID, (_event, id: number): Token | null => {
     return (getTokenByIdStmt.get(id) as Token | undefined) ?? null;
   });
@@ -989,7 +1001,8 @@ function registerIpcHandlers() {
     (
       _event,
       data: {
-        campaign_id: number;
+        world_id: number;
+        campaign_id?: number | null;
         name: string;
         image_src?: string | null;
         config?: string;
@@ -1000,6 +1013,15 @@ function registerIpcHandlers() {
       if (!name) {
         throw new Error('Token name is required');
       }
+      if (!Number.isInteger(data.world_id) || data.world_id <= 0) {
+        throw new Error('Invalid world_id');
+      }
+      if (
+        data.campaign_id != null &&
+        (!Number.isInteger(data.campaign_id) || data.campaign_id <= 0)
+      ) {
+        throw new Error('Invalid campaign_id');
+      }
 
       const config =
         data.config === undefined
@@ -1009,12 +1031,20 @@ function registerIpcHandlers() {
         data.is_visible === undefined
           ? 1
           : ensureSqliteBooleanNumber(data.is_visible, 'Token visibility');
+      const campaignId = data.campaign_id ?? null;
 
       const result = db
         .prepare(
-          'INSERT INTO tokens (campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?)',
+          'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, is_visible) VALUES (?, ?, ?, ?, ?, ?)',
         )
-        .run(data.campaign_id, name, data.image_src ?? null, config, isVisible);
+        .run(
+          data.world_id,
+          campaignId,
+          name,
+          data.image_src ?? null,
+          config,
+          isVisible,
+        );
 
       const token = getTokenByIdStmt.get(result.lastInsertRowid) as
         | Token

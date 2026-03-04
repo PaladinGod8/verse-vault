@@ -17,6 +17,8 @@ BattleMap Step 01 (2026-03-03) adds shared constants for planned battlemaps CRUD
 
 Runtime Step 01 (2026-03-04) adds token CRUD constants (`TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, `TOKENS_DELETE`), wires all 5 token handlers in `main`, and exposes `window.db.tokens.getAllByCampaign/getById/add/update/delete` in preload with shared `Token` and `DbApi.tokens` signatures.
 
+Tokens Step 01 (2026-03-04) adds `TOKENS_GET_ALL_BY_WORLD` constant; wires world-scoped read handler in `main`; updates `TOKENS_ADD` to require `world_id` and accept optional `campaign_id`; adds `window.db.tokens.getAllByWorld(worldId)` preload bridge; updates `Token` interface (`world_id: number`, `campaign_id: number | null`) and `DbApi.tokens.add` signature.
+
 Runtime Step 01 (2026-03-04) also hardens BattleMap config validation in `main` so `config` is a JSON object with runtime-ready defaults at `runtime.grid`, `runtime.map`, and `runtime.camera`; scene payload validation remains backward-compatible while validating optional runtime linkage field `payload.runtime.battlemap_id`.
 
 Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
@@ -221,7 +223,8 @@ interface ScenePayload {
 
 interface Token {
   id: number;
-  campaign_id: number;
+  world_id: number;
+  campaign_id: number | null;
   name: string;
   image_src: string | null;
   config: string;
@@ -349,10 +352,12 @@ interface DbApi {
     delete(id: number): Promise<{ id: number }>;
   };
   tokens: {
+    getAllByWorld(worldId: number): Promise<Token[]>;
     getAllByCampaign(campaignId: number): Promise<Token[]>;
     getById(id: number): Promise<Token | null>;
     add(data: {
-      campaign_id: number;
+      world_id: number;
+      campaign_id?: number | null;
       name: string;
       image_src?: string | null;
       config?: string;
@@ -480,12 +485,13 @@ interface DbApi {
 - `BATTLEMAPS_UPDATE` updates only explicitly provided fields (`name`, `config`) using `hasOwnProperty` checks, validates trimmed `name` and object JSON `config` when present, normalizes runtime defaults for `config`, always refreshes `updated_at`, and returns the refreshed row (throws `'BattleMap not found'` when missing).
 - `BATTLEMAPS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - BattleMap channels are wired end-to-end in Step 03 via `window.db.battlemaps.getAllByWorld/getById/add/update/delete` and shared `BattleMap` + `DbApi.battlemaps` signatures in `forge.env.d.ts`.
-- Token main handlers are wired for `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, and `TOKENS_DELETE`.
+- Token main handlers are wired for `TOKENS_GET_ALL_BY_WORLD`, `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, and `TOKENS_DELETE`.
+- `TOKENS_GET_ALL_BY_WORLD` is scoped by `world_id` (validated positive integer) and returns tokens ordered by `name ASC`; added in Tokens Step 01 (2026-03-04).
 - `TOKENS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns deterministic order (`updated_at DESC, id DESC`); `TOKENS_GET_BY_ID` returns a row or `null`.
-- `TOKENS_ADD` validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as a JSON object, validates `is_visible` as `0|1`, inserts (`campaign_id`, `name`, `image_src`, `config`, `is_visible`), and returns the inserted row.
+- `TOKENS_ADD` requires `world_id` (positive integer), accepts optional `campaign_id` (positive integer or null), validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as a JSON object, validates `is_visible` as `0|1`, inserts (`world_id`, `campaign_id`, `name`, `image_src`, `config`, `is_visible`), and returns the inserted row.
 - `TOKENS_UPDATE` updates only explicitly provided fields (`name`, `image_src`, `config`, `is_visible`) using `hasOwnProperty` checks, validates trimmed `name`, object JSON `config`, and `is_visible` as `0|1` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'Token not found'` when missing).
 - `TOKENS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Token channels are wired end-to-end via `window.db.tokens.getAllByCampaign/getById/add/update/delete` and shared `Token` + `DbApi.tokens` signatures in `forge.env.d.ts`.
+- Token channels are wired end-to-end via `window.db.tokens.getAllByWorld/getAllByCampaign/getById/add/update/delete` and shared `Token` + `DbApi.tokens` signatures in `forge.env.d.ts`.
 - Arc main handlers are wired for `ARCS_GET_ALL_BY_CAMPAIGN`, `ARCS_GET_BY_ID`, `ARCS_ADD`, `ARCS_UPDATE`, and `ARCS_DELETE`.
 - `ARCS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns arcs ordered by `sort_order ASC, id ASC`.
 - `ARCS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted, inserts (`campaign_id`, `name`, `sort_order`), and returns the inserted row.
