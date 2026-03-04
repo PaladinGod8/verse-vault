@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Link,
-  useBlocker,
   useBeforeUnload,
   useNavigate,
   useParams,
@@ -175,7 +174,6 @@ export default function BattleMapRuntimePage() {
   const activeRuntimeSavePromiseRef = useRef<Promise<boolean> | null>(null);
   const lastPersistedRuntimeConfigKeyRef = useRef<string | null>(null);
   const runtimeTokenInstanceIdCounterRef = useRef(0);
-  const isHandlingBlockedNavigationRef = useRef(false);
 
   const clearRuntimeSaveTimer = useCallback(() => {
     if (runtimeSaveTimerRef.current !== null) {
@@ -338,75 +336,6 @@ export default function BattleMapRuntimePage() {
       [hasPendingRuntimeChanges],
     ),
   );
-
-  const runtimeNavigationBlocker = useBlocker(
-    useCallback(
-      ({ currentLocation, nextLocation }) => {
-        const isSameLocation =
-          currentLocation.pathname === nextLocation.pathname &&
-          currentLocation.search === nextLocation.search &&
-          currentLocation.hash === nextLocation.hash;
-        if (isSameLocation) {
-          return false;
-        }
-
-        return hasPendingRuntimeChanges();
-      },
-      [hasPendingRuntimeChanges],
-    ),
-  );
-
-  useEffect(() => {
-    if (runtimeNavigationBlocker.state !== 'blocked') {
-      return;
-    }
-    if (isHandlingBlockedNavigationRef.current) {
-      return;
-    }
-
-    isHandlingBlockedNavigationRef.current = true;
-    let isMounted = true;
-
-    const resolveBlockedNavigation = async () => {
-      try {
-        const didPersist = await flushRuntimePersistence();
-        if (!isMounted) {
-          return;
-        }
-
-        if (!didPersist && hasPendingRuntimeChanges()) {
-          const shouldDiscardChanges = window.confirm(
-            UNSAVED_RUNTIME_CONFIRMATION_MESSAGE,
-          );
-          if (!isMounted) {
-            return;
-          }
-
-          if (!shouldDiscardChanges) {
-            runtimeNavigationBlocker.reset();
-            return;
-          }
-        }
-
-        runtimeNavigationBlocker.proceed();
-      } finally {
-        if (isMounted) {
-          isHandlingBlockedNavigationRef.current = false;
-        }
-      }
-    };
-
-    void resolveBlockedNavigation();
-
-    return () => {
-      isMounted = false;
-      isHandlingBlockedNavigationRef.current = false;
-    };
-  }, [
-    flushRuntimePersistence,
-    hasPendingRuntimeChanges,
-    runtimeNavigationBlocker,
-  ]);
 
   useEffect(() => {
     battleMapConfigRef.current = battleMapConfig;
