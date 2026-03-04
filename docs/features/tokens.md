@@ -11,6 +11,7 @@ Tokens are world-first scoped:
 - every token belongs to a world
 - campaigns can hold independent copied rows
 - copied campaign tokens do not stay linked to their world source row
+- token create/edit supports desktop image upload via drag-and-drop or file picker; uploaded files are persisted by main and stored as `image_src` file URLs
 
 ## 2. Data Shape
 
@@ -60,14 +61,15 @@ Indexes:
 
 ## 4. IPC Contract
 
-| Channel                      | Signature                                                                       | Notes                                                                           |
-| ---------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `db:tokens:getAllByWorld`    | `(worldId: number) => Token[]`                                                  | Returns tokens for `world_id` (includes world-scoped and campaign-scoped rows). |
-| `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                               | Returns rows where `campaign_id = campaignId`.                                  |
-| `db:tokens:getById`          | `(id: number) => Token \| null`                                                 | Returns matching row or `null`.                                                 |
-| `db:tokens:add`              | `({ world_id, campaign_id?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional.                                    |
-| `db:tokens:update`           | `(id, { name?, image_src?, config?, is_visible? }) => Token`                    | `world_id` and `campaign_id` are immutable after insert.                        |
-| `db:tokens:delete`           | `(id: number) => { id: number }`                                                | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.   |
+| Channel                      | Signature                                                                       | Notes                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `db:tokens:getAllByWorld`    | `(worldId: number) => Token[]`                                                  | Returns tokens for `world_id` (includes world-scoped and campaign-scoped rows).   |
+| `db:tokens:getAllByCampaign` | `(campaignId: number) => Token[]`                                               | Returns rows where `campaign_id = campaignId`.                                    |
+| `db:tokens:getById`          | `(id: number) => Token \| null`                                                 | Returns matching row or `null`.                                                   |
+| `db:tokens:importImage`      | `({ fileName, mimeType, bytes }) => { image_src: string }`                      | Validates and persists image bytes in main, then returns persisted `file://` URL. |
+| `db:tokens:add`              | `({ world_id, campaign_id?, name, image_src?, config?, is_visible? }) => Token` | `world_id` required; `campaign_id` optional.                                      |
+| `db:tokens:update`           | `(id, { name?, image_src?, config?, is_visible? }) => Token`                    | `world_id` and `campaign_id` are immutable after insert.                          |
+| `db:tokens:delete`           | `(id: number) => { id: number }`                                                | Deletes by id; world/campaign parent deletes are handled by DB cascade rules.     |
 
 ## 5. User-Facing Behavior
 
@@ -75,8 +77,8 @@ Indexes:
 
 - Accessible from the `Tokens` entry in the world sidebar.
 - Table shows thumbnail, name, scope label, updated date, created date, and actions.
-- `New Token` always inserts a world-scoped row (`campaign_id = null`).
-- `Edit` updates only name, image URL/path text, and visibility.
+- `New Token` always inserts a world-scoped row (`campaign_id = null`) and supports image upload by desktop drag-and-drop or file picker.
+- `Edit` updates name, visibility, and image via three paths: replace with uploaded file, clear image, or keep/adjust text `image_src`.
 - `Delete` requires confirmation (`Delete "<name>"? This cannot be undone.`) and removes that token row.
 - `Copy to Campaign` is shown only for world-scoped rows; it creates an independent campaign-scoped copy with the same `name`, `image_src`, `config`, and `is_visible`.
 
@@ -94,7 +96,9 @@ Indexes:
 - `world_id`: required positive integer; validated in main handler.
 - `campaign_id`: optional; if provided, must be a positive integer.
 - Same-world campaign copy is enforced by UI flow (campaign picker is scoped to the world). DB FKs enforce existence of `world_id` and `campaign_id` targets.
-- `image_src`: optional free-text string; renderer form normalizes empty string to `null`.
+- `image_src`: optional string; renderer normalizes empty/whitespace text input to `null`.
+- `image_upload` (renderer submit payload): optional `{ fileName, mimeType, bytes }`; when present, renderer and main both validate image type and 5 MB size before persistence.
+- upload precedence in edit save path: `image_upload` replace > `clear_image` -> `image_src: null` > explicit/manual `image_src` update > omitted image field (leave unchanged).
 - `config`: defaults to `'{}'`; when provided, must be JSON object text.
 - `is_visible`: `1` (default) or `0`.
 
@@ -104,12 +108,70 @@ Indexes:
 - Deleting a campaign deletes only campaign-scoped token copies tied to that campaign via `tokens.campaign_id -> campaigns.id ON DELETE CASCADE`.
 - World-scoped rows (`campaign_id = NULL`) are unaffected by campaign deletion.
 
-## 8. Non-Goals
+## 8. Token Desktop Image Upload
 
-- No image file upload pipeline; `image_src` is plain text (URL/path).
-- No typed character/item/entity model; tokens stay generic.
-- No runtime token persistence; placement is ephemeral for the session.
-- No drag-and-drop palette-to-canvas workflow; placement is click-to-add in this version.
+### Overview
+
+Token create/edit now supports desktop image upload through drag-and-drop or file picker. This solves the workflow gap where users previously had to manually paste paths/URLs for local assets.
+
+### Architecture
+
+- Renderer dropzone is implemented with `dnd-kit` (`TokenImageDropzone`) and native `dataTransfer.files` extraction from desktop drops.
+- Renderer form (`TokenForm`) builds `image_upload` payload (`fileName`, normalized lowercase `mimeType`, `Uint8Array` bytes) and sends it through `window.db.tokens.importImage(...)`.
+- Preload forwards `db:tokens:importImage` (`IPC.TOKENS_IMPORT_IMAGE`) and preserves the security boundary (renderer never touches Node APIs).
+- Main handler validates payload and writes file bytes under `path.join(app.getPath('userData'), 'token-images')` with unique filename format `<timestamp>-<randomUUID>.<ext>`.
+- Main returns `{ image_src }`, where `image_src` is a persisted `file://` URL built with `pathToFileURL(...)`.
+
+### UX Behavior
+
+- Create flow:
+  - user can drag-and-drop an image or use picker in `New Token`;
+  - on save, upload happens before `tokens.add`;
+  - add payload uses returned `image_src`.
+- Edit replace flow:
+  - user can select a new image in `Edit Token`;
+  - on save, upload happens before `tokens.update`;
+  - updated row thumbnail uses new persisted `image_src`.
+- Edit clear flow:
+  - user selects `Clear image on save`;
+  - save sends `image_src: null` without import call;
+  - row falls back to placeholder thumbnail.
+- Validation and feedback:
+  - inline form validation for unsupported type, empty file, and oversized file;
+  - upload/read/import failures surface as toast errors and block mutation.
+
+### Security + Boundary Notes
+
+- Renderer does not access Node filesystem APIs directly.
+- Renderer uses `window.db` bridge only (`window.db.tokens.importImage`, `add`, `update`).
+- All file writes happen in the main process only.
+
+### Constraints
+
+- Supported image MIME types: `image/png`, `image/jpeg`, `image/webp`, `image/gif`.
+- Max file size: 5 MB.
+- File bytes must be non-empty (`Uint8Array`).
+
+### Test Coverage Summary
+
+- Unit coverage:
+  - `TokenImageDropzone`: drag drop, picker, keyboard activation, disabled state, file metadata, error rendering.
+  - `TokenForm`: valid upload payload, invalid type/size validation, create/edit submit payload variants, clear-image path.
+  - `TokensPage`: create/edit import ordering, create/edit failure handling, clear-image update behavior.
+- E2E coverage (`tests/e2e/tokens.test.ts`):
+  - create token with uploaded image and thumbnail `file:///.../token-images/...`;
+  - edit replace image and assert thumbnail source changes;
+  - edit clear image and assert placeholder;
+  - invalid upload type shows inline error and does not mutate stored token image.
+
+### Non-goals
+
+- No image editing/cropping pipeline.
+- No bulk image upload for multiple tokens at once.
+- No cloud sync/distributed media storage for token image files.
+- No typed character/item/entity model; tokens remain generic.
+- No runtime token persistence; placement remains session-only.
+- No drag-and-drop palette-to-canvas workflow; runtime placement remains click-to-add.
 - No campaign-to-world promotion action.
 
 ## 9. Migration Notes
