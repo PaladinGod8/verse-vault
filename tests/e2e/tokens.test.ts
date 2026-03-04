@@ -1,0 +1,529 @@
+import {
+  test,
+  expect,
+  type ElectronApplication,
+  type Locator,
+  type Page,
+} from '@playwright/test';
+import { _electron as electron } from 'playwright';
+import path from 'path';
+
+const mainJs = path.join(__dirname, '../../.vite/build/main.js');
+
+let app: ElectronApplication | null = null;
+let page: Page | null = null;
+let worldId: number | null = null;
+
+function tokenRows(window: Page, tokenName: string): Locator {
+  return window.locator('tbody tr').filter({ hasText: tokenName });
+}
+
+function tokenRow(window: Page, tokenName: string): Locator {
+  return tokenRows(window, tokenName).first();
+}
+
+function runtimePalette(window: Page): Locator {
+  return window
+    .locator('section')
+    .filter({ hasText: 'Runtime Tokens' })
+    .first();
+}
+
+function worldTokensSection(window: Page): Locator {
+  return window.getByRole('heading', { name: 'World Tokens' }).locator('..');
+}
+
+function sceneTokensSection(window: Page): Locator {
+  return window
+    .getByRole('heading', { name: /Scene Tokens \(\d+\)/ })
+    .locator('..');
+}
+
+function requirePageAndWorld(): { page: Page; worldId: number } {
+  if (!page || worldId === null) {
+    throw new Error('Expected test page and world to be initialized.');
+  }
+  return { page, worldId };
+}
+
+async function launchElectronApp(): Promise<Page> {
+  const env = { ...process.env };
+  delete env.ELECTRON_RUN_AS_NODE;
+
+  app = await electron.launch({ args: [mainJs], env });
+  const mainWindow = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }) => {
+    const win =
+      BrowserWindow.getAllWindows().find((candidate) => {
+        const url = candidate.webContents.getURL();
+        return !url.startsWith('devtools://');
+      }) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) {
+      return;
+    }
+    win.setSize(1440, 960);
+    win.center();
+    win.focus();
+  });
+  await mainWindow.bringToFront();
+  await mainWindow.waitForLoadState('domcontentloaded');
+  return mainWindow;
+}
+
+async function ensureWorldsLanding(window: Page) {
+  if (await window.getByRole('button', { name: 'Create world' }).isVisible()) {
+    return;
+  }
+
+  const backToWorldsLink = window.getByRole('link', { name: 'Back to worlds' });
+  if (await backToWorldsLink.isVisible().catch(() => false)) {
+    await backToWorldsLink.click();
+  } else {
+    const backToWorldLink = window.getByRole('link', { name: 'Back to world' });
+    if (await backToWorldLink.isVisible().catch(() => false)) {
+      await backToWorldLink.click();
+    }
+
+    if (await backToWorldsLink.isVisible().catch(() => false)) {
+      await backToWorldsLink.click();
+    }
+  }
+
+  await expect(
+    window.getByRole('heading', { name: 'Worlds', level: 1 }),
+  ).toBeVisible();
+  await expect(
+    window.getByRole('button', { name: 'Create world' }),
+  ).toBeVisible();
+}
+
+async function createWorld(window: Page, name: string): Promise<number> {
+  const created = await window.evaluate(async (worldName) => {
+    return window.db.worlds.add({ name: worldName });
+  }, name);
+  return created.id;
+}
+
+async function createCampaign(
+  window: Page,
+  targetWorldId: number,
+  name: string,
+): Promise<Campaign> {
+  return window.evaluate(
+    async ({ nextWorldId, campaignName }) =>
+      window.db.campaigns.add({
+        world_id: nextWorldId,
+        name: campaignName,
+      }),
+    { nextWorldId: targetWorldId, campaignName: name },
+  );
+}
+
+async function createBattleMap(
+  window: Page,
+  targetWorldId: number,
+  name: string,
+): Promise<BattleMap> {
+  return window.evaluate(
+    async ({ nextWorldId, battleMapName }) =>
+      window.db.battlemaps.add({
+        world_id: nextWorldId,
+        name: battleMapName,
+      }),
+    { nextWorldId: targetWorldId, battleMapName: name },
+  );
+}
+
+async function createTokenRecord(
+  window: Page,
+  input: {
+    worldId: number;
+    campaignId?: number | null;
+    name: string;
+    imageSrc?: string | null;
+    isVisible?: number;
+  },
+): Promise<Token> {
+  return window.evaluate(async (payload) => {
+    return window.db.tokens.add({
+      world_id: payload.worldId,
+      campaign_id: payload.campaignId,
+      name: payload.name,
+      image_src: payload.imageSrc,
+      is_visible: payload.isVisible,
+    });
+  }, input);
+}
+
+async function goToTokensPage(window: Page, targetWorldId: number) {
+  await window.goto(`#/world/${targetWorldId}/tokens`);
+  await expect(window.getByRole('button', { name: 'New Token' })).toBeVisible();
+  await window.waitForFunction(() => {
+    const bodyText = document.body.textContent ?? '';
+    const hasRows = document.querySelectorAll('tbody tr').length > 0;
+    return (
+      !bodyText.includes('Loading tokens...') &&
+      (hasRows || bodyText.includes('No tokens yet.'))
+    );
+  });
+}
+
+async function goToRuntimePage(
+  window: Page,
+  targetWorldId: number,
+  battleMapId: number,
+) {
+  await window.goto(
+    `#/world/${targetWorldId}/battlemaps/${battleMapId}/runtime`,
+  );
+  await expect(
+    window.getByRole('heading', { name: 'Runtime Canvas' }),
+  ).toBeVisible();
+  await expect(
+    window.getByRole('heading', { name: 'World Tokens' }),
+  ).toBeVisible();
+}
+
+async function createWorldScopedTokenViaForm(
+  window: Page,
+  data: { name: string; imageSrc?: string; isVisible?: boolean },
+) {
+  await window.getByRole('button', { name: 'New Token' }).click();
+  const dialog = window.getByRole('dialog', { name: 'New Token' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Name').fill(data.name);
+  if (data.imageSrc !== undefined) {
+    await dialog.getByLabel('Image URL').fill(data.imageSrc);
+  }
+  if (data.isVisible !== undefined) {
+    const visibleCheckbox = dialog.getByRole('checkbox', { name: 'Visible' });
+    const isChecked = await visibleCheckbox.isChecked();
+    if (isChecked !== data.isVisible) {
+      await visibleCheckbox.click();
+    }
+  }
+  await dialog.getByRole('button', { name: 'Create' }).click();
+}
+
+test.beforeEach(async () => {
+  const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  page = await launchElectronApp();
+  await ensureWorldsLanding(page);
+  worldId = await createWorld(page, `E2E Tokens World ${unique}`);
+});
+
+test.afterEach(async () => {
+  if (page && worldId !== null && !page.isClosed()) {
+    await page
+      .evaluate(async (existingWorldId) => {
+        await window.db.worlds.delete(existingWorldId);
+      }, worldId)
+      .catch(() => undefined);
+  }
+
+  if (app) {
+    await app.close().catch(() => undefined);
+  }
+
+  app = null;
+  page = null;
+  worldId = null;
+});
+
+test.describe('Token CRUD - World-Level', () => {
+  test('creates a world-scoped token', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Dragon Head',
+      imageSrc: 'https://example.com/dragon.png',
+      isVisible: true,
+    });
+
+    const createdRow = tokenRow(window, 'Dragon Head');
+    await expect(createdRow).toBeVisible();
+    await expect(createdRow.locator('td').nth(2)).toHaveText('World');
+    await expect(window.getByText('Token created.')).toBeVisible();
+  });
+
+  test('shows validation error for empty name', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    const rowCountBefore = await window.locator('tbody tr').count();
+
+    await window.getByRole('button', { name: 'New Token' }).click();
+    const dialog = window.getByRole('dialog', { name: 'New Token' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Create' }).click();
+
+    await expect(dialog.getByText('Name is required.')).toBeVisible();
+    await expect(window.locator('tbody tr')).toHaveCount(rowCountBefore);
+  });
+
+  test('edits a token', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Test Edit Token',
+    });
+    await expect(tokenRow(window, 'Test Edit Token')).toBeVisible();
+
+    await tokenRow(window, 'Test Edit Token')
+      .getByRole('button', { name: 'Edit' })
+      .click();
+    const editDialog = window.getByRole('dialog', { name: 'Edit Token' });
+    await expect(editDialog).toBeVisible();
+    await editDialog.getByLabel('Name').fill('Renamed Token');
+    await editDialog.getByRole('button', { name: 'Save' }).click();
+
+    await expect(tokenRow(window, 'Renamed Token')).toBeVisible();
+    await expect(tokenRows(window, 'Test Edit Token')).toHaveCount(0);
+    await expect(window.getByText('Token updated.')).toBeVisible();
+  });
+
+  test('deletes a token', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Delete Me',
+    });
+    await expect(tokenRow(window, 'Delete Me')).toBeVisible();
+
+    await tokenRow(window, 'Delete Me')
+      .getByRole('button', { name: 'Delete' })
+      .click();
+    const deleteDialog = window.getByRole('dialog', {
+      name: 'Delete "Delete Me"?',
+    });
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(tokenRow(window, 'Delete Me')).toBeVisible();
+
+    await tokenRow(window, 'Delete Me')
+      .getByRole('button', { name: 'Delete' })
+      .click();
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: 'Delete' }).click();
+
+    await expect(tokenRows(window, 'Delete Me')).toHaveCount(0);
+    await expect(window.getByText('Token deleted.')).toBeVisible();
+  });
+});
+
+test.describe('Copy to Campaign', () => {
+  test('copies a world-scoped token to a campaign', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const campaignName = `E2E Campaign ${unique}`;
+    const campaign = await createCampaign(window, targetWorldId, campaignName);
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, { name: 'Torch' });
+    await expect(tokenRow(window, 'Torch')).toBeVisible();
+
+    await tokenRow(window, 'Torch')
+      .getByRole('button', { name: 'Copy to Campaign' })
+      .click();
+    const copyDialog = window.getByRole('dialog', {
+      name: 'Copy "Torch" to Campaign',
+    });
+    await expect(copyDialog).toBeVisible();
+    await copyDialog.getByLabel('Campaign').selectOption(String(campaign.id));
+    await copyDialog.getByRole('button', { name: 'Copy' }).click();
+
+    const torchRows = tokenRows(window, 'Torch');
+    await expect(torchRows).toHaveCount(2);
+    await expect(torchRows.filter({ hasText: 'World' })).toHaveCount(1);
+    await expect(
+      torchRows.filter({ hasText: `Campaign: ${campaignName}` }),
+    ).toHaveCount(1);
+    await expect(window.getByText('Token copied to campaign.')).toBeVisible();
+  });
+
+  test('Copy to Campaign button is absent on campaign-scoped rows', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const campaignName = `E2E Campaign ${unique}`;
+    const campaign = await createCampaign(window, targetWorldId, campaignName);
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, { name: 'Torch' });
+
+    await tokenRow(window, 'Torch')
+      .getByRole('button', { name: 'Copy to Campaign' })
+      .click();
+    const copyDialog = window.getByRole('dialog', {
+      name: 'Copy "Torch" to Campaign',
+    });
+    await copyDialog.getByLabel('Campaign').selectOption(String(campaign.id));
+    await copyDialog.getByRole('button', { name: 'Copy' }).click();
+
+    const campaignScopedTorchRow = tokenRows(window, 'Torch')
+      .filter({ hasText: `Campaign: ${campaignName}` })
+      .first();
+    await expect(campaignScopedTorchRow).toBeVisible();
+    await expect(
+      campaignScopedTorchRow.getByRole('button', { name: 'Copy to Campaign' }),
+    ).toHaveCount(0);
+  });
+});
+
+test.describe('Scope Labels', () => {
+  test('world-scoped token shows World scope label', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, { name: 'Scope World Token' });
+
+    await expect(
+      tokenRow(window, 'Scope World Token').locator('td').nth(2),
+    ).toHaveText('World');
+  });
+
+  test('campaign-scoped token shows Campaign scope label', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const campaignName = `Scope Campaign ${unique}`;
+    const campaign = await createCampaign(window, targetWorldId, campaignName);
+    await goToTokensPage(window, targetWorldId);
+    await createWorldScopedTokenViaForm(window, {
+      name: 'Scope Campaign Token',
+    });
+    await tokenRow(window, 'Scope Campaign Token')
+      .getByRole('button', { name: 'Copy to Campaign' })
+      .click();
+    const copyDialog = window.getByRole('dialog', {
+      name: 'Copy "Scope Campaign Token" to Campaign',
+    });
+    await copyDialog.getByLabel('Campaign').selectOption(String(campaign.id));
+    await copyDialog.getByRole('button', { name: 'Copy' }).click();
+
+    const campaignScopedRow = tokenRows(window, 'Scope Campaign Token')
+      .filter({ hasText: `Campaign: ${campaignName}` })
+      .first();
+    await expect(campaignScopedRow).toBeVisible();
+    await expect(campaignScopedRow.locator('td').nth(2)).toHaveText(
+      new RegExp(
+        `^Campaign: ${campaignName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+      ),
+    );
+  });
+});
+
+test.describe('Runtime Palette - World Tokens', () => {
+  test('world tokens section appears in the runtime palette', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const battleMap = await createBattleMap(
+      window,
+      targetWorldId,
+      `Runtime BattleMap ${unique}`,
+    );
+    const tokenName = `Runtime World Token ${unique}`;
+    await createTokenRecord(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+      isVisible: 1,
+    });
+
+    await goToRuntimePage(window, targetWorldId, battleMap.id);
+    await expect(
+      runtimePalette(window).getByRole('heading', { name: 'World Tokens' }),
+    ).toBeVisible();
+    await expect(worldTokensSection(window).getByText(tokenName)).toBeVisible();
+  });
+
+  test('invisible world tokens are hidden when showInvisibleTokens is off', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const battleMap = await createBattleMap(
+      window,
+      targetWorldId,
+      `Runtime BattleMap ${unique}`,
+    );
+    const invisibleTokenName = `Invisible World Token ${unique}`;
+    await createTokenRecord(window, {
+      worldId: targetWorldId,
+      name: invisibleTokenName,
+      isVisible: 0,
+    });
+
+    await goToRuntimePage(window, targetWorldId, battleMap.id);
+
+    const toggle = runtimePalette(window).getByRole('checkbox', {
+      name: 'Show invisible tokens',
+    });
+    const invisibleTokenRow = worldTokensSection(window)
+      .locator('li')
+      .filter({ hasText: invisibleTokenName });
+
+    await expect(invisibleTokenRow).toHaveCount(1);
+    await toggle.click();
+    await expect(invisibleTokenRow).toHaveCount(0);
+    await toggle.click();
+    await expect(invisibleTokenRow).toHaveCount(1);
+  });
+
+  test('clicking Add on a world token places it in the scene', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const battleMap = await createBattleMap(
+      window,
+      targetWorldId,
+      `Runtime BattleMap ${unique}`,
+    );
+    const tokenName = `Addable World Token ${unique}`;
+    await createTokenRecord(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+      isVisible: 1,
+    });
+
+    await goToRuntimePage(window, targetWorldId, battleMap.id);
+
+    await worldTokensSection(window)
+      .locator('li')
+      .filter({ hasText: tokenName })
+      .first()
+      .getByRole('button', { name: 'Add' })
+      .click();
+
+    await expect(
+      runtimePalette(window).getByRole('heading', { name: 'Scene Tokens (1)' }),
+    ).toBeVisible();
+    await expect(
+      sceneTokensSection(window).locator('li').filter({ hasText: tokenName }),
+    ).toHaveCount(1);
+  });
+
+  test('hover preview appears for token with image_src', async () => {
+    const { page: window, worldId: targetWorldId } = requirePageAndWorld();
+    const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const battleMap = await createBattleMap(
+      window,
+      targetWorldId,
+      `Runtime BattleMap ${unique}`,
+    );
+    const tokenName = `Preview World Token ${unique}`;
+    const imageSrc = `https://example.com/token-preview-${unique}.png`;
+    await createTokenRecord(window, {
+      worldId: targetWorldId,
+      name: tokenName,
+      imageSrc,
+      isVisible: 1,
+    });
+
+    await goToRuntimePage(window, targetWorldId, battleMap.id);
+
+    const tokenListItem = worldTokensSection(window)
+      .locator('li')
+      .filter({ hasText: tokenName })
+      .first();
+    await expect(tokenListItem).toBeVisible();
+    await tokenListItem.hover();
+
+    const previewImage = window.locator(`img[src="${imageSrc}"]`);
+    await expect(previewImage).toBeVisible();
+
+    await window.getByRole('heading', { name: 'Runtime Canvas' }).hover();
+    await expect(previewImage).toHaveCount(0);
+  });
+});
