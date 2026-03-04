@@ -1,7 +1,53 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TokenForm from '../../../src/renderer/components/tokens/TokenForm';
+import type { TokenFormValues } from '../../../src/renderer/components/tokens/TokenForm';
+
+if (!('createObjectURL' in URL)) {
+  Object.defineProperty(URL, 'createObjectURL', {
+    value: vi.fn(() => 'blob:token-preview'),
+    configurable: true,
+  });
+}
+
+if (!('revokeObjectURL' in URL)) {
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    value: vi.fn(),
+    configurable: true,
+  });
+}
+
+function makeImageFile(
+  name = 'token.png',
+  type = 'image/png',
+  bytes: Uint8Array = new Uint8Array([1, 2, 3]),
+): File {
+  const file = new File([bytes], name, { type });
+  const buffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  );
+  Object.defineProperty(file, 'arrayBuffer', {
+    value: vi.fn(async () => buffer),
+    configurable: true,
+  });
+  return file;
+}
+
+function getDropzoneButton(): HTMLElement {
+  return screen.getByRole('button', {
+    name: /Drag an image here, or click to choose a file/i,
+  });
+}
+
+function getFileInput(container: HTMLElement): HTMLInputElement {
+  const input = container.querySelector('input[type="file"]');
+  if (!input) {
+    throw new Error('Expected hidden file input');
+  }
+  return input as HTMLInputElement;
+}
 
 describe('TokenForm', () => {
   it('renders create mode fields and submit label when initial values are not provided', () => {
@@ -9,6 +55,10 @@ describe('TokenForm', () => {
 
     expect(screen.getByLabelText('Name *')).toBeInTheDocument();
     expect(screen.getByLabelText('Image URL')).toBeInTheDocument();
+    expect(screen.getByText('Token Image Upload')).toBeInTheDocument();
+    expect(
+      screen.getByText('Accepted: PNG, JPEG, WEBP, GIF. Max 5 MB.'),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Visible')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
   });
@@ -33,6 +83,82 @@ describe('TokenForm', () => {
     );
     expect(screen.getByLabelText('Visible')).toBeChecked();
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+  });
+
+  it('accepts valid dropped image and emits create payload with image_upload', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    const imageFile = makeImageFile();
+
+    render(<TokenForm onSave={onSave} onClose={vi.fn()} isSaving={false} />);
+
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: {
+        files: [imageFile],
+      },
+    });
+    expect(screen.getByText('token.png')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Name *'), 'Wolf');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    const payload = onSave.mock.calls[0][0] as TokenFormValues;
+    expect(payload.name).toBe('Wolf');
+    expect(payload.image_src).toBeNull();
+    expect(payload.is_visible).toBe(1);
+    expect(payload.clear_image).toBe(false);
+    expect(payload.image_upload).toMatchObject({
+      fileName: 'token.png',
+      mimeType: 'image/png',
+    });
+    expect(payload.image_upload?.bytes).toBeInstanceOf(Uint8Array);
+    expect(Array.from(payload.image_upload?.bytes ?? [])).toEqual([1, 2, 3]);
+  });
+
+  it('accepts valid picked image from file input', async () => {
+    const onSave = vi.fn();
+    const imageFile = makeImageFile('picked.webp', 'image/webp');
+    const { container } = render(
+      <TokenForm onSave={onSave} onClose={vi.fn()} isSaving={false} />,
+    );
+
+    fireEvent.change(getFileInput(container), {
+      target: { files: [imageFile] },
+    });
+
+    expect(screen.getByText('picked.webp')).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Unsupported image type/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('surfaces invalid type and size errors from dropzone selection', () => {
+    const { container } = render(
+      <TokenForm onSave={vi.fn()} onClose={vi.fn()} isSaving={false} />,
+    );
+
+    fireEvent.change(getFileInput(container), {
+      target: {
+        files: [new File(['plain text'], 'bad.txt', { type: 'text/plain' })],
+      },
+    });
+    expect(
+      screen.getByText('Unsupported image type. Use PNG, JPEG, WEBP, or GIF.'),
+    ).toBeInTheDocument();
+
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: {
+        files: [
+          makeImageFile(
+            'huge.png',
+            'image/png',
+            new Uint8Array(5 * 1024 * 1024 + 1),
+          ),
+        ],
+      },
+    });
+    expect(screen.getByText('Image exceeds 5 MB limit.')).toBeInTheDocument();
   });
 
   it('blocks submit when name is empty or whitespace-only', async () => {
@@ -67,6 +193,88 @@ describe('TokenForm', () => {
       name: 'Arc Wolf',
       image_src: null,
       is_visible: 0,
+      image_upload: undefined,
+      clear_image: false,
+    });
+  });
+
+  it('emits edit payload for no-change, replace, and clear image paths', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+
+    const { rerender } = render(
+      <TokenForm
+        initialValues={{
+          name: 'Existing Token',
+          image_src: 'https://assets.example/current.png',
+          is_visible: 1,
+        }}
+        onSave={onSave}
+        onClose={vi.fn()}
+        isSaving={false}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    expect(onSave).toHaveBeenLastCalledWith({
+      name: 'Existing Token',
+      image_src: undefined,
+      is_visible: 1,
+      image_upload: undefined,
+      clear_image: false,
+    });
+
+    rerender(
+      <TokenForm
+        initialValues={{
+          name: 'Existing Token',
+          image_src: 'https://assets.example/current.png',
+          is_visible: 1,
+        }}
+        onSave={onSave}
+        onClose={vi.fn()}
+        isSaving={false}
+      />,
+    );
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: {
+        files: [makeImageFile('replacement.gif', 'image/gif')],
+      },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
+    const replacePayload = onSave.mock.calls[1][0] as TokenFormValues;
+    expect(replacePayload.image_upload).toMatchObject({
+      fileName: 'replacement.gif',
+      mimeType: 'image/gif',
+    });
+    expect(replacePayload.clear_image).toBe(false);
+    expect(replacePayload.image_src).toBe('https://assets.example/current.png');
+
+    rerender(
+      <TokenForm
+        initialValues={{
+          name: 'Existing Token',
+          image_src: 'https://assets.example/current.png',
+          is_visible: 1,
+        }}
+        onSave={onSave}
+        onClose={vi.fn()}
+        isSaving={false}
+      />,
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Clear image on save' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(3));
+    expect(onSave).toHaveBeenLastCalledWith({
+      name: 'Existing Token',
+      image_src: null,
+      is_visible: 1,
+      image_upload: undefined,
+      clear_image: true,
     });
   });
 

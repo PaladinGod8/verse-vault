@@ -11,6 +11,7 @@ const appOnMock = vi.fn((event: string, handler: EventHandler) => {
   registeredEvents[event] = handler;
 });
 const appQuitMock = vi.fn();
+const appGetPathMock = vi.fn(() => 'C:\\mock-user-data');
 const ipcHandleMock = vi.fn((channel: string, handler: IpcHandler) => {
   registeredIpcHandlers[channel] = handler;
 });
@@ -45,6 +46,12 @@ const getDatabaseMock = vi.fn(() => ({
   transaction: transactionMock,
 }));
 const closeDatabaseMock = vi.fn();
+const randomUUIDMock = vi.fn(() => 'mock-uuid');
+const mkdirMock = vi.fn(async () => undefined);
+const writeFileMock = vi.fn(async () => undefined);
+const pathToFileURLMock = vi.fn((value: string) => ({
+  toString: () => `file:///${value.replaceAll('\\', '/')}`,
+}));
 
 function setForgeGlobals(devServerUrl: string | undefined) {
   Object.defineProperty(globalThis, 'MAIN_WINDOW_VITE_DEV_SERVER_URL', {
@@ -72,10 +79,34 @@ async function importMainWithMocks() {
     app: {
       on: appOnMock,
       quit: appQuitMock,
+      getPath: appGetPathMock,
     },
     BrowserWindow: BrowserWindowMock,
     ipcMain: {
       handle: ipcHandleMock,
+    },
+  }));
+  vi.doMock('node:crypto', () => ({
+    __esModule: true,
+    randomUUID: randomUUIDMock,
+    default: {
+      randomUUID: randomUUIDMock,
+    },
+  }));
+  vi.doMock('node:fs/promises', () => ({
+    __esModule: true,
+    mkdir: mkdirMock,
+    writeFile: writeFileMock,
+    default: {
+      mkdir: mkdirMock,
+      writeFile: writeFileMock,
+    },
+  }));
+  vi.doMock('node:url', () => ({
+    __esModule: true,
+    pathToFileURL: pathToFileURLMock,
+    default: {
+      pathToFileURL: pathToFileURLMock,
     },
   }));
   vi.doMock('../../../src/database/db', () => ({
@@ -214,6 +245,16 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
 describe('token IPC handlers', () => {
   beforeEach(() => {
     prepareMock.mockReset();
+    appGetPathMock.mockReset();
+    appGetPathMock.mockReturnValue('C:\\mock-user-data');
+    randomUUIDMock.mockReset();
+    randomUUIDMock.mockReturnValue('mock-uuid');
+    mkdirMock.mockReset();
+    writeFileMock.mockReset();
+    pathToFileURLMock.mockReset();
+    pathToFileURLMock.mockImplementation((value: string) => ({
+      toString: () => `file:///${value.replaceAll('\\', '/')}`,
+    }));
     setForgeGlobals(undefined);
   });
 
@@ -381,5 +422,73 @@ describe('token IPC handlers', () => {
     expect(handler({}, 31)).toEqual({ id: 31 });
     expect(tokensDeleteRunMock).toHaveBeenCalledWith(31);
     expect(() => handler({}, 0)).toThrowError('Invalid id');
+  });
+
+  it('handles TOKENS_IMPORT_IMAGE validation and success paths', async () => {
+    setupTokenSqlMocks([]);
+
+    await importMainWithMocks();
+
+    const handler = registeredIpcHandlers[IPC.TOKENS_IMPORT_IMAGE];
+    expect(handler).toBeTypeOf('function');
+
+    const validBytes = new Uint8Array([1, 2, 3, 4]);
+    const importResult = (await handler(
+      {},
+      {
+        fileName: 'wolf.png',
+        mimeType: 'image/png',
+        bytes: validBytes,
+      },
+    )) as TokenImageImportResult;
+
+    expect(appGetPathMock).toHaveBeenCalledWith('userData');
+    expect(mkdirMock).toHaveBeenCalledWith(
+      'C:\\mock-user-data\\token-images',
+      expect.objectContaining({ recursive: true }),
+    );
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    const [savedPath, savedBytes] = writeFileMock.mock.calls[0] as [
+      string,
+      Uint8Array,
+    ];
+    expect(savedPath).toContain('C:\\mock-user-data\\token-images\\');
+    expect(savedPath.endsWith('-mock-uuid.png')).toBe(true);
+    expect(savedBytes).toBe(validBytes);
+    expect(importResult.image_src).toContain('C:/mock-user-data/token-images/');
+    expect(importResult.image_src.endsWith('-mock-uuid.png')).toBe(true);
+
+    await expect(
+      handler(
+        {},
+        {
+          fileName: 'wolf.txt',
+          mimeType: 'text/plain',
+          bytes: new Uint8Array([1]),
+        },
+      ),
+    ).rejects.toThrowError('Unsupported token image mimeType');
+
+    await expect(
+      handler(
+        {},
+        {
+          fileName: 'wolf.png',
+          mimeType: 'image/png',
+          bytes: new Uint8Array(0),
+        },
+      ),
+    ).rejects.toThrowError('Token image bytes cannot be empty');
+
+    await expect(
+      handler(
+        {},
+        {
+          fileName: 'wolf.png',
+          mimeType: 'image/png',
+          bytes: new Uint8Array(5 * 1024 * 1024 + 1),
+        },
+      ),
+    ).rejects.toThrowError('Token image exceeds 5 MB limit');
   });
 });

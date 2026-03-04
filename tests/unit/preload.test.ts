@@ -294,4 +294,19 @@ describe('preload', () => {
     });
     expect(invokeMock).toHaveBeenNthCalledWith(58, IPC.TOKENS_DELETE, 71);
   });
+
+  it('forwards tokens.importImage to TOKENS_IMPORT_IMAGE', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const payload: TokenImageImportPayload = {
+      fileName: 'wolf.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    };
+
+    await api.tokens.importImage(payload);
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.TOKENS_IMPORT_IMAGE, payload);
+  });
 });
