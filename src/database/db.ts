@@ -72,6 +72,7 @@ function initializeSchema(db: Database.Database): void {
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       world_id    INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
       campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+      grid_type   TEXT    NOT NULL DEFAULT 'square' CHECK (grid_type IN ('square', 'hex')),
       name        TEXT    NOT NULL,
       image_src   TEXT,
       config      TEXT    NOT NULL DEFAULT '{}',
@@ -156,6 +157,7 @@ function initializeSchema(db: Database.Database): void {
   runSessionPlannedAtMigration(db);
   runTokenWorldIdMigration(db);
   runTokenCampaignNullableMigration(db);
+  runTokenGridTypeMigration(db);
   ensureTokenCampaignIdIndex(db);
   ensureTokenWorldIdIndex(db);
 }
@@ -276,6 +278,7 @@ function runTokenCampaignNullableMigration(db: Database.Database): void {
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         world_id    INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
         campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+        grid_type   TEXT    NOT NULL DEFAULT 'square' CHECK (grid_type IN ('square', 'hex')),
         name        TEXT    NOT NULL,
         image_src   TEXT,
         config      TEXT    NOT NULL DEFAULT '{}',
@@ -291,6 +294,7 @@ function runTokenCampaignNullableMigration(db: Database.Database): void {
         id,
         world_id,
         campaign_id,
+        grid_type,
         name,
         image_src,
         config,
@@ -305,6 +309,7 @@ function runTokenCampaignNullableMigration(db: Database.Database): void {
           (SELECT world_id FROM campaigns WHERE campaigns.id = tokens.campaign_id)
         ) AS world_id,
         campaign_id,
+        'square' AS grid_type,
         name,
         image_src,
         config,
@@ -323,6 +328,22 @@ function runTokenCampaignNullableMigration(db: Database.Database): void {
       ALTER TABLE tokens_new RENAME TO tokens;
     `);
   })();
+}
+
+function runTokenGridTypeMigration(db: Database.Database): void {
+  const cols = db.pragma('table_info(tokens)') as { name: string }[];
+  if (!cols.some((c) => c.name === 'grid_type')) {
+    db.exec(
+      "ALTER TABLE tokens ADD COLUMN grid_type TEXT NOT NULL DEFAULT 'square' CHECK (grid_type IN ('square', 'hex'))",
+    );
+  }
+
+  // Normalize legacy rows to a safe default before grid variants are used.
+  db.exec(`
+    UPDATE tokens
+    SET grid_type = 'square'
+    WHERE grid_type IS NULL OR grid_type NOT IN ('square', 'hex')
+  `);
 }
 
 function ensureTokenCampaignIdIndex(db: Database.Database): void {
