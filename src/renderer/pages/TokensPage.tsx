@@ -109,8 +109,12 @@ export default function TokensPage() {
 
   const reloadTokens = async () => {
     if (worldId === null) return;
-    const tokensList = await window.db.tokens.getAllByWorld(worldId);
+    const [tokensList, campaignsList] = await Promise.all([
+      window.db.tokens.getAllByWorld(worldId),
+      window.db.campaigns.getAllByWorld(worldId),
+    ]);
     setTokens(tokensList);
+    setCampaigns(campaignsList);
   };
 
   const handleCreate = async (data: TokenFormValues) => {
@@ -400,17 +404,29 @@ export default function TokensPage() {
                           </button>
 
                           {token.campaign_id === null ? (
-                            <button
-                              type="button"
-                              onClick={() => handleMoveToCampaign(token)}
-                              className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={
-                                deletingToken?.id === token.id ||
-                                isMoveDialogPending
-                              }
-                            >
-                              Move to Campaign
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveToCampaign(token)}
+                                className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={
+                                  deletingToken?.id === token.id ||
+                                  isMoveDialogPending
+                                }
+                              >
+                                Move to Campaign
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCopyingToken(token)}
+                                className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={
+                                  deletingToken?.id === token.id || isSaving
+                                }
+                              >
+                                Copy to Campaign
+                              </button>
+                            </>
                           ) : (
                             <>
                               <button

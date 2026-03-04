@@ -302,8 +302,8 @@
 
 ### Token Move TokensPage Integration (Step 04)
 
-- **Purpose**: integrate `MoveTokenDialog` into `TokensPage.tsx` with context-aware move action buttons (move-to-campaign for world tokens, move-to-world and move-to-campaign for campaign tokens), state management, and confirm handlers.
-- **Status**: added on 2026-03-05.
+- **Purpose**: integrate `MoveTokenDialog` into `TokensPage.tsx` with context-aware move action buttons (move-to-campaign for world tokens, move-to-world and move-to-campaign for campaign tokens), state management, and confirm handlers; world-scoped tokens now correctly open `CopyTokenToCampaignDialog` via button.
+- **Status**: added on 2026-03-05; bugfix on 2026-03-05 (corrected copy-to-campaign button handler).
 - **UI**: `src/renderer/pages/TokensPage.tsx` (refactored actions column with conditional move buttons and dialog mounting).
 - **Store**: none yet.
 - **IPC**: uses existing `IPC.TOKENS_MOVE_TO_WORLD`, `IPC.TOKENS_MOVE_TO_CAMPAIGN` via `window.db.tokens.moveToWorld/moveToCampaign` (from Steps 01-02).
