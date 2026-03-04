@@ -68,6 +68,20 @@ function initializeSchema(db: Database.Database): void {
       updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS tokens (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      name        TEXT    NOT NULL,
+      image_src   TEXT,
+      config      TEXT    NOT NULL DEFAULT '{}',
+      is_visible  INTEGER NOT NULL DEFAULT 1 CHECK (is_visible IN (0, 1)),
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id
+      ON tokens(campaign_id);
+
     CREATE TABLE IF NOT EXISTS arcs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,

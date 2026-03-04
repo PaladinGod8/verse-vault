@@ -5,7 +5,7 @@
 
 ## Scope Note
 
-Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, session CRUD handlers, and scene CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, campaign-scoped token CRUD handlers, session CRUD handlers, and scene CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
@@ -14,6 +14,10 @@ Abilities Step 07 (2026-02-27) exposes ability mutation bridges in preload (`win
 Campaign Step 07 (2026-02-27) wires campaign CRUD handlers in `main` for `CAMPAIGNS_GET_ALL_BY_WORLD`, `CAMPAIGNS_GET_BY_ID`, `CAMPAIGNS_ADD`, `CAMPAIGNS_UPDATE`, and `CAMPAIGNS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
 BattleMap Step 01 (2026-03-03) adds shared constants for planned battlemaps CRUD (`BATTLEMAPS_GET_ALL_BY_WORLD`, `BATTLEMAPS_GET_BY_ID`, `BATTLEMAPS_ADD`, `BATTLEMAPS_UPDATE`, `BATTLEMAPS_DELETE`) and schema bootstrap in `db.ts`; BattleMap Step 02 (2026-03-03) wires all 5 handlers in `main`; BattleMap Step 03 (2026-03-03) wires preload bridge methods and shared `BattleMap` + `DbApi.battlemaps` signatures.
+
+Runtime Step 01 (2026-03-04) adds token CRUD constants (`TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, `TOKENS_DELETE`), wires all 5 token handlers in `main`, and exposes `window.db.tokens.getAllByCampaign/getById/add/update/delete` in preload with shared `Token` and `DbApi.tokens` signatures.
+
+Runtime Step 01 (2026-03-04) also hardens BattleMap config validation in `main` so `config` is a JSON object with runtime-ready defaults at `runtime.grid`, `runtime.map`, and `runtime.camera`; scene payload validation remains backward-compatible while validating optional runtime linkage field `payload.runtime.battlemap_id`.
 
 Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
 
@@ -25,7 +29,7 @@ Campaign Scenes Index Step 01 (2026-03-03) adds `SCENES_GET_ALL_BY_CAMPAIGN` in 
 
 Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`; Campaign Scenes Index Step 01 extends this with one additional read channel (16 total).
 
-Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`; Campaign Scenes Index Step 01 adds `CampaignSceneListItem` and `DbApi.scenes.getAllByCampaign`.
+Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`; Campaign Scenes Index Step 01 adds `CampaignSceneListItem` and `DbApi.scenes.getAllByCampaign`; Runtime Step 01 adds `Token`, `DbApi.tokens`, and runtime config/payload support interfaces (`BattleMapRuntime*`, `BattleMapConfig`, `ScenePayload*`).
 
 Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.campaign_id` → `sessions.act_id`, adds full CRUD + reparenting channels for arcs and acts (`ARCS_*`, `ACTS_*`), replaces `SESSIONS_GET_ALL_BY_CAMPAIGN` handler with `SESSIONS_GET_ALL_BY_ACT`, adds `SESSIONS_MOVE_TO_ACT`, and exposes `window.db.arcs.*`, `window.db.acts.*`, and updated `window.db.sessions.getAllByAct/moveTo` bridge methods. `SESSIONS_GET_ALL_BY_CAMPAIGN` constant retained for renderer compatibility until Step 02.
 
@@ -66,6 +70,11 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.BATTLEMAPS_ADD`              | `db:battlemaps:add`           | renderer -> main | `{ world_id: number; name: string; config?: string }`                                                                                                                                                                                                                                                                       | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }`         | `src/main.ts:registerIpcHandlers` |
 | `IPC.BATTLEMAPS_UPDATE`           | `db:battlemaps:update`        | renderer -> main | `id: number, data: { name?: string; config?: string }`                                                                                                                                                                                                                                                                      | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }`         | `src/main.ts:registerIpcHandlers` |
 | `IPC.BATTLEMAPS_DELETE`           | `db:battlemaps:delete`        | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                                                                                                 | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_GET_ALL_BY_CAMPAIGN`  | `db:tokens:getAllByCampaign`  | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                        | `Token[]`                                                                                                        | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_GET_BY_ID`            | `db:tokens:getById`           | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `Token \| null`                                                                                                  | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_ADD`                  | `db:tokens:add`               | renderer -> main | `{ campaign_id: number; name: string; image_src?: string \| null; config?: string; is_visible?: number }`                                                                                                                                                                                                                   | `Token`                                                                                                          | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_UPDATE`               | `db:tokens:update`            | renderer -> main | `id: number, data: { name?: string; image_src?: string \| null; config?: string; is_visible?: number }`                                                                                                                                                                                                                     | `Token`                                                                                                          | `src/main.ts:registerIpcHandlers` |
+| `IPC.TOKENS_DELETE`               | `db:tokens:delete`            | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `{ id: number }`                                                                                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.ARCS_GET_ALL_BY_CAMPAIGN`    | `db:arcs:getAllByCampaign`    | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                        | `Arc[]`                                                                                                          | `src/main.ts:registerIpcHandlers` |
 | `IPC.ARCS_GET_BY_ID`              | `db:arcs:getById`             | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                | `Arc \| null`                                                                                                    | `src/main.ts:registerIpcHandlers` |
 | `IPC.ARCS_ADD`                    | `db:arcs:add`                 | renderer -> main | `{ campaign_id: number; name: string; sort_order?: number }`                                                                                                                                                                                                                                                                | `Arc`                                                                                                            | `src/main.ts:registerIpcHandlers` |
@@ -164,6 +173,59 @@ interface BattleMap {
   world_id: number;
   name: string;
   config: string;
+  created_at: string; // ISO datetime string from SQLite
+  updated_at: string; // ISO datetime string from SQLite
+}
+
+type BattleMapGridMode = 'square' | 'hex' | 'none';
+
+interface BattleMapRuntimeGridConfig {
+  mode: BattleMapGridMode;
+  cellSize: number;
+  originX: number;
+  originY: number;
+}
+
+interface BattleMapRuntimeMapConfig {
+  imageSrc: string | null;
+  backgroundColor: string;
+}
+
+interface BattleMapRuntimeCameraConfig {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+interface BattleMapRuntimeConfig {
+  grid: BattleMapRuntimeGridConfig;
+  map: BattleMapRuntimeMapConfig;
+  camera: BattleMapRuntimeCameraConfig;
+  [key: string]: unknown;
+}
+
+interface BattleMapConfig {
+  runtime?: BattleMapRuntimeConfig;
+  [key: string]: unknown;
+}
+
+interface ScenePayloadRuntime {
+  battlemap_id?: number | null;
+  [key: string]: unknown;
+}
+
+interface ScenePayload {
+  runtime?: ScenePayloadRuntime;
+  [key: string]: unknown;
+}
+
+interface Token {
+  id: number;
+  campaign_id: number;
+  name: string;
+  image_src: string | null;
+  config: string;
+  is_visible: number;
   created_at: string; // ISO datetime string from SQLite
   updated_at: string; // ISO datetime string from SQLite
 }
@@ -286,6 +348,27 @@ interface DbApi {
     ): Promise<BattleMap>;
     delete(id: number): Promise<{ id: number }>;
   };
+  tokens: {
+    getAllByCampaign(campaignId: number): Promise<Token[]>;
+    getById(id: number): Promise<Token | null>;
+    add(data: {
+      campaign_id: number;
+      name: string;
+      image_src?: string | null;
+      config?: string;
+      is_visible?: number;
+    }): Promise<Token>;
+    update(
+      id: number,
+      data: {
+        name?: string;
+        image_src?: string | null;
+        config?: string;
+        is_visible?: number;
+      },
+    ): Promise<Token>;
+    delete(id: number): Promise<{ id: number }>;
+  };
   arcs: {
     getAllByCampaign(campaignId: number): Promise<Arc[]>;
     getById(id: number): Promise<Arc | null>;
@@ -393,10 +476,16 @@ interface DbApi {
 - Campaign preload bridge methods are wired end-to-end in Step 10 via `window.db.campaigns.getAllByWorld/getById/add/update/delete`.
 - BattleMap main handlers are wired for `BATTLEMAPS_GET_ALL_BY_WORLD`, `BATTLEMAPS_GET_BY_ID`, `BATTLEMAPS_ADD`, `BATTLEMAPS_UPDATE`, and `BATTLEMAPS_DELETE`.
 - `BATTLEMAPS_GET_ALL_BY_WORLD` is scoped by `world_id` and returns deterministic order (`updated_at DESC, id DESC`); `BATTLEMAPS_GET_BY_ID` returns a row or `null`.
-- `BATTLEMAPS_ADD` validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as JSON text, inserts (`world_id`, `name`, `config`), and returns the inserted row.
-- `BATTLEMAPS_UPDATE` updates only explicitly provided fields (`name`, `config`) using `hasOwnProperty` checks, validates trimmed `name` and JSON `config` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'BattleMap not found'` when missing).
+- `BATTLEMAPS_ADD` validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates `config` as a JSON object, normalizes runtime defaults (`runtime.grid`, `runtime.map`, `runtime.camera`), inserts (`world_id`, `name`, `config`), and returns the inserted row.
+- `BATTLEMAPS_UPDATE` updates only explicitly provided fields (`name`, `config`) using `hasOwnProperty` checks, validates trimmed `name` and object JSON `config` when present, normalizes runtime defaults for `config`, always refreshes `updated_at`, and returns the refreshed row (throws `'BattleMap not found'` when missing).
 - `BATTLEMAPS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - BattleMap channels are wired end-to-end in Step 03 via `window.db.battlemaps.getAllByWorld/getById/add/update/delete` and shared `BattleMap` + `DbApi.battlemaps` signatures in `forge.env.d.ts`.
+- Token main handlers are wired for `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, and `TOKENS_DELETE`.
+- `TOKENS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns deterministic order (`updated_at DESC, id DESC`); `TOKENS_GET_BY_ID` returns a row or `null`.
+- `TOKENS_ADD` validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates provided `config` as a JSON object, validates `is_visible` as `0|1`, inserts (`campaign_id`, `name`, `image_src`, `config`, `is_visible`), and returns the inserted row.
+- `TOKENS_UPDATE` updates only explicitly provided fields (`name`, `image_src`, `config`, `is_visible`) using `hasOwnProperty` checks, validates trimmed `name`, object JSON `config`, and `is_visible` as `0|1` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'Token not found'` when missing).
+- `TOKENS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
+- Token channels are wired end-to-end via `window.db.tokens.getAllByCampaign/getById/add/update/delete` and shared `Token` + `DbApi.tokens` signatures in `forge.env.d.ts`.
 - Arc main handlers are wired for `ARCS_GET_ALL_BY_CAMPAIGN`, `ARCS_GET_BY_ID`, `ARCS_ADD`, `ARCS_UPDATE`, and `ARCS_DELETE`.
 - `ARCS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns arcs ordered by `sort_order ASC, id ASC`.
 - `ARCS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted, inserts (`campaign_id`, `name`, `sort_order`), and returns the inserted row.
@@ -419,8 +508,8 @@ interface DbApi {
 - Scene main handlers are wired for `SCENES_GET_ALL_BY_CAMPAIGN`, `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, `SCENES_DELETE`, and `SCENES_MOVE_TO_SESSION`.
 - `SCENES_GET_ALL_BY_CAMPAIGN` joins `scenes -> sessions -> acts -> arcs`, filters by `arcs.campaign_id`, and returns deterministic hierarchy order (`arc.sort_order/id`, `act.sort_order/id`, `session.sort_order/id`, `scene.sort_order/id`).
 - `SCENES_GET_ALL_BY_SESSION` is scoped by `session_id` and returns scenes ordered by `sort_order ASC, id ASC`.
-- `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text when provided, defaults omitted `payload` to `'{}'`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the session), inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row.
-- `SCENES_UPDATE` updates only explicitly provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, validates `payload` as JSON text when present, always refreshes `updated_at`, and returns the refreshed row.
+- `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text when provided, defaults omitted `payload` to `'{}'`, preserves backward-compatible payload shape while validating optional `payload.runtime.battlemap_id` as a positive integer or `null`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the session), inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row.
+- `SCENES_UPDATE` updates only explicitly provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, validates JSON `payload` when present with the same optional runtime linkage rule (`payload.runtime.battlemap_id`), always refreshes `updated_at`, and returns the refreshed row.
 - `SCENES_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `session_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - `SCENES_MOVE_TO_SESSION` runs inside a transaction, validates source scene + target session, returns unchanged row when target equals current `session_id`, appends moved scene to target tail (`MAX(sort_order) + 1`), resequences the old session, and returns the refreshed moved row.
 - Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`, and extended in Campaign Scenes Index Step 01 with `window.db.scenes.getAllByCampaign`.
