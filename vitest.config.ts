@@ -1,3 +1,4 @@
+import os from 'os';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -7,6 +8,15 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     include: ['tests/unit/**/*.test.{ts,tsx}'],
     css: false,
+
+    // Use worker_threads instead of child_process forks.
+    // Threads start faster and share the V8 heap, which is safe here because
+    // every test file mocks all native modules (electron, better-sqlite3).
+    // Vitest still isolates each file's module registry (isolate: true default).
+    pool: 'threads',
+    minWorkers: 2,
+    maxWorkers: Math.max(2, os.cpus().length - 1),
+
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov', 'json-summary'],
