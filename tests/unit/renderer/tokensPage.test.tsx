@@ -1,8 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import TokensPage from '../../../src/renderer/pages/TokensPage';
+
+if (!('createObjectURL' in URL)) {
+  Object.defineProperty(URL, 'createObjectURL', {
+    value: vi.fn(() => 'blob:token-preview'),
+    configurable: true,
+  });
+}
+
+if (!('revokeObjectURL' in URL)) {
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    value: vi.fn(),
+    configurable: true,
+  });
+}
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
@@ -23,6 +43,7 @@ vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
 
 const worldsGetByIdMock = vi.fn();
 const tokensGetAllByWorldMock = vi.fn();
+const tokensImportImageMock = vi.fn();
 const tokensAddMock = vi.fn();
 const tokensUpdateMock = vi.fn();
 const tokensDeleteMock = vi.fn();
@@ -133,6 +154,7 @@ describe('TokensPage', () => {
         getAllByWorld: tokensGetAllByWorldMock,
         getAllByCampaign: vi.fn(),
         getById: vi.fn(),
+        importImage: tokensImportImageMock,
         add: tokensAddMock,
         update: tokensUpdateMock,
         delete: tokensDeleteMock,
@@ -276,6 +298,57 @@ describe('TokensPage', () => {
     );
   });
 
+  it('create flow uploads image before tokens.add when image_upload is provided', async () => {
+    const user = userEvent.setup();
+    const imageFile = new File([new Uint8Array([1, 2, 3])], 'wolf.png', {
+      type: 'image/png',
+    });
+    Object.defineProperty(imageFile, 'arrayBuffer', {
+      value: vi.fn(async () => new Uint8Array([1, 2, 3]).buffer),
+      configurable: true,
+    });
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([]);
+    tokensGetAllByWorldMock.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      buildToken({
+        id: 501,
+        name: 'Uploaded Wolf',
+        image_src: 'file:///a.png',
+      }),
+    ]);
+    tokensImportImageMock.mockResolvedValue({ image_src: 'file:///a.png' });
+    tokensAddMock.mockResolvedValue(
+      buildToken({ id: 501, name: 'Uploaded Wolf' }),
+    );
+
+    renderTokensPage();
+    await screen.findByText('No tokens yet.');
+    await user.click(screen.getByRole('button', { name: 'New Token' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New Token' });
+
+    fireEvent.drop(
+      within(dialog).getByRole('button', {
+        name: /Drag an image here, or click to choose a file/i,
+      }),
+      { dataTransfer: { files: [imageFile] } },
+    );
+    await user.type(within(dialog).getByLabelText('Name *'), 'Uploaded Wolf');
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => expect(tokensImportImageMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(tokensAddMock).toHaveBeenCalledTimes(1));
+    expect(tokensImportImageMock.mock.invocationCallOrder[0]).toBeLessThan(
+      tokensAddMock.mock.invocationCallOrder[0],
+    );
+    expect(tokensAddMock).toHaveBeenCalledWith({
+      world_id: 1,
+      name: 'Uploaded Wolf',
+      image_src: 'file:///a.png',
+      is_visible: 1,
+    });
+  });
+
   it('shows create error toast when add fails', async () => {
     const user = userEvent.setup();
     worldsGetByIdMock.mockResolvedValue(buildWorld());
@@ -337,6 +410,95 @@ describe('TokensPage', () => {
     );
   });
 
+  it('edit replace flow uploads image before tokens.update', async () => {
+    const user = userEvent.setup();
+    const existingToken = buildToken({
+      id: 300,
+      name: 'Scout',
+      image_src: 'https://assets.example/scout.png',
+    });
+    const imageFile = new File([new Uint8Array([4, 5, 6])], 'replace.png', {
+      type: 'image/png',
+    });
+    Object.defineProperty(imageFile, 'arrayBuffer', {
+      value: vi.fn(async () => new Uint8Array([4, 5, 6]).buffer),
+      configurable: true,
+    });
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([]);
+    tokensGetAllByWorldMock
+      .mockResolvedValueOnce([existingToken])
+      .mockResolvedValueOnce([
+        buildToken({ id: 300, name: 'Scout', image_src: 'file:///new.png' }),
+      ]);
+    tokensImportImageMock.mockResolvedValue({ image_src: 'file:///new.png' });
+    tokensUpdateMock.mockResolvedValue(
+      buildToken({ id: 300, name: 'Scout', image_src: 'file:///new.png' }),
+    );
+
+    renderTokensPage();
+    await screen.findByText('Scout');
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Token' });
+
+    fireEvent.drop(
+      within(dialog).getByRole('button', {
+        name: /Drag an image here, or click to choose a file/i,
+      }),
+      { dataTransfer: { files: [imageFile] } },
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(tokensImportImageMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(tokensUpdateMock).toHaveBeenCalledTimes(1));
+    expect(tokensImportImageMock.mock.invocationCallOrder[0]).toBeLessThan(
+      tokensUpdateMock.mock.invocationCallOrder[0],
+    );
+    expect(tokensUpdateMock).toHaveBeenCalledWith(300, {
+      name: 'Scout',
+      image_src: 'file:///new.png',
+      is_visible: 1,
+    });
+  });
+
+  it('edit clear image flow sends image_src null without upload', async () => {
+    const user = userEvent.setup();
+    const existingToken = buildToken({
+      id: 301,
+      name: 'Scout',
+      image_src: 'https://assets.example/scout.png',
+    });
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([]);
+    tokensGetAllByWorldMock
+      .mockResolvedValueOnce([existingToken])
+      .mockResolvedValueOnce([
+        buildToken({ id: 301, name: 'Scout', image_src: null }),
+      ]);
+    tokensUpdateMock.mockResolvedValue(
+      buildToken({ id: 301, image_src: null }),
+    );
+
+    renderTokensPage();
+    await screen.findByText('Scout');
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Token' });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Clear image on save' }),
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(tokensUpdateMock).toHaveBeenCalledTimes(1));
+    expect(tokensImportImageMock).not.toHaveBeenCalled();
+    expect(tokensUpdateMock).toHaveBeenCalledWith(301, {
+      name: 'Scout',
+      image_src: null,
+      is_visible: 1,
+    });
+  });
+
   it('shows update error toast fallback for non-Error rejections', async () => {
     const user = userEvent.setup();
     worldsGetByIdMock.mockResolvedValue(buildWorld());
@@ -359,6 +521,84 @@ describe('TokensPage', () => {
         'Please try again.',
       );
     });
+  });
+
+  it('blocks create mutation and shows error when image upload fails', async () => {
+    const user = userEvent.setup();
+    const imageFile = new File([new Uint8Array([1])], 'wolf.png', {
+      type: 'image/png',
+    });
+    Object.defineProperty(imageFile, 'arrayBuffer', {
+      value: vi.fn(async () => new Uint8Array([1]).buffer),
+      configurable: true,
+    });
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([]);
+    tokensGetAllByWorldMock.mockResolvedValue([]);
+    tokensImportImageMock.mockRejectedValue(new Error('upload failed'));
+
+    renderTokensPage();
+    await screen.findByText('No tokens yet.');
+    await user.click(screen.getByRole('button', { name: 'New Token' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New Token' });
+    fireEvent.drop(
+      within(dialog).getByRole('button', {
+        name: /Drag an image here, or click to choose a file/i,
+      }),
+      { dataTransfer: { files: [imageFile] } },
+    );
+    await user.type(within(dialog).getByLabelText('Name *'), 'Upload Fail');
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to create token.',
+        'upload failed',
+      );
+    });
+    expect(tokensAddMock).not.toHaveBeenCalled();
+  });
+
+  it('blocks edit mutation and shows error when replacement upload fails', async () => {
+    const user = userEvent.setup();
+    const existingToken = buildToken({
+      id: 302,
+      name: 'Mage',
+      image_src: 'https://assets.example/mage.png',
+    });
+    const imageFile = new File([new Uint8Array([2])], 'replace.png', {
+      type: 'image/png',
+    });
+    Object.defineProperty(imageFile, 'arrayBuffer', {
+      value: vi.fn(async () => new Uint8Array([2]).buffer),
+      configurable: true,
+    });
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([]);
+    tokensGetAllByWorldMock.mockResolvedValue([existingToken]);
+    tokensImportImageMock.mockRejectedValue(new Error('upload broke'));
+
+    renderTokensPage();
+    await screen.findByText('Mage');
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Token' });
+    fireEvent.drop(
+      within(dialog).getByRole('button', {
+        name: /Drag an image here, or click to choose a file/i,
+      }),
+      { dataTransfer: { files: [imageFile] } },
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to update token.',
+        'upload broke',
+      );
+    });
+    expect(tokensUpdateMock).not.toHaveBeenCalled();
   });
 
   it('cancels delete confirmation without deleting', async () => {
