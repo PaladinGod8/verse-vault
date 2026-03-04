@@ -139,11 +139,27 @@ export default function TokensPage() {
     if (!editingToken) return;
     setIsSaving(true);
     try {
-      await window.db.tokens.update(editingToken.id, {
+      const updatePayload: {
+        name: string;
+        image_src?: string | null;
+        is_visible: number;
+      } = {
         name: data.name,
-        image_src: data.image_src,
         is_visible: data.is_visible,
-      });
+      };
+
+      if (data.image_upload) {
+        const importResult = await window.db.tokens.importImage(
+          data.image_upload,
+        );
+        updatePayload.image_src = importResult.image_src;
+      } else if (data.clear_image) {
+        updatePayload.image_src = null;
+      } else if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
+        updatePayload.image_src = data.image_src ?? null;
+      }
+
+      await window.db.tokens.update(editingToken.id, updatePayload);
       await reloadTokens();
       setEditingToken(null);
       toast.success('Token updated.', `"${data.name}" was saved.`);
