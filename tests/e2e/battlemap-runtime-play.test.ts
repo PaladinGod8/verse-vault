@@ -295,9 +295,9 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.up();
     await window.waitForTimeout(250);
     const afterCameraPan = await runtimeCanvasAfterReload.screenshot();
-    expect(tokenDragChangedFrame || !afterCameraPan.equals(beforeCameraPan)).toBe(
-      true,
-    );
+    expect(
+      tokenDragChangedFrame || !afterCameraPan.equals(beforeCameraPan),
+    ).toBe(true);
     expect(afterCameraPan.equals(beforeCameraPan)).toBe(false);
 
     await window.getByRole('button', { name: 'Exit Runtime' }).click();
