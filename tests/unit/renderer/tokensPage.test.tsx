@@ -398,7 +398,14 @@ describe('TokensPage', () => {
       grid_type: 'square',
       image_src: undefined,
       is_visible: 1,
+      config: expect.stringContaining('"square_cells"'),
     });
+    const callArgs = tokensAddMock.mock.calls[0][0];
+    expect(callArgs.config).toBeDefined();
+    const parsedConfig = JSON.parse(callArgs.config);
+    expect(parsedConfig.footprint.square_cells).toEqual([{ col: 0, row: 0 }]);
+    expect(parsedConfig.footprint.width_cells).toBe(1);
+    expect(parsedConfig.footprint.height_cells).toBe(1);
     await waitFor(() => {
       expect(tokensGetAllByWorldMock).toHaveBeenCalledTimes(2);
     });
