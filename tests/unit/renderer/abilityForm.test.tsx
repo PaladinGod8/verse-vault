@@ -175,6 +175,10 @@ describe('AbilityForm', () => {
         pick_count: null,
         pick_timing: null,
         pick_is_permanent: 0,
+        range_cells: null,
+        aoe_shape: null,
+        aoe_size_cells: null,
+        target_type: null,
       });
     });
   });
