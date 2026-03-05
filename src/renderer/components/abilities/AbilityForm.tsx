@@ -123,7 +123,8 @@ export default function AbilityForm({
     initialValues?.pick_is_permanent === 1,
   );
   const [rangeCells, setRangeCells] = useState(
-    initialValues?.range_cells !== null && initialValues?.range_cells !== undefined
+    initialValues?.range_cells !== null &&
+      initialValues?.range_cells !== undefined
       ? String(initialValues.range_cells)
       : '',
   );
@@ -134,7 +135,9 @@ export default function AbilityForm({
       ? String(initialValues.aoe_size_cells)
       : '',
   );
-  const [targetType, setTargetType] = useState(initialValues?.target_type ?? '');
+  const [targetType, setTargetType] = useState(
+    initialValues?.target_type ?? '',
+  );
   const [levels, setLevels] = useState<Level[]>([]);
   const [isLoadingLevels, setIsLoadingLevels] = useState(false);
   const [levelsLoadError, setLevelsLoadError] = useState<string | null>(null);

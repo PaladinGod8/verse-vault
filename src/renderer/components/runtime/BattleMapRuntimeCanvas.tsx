@@ -902,7 +902,12 @@ export default function BattleMapRuntimeCanvas({
         sizeCells,
         angleRad,
       };
-      const shapePoly = getShapePolygon(shapeParams, casterX, casterY, cellSize);
+      const shapePoly = getShapePolygon(
+        shapeParams,
+        casterX,
+        casterY,
+        cellSize,
+      );
       if (shapePoly.points.length >= 6) {
         overlayLayer
           .poly(shapePoly.points, true)
@@ -1017,7 +1022,9 @@ export default function BattleMapRuntimeCanvas({
           for (const v of vertexOffsets) {
             hexPts.push(center.x + v.x, center.y + v.y);
           }
-          overlayLayer.poly(hexPts, true).fill({ color: 0x38bdf8, alpha: 0.18 });
+          overlayLayer
+            .poly(hexPts, true)
+            .fill({ color: 0x38bdf8, alpha: 0.18 });
         }
       }
     }
@@ -1419,7 +1426,10 @@ export default function BattleMapRuntimeCanvas({
       const handlePointerMove = (event: PointerEvent) => {
         const state = castingStateRef.current;
         if (!state) return;
-        const worldPoint = getWorldPointFromClient(event.clientX, event.clientY);
+        const worldPoint = getWorldPointFromClient(
+          event.clientX,
+          event.clientY,
+        );
         if (!worldPoint) return;
         const angle = Math.atan2(
           worldPoint.y - state.casterY,

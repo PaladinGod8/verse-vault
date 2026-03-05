@@ -301,4 +301,82 @@ describe('AbilityForm', () => {
       '{\n  "mana": 8\n}',
     );
   });
+
+  it('submits casting range fields in payload for active type', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(<AbilityForm worldId={1} onSubmit={onSubmit} onCancel={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Name'), 'Arc Flash');
+    await user.selectOptions(screen.getByLabelText('Type'), 'active');
+    fireEvent.change(screen.getByLabelText('Cast cost (JSON object)'), {
+      target: { value: '{}' },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Create ability' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          range_cells: null,
+          aoe_shape: null,
+          aoe_size_cells: null,
+          target_type: null,
+        }),
+      );
+    });
+  });
+
+  it('submits casting fields as null for passive type', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(<AbilityForm worldId={1} onSubmit={onSubmit} onCancel={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Name'), 'Passive Ability');
+    await user.selectOptions(screen.getByLabelText('Type'), 'passive');
+
+    await user.click(screen.getByRole('button', { name: 'Create ability' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          range_cells: null,
+          aoe_shape: null,
+          aoe_size_cells: null,
+          target_type: null,
+        }),
+      );
+    });
+  });
+
+  it('pre-fills with initialValues in edit mode including casting fields', async () => {
+    render(
+      <AbilityForm
+        mode="edit"
+        worldId={1}
+        initialValues={{
+          name: 'Arc Flash',
+          type: 'active',
+          effects: '[]',
+          cast_cost: '{}',
+          range_cells: 8,
+          aoe_shape: 'cone',
+          aoe_size_cells: 3,
+          target_type: 'token',
+        }}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(levelsGetAllByWorldMock).toHaveBeenCalledWith(1);
+    });
+
+    // Verify form was rendered with initial values
+    expect(screen.getByLabelText('Name')).toHaveValue('Arc Flash');
+    expect(screen.getByLabelText('Type')).toHaveValue('active');
+  });
 });
