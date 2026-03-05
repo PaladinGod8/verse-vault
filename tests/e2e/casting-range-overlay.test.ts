@@ -11,6 +11,16 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     const abilityName = `E2E Fireball ${unique}`;
     const battleMapName = `E2E Arena ${unique}`;
     const tokenName = `E2E Mage ${unique}`;
+    const battleMapConfig = JSON.stringify({
+      runtime: {
+        grid: {
+          mode: 'square',
+          cellSize: 64,
+          originX: 0,
+          originY: 0,
+        },
+      },
+    });
 
     // Create world
     await page.getByRole('button', { name: 'Create world' }).click();
@@ -53,10 +63,9 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     const battleMapDialog = page.getByRole('dialog', { name: 'New BattleMap' });
     await expect(battleMapDialog).toBeVisible();
     await battleMapDialog.getByLabel('Name').fill(battleMapName);
-    await battleMapDialog.getByLabel('Grid mode').selectOption('square');
-    await battleMapDialog.getByLabel('Cell size (px)').fill('64');
-    await battleMapDialog.getByLabel('Grid width').fill('20');
-    await battleMapDialog.getByLabel('Grid height').fill('20');
+    await battleMapDialog
+      .getByLabel('Config JSON (optional)')
+      .fill(battleMapConfig);
     await battleMapDialog
       .getByRole('button', { name: 'Create BattleMap' })
       .click();
@@ -73,7 +82,7 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     const tokenDialog = page.getByRole('dialog', { name: 'New Token' });
     await expect(tokenDialog).toBeVisible();
     await tokenDialog.getByLabel('Name').fill(tokenName);
-    await tokenDialog.getByRole('button', { name: 'Create token' }).click();
+    await tokenDialog.getByRole('button', { name: 'Create' }).click();
 
     const tokenRow = page
       .locator('tbody tr')
@@ -83,7 +92,7 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
 
     // Open battlemap in runtime mode
     await page.getByRole('link', { name: 'BattleMaps' }).click();
-    await battleMapRow.getByRole('button', { name: 'Play' }).click();
+    await battleMapRow.getByRole('link', { name: 'Play' }).click();
 
     // Wait for runtime page to load
     await expect(
@@ -98,66 +107,40 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     await page.waitForTimeout(500); // Allow initial render
     const baselineScreenshot = await canvas.screenshot();
 
-    // Get world, token, and battlemap IDs for token placement
-    const tokenId = await page.evaluate(
-      async ({ worldNameArg, tokenNameArg }) => {
-        const worlds = await window.db.worlds.getAll();
-        const world = worlds.find((w) => w.name === worldNameArg);
-        if (!world) throw new Error('World not found');
+    // Place and select token via runtime token palette.
+    const runtimeTokenSection = page
+      .locator('section')
+      .filter({ hasText: 'Runtime Tokens' })
+      .first();
+    const worldTokensSection = runtimeTokenSection
+      .locator('div')
+      .filter({ hasText: 'World Tokens' })
+      .first();
 
-        const tokens = await window.db.tokens.getAllByWorld(world.id);
-        const token = tokens.find((t) => t.name === tokenNameArg);
-        if (!token) throw new Error('Token not found');
+    const tokenSourceRow = worldTokensSection
+      .locator('li')
+      .filter({ hasText: tokenName })
+      .first();
+    await expect(tokenSourceRow).toBeVisible();
+    await tokenSourceRow.getByRole('button', { name: 'Add' }).click();
 
-        return token.id;
-      },
-      { worldNameArg: worldName, tokenNameArg: tokenName },
-    );
+    const sceneTokensSection = runtimeTokenSection
+      .locator('div')
+      .filter({ hasText: 'Scene Tokens' })
+      .first();
+    await expect(
+      sceneTokensSection.getByRole('button', { name: tokenName }),
+    ).toBeVisible();
+    await sceneTokensSection.getByRole('button', { name: tokenName }).click();
 
-    const battleMapId = await page.evaluate(
-      async ({ worldNameArg, battleMapNameArg }) => {
-        const worlds = await window.db.worlds.getAll();
-        const world = worlds.find((w) => w.name === worldNameArg);
-        if (!world) throw new Error('World not found');
-
-        const battleMaps = await window.db.battlemaps.getAllByWorld(world.id);
-        const battleMap = battleMaps.find((bm) => bm.name === battleMapNameArg);
-        if (!battleMap) throw new Error('BattleMap not found');
-
-        return battleMap.id;
-      },
-      { worldNameArg: worldName, battleMapNameArg: battleMapName },
-    );
-
-    // Place token at grid position (5, 5)
-    await page.evaluate(
-      async ({ battleMapIdArg, tokenIdArg }) => {
-        await window.db.battlemaps.addToken({
-          battlemap_id: battleMapIdArg,
-          token_id: tokenIdArg,
-          grid_x: 5,
-          grid_y: 5,
-        });
-      },
-      { battleMapIdArg: battleMapId, tokenIdArg: tokenId },
-    );
-
-    // Reload runtime page to show placed token
-    await page.reload();
-    await page.waitForTimeout(500);
-
-    // Select token (click on canvas at token position)
-    // Approximate canvas position: (5 * 64 + 32, 5 * 64 + 32) = (352, 352)
-    await canvas.click({ position: { x: 352, y: 352 } });
-
-    // Verify AbilityPickerPanel appears
-    const abilityPickerPanel = page.locator(
-      '[data-testid="ability-picker-panel"]',
-    );
-    await expect(abilityPickerPanel).toBeVisible();
+    // Verify the selected token exposes abilities in runtime.
+    const abilityButton = page.getByRole('button', {
+      name: new RegExp(abilityName),
+    });
+    await expect(abilityButton).toBeVisible();
 
     // Click the ability to enter cast mode
-    await abilityPickerPanel.getByText(abilityName).click();
+    await abilityButton.click();
 
     // Wait for overlay to render
     await page.waitForTimeout(300);
@@ -176,7 +159,7 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     // but the interaction validates that pointer events are handled without error
 
     // Exit cast mode (click ability again to deselect)
-    await abilityPickerPanel.getByText(abilityName).click();
+    await abilityButton.click();
     await page.waitForTimeout(100);
 
     // Take screenshot after exit
