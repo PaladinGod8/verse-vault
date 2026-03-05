@@ -62,13 +62,11 @@ export default function TokenForm({
   const [gridType, setGridType] = useState<TokenGridType>(
     initialValues?.grid_type ?? 'square',
   );
-  const [imageSrc, setImageSrc] = useState(initialImageSrc ?? '');
   const [isVisible, setIsVisible] = useState(initialValues?.is_visible ?? 1);
   const [nameError, setNameError] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [clearImage, setClearImage] = useState(false);
-  const [hasImageSrcChanged, setHasImageSrcChanged] = useState(false);
   const [painterModalOpen, setPainterModalOpen] = useState(false);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [footprintResult, setFootprintResult] =
@@ -130,10 +128,6 @@ export default function TokenForm({
 
     setNameError(null);
     setImageUploadError(null);
-    const trimmedImageSrc = imageSrc.trim();
-    const normalizedImageSrc = trimmedImageSrc === '' ? null : trimmedImageSrc;
-    const shouldSendImageSrc =
-      isCreateMode || hasImageSrcChanged || (!clearImage && !!imageUpload);
 
     // Build config with footprint/framing data if available
     let config: string | undefined;
@@ -148,7 +142,7 @@ export default function TokenForm({
     await onSave({
       name: trimmedName,
       grid_type: gridType,
-      image_src: shouldSendImageSrc ? normalizedImageSrc : undefined,
+      image_src: clearImage ? null : undefined,
       is_visible: isVisible,
       image_upload: imageUpload,
       clear_image: clearImage,
@@ -214,28 +208,6 @@ export default function TokenForm({
         </select>
       </div>
 
-      <div>
-        <label
-          htmlFor="token-image-src"
-          className="mb-1 block text-sm font-medium text-slate-700"
-        >
-          Image URL
-        </label>
-        <input
-          id="token-image-src"
-          type="text"
-          value={imageSrc}
-          onChange={(e) => {
-            setImageSrc(e.target.value);
-            setHasImageSrcChanged(true);
-            if (clearImage) setClearImage(false);
-          }}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
-          placeholder="https://... or /path/to/image.png"
-          disabled={isSaving}
-        />
-      </div>
-
       {!isCreateMode && initialImageSrc ? (
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-700">
@@ -259,8 +231,6 @@ export default function TokenForm({
             className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
             onClick={() => {
               setClearImage(true);
-              setImageSrc('');
-              setHasImageSrcChanged(true);
               setSelectedImageFile(null);
               setFootprintResult(null);
               setImageUploadError(null);
