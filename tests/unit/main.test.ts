@@ -1231,7 +1231,9 @@ describe('main process', () => {
     expect(abilityAddWithRangeResult).toMatchObject({ id: 11 });
 
     // Test that new fields default to null when omitted
-    registeredIpcHandlers[IPC.ABILITIES_ADD](
+    const abilityAddWithoutRangeResult = registeredIpcHandlers[
+      IPC.ABILITIES_ADD
+    ](
       {},
       {
         world_id: 1,
