@@ -1,3 +1,8 @@
+// eslint-disable-next-line import/no-unresolved -- pixi.js exposes these via package exports; eslint-import resolver flags a false positive.
+import type { PointData } from 'pixi.js';
+// eslint-disable-next-line import/no-unresolved -- pixi.js exposes these via package exports; eslint-import resolver flags a false positive.
+import { Polygon, Rectangle } from 'pixi.js';
+
 import {
   clampGridCellSize,
   pointyHexCenterFromAxial,
@@ -16,13 +21,42 @@ export type CastingShapeParams = {
   angleRad: number; // direction angle in radians (used for cone/line)
 };
 
-type Point = { x: number; y: number };
-
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function polygonArea(vertices: Point[]): number {
+/** Extract individual vertices from a PixiJS Polygon's flat number[] store. */
+function polygonVertices(poly: Polygon): PointData[] {
+  const pts: PointData[] = [];
+  for (let i = 0; i + 1 < poly.points.length; i += 2) {
+    pts.push({ x: poly.points[i], y: poly.points[i + 1] });
+  }
+  return pts;
+}
+
+/** Build a PixiJS Polygon from an array of PointData vertices. */
+function polygonFromPoints(pts: PointData[]): Polygon {
+  const flat: number[] = [];
+  for (const p of pts) flat.push(p.x, p.y);
+  return new Polygon(flat);
+}
+
+/**
+ * Build a rectangle clip polygon wound CW in screen Y-down coordinates from a
+ * PixiJS Rectangle, so the interior is to the LEFT of every directed edge.
+ *
+ *   BL -> TL -> TR -> BR  (bottom-left, top-left, top-right, bottom-right)
+ */
+function rectClipPolygon(rect: Rectangle): PointData[] {
+  return [
+    { x: rect.left, y: rect.bottom }, // bottom-left
+    { x: rect.left, y: rect.top }, // top-left
+    { x: rect.right, y: rect.top }, // top-right
+    { x: rect.right, y: rect.bottom }, // bottom-right
+  ];
+}
+
+function polygonArea(vertices: PointData[]): number {
   const n = vertices.length;
   if (n < 3) return 0;
   let sum = 0;
@@ -33,13 +67,18 @@ function polygonArea(vertices: Point[]): number {
   return Math.abs(sum) * 0.5;
 }
 
-function isInsideHalfPlane(p: Point, a: Point, b: Point): boolean {
+function isInsideHalfPlane(p: PointData, a: PointData, b: PointData): boolean {
   // Returns true if p is on the left side of (or on) the directed edge a -> b.
-  // "Left" here means the cross product (b-a) × (p-a) >= 0.
+  // "Left" means the cross product (b-a) × (p-a) >= 0.
   return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x) >= 0;
 }
 
-function intersectSegments(a: Point, b: Point, c: Point, d: Point): Point {
+function intersectSegments(
+  a: PointData,
+  b: PointData,
+  c: PointData,
+  d: PointData,
+): PointData {
   // Intersection of line through AB with line through CD.
   const abx = b.x - a.x;
   const aby = b.y - a.y;
@@ -58,13 +97,13 @@ function intersectSegments(a: Point, b: Point, c: Point, d: Point): Point {
  * edge from `edgeA` to `edgeB`.  Returns the clipped polygon (may be empty).
  */
 function clipPolygonByHalfPlane(
-  polygon: Point[],
-  edgeA: Point,
-  edgeB: Point,
-): Point[] {
+  polygon: PointData[],
+  edgeA: PointData,
+  edgeB: PointData,
+): PointData[] {
   const n = polygon.length;
   if (n === 0) return [];
-  const output: Point[] = [];
+  const output: PointData[] = [];
   for (let i = 0; i < n; i++) {
     const curr = polygon[i];
     const prev = polygon[(i + n - 1) % n];
@@ -83,13 +122,13 @@ function clipPolygonByHalfPlane(
 }
 
 /**
- * Clips `subject` against the convex `clip` polygon using Sutherland-Hodgman
- * and returns the area of the result via the shoelace formula.
+ * Clips `subject` vertices against the convex `clip` polygon using
+ * Sutherland-Hodgman and returns the area of the result via shoelace.
  *
- * The `clip` polygon must be wound such that the interior is to the LEFT of
- * each directed edge (CW winding in screen / PixiJS Y-down coordinates).
+ * The `clip` polygon must be wound CW in screen Y-down coordinates so the
+ * interior is to the LEFT of each directed edge.
  */
-function intersectionArea(subject: Point[], clip: Point[]): number {
+function intersectionArea(subject: PointData[], clip: PointData[]): number {
   if (subject.length === 0 || clip.length === 0) return 0;
   let clipped = [...subject];
   const n = clip.length;
@@ -100,33 +139,13 @@ function intersectionArea(subject: Point[], clip: Point[]): number {
   return polygonArea(clipped);
 }
 
-/**
- * Builds a rectangle clip polygon wound CW in screen Y-down coordinates,
- * so that the interior is to the LEFT of every directed edge.
- *
- *   BL -> TL -> TR -> BR  (bottom-left, top-left, top-right, bottom-right)
- */
-function rectClipPolygon(
-  minX: number,
-  minY: number,
-  maxX: number,
-  maxY: number,
-): Point[] {
-  return [
-    { x: minX, y: maxY }, // bottom-left
-    { x: minX, y: minY }, // top-left
-    { x: maxX, y: minY }, // top-right
-    { x: maxX, y: maxY }, // bottom-right
-  ];
-}
-
 // ---------------------------------------------------------------------------
 // Exported functions
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the world-space polygon vertices for the given AoE shape, centered
- * at `(centerX, centerY)`.  Returns an empty array when `shape` is `null`.
+ * Returns the world-space PixiJS Polygon for the given AoE shape, centered at
+ * `(centerX, centerY)`.  Returns an empty Polygon when `shape` is `null`.
  *
  * All coordinates are in world units.  Angles are in radians with 0 pointing
  * in the positive-X (right) direction, consistent with PixiJS screen coords
@@ -137,39 +156,36 @@ export function getShapePolygon(
   centerX: number,
   centerY: number,
   cellSize: number,
-): Point[] {
+): Polygon {
   const { shape, sizeCells, angleRad } = params;
   const safe = clampGridCellSize(cellSize);
 
-  if (shape === null) return [];
+  if (shape === null) return new Polygon([]);
 
   if (shape === 'circle') {
     const radius = sizeCells * safe;
     const segments = 32;
-    const vertices: Point[] = [];
+    const pts: PointData[] = [];
     for (let i = 0; i < segments; i++) {
       const a = (2 * Math.PI * i) / segments;
-      vertices.push({
-        x: centerX + radius * Math.cos(a),
-        y: centerY + radius * Math.sin(a),
-      });
+      pts.push({ x: centerX + radius * Math.cos(a), y: centerY + radius * Math.sin(a) });
     }
-    return vertices;
+    return polygonFromPoints(pts);
   }
 
   if (shape === 'rectangle') {
     const half = sizeCells * safe * 0.5;
-    return [
+    return polygonFromPoints([
       { x: centerX - half, y: centerY - half },
       { x: centerX + half, y: centerY - half },
       { x: centerX + half, y: centerY + half },
       { x: centerX - half, y: centerY + half },
-    ];
+    ]);
   }
 
   if (shape === 'cone') {
     const dist = sizeCells * safe;
-    return [
+    return polygonFromPoints([
       { x: centerX, y: centerY },
       {
         x: centerX + dist * Math.cos(angleRad - Math.PI / 4),
@@ -179,7 +195,7 @@ export function getShapePolygon(
         x: centerX + dist * Math.cos(angleRad + Math.PI / 4),
         y: centerY + dist * Math.sin(angleRad + Math.PI / 4),
       },
-    ];
+    ]);
   }
 
   if (shape === 'line') {
@@ -191,7 +207,7 @@ export function getShapePolygon(
     const sin = Math.sin(angleRad);
     const perpCos = Math.cos(angleRad + Math.PI / 2);
     const perpSin = Math.sin(angleRad + Math.PI / 2);
-    return [
+    return polygonFromPoints([
       {
         x: centerX + cos * halfLen + perpCos * halfW,
         y: centerY + sin * halfLen + perpSin * halfW,
@@ -208,10 +224,10 @@ export function getShapePolygon(
         x: centerX - cos * halfLen + perpCos * halfW,
         y: centerY - sin * halfLen + perpSin * halfW,
       },
-    ];
+    ]);
   }
 
-  return [];
+  return new Polygon([]);
 }
 
 /**
@@ -234,11 +250,10 @@ export function getHighlightedSquareTiles(
 
   const effectiveSizeCells = shape === null ? 0.5 : sizeCells;
   const effectiveParams: CastingShapeParams =
-    shape === null
-      ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 }
-      : params;
+    shape === null ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 } : params;
 
-  const shapePolygon = getShapePolygon(effectiveParams, casterX, casterY, safe);
+  const shapePoly = getShapePolygon(effectiveParams, casterX, casterY, safe);
+  const shapeVerts = polygonVertices(shapePoly);
 
   const searchRadius = (rangeCells + effectiveSizeCells + 1) * safe;
   const colMin = Math.floor((casterX - searchRadius - originX) / safe);
@@ -251,13 +266,9 @@ export function getHighlightedSquareTiles(
 
   for (let col = colMin; col <= colMax; col++) {
     for (let row = rowMin; row <= rowMax; row++) {
-      const tileMinX = originX + col * safe;
-      const tileMinY = originY + row * safe;
-      const tileMaxX = tileMinX + safe;
-      const tileMaxY = tileMinY + safe;
-
-      const clip = rectClipPolygon(tileMinX, tileMinY, tileMaxX, tileMaxY);
-      const coverage = intersectionArea(shapePolygon, clip);
+      const tile = new Rectangle(originX + col * safe, originY + row * safe, safe, safe);
+      const clip = rectClipPolygon(tile);
+      const coverage = intersectionArea(shapeVerts, clip);
       if (coverage / tileArea >= 0.5 - 1e-9) {
         result.push({ col, row });
       }
@@ -288,11 +299,10 @@ export function getHighlightedHexTiles(
 
   const effectiveSizeCells = shape === null ? 0.5 : sizeCells;
   const effectiveParams: CastingShapeParams =
-    shape === null
-      ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 }
-      : params;
+    shape === null ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 } : params;
 
-  const shapePolygon = getShapePolygon(effectiveParams, casterX, casterY, safe);
+  const shapePoly = getShapePolygon(effectiveParams, casterX, casterY, safe);
+  const shapeVerts = polygonVertices(shapePoly);
 
   const searchRadius = (rangeCells + effectiveSizeCells + 1) * safe;
   const bounds = {
@@ -325,12 +335,12 @@ export function getHighlightedHexTiles(
       // getPointyHexVertexOffsets returns vertices starting at the top and
       // going clockwise in screen (Y-down) coords, so the interior is to the
       // LEFT of each directed edge — exactly what clipPolygonByHalfPlane needs.
-      const hexClip: Point[] = vertexOffsets.map((off) => ({
+      const hexClip: PointData[] = vertexOffsets.map((off) => ({
         x: center.x + off.x,
         y: center.y + off.y,
       }));
 
-      const coverage = intersectionArea(shapePolygon, hexClip);
+      const coverage = intersectionArea(shapeVerts, hexClip);
       if (coverage / hexArea >= 0.5 - 1e-9) {
         result.push({ q, r });
       }
