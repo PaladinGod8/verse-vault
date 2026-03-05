@@ -27,7 +27,9 @@ export default function WorldForm({
   const [thumbnailSrc, setThumbnailSrc] = useState<string | null>(
     initialValues?.thumbnail ?? null,
   );
-  const [thumbnailUploadError, setThumbnailUploadError] = useState<string | null>(null);
+  const [thumbnailUploadError, setThumbnailUploadError] = useState<
+    string | null
+  >(null);
   const [isImportingImage, setIsImportingImage] = useState(false);
   const [shortDescription, setShortDescription] = useState(
     initialValues?.short_description ?? '',
@@ -119,7 +121,9 @@ export default function WorldForm({
 
       {thumbnailSrc && !thumbnailFile ? (
         <div className="space-y-1">
-          <p className="text-sm font-medium text-slate-800">Current thumbnail</p>
+          <p className="text-sm font-medium text-slate-800">
+            Current thumbnail
+          </p>
           <img
             src={thumbnailSrc}
             alt="Current world thumbnail"

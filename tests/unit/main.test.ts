@@ -892,11 +892,14 @@ describe('main process', () => {
 
     const worldImportImageResult = await registeredIpcHandlers[
       IPC.WORLDS_IMPORT_IMAGE
-    ]({}, {
-      fileName: 'thumbnail.png',
-      mimeType: 'image/png',
-      bytes: new Uint8Array([1, 2, 3]),
-    });
+    ](
+      {},
+      {
+        fileName: 'thumbnail.png',
+        mimeType: 'image/png',
+        bytes: new Uint8Array([1, 2, 3]),
+      },
+    );
     expect(mkdirMock).toHaveBeenCalledWith(
       expect.stringContaining('world-images'),
       { recursive: true },

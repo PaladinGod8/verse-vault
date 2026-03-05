@@ -110,7 +110,9 @@ describe('WorldForm', () => {
       await user.upload(fileInput, file);
 
       // While import is in flight, submit should be disabled
-      expect(screen.getByRole('button', { name: 'Create world' })).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: 'Create world' }),
+      ).toBeDisabled();
 
       resolveImport({ image_src: 'vv-media://world-images/cover.png' });
       await waitFor(() =>
@@ -120,7 +122,10 @@ describe('WorldForm', () => {
       );
 
       expect(mockImportImage).toHaveBeenCalledWith(
-        expect.objectContaining({ fileName: 'cover.png', mimeType: 'image/png' }),
+        expect.objectContaining({
+          fileName: 'cover.png',
+          mimeType: 'image/png',
+        }),
       );
     });
 
@@ -173,9 +178,7 @@ describe('WorldForm', () => {
         screen.getByRole('button', { name: 'Remove selected file' }),
       );
 
-      expect(
-        screen.queryByText('cover.png'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('cover.png')).not.toBeInTheDocument();
     });
 
     it('submits thumbnailSrc returned by importImage as thumbnail field', async () => {
@@ -205,7 +208,9 @@ describe('WorldForm', () => {
 
       await waitFor(() =>
         expect(onSubmit).toHaveBeenCalledWith(
-          expect.objectContaining({ thumbnail: 'vv-media://world-images/t.png' }),
+          expect.objectContaining({
+            thumbnail: 'vv-media://world-images/t.png',
+          }),
         ),
       );
     });
@@ -322,7 +327,9 @@ describe('WorldForm', () => {
       await user.click(screen.getByRole('button', { name: 'Save changes' }));
       await waitFor(() =>
         expect(onSubmit).toHaveBeenCalledWith(
-          expect.objectContaining({ thumbnail: 'vv-media://world-images/new.png' }),
+          expect.objectContaining({
+            thumbnail: 'vv-media://world-images/new.png',
+          }),
         ),
       );
     });
