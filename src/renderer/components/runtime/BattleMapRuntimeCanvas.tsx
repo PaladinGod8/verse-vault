@@ -27,6 +27,14 @@ import {
   stepCameraCenterTowardTarget,
   worldDeltaFromScreenDelta,
 } from '../../lib/runtimeMath';
+import {
+  getHighlightedHexTiles,
+  getHighlightedSquareTiles,
+  getShapePolygon,
+  type CastingShapeParams,
+  type HighlightedHexTile,
+  type HighlightedSquareTile,
+} from '../../lib/castingRangeMath';
 
 export type RuntimeSceneToken = {
   instanceId: string;
@@ -40,6 +48,13 @@ export type RuntimeSceneToken = {
   y: number;
 };
 
+type CastingState = {
+  casterX: number;
+  casterY: number;
+  ability: Ability;
+  angleRad: number;
+} | null;
+
 type BattleMapRuntimeCanvasProps = {
   runtimeConfig: BattleMapRuntimeConfig;
   tokens: RuntimeSceneToken[];
@@ -49,6 +64,8 @@ type BattleMapRuntimeCanvasProps = {
     tokenInstanceId: string,
     position: { x: number; y: number },
   ) => void;
+  castingState: CastingState;
+  onCastingAngleChange: (angleRad: number) => void;
   className?: string;
 };
 
@@ -58,11 +75,13 @@ type StageGraph = {
   mapContainer: Container;
   imageContainer: Container;
   gridContainer: Container;
+  rangeOverlayContainer: Container;
   tokenContainer: Container;
   uiContainer: Container;
   backgroundLayer: Graphics;
   mapLayer: Graphics;
   gridLayer: Graphics;
+  rangeOverlayLayer: Graphics;
 };
 
 type TokenDisplay = {
@@ -223,6 +242,8 @@ export default function BattleMapRuntimeCanvas({
   selectedTokenInstanceId,
   onTokenSelect,
   onTokenMove,
+  castingState,
+  onCastingAngleChange,
   className,
 }: BattleMapRuntimeCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -249,6 +270,14 @@ export default function BattleMapRuntimeCanvas({
   const removeDragListenersRef = useRef<(() => void) | null>(null);
   const removeCameraPanListenersRef = useRef<(() => void) | null>(null);
   const removeWheelListenerRef = useRef<(() => void) | null>(null);
+  const removePointerMoveListenerRef = useRef<(() => void) | null>(null);
+  const castingStateRef = useRef<CastingState>(castingState);
+  const onCastingAngleChangeRef = useRef(onCastingAngleChange);
+  const overlayTileCacheRef = useRef<{
+    key: string;
+    squareTiles: HighlightedSquareTile[] | null;
+    hexTiles: HighlightedHexTile[] | null;
+  } | null>(null);
 
   const removeMapSprite = () => {
     const sprite = mapSpriteRef.current;
@@ -280,6 +309,11 @@ export default function BattleMapRuntimeCanvas({
   const removeWheelListener = () => {
     removeWheelListenerRef.current?.();
     removeWheelListenerRef.current = null;
+  };
+
+  const removePointerMoveListener = () => {
+    removePointerMoveListenerRef.current?.();
+    removePointerMoveListenerRef.current = null;
   };
 
   const getTokenByInstanceId = (tokenInstanceId: string) => {
@@ -832,6 +866,163 @@ export default function BattleMapRuntimeCanvas({
     });
   };
 
+  const syncOverlayLayer = () => {
+    const stageGraph = stageGraphRef.current;
+    const state = castingStateRef.current;
+    if (!stageGraph) return;
+
+    const overlayLayer = stageGraph.rangeOverlayLayer;
+    overlayLayer.clear();
+
+    if (!state) return;
+
+    const { casterX, casterY, ability, angleRad } = state;
+
+    if (ability.range_cells === null) {
+      console.warn(
+        '[castingRange] ability with range_cells=null passed into castingState — skipping overlay',
+      );
+      return;
+    }
+
+    const gridConfig = runtimeConfigRef.current.grid;
+    const cellSize = clampGridCellSize(gridConfig.cellSize);
+
+    // 1. Range ring
+    const rangeRadius = ability.range_cells * cellSize;
+    overlayLayer
+      .circle(casterX, casterY, rangeRadius)
+      .stroke({ color: 0xffffff, alpha: 0.45, width: 2 });
+
+    // 2. AoE shape fill
+    if (ability.aoe_shape !== null) {
+      const sizeCells = ability.aoe_size_cells ?? 1;
+      const shapeParams: CastingShapeParams = {
+        shape: ability.aoe_shape,
+        sizeCells,
+        angleRad,
+      };
+      const shapePoly = getShapePolygon(shapeParams, casterX, casterY, cellSize);
+      if (shapePoly.points.length >= 6) {
+        overlayLayer
+          .poly(shapePoly.points, true)
+          .fill({ color: 0x38bdf8, alpha: 0.22 });
+        overlayLayer
+          .poly(shapePoly.points, true)
+          .stroke({ color: 0x38bdf8, alpha: 0.7, width: 1.5 });
+      }
+    }
+
+    // 3. Tile highlights (skip for mode = 'none')
+    if (gridConfig.mode !== 'none') {
+      const sizeCells = ability.aoe_size_cells ?? 1;
+      const isAngleDependent =
+        ability.aoe_shape === 'cone' || ability.aoe_shape === 'line';
+      const cacheKey = `${casterX}:${casterY}:${ability.id}:${isAngleDependent ? angleRad : 0}:${cellSize}`;
+
+      let squareTiles: HighlightedSquareTile[] | null = null;
+      let hexTiles: HighlightedHexTile[] | null = null;
+
+      const cached = overlayTileCacheRef.current;
+      if (cached?.key === cacheKey) {
+        squareTiles = cached.squareTiles;
+        hexTiles = cached.hexTiles;
+      } else {
+        const shapeParams: CastingShapeParams = {
+          shape: ability.aoe_shape ?? null,
+          sizeCells,
+          angleRad: isAngleDependent ? angleRad : 0,
+        };
+        if (gridConfig.mode === 'square') {
+          squareTiles = getHighlightedSquareTiles(
+            shapeParams,
+            casterX,
+            casterY,
+            ability.range_cells,
+            cellSize,
+            gridConfig.originX,
+            gridConfig.originY,
+          );
+        } else {
+          hexTiles = getHighlightedHexTiles(
+            shapeParams,
+            casterX,
+            casterY,
+            ability.range_cells,
+            cellSize,
+            gridConfig.originX,
+            gridConfig.originY,
+          );
+        }
+        overlayTileCacheRef.current = { key: cacheKey, squareTiles, hexTiles };
+      }
+
+      const isTokenTarget = ability.target_type === 'token';
+
+      if (gridConfig.mode === 'square' && squareTiles) {
+        let occupiedKeys: Set<string> | null = null;
+        if (isTokenTarget) {
+          occupiedKeys = new Set<string>();
+          for (const token of tokensRef.current) {
+            const col = Math.floor((token.x - gridConfig.originX) / cellSize);
+            const row = Math.floor((token.y - gridConfig.originY) / cellSize);
+            occupiedKeys.add(`${col}:${row}`);
+          }
+        }
+        for (const tile of squareTiles) {
+          if (
+            isTokenTarget &&
+            occupiedKeys &&
+            !occupiedKeys.has(`${tile.col}:${tile.row}`)
+          ) {
+            continue;
+          }
+          const tileX = gridConfig.originX + tile.col * cellSize;
+          const tileY = gridConfig.originY + tile.row * cellSize;
+          overlayLayer
+            .rect(tileX, tileY, cellSize, cellSize)
+            .fill({ color: 0x38bdf8, alpha: 0.18 });
+        }
+      } else if (gridConfig.mode === 'hex' && hexTiles) {
+        let occupiedKeys: Set<string> | null = null;
+        if (isTokenTarget) {
+          occupiedKeys = new Set<string>();
+          const radius = cellSize * 0.5;
+          for (const token of tokensRef.current) {
+            const shiftedX = token.x - gridConfig.originX;
+            const shiftedY = token.y - gridConfig.originY;
+            const q = ((SQRT_3 / 3) * shiftedX - shiftedY / 3) / radius;
+            const r = ((2 / 3) * shiftedY) / radius;
+            const { roundedQ, roundedR } = roundPointyHexAxial(q, r);
+            occupiedKeys.add(`${roundedQ}:${roundedR}`);
+          }
+        }
+        const vertexOffsets = getPointyHexVertexOffsets(cellSize);
+        for (const tile of hexTiles) {
+          if (
+            isTokenTarget &&
+            occupiedKeys &&
+            !occupiedKeys.has(`${tile.q}:${tile.r}`)
+          ) {
+            continue;
+          }
+          const center = pointyHexCenterFromAxial(
+            tile.q,
+            tile.r,
+            gridConfig.originX,
+            gridConfig.originY,
+            cellSize,
+          );
+          const hexPts: number[] = [];
+          for (const v of vertexOffsets) {
+            hexPts.push(center.x + v.x, center.y + v.y);
+          }
+          overlayLayer.poly(hexPts, true).fill({ color: 0x38bdf8, alpha: 0.18 });
+        }
+      }
+    }
+  };
+
   const syncCameraTransform = () => {
     const app = appRef.current;
     const stageGraph = stageGraphRef.current;
@@ -1059,6 +1250,7 @@ export default function BattleMapRuntimeCanvas({
   useEffect(() => {
     tokensRef.current = tokens;
     syncTokenLayer();
+    syncOverlayLayer();
   }, [tokens]);
 
   useEffect(() => {
@@ -1085,6 +1277,16 @@ export default function BattleMapRuntimeCanvas({
   useEffect(() => {
     void syncMapImage();
   }, [runtimeConfig.map.imageSrc]);
+
+  useEffect(() => {
+    onCastingAngleChangeRef.current = onCastingAngleChange;
+  }, [onCastingAngleChange]);
+
+  useEffect(() => {
+    castingStateRef.current = castingState;
+    overlayTileCacheRef.current = null;
+    syncOverlayLayer();
+  }, [castingState]);
 
   useEffect(() => {
     let isDisposed = false;
@@ -1126,20 +1328,24 @@ export default function BattleMapRuntimeCanvas({
       const mapContainer = new Container();
       const imageContainer = new Container();
       const gridContainer = new Container();
+      const rangeOverlayContainer = new Container();
       const tokenContainer = new Container();
       tokenContainer.sortableChildren = true;
       const uiContainer = new Container();
       const backgroundLayer = new Graphics();
       const mapLayer = new Graphics();
       const gridLayer = new Graphics();
+      const rangeOverlayLayer = new Graphics();
 
       backgroundContainer.addChild(backgroundLayer);
       mapContainer.addChild(mapLayer);
       gridContainer.addChild(gridLayer);
+      rangeOverlayContainer.addChild(rangeOverlayLayer);
       worldContainer.addChild(backgroundContainer);
       worldContainer.addChild(mapContainer);
       worldContainer.addChild(imageContainer);
       worldContainer.addChild(gridContainer);
+      worldContainer.addChild(rangeOverlayContainer);
       worldContainer.addChild(tokenContainer);
       app.stage.addChild(worldContainer);
       app.stage.addChild(uiContainer);
@@ -1210,23 +1416,43 @@ export default function BattleMapRuntimeCanvas({
         wheelCanvas.removeEventListener('wheel', handleWheel);
       };
 
+      const handlePointerMove = (event: PointerEvent) => {
+        const state = castingStateRef.current;
+        if (!state) return;
+        const worldPoint = getWorldPointFromClient(event.clientX, event.clientY);
+        if (!worldPoint) return;
+        const angle = Math.atan2(
+          worldPoint.y - state.casterY,
+          worldPoint.x - state.casterX,
+        );
+        onCastingAngleChangeRef.current(angle);
+      };
+
+      wheelCanvas.addEventListener('pointermove', handlePointerMove);
+      removePointerMoveListenerRef.current = () => {
+        wheelCanvas.removeEventListener('pointermove', handlePointerMove);
+      };
+
       stageGraphRef.current = {
         worldContainer,
         backgroundContainer,
         mapContainer,
         imageContainer,
         gridContainer,
+        rangeOverlayContainer,
         tokenContainer,
         uiContainer,
         backgroundLayer,
         mapLayer,
         gridLayer,
+        rangeOverlayLayer,
       };
 
       syncBaseLayers();
       syncCameraTransform();
       syncGridLayer();
       syncTokenLayer();
+      syncOverlayLayer();
       void syncMapImage();
 
       resizeObserver = new ResizeObserver(() => {
@@ -1240,6 +1466,7 @@ export default function BattleMapRuntimeCanvas({
         syncCameraTransform();
         syncGridLayer();
         syncTokenLayer();
+        syncOverlayLayer();
       });
       resizeObserver.observe(hostElement);
     };
@@ -1256,6 +1483,7 @@ export default function BattleMapRuntimeCanvas({
       removeDragListeners();
       removeCameraPanListeners();
       removeWheelListener();
+      removePointerMoveListener();
       clearTokenDisplays();
       removeMapSprite();
       stageGraphRef.current = null;

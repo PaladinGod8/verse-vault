@@ -5,6 +5,7 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
+import AbilityPickerPanel from '../components/runtime/AbilityPickerPanel';
 import BattleMapRuntimeCanvas, {
   type RuntimeSceneToken,
 } from '../components/runtime/BattleMapRuntimeCanvas';
@@ -172,6 +173,8 @@ export default function BattleMapRuntimePage() {
   const [selectedRuntimeTokenInstanceId, setSelectedRuntimeTokenInstanceId] =
     useState<string | null>(null);
   const [showInvisibleTokens, setShowInvisibleTokens] = useState(true);
+  const [castingAbility, setCastingAbility] = useState<Ability | null>(null);
+  const [castingAngleRad, setCastingAngleRad] = useState<number>(0);
 
   const battleMapConfigRef = useRef<Record<string, unknown> | null>(null);
   const runtimeConfigRef = useRef<BattleMapRuntimeConfig | null>(null);
@@ -578,6 +581,18 @@ export default function BattleMapRuntimePage() {
   }, [runtimeTokens, selectedRuntimeTokenInstanceId]);
 
   useEffect(() => {
+    setCastingAbility(null);
+  }, [selectedRuntimeTokenInstanceId]);
+
+  const selectedToken = useMemo(
+    () =>
+      runtimeTokens.find(
+        (t) => t.instanceId === selectedRuntimeTokenInstanceId,
+      ) ?? null,
+    [runtimeTokens, selectedRuntimeTokenInstanceId],
+  );
+
+  useEffect(() => {
     let isMounted = true;
     clearRuntimeSaveTimer();
     setIsSavingRuntimeConfig(false);
@@ -914,7 +929,7 @@ export default function BattleMapRuntimePage() {
               onRemovePlacedToken={handleRemoveRuntimeToken}
             />
 
-            <div className="h-[55vh] min-h-[320px]">
+            <div className="relative h-[55vh] min-h-[320px]">
               {runtimeConfig ? (
                 <BattleMapRuntimeCanvas
                   runtimeConfig={runtimeConfig}
@@ -922,8 +937,30 @@ export default function BattleMapRuntimePage() {
                   selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
                   onTokenSelect={handleSelectRuntimeToken}
                   onTokenMove={handleMoveRuntimeToken}
+                  castingState={
+                    castingAbility !== null && selectedToken !== null
+                      ? {
+                          casterX: selectedToken.x,
+                          casterY: selectedToken.y,
+                          ability: castingAbility,
+                          angleRad: castingAngleRad,
+                        }
+                      : null
+                  }
+                  onCastingAngleChange={setCastingAngleRad}
                   className="h-full w-full"
                 />
+              ) : null}
+
+              {selectedRuntimeTokenInstanceId !== null &&
+              worldId !== null ? (
+                <div className="absolute right-3 top-3 w-56">
+                  <AbilityPickerPanel
+                    worldId={worldId}
+                    castingAbility={castingAbility}
+                    onAbilitySelect={setCastingAbility}
+                  />
+                </div>
               ) : null}
             </div>
           </div>
