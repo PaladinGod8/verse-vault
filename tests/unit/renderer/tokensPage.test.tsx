@@ -396,7 +396,7 @@ describe('TokensPage', () => {
       world_id: 1,
       name: 'Arc Wolf',
       grid_type: 'square',
-      image_src: null,
+      image_src: undefined,
       is_visible: 1,
     });
     await waitFor(() => {
