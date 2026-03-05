@@ -54,6 +54,10 @@ contextBridge.exposeInMainWorld('db', {
       pick_count?: number | null;
       pick_timing?: string | null;
       pick_is_permanent?: number;
+      range_cells?: number | null;
+      aoe_shape?: 'circle' | 'rectangle' | 'cone' | 'line' | null;
+      aoe_size_cells?: number | null;
+      target_type?: 'tile' | 'token' | null;
     }): Promise<Ability> => ipcRenderer.invoke(IPC.ABILITIES_ADD, data),
     update: (
       id: number,
@@ -70,6 +74,10 @@ contextBridge.exposeInMainWorld('db', {
         pick_count?: number | null;
         pick_timing?: string | null;
         pick_is_permanent?: number;
+        range_cells?: number | null;
+        aoe_shape?: 'circle' | 'rectangle' | 'cone' | 'line' | null;
+        aoe_size_cells?: number | null;
+        target_type?: 'tile' | 'token' | null;
       },
     ): Promise<Ability> => ipcRenderer.invoke(IPC.ABILITIES_UPDATE, id, data),
     delete: (id: number): Promise<{ id: number }> =>
