@@ -482,9 +482,8 @@ describe('TokenForm', () => {
       name: 'Footprint Painter',
     });
 
-    const initialFootprintEl = within(painterDialog).getByTestId(
-      'initial-footprint',
-    );
+    const initialFootprintEl =
+      within(painterDialog).getByTestId('initial-footprint');
     const initialFootprint = JSON.parse(initialFootprintEl.textContent!);
     expect(initialFootprint.grid_type).toBe('square');
     expect(initialFootprint.square_cells).toEqual([{ col: 0, row: 0 }]);
@@ -508,9 +507,8 @@ describe('TokenForm', () => {
       name: 'Footprint Painter',
     });
 
-    const initialFootprintEl = within(painterDialog).getByTestId(
-      'initial-footprint',
-    );
+    const initialFootprintEl =
+      within(painterDialog).getByTestId('initial-footprint');
     const initialFootprint = JSON.parse(initialFootprintEl.textContent!);
     expect(initialFootprint.grid_type).toBe('hex');
     expect(initialFootprint.hex_cells).toEqual([{ q: 0, r: 0 }]);
