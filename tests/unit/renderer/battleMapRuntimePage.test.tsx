@@ -33,19 +33,37 @@ vi.mock(
   () => ({
     default: ({
       tokens,
+      selectedTokenInstanceId,
       onTokenSelect,
       onTokenMove,
+      castingState,
+      onCastingAngleChange,
     }: {
       tokens: Array<{ instanceId: string; x: number; y: number }>;
+      selectedTokenInstanceId: string | null;
       onTokenSelect: (tokenInstanceId: string | null) => void;
       onTokenMove: (
         tokenInstanceId: string,
         position: { x: number; y: number },
       ) => void;
+      castingState: {
+        casterX: number;
+        casterY: number;
+        angleRad: number;
+        ability: Ability;
+      } | null;
+      onCastingAngleChange: (angleRad: number) => void;
     }) => (
       <div data-testid="runtime-canvas">
         Runtime Canvas Mock
         <p>Canvas Tokens: {tokens.length}</p>
+        <p>Canvas Selected Token: {selectedTokenInstanceId ?? 'none'}</p>
+        <p>
+          Casting:{' '}
+          {castingState
+            ? `${castingState.ability.name}|${castingState.angleRad.toFixed(2)}`
+            : 'none'}
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -59,12 +77,28 @@ vi.mock(
         <button
           type="button"
           onClick={() => {
+            if (tokens[1]) {
+              onTokenSelect(tokens[1].instanceId);
+            }
+          }}
+        >
+          Select Second Runtime Token
+        </button>
+        <button
+          type="button"
+          onClick={() => {
             if (tokens[0]) {
               onTokenMove(tokens[0].instanceId, { x: 111, y: 222 });
             }
           }}
         >
           Move First Runtime Token
+        </button>
+        <button type="button" onClick={() => onTokenSelect(null)}>
+          Deselect Runtime Token
+        </button>
+        <button type="button" onClick={() => onCastingAngleChange(Math.PI / 3)}>
+          Rotate Casting Angle
         </button>
       </div>
     ),
@@ -253,19 +287,47 @@ vi.mock('../../../src/renderer/components/runtime/AbilityPickerPanel', () => ({
     worldId: number;
     castingAbility: Ability | null;
     onAbilitySelect: (ability: Ability | null) => void;
-  }) => (
-    <div data-testid="ability-picker-panel">
-      <p>Ability Picker (World: {worldId})</p>
-      <button type="button" onClick={() => onAbilitySelect(null)}>
-        Close Ability Picker
-      </button>
-      {castingAbility ? (
-        <p>Selected: {castingAbility.name}</p>
-      ) : (
-        <p>No ability selected</p>
-      )}
-    </div>
-  ),
+  }) => {
+    const castableAbility: Ability = {
+      id: 901,
+      world_id: worldId,
+      name: 'Castable Bolt',
+      description: null,
+      type: 'active',
+      passive_subtype: null,
+      level_id: null,
+      effects: '[]',
+      conditions: '[]',
+      cast_cost: '{}',
+      trigger: null,
+      pick_count: null,
+      pick_timing: null,
+      pick_is_permanent: 0,
+      range_cells: 6,
+      aoe_shape: 'line',
+      aoe_size_cells: 1,
+      target_type: 'tile',
+      created_at: '2026-03-05 00:00:00',
+      updated_at: '2026-03-05 00:00:00',
+    };
+
+    return (
+      <div data-testid="ability-picker-panel">
+        <p>Ability Picker (World: {worldId})</p>
+        <button type="button" onClick={() => onAbilitySelect(castableAbility)}>
+          Pick Castable Ability
+        </button>
+        <button type="button" onClick={() => onAbilitySelect(null)}>
+          Close Ability Picker
+        </button>
+        {castingAbility ? (
+          <p>Selected: {castingAbility.name}</p>
+        ) : (
+          <p>No ability selected</p>
+        )}
+      </div>
+    );
+  },
 }));
 
 const battlemapsGetByIdMock = vi.fn();
@@ -803,49 +865,76 @@ describe('BattleMapRuntimePage', () => {
     expect(await screen.findByText('Placed Tokens: 3')).toBeInTheDocument();
   });
 
-  it('renders AbilityPickerPanel when a token is selected', async () => {
-    const baseBattleMap = buildBattleMap();
-    battlemapsGetByIdMock.mockResolvedValue(baseBattleMap);
+  it('shows and hides AbilityPickerPanel as runtime token selection changes', async () => {
+    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
     campaignsGetAllByWorldMock.mockResolvedValue([buildCampaign()]);
     tokensGetAllByCampaignMock.mockResolvedValue([buildToken()]);
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
+    expect(await screen.findByText('Campaign Tokens: 1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('ability-picker-panel'),
+    ).not.toBeInTheDocument();
 
-    // Select first runtime token
+    fireEvent.click(screen.getByRole('button', { name: 'Add First Token' }));
     fireEvent.click(
-      screen.getByRole('button', { name: 'Select First Runtime Token' }),
+      screen.getByRole('button', { name: 'Select First Placed Token' }),
     );
+    expect(
+      await screen.findByTestId('ability-picker-panel'),
+    ).toBeInTheDocument();
 
-    // Runtime page continues to function when token is selected
-    // The AbilityPickerPanel would render when token is selected in production
-    // For test purposes, verify the runtime canvas remains available
-    expect(screen.getByTestId('runtime-canvas')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Deselect Runtime Token' }),
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('ability-picker-panel'),
+      ).not.toBeInTheDocument();
+    });
   });
 
-  it('hides AbilityPickerPanel when deselecting token (token select set to null)', async () => {
-    const baseBattleMap = buildBattleMap();
-    battlemapsGetByIdMock.mockResolvedValue(baseBattleMap);
+  it('passes casting state to canvas and clears it when picker closes', async () => {
+    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
     campaignsGetAllByWorldMock.mockResolvedValue([buildCampaign()]);
     tokensGetAllByCampaignMock.mockResolvedValue([buildToken()]);
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
+    expect(await screen.findByText('Campaign Tokens: 1')).toBeInTheDocument();
 
-    // Select first runtime token
+    fireEvent.click(screen.getByRole('button', { name: 'Add First Token' }));
     fireEvent.click(
-      screen.getByRole('button', { name: 'Select First Runtime Token' }),
+      screen.getByRole('button', { name: 'Select First Placed Token' }),
     );
+    expect(
+      await screen.findByTestId('ability-picker-panel'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Casting: none')).toBeInTheDocument();
 
-    // Runtime page accepts user interaction with token selection
-    // The AbilityPickerPanel state would toggle based on token selection in production
-    // For test purposes, verify the runtime page remains functional
-    expect(screen.getByTestId('runtime-canvas')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Pick Castable Ability' }),
+    );
+    expect(
+      await screen.findByText('Casting: Castable Bolt|0.00'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate Casting Angle' }),
+    );
+    expect(
+      await screen.findByText('Casting: Castable Bolt|1.05'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Close Ability Picker' }),
+    );
+    expect(await screen.findByText('Casting: none')).toBeInTheDocument();
   });
 
-  it('resets castingAbility to null when selecting a different token', async () => {
-    const baseBattleMap = buildBattleMap();
-    battlemapsGetByIdMock.mockResolvedValue(baseBattleMap);
+  it('resets casting ability when selecting a different runtime token', async () => {
+    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
     campaignsGetAllByWorldMock.mockResolvedValue([buildCampaign()]);
     tokensGetAllByCampaignMock.mockResolvedValue([
       buildToken({ id: 71, name: 'Token A' }),
@@ -854,10 +943,39 @@ describe('BattleMapRuntimePage', () => {
 
     renderRuntimePage('/world/1/battlemaps/61/runtime');
     expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
+    expect(await screen.findByText('Campaign Tokens: 2')).toBeInTheDocument();
 
-    // Runtime page with token selection is ready
-    // The AbilityPickerPanel mock is configured and will render when needed
-    // Verify the page rendered successfully with the canvas
-    expect(screen.getByTestId('runtime-canvas')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add First Token' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add Second Token' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select Second Runtime Token' }),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Pick Castable Ability' }),
+    );
+    expect(
+      await screen.findByText('Casting: Castable Bolt|0.00'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select First Placed Token' }),
+    );
+    expect(await screen.findByText('Casting: none')).toBeInTheDocument();
+  });
+
+  it('does not add tokens whose grid type does not match active runtime grid', async () => {
+    battlemapsGetByIdMock.mockResolvedValue(buildBattleMap());
+    campaignsGetAllByWorldMock.mockResolvedValue([buildCampaign()]);
+    tokensGetAllByCampaignMock.mockResolvedValue([
+      buildToken({ id: 71, grid_type: 'hex' }),
+    ]);
+
+    renderRuntimePage('/world/1/battlemaps/61/runtime');
+    expect(await screen.findByText('Runtime Canvas')).toBeInTheDocument();
+    expect(await screen.findByText('Campaign Tokens: 1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add First Token' }));
+    expect(screen.getByText('Placed Tokens: 0')).toBeInTheDocument();
   });
 });

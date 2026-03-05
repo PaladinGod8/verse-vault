@@ -131,6 +131,12 @@ vi.mock('pixi.js', () => {
       return this;
     }
 
+    poly(points: number[] | { points: number[] }, closePath: boolean): this {
+      void points;
+      void closePath;
+      return this;
+    }
+
     moveTo(x: number, y: number): this {
       void x;
       void y;
@@ -182,6 +188,14 @@ vi.mock('pixi.js', () => {
       public width: number,
       public height: number,
     ) {}
+  }
+
+  class MockPolygon {
+    points: number[];
+
+    constructor(points: number[]) {
+      this.points = points;
+    }
   }
 
   class MockTicker {
@@ -236,6 +250,7 @@ vi.mock('pixi.js', () => {
     Circle: MockCircle,
     Container: MockContainer,
     Graphics: MockGraphics,
+    Polygon: MockPolygon,
     Rectangle: MockRectangle,
     Sprite: MockSprite,
   };
@@ -336,6 +351,32 @@ function buildRuntimeToken(
     sourceMissing: false,
     x: 0,
     y: 0,
+    ...overrides,
+  };
+}
+
+function buildAbility(overrides: Partial<Ability> = {}): Ability {
+  return {
+    id: 200,
+    world_id: 1,
+    name: 'Arc Bolt',
+    description: null,
+    type: 'active',
+    passive_subtype: null,
+    level_id: null,
+    effects: '[]',
+    conditions: '[]',
+    cast_cost: '{}',
+    trigger: null,
+    pick_count: null,
+    pick_timing: null,
+    pick_is_permanent: 0,
+    range_cells: 4,
+    aoe_shape: 'line',
+    aoe_size_cells: 2,
+    target_type: 'tile',
+    created_at: '2026-03-05 00:00:00',
+    updated_at: '2026-03-05 00:00:00',
     ...overrides,
   };
 }
@@ -1042,6 +1083,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-missing'}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -1049,5 +1092,207 @@ describe('BattleMapRuntimeCanvas', () => {
       expect(pixiState.appInstances).toHaveLength(1);
     });
     expect(getApp().ticker.add).not.toHaveBeenCalled();
+  });
+
+  it('updates casting angle from pointer movement only when casting state is active', async () => {
+    const onCastingAngleChange = vi.fn();
+    const castingState = {
+      casterX: 0,
+      casterY: 0,
+      angleRad: 0,
+      ability: buildAbility({
+        id: 301,
+        aoe_shape: 'cone',
+        target_type: 'tile',
+      }),
+    };
+
+    const { rerender } = render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={castingState}
+        onCastingAngleChange={onCastingAngleChange}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(pixiState.appInstances).toHaveLength(1);
+    });
+
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+      .canvas;
+    canvas.dispatchEvent(
+      createPointerEvent('pointermove', {
+        pointerId: 1,
+        clientX: 700,
+        clientY: 300,
+      }),
+    );
+    expect(onCastingAngleChange).toHaveBeenCalled();
+
+    const callsBeforeDisable = onCastingAngleChange.mock.calls.length;
+    rerender(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={onCastingAngleChange}
+      />,
+    );
+
+    canvas.dispatchEvent(
+      createPointerEvent('pointermove', {
+        pointerId: 1,
+        clientX: 710,
+        clientY: 310,
+      }),
+    );
+    expect(onCastingAngleChange.mock.calls.length).toBe(callsBeforeDisable);
+  });
+
+  it('guards overlay when casting ability has null range_cells', async () => {
+    const warnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined);
+
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({ grid: { mode: 'square' } })}
+        tokens={[buildRuntimeToken({ x: 25, y: 25 })]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={{
+          casterX: 25,
+          casterY: 25,
+          angleRad: 0,
+          ability: buildAbility({
+            id: 302,
+            range_cells: null,
+            aoe_shape: null,
+          }),
+        }}
+        onCastingAngleChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(warnSpy).toHaveBeenCalled();
+    });
+  });
+
+  it('executes square casting overlay branches including token targeting and cache reuse', async () => {
+    const castingAbility = buildAbility({
+      id: 303,
+      aoe_shape: 'line',
+      target_type: 'token',
+      aoe_size_cells: 2,
+    });
+    const castingState = {
+      casterX: 0,
+      casterY: 0,
+      angleRad: 0,
+      ability: castingAbility,
+    };
+
+    const { rerender } = render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({
+          grid: { mode: 'square', cellSize: 50, originX: 0, originY: 0 },
+        })}
+        tokens={[
+          buildRuntimeToken({ instanceId: 'runtime-token-1', x: 25, y: 25 }),
+          buildRuntimeToken({ instanceId: 'runtime-token-2', x: 75, y: 25 }),
+        ]}
+        selectedTokenInstanceId={'runtime-token-1'}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={castingState}
+        onCastingAngleChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(pixiState.appInstances).toHaveLength(1);
+    });
+
+    // Same key hits tile cache branch.
+    rerender(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({
+          grid: { mode: 'square', cellSize: 50, originX: 0, originY: 0 },
+        })}
+        tokens={[
+          buildRuntimeToken({ instanceId: 'runtime-token-1', x: 25, y: 25 }),
+          buildRuntimeToken({ instanceId: 'runtime-token-2', x: 75, y: 25 }),
+        ]}
+        selectedTokenInstanceId={'runtime-token-1'}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={castingState}
+        onCastingAngleChange={vi.fn()}
+      />,
+    );
+
+    // Angle-dependent shape with changed angle invalidates cache and recomputes.
+    rerender(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({
+          grid: { mode: 'square', cellSize: 50, originX: 0, originY: 0 },
+        })}
+        tokens={[
+          buildRuntimeToken({ instanceId: 'runtime-token-1', x: 25, y: 25 }),
+          buildRuntimeToken({ instanceId: 'runtime-token-2', x: 75, y: 25 }),
+        ]}
+        selectedTokenInstanceId={'runtime-token-2'}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={{ ...castingState, angleRad: Math.PI / 4 }}
+        onCastingAngleChange={vi.fn()}
+      />,
+    );
+
+    expect(pixiState.appInstances).toHaveLength(1);
+  });
+
+  it('executes hex casting overlay branches for token-target abilities', async () => {
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig({
+          grid: { mode: 'hex', cellSize: 50, originX: 0, originY: 0 },
+        })}
+        tokens={[
+          buildRuntimeToken({ instanceId: 'runtime-token-h1', x: 0, y: 0 }),
+          buildRuntimeToken({ instanceId: 'runtime-token-h2', x: 43.3, y: 75 }),
+        ]}
+        selectedTokenInstanceId={'runtime-token-h1'}
+        onTokenSelect={vi.fn()}
+        onTokenMove={vi.fn()}
+        castingState={{
+          casterX: 0,
+          casterY: 0,
+          angleRad: Math.PI / 6,
+          ability: buildAbility({
+            id: 304,
+            aoe_shape: 'cone',
+            target_type: 'token',
+            range_cells: 5,
+            aoe_size_cells: 2,
+          }),
+        }}
+        onCastingAngleChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(pixiState.appInstances).toHaveLength(1);
+    });
   });
 });

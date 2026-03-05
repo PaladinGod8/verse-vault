@@ -309,4 +309,63 @@ describe('preload', () => {
 
     expect(invokeMock).toHaveBeenCalledWith(IPC.TOKENS_IMPORT_IMAGE, payload);
   });
+
+  it('throws error when tokens.importImage receives non-Uint8Array bytes', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const invalidPayload = {
+      fileName: 'wolf.png',
+      mimeType: 'image/png',
+      bytes: [1, 2, 3],
+    } as unknown as TokenImageImportPayload;
+
+    try {
+      await api.tokens.importImage(invalidPayload);
+      expect.fail('Should have thrown an error');
+    } catch (err) {
+      expect((err as Error).message).toBe(
+        'Token image bytes must be a Uint8Array',
+      );
+    }
+  });
+
+  it('forwards worlds.importImage to WORLDS_IMPORT_IMAGE', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const payload: TokenImageImportPayload = {
+      fileName: 'world.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([4, 5, 6]),
+    };
+
+    await api.worlds.importImage(payload);
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.WORLDS_IMPORT_IMAGE, {
+      fileName: 'world.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([4, 5, 6]),
+    });
+  });
+
+  it('throws error when worlds.importImage receives non-Uint8Array bytes', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const invalidPayload = {
+      fileName: 'world.png',
+      mimeType: 'image/png',
+      bytes: { data: [1, 2, 3] },
+    } as unknown as TokenImageImportPayload;
+
+    try {
+      await api.worlds.importImage(invalidPayload);
+      expect.fail('Should have thrown an error');
+    } catch (err) {
+      expect((err as Error).message).toBe(
+        'World image bytes must be a Uint8Array',
+      );
+    }
+  });
 });
