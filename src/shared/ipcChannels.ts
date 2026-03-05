@@ -10,6 +10,7 @@ export const IPC = {
   WORLDS_UPDATE: 'db:worlds:update',
   WORLDS_DELETE: 'db:worlds:delete',
   WORLDS_MARK_VIEWED: 'db:worlds:markViewed',
+  WORLDS_IMPORT_IMAGE: 'db:worlds:importImage',
   LEVELS_GET_ALL_BY_WORLD: 'db:levels:getAllByWorld',
   LEVELS_GET_BY_ID: 'db:levels:getById',
   LEVELS_ADD: 'db:levels:add',

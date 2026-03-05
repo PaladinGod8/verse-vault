@@ -43,6 +43,7 @@ const TOKEN_IMAGE_MIME_TO_EXTENSION = {
 const TOKEN_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const TOKEN_IMAGE_PROTOCOL = 'vv-media';
 const TOKEN_IMAGE_HOST = 'token-images';
+const WORLD_IMAGE_HOST = 'world-images';
 
 const DEFAULT_BATTLEMAP_RUNTIME_CONFIG = {
   grid: {
@@ -354,17 +355,31 @@ function buildTokenImageMediaUrl(fileName: string): string {
   return `${TOKEN_IMAGE_PROTOCOL}://${TOKEN_IMAGE_HOST}/${encodeURIComponent(fileName)}`;
 }
 
+function worldImagesDirectoryPath(): string {
+  return path.join(app.getPath('userData'), 'world-images');
+}
+
+function buildWorldImageMediaUrl(fileName: string): string {
+  return `${TOKEN_IMAGE_PROTOCOL}://${WORLD_IMAGE_HOST}/${encodeURIComponent(fileName)}`;
+}
+
 function registerTokenImageProtocol(): void {
   protocol.handle(TOKEN_IMAGE_PROTOCOL, async (request) => {
     let requestUrl: URL;
     try {
       requestUrl = new URL(request.url);
     } catch {
-      return new Response('Invalid token image request URL', { status: 400 });
+      return new Response('Invalid media request URL', { status: 400 });
     }
 
-    if (requestUrl.hostname !== TOKEN_IMAGE_HOST) {
-      return new Response('Token image not found', { status: 404 });
+    // Resolve which directory to serve from based on the URL host.
+    let imagesDir: string;
+    if (requestUrl.hostname === TOKEN_IMAGE_HOST) {
+      imagesDir = path.resolve(tokenImagesDirectoryPath());
+    } else if (requestUrl.hostname === WORLD_IMAGE_HOST) {
+      imagesDir = path.resolve(worldImagesDirectoryPath());
+    } else {
+      return new Response('Media host not found', { status: 404 });
     }
 
     const requestedPath = decodeURIComponent(requestUrl.pathname).replace(
@@ -373,19 +388,18 @@ function registerTokenImageProtocol(): void {
     );
     const fileName = path.basename(requestedPath);
     if (!fileName || fileName !== requestedPath) {
-      return new Response('Invalid token image path', { status: 400 });
+      return new Response('Invalid media path', { status: 400 });
     }
 
-    const tokenImagesDir = path.resolve(tokenImagesDirectoryPath());
-    const filePath = path.resolve(path.join(tokenImagesDir, fileName));
-    if (path.dirname(filePath) !== tokenImagesDir) {
-      return new Response('Invalid token image path', { status: 400 });
+    const filePath = path.resolve(path.join(imagesDir, fileName));
+    if (path.dirname(filePath) !== imagesDir) {
+      return new Response('Invalid media path', { status: 400 });
     }
 
     try {
       return await net.fetch(pathToFileURL(filePath).toString());
     } catch {
-      return new Response('Token image not found', { status: 404 });
+      return new Response('Media file not found', { status: 404 });
     }
   });
 }
@@ -770,6 +784,28 @@ function registerIpcHandlers() {
     ).run(id);
     return db.prepare('SELECT * FROM worlds WHERE id = ?').get(id) ?? null;
   });
+
+  ipcMain.handle(
+    IPC.WORLDS_IMPORT_IMAGE,
+    async (
+      _event,
+      payload: TokenImageImportPayload,
+    ): Promise<TokenImageImportResult> => {
+      const { mimeType, bytes } = ensureTokenImageImportPayload(payload);
+
+      const worldImagesDir = worldImagesDirectoryPath();
+      await mkdir(worldImagesDir, { recursive: true });
+
+      const extension = TOKEN_IMAGE_MIME_TO_EXTENSION[mimeType];
+      const uniqueFileName = `${Date.now()}-${randomUUID()}.${extension}`;
+      const savedAbsolutePath = path.join(worldImagesDir, uniqueFileName);
+      await writeFile(savedAbsolutePath, bytes);
+
+      return {
+        image_src: buildWorldImageMediaUrl(uniqueFileName),
+      };
+    },
+  );
 
   ipcMain.handle(IPC.LEVELS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
     return db
