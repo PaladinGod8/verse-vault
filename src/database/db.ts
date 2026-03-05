@@ -160,6 +160,7 @@ function initializeSchema(db: Database.Database): void {
   runTokenGridTypeMigration(db);
   ensureTokenCampaignIdIndex(db);
   ensureTokenWorldIdIndex(db);
+  runAbilitiesRangeShapeTargetMigration(db);
 }
 
 function runArcActMigration(db: Database.Database): void {
@@ -371,6 +372,22 @@ function runSessionPlannedAtMigration(db: Database.Database): void {
   }
 
   db.exec('ALTER TABLE sessions ADD COLUMN planned_at TEXT');
+}
+
+function runAbilitiesRangeShapeTargetMigration(db: Database.Database): void {
+  const addColumn = (sql: string) => {
+    try {
+      db.exec(sql);
+    } catch {}
+  };
+  addColumn(`ALTER TABLE abilities ADD COLUMN range_cells INTEGER`);
+  addColumn(
+    `ALTER TABLE abilities ADD COLUMN aoe_shape TEXT CHECK (aoe_shape IS NULL OR aoe_shape IN ('circle','rectangle','cone','line'))`,
+  );
+  addColumn(`ALTER TABLE abilities ADD COLUMN aoe_size_cells INTEGER`);
+  addColumn(
+    `ALTER TABLE abilities ADD COLUMN target_type TEXT CHECK (target_type IS NULL OR target_type IN ('tile','token'))`,
+  );
 }
 
 export function closeDatabase(): void {

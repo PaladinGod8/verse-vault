@@ -338,7 +338,7 @@
 - **IPC**: contracts exist from Step 01; runtime handlers still not wired in this step
 - **Main handler**: not wired in this step
 - **Preload bridge**: not wired in this step
-- **Storage**: `verse-vault.db` -> `abilities` table (`id`, `world_id`, `name`, `description`, `type`, `passive_subtype`, `level_id`, `effects`, `conditions`, `cast_cost`, `trigger`, `pick_count`, `pick_timing`, `pick_is_permanent`, `created_at`, `updated_at`) and `ability_children` (`id`, `parent_id`, `child_id`, `UNIQUE(parent_id, child_id)`)
+- **Storage**: `verse-vault.db` -> `abilities` table (`id`, `world_id`, `name`, `description`, `type`, `passive_subtype`, `level_id`, `effects`, `conditions`, `cast_cost`, `trigger`, `pick_count`, `pick_timing`, `pick_is_permanent`, `created_at`, `updated_at`; extended in Casting Range Overlay Step 01 (2026-03-05) with nullable `range_cells INTEGER`, `aoe_shape TEXT CHECK IN (circle|rectangle|cone|line)`, `aoe_size_cells INTEGER`, `target_type TEXT CHECK IN (tile|token)`) and `ability_children` (`id`, `parent_id`, `child_id`, `UNIQUE(parent_id, child_id)`)
 
 ### Ability Main Read Handlers (Step 03)
 

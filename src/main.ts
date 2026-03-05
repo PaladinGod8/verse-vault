@@ -1844,6 +1844,10 @@ function registerIpcHandlers() {
         pick_count?: number | null;
         pick_timing?: string | null;
         pick_is_permanent?: number;
+        range_cells?: number | null;
+        aoe_shape?: string | null;
+        aoe_size_cells?: number | null;
+        target_type?: string | null;
       },
     ) => {
       const name = typeof data.name === 'string' ? data.name.trim() : '';
@@ -1854,6 +1858,15 @@ function registerIpcHandlers() {
       if (!type) {
         throw new Error('Ability type is required');
       }
+
+      const rangeCells =
+        typeof data.range_cells === 'number' ? data.range_cells : null;
+      const aoeShape =
+        typeof data.aoe_shape === 'string' ? data.aoe_shape : null;
+      const aoeSizeCells =
+        typeof data.aoe_size_cells === 'number' ? data.aoe_size_cells : null;
+      const targetType =
+        typeof data.target_type === 'string' ? data.target_type : null;
 
       const result = db
         .prepare(
@@ -1871,9 +1884,13 @@ function registerIpcHandlers() {
             trigger,
             pick_count,
             pick_timing,
-            pick_is_permanent
+            pick_is_permanent,
+            range_cells,
+            aoe_shape,
+            aoe_size_cells,
+            target_type
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
         )
         .run(
@@ -1890,6 +1907,10 @@ function registerIpcHandlers() {
           data.pick_count ?? null,
           data.pick_timing ?? null,
           data.pick_is_permanent ?? 0,
+          rangeCells,
+          aoeShape,
+          aoeSizeCells,
+          targetType,
         );
 
       const ability = db
@@ -1920,6 +1941,10 @@ function registerIpcHandlers() {
         pick_count?: number | null;
         pick_timing?: string | null;
         pick_is_permanent?: number;
+        range_cells?: number | null;
+        aoe_shape?: string | null;
+        aoe_size_cells?: number | null;
+        target_type?: string | null;
       },
     ) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
@@ -2027,6 +2052,26 @@ function registerIpcHandlers() {
       if (hasPickIsPermanent && data.pick_is_permanent !== undefined) {
         setClauses.push('pick_is_permanent = ?');
         values.push(data.pick_is_permanent);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, 'range_cells')) {
+        setClauses.push('range_cells = ?');
+        values.push(data.range_cells ?? null);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, 'aoe_shape')) {
+        setClauses.push('aoe_shape = ?');
+        values.push(data.aoe_shape ?? null);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, 'aoe_size_cells')) {
+        setClauses.push('aoe_size_cells = ?');
+        values.push(data.aoe_size_cells ?? null);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, 'target_type')) {
+        setClauses.push('target_type = ?');
+        values.push(data.target_type ?? null);
       }
 
       const updateSql =
