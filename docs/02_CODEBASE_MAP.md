@@ -719,6 +719,17 @@
 - **Preload bridge**: unchanged in this step
 - **Storage**: renderer-only; native `wheel` DOM listener (non-passive) on the Pixi canvas normalises `deltaY` across DOM delta modes (pixel/line/page), scales zoom by `1.001^delta`, adjusts camera position to keep the world point under the cursor fixed, clamps via `clampCameraZoom`/`getEffectiveMinZoom`, cancels any active camera focus animation, and blocks zoom during active token drag.
 
+### Token Image Rendering Fix (Runtime Step 07)
+
+- **Purpose**: fix token images not rendering in the BattleMap runtime canvas — PixiJS blob workers can't access the `vv-media://` Electron custom protocol, so `Assets.load()` was silently falling back to the placeholder circle; CSP also blocked blob worker creation.
+- **Status**: fixed on 2026-03-05
+- **UI**: `src/renderer/components/runtime/BattleMapRuntimeCanvas.tsx` — `Assets.setPreferences({ preferWorkers: false, preferCreateImageBitmap: false })` called at `initializePixi` start so textures load via `new Image()` in the renderer main thread; `index.html` — added `worker-src blob:` to CSP.
+- **Store**: none
+- **IPC**: unchanged
+- **Main handler**: unchanged
+- **Preload bridge**: unchanged
+- **Storage**: renderer-only; no data model changes.
+
 ### Campaign Main CRUD Handlers (Step 07)
 
 - **Purpose**: add campaign CRUD handlers in main process scoped by world with explicit partial-update behavior

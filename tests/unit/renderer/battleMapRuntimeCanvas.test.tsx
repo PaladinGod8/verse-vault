@@ -231,6 +231,7 @@ vi.mock('pixi.js', () => {
     Assets: {
       load: pixiState.assetsLoadMock,
       unload: pixiState.assetsUnloadMock,
+      setPreferences: vi.fn(),
     },
     Circle: MockCircle,
     Container: MockContainer,

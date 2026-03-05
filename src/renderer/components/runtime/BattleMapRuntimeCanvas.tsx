@@ -10,6 +10,7 @@ import {
   Rectangle,
   Sprite,
 } from 'pixi.js';
+
 import type { FederatedPointerEvent } from 'pixi.js';
 import {
   clampCameraZoom,
@@ -1097,6 +1098,14 @@ export default function BattleMapRuntimeCanvas({
     }
 
     const initializePixi = async () => {
+      // Electron custom protocols (vv-media://) are not accessible from blob
+      // workers. Disable workers and ImageBitmap so PixiJS loads textures via
+      // new Image() in the renderer main thread where the protocol is available.
+      Assets.setPreferences({
+        preferWorkers: false,
+        preferCreateImageBitmap: false,
+      });
+
       const app = new Application();
       await app.init({
         antialias: true,
