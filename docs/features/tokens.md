@@ -105,10 +105,10 @@ Indexes:
 
 When creating a new token, a default footprint is applied automatically based on the selected grid type:
 
-| Grid Type | Default Footprint | Config fields set |
-|-----------|------------------|-------------------|
-| `square` | 1×1 — single center cell `{col: 0, row: 0}` | `square_cells`, `width_cells: 1`, `height_cells: 1` |
-| `hex` | 1-hex — single center cell `{q: 0, r: 0}` | `hex_cells`, `radius_cells: 1` |
+| Grid Type | Default Footprint                           | Config fields set                                   |
+| --------- | ------------------------------------------- | --------------------------------------------------- |
+| `square`  | 1×1 — single center cell `{col: 0, row: 0}` | `square_cells`, `width_cells: 1`, `height_cells: 1` |
+| `hex`     | 1-hex — single center cell `{q: 0, r: 0}`   | `hex_cells`, `radius_cells: 1`                      |
 
 The default applies in two scenarios:
 
