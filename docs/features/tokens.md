@@ -101,6 +101,28 @@ Indexes:
   - `Confirm` is disabled until at least one occupied cell is painted.
 - On confirm, painter returns deterministic `footprint` + `framing`; this is serialized into `TokenForm` submit payload `config`.
 
+### Default Footprint on Create
+
+When creating a new token, a default footprint is applied automatically based on the selected grid type:
+
+| Grid Type | Default Footprint | Config fields set |
+|-----------|------------------|-------------------|
+| `square` | 1×1 — single center cell `{col: 0, row: 0}` | `square_cells`, `width_cells: 1`, `height_cells: 1` |
+| `hex` | 1-hex — single center cell `{q: 0, r: 0}` | `hex_cells`, `radius_cells: 1` |
+
+The default applies in two scenarios:
+
+1. **Image upload path**: When the FootprintPainterModal opens, the center cell is pre-painted. The user can
+   confirm immediately (accepting the default) or adjust the footprint before confirming. If the user adjusts
+   cells, the painter's result is used — the default is not re-applied.
+
+2. **No-image path**: When a token is submitted without an image (the painter is never opened), the default
+   footprint is written into `config` automatically on submit.
+
+Default footprint is **only applied in create mode**. Edit mode is unchanged: the painter opens with the
+token's existing footprint (sourced from `Token.config`), and submitting without opening the painter preserves
+the existing stored config.
+
 ### Occupancy and Framing Config Shape
 
 Stored in `Token.config` JSON (additive, backward-compatible):
