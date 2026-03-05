@@ -168,7 +168,6 @@ describe('TokenForm', () => {
 
     expect(screen.getByLabelText('Name *')).toBeInTheDocument();
     expect(screen.getByLabelText('Grid Type *')).toHaveValue('square');
-    expect(screen.getByLabelText('Image URL')).toBeInTheDocument();
     expect(screen.getByText('Token Image Upload')).toBeInTheDocument();
     expect(
       screen.getByText('Accepted: PNG, JPEG, WEBP, GIF. Max 5 MB.'),
@@ -194,9 +193,6 @@ describe('TokenForm', () => {
 
     expect(screen.getByLabelText('Name *')).toHaveValue('Existing Token');
     expect(screen.getByLabelText('Grid Type *')).toHaveValue('hex');
-    expect(screen.getByLabelText('Image URL')).toHaveValue(
-      'https://assets.example/token.png',
-    );
     expect(screen.getByLabelText('Visible')).toBeChecked();
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
   });
@@ -228,7 +224,7 @@ describe('TokenForm', () => {
     const payload = onSave.mock.calls[0][0] as TokenFormValues;
     expect(payload.name).toBe('Wolf');
     expect(payload.grid_type).toBe('square');
-    expect(payload.image_src).toBeNull();
+    expect(payload.image_src).toBeUndefined();
     expect(payload.is_visible).toBe(1);
     expect(payload.clear_image).toBe(false);
     expect(payload.image_upload).toMatchObject({
@@ -307,7 +303,7 @@ describe('TokenForm', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('submits trimmed values and maps empty image_src to null', async () => {
+  it('submits trimmed name and no-image payload when no file is selected', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
 
@@ -315,14 +311,13 @@ describe('TokenForm', () => {
 
     await user.type(screen.getByLabelText('Name *'), '  Arc Wolf  ');
     await user.click(screen.getByLabelText('Visible'));
-    await user.type(screen.getByLabelText('Image URL'), '   ');
     await user.click(screen.getByRole('button', { name: 'Create' }));
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave).toHaveBeenCalledWith({
       name: 'Arc Wolf',
       grid_type: 'square',
-      image_src: null,
+      image_src: undefined,
       is_visible: 0,
       image_upload: undefined,
       clear_image: false,
@@ -390,7 +385,7 @@ describe('TokenForm', () => {
       mimeType: 'image/gif',
     });
     expect(replacePayload.clear_image).toBe(false);
-    expect(replacePayload.image_src).toBe('https://assets.example/current.png');
+    expect(replacePayload.image_src).toBeUndefined();
 
     rerender(
       <TokenForm
