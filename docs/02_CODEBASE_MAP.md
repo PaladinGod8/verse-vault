@@ -450,6 +450,17 @@
 - **Preload bridge**: unchanged in this step
 - **Storage**: unchanged in this step (renderer-only modal layout update with `max-h` + internal `overflow-y-auto`)
 
+### Casting Range Overlay — Ability Form UI (Step 02)
+
+- **Purpose**: surface `range_cells`, `aoe_shape`, `aoe_size_cells`, and `target_type` in the ability authoring form so GMs can set casting range and AoE metadata when creating or editing `type = active` abilities
+- **Status**: added on 2026-03-05
+- **UI**: `src/renderer/components/abilities/AbilityForm.tsx` — adds Range (cells) number input, AoE shape select (circle/rectangle/cone/line), AoE size (cells) number input (visible only when a shape is selected), and Target type select (tile/token) under the active-ability section; all four fields are cleared on type switch away from active; passive submit always sends all four as `null`
+- **Store**: none yet
+- **IPC**: unchanged (uses existing `IPC.ABILITIES_ADD` and `IPC.ABILITIES_UPDATE` via `window.db.abilities.add/update`; payload now includes `range_cells`, `aoe_shape`, `aoe_size_cells`, `target_type`)
+- **Main handler**: unchanged in this step (fields were wired in Casting Range Overlay Step 01)
+- **Preload bridge**: unchanged in this step
+- **Storage**: no schema change; fields were added in Casting Range Overlay Step 01; form now populates and submits them
+
 ### Campaign Shared Contract (Step 01)
 
 - **Purpose**: define shared IPC constant names for upcoming campaigns CRUD scoped by world
