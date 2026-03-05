@@ -118,10 +118,6 @@ describe('WorldsHomePage renderer behaviors', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Create world' });
     await user.type(within(dialog).getByLabelText('Name'), '  New Realm  ');
     await user.type(
-      within(dialog).getByLabelText('Thumbnail URL (optional)'),
-      'https://example.com/new.png',
-    );
-    await user.type(
       within(dialog).getByLabelText('Short description (optional)'),
       'Created in test',
     );
@@ -131,7 +127,7 @@ describe('WorldsHomePage renderer behaviors', () => {
 
     expect(worldsAddMock).toHaveBeenCalledWith({
       name: 'New Realm',
-      thumbnail: 'https://example.com/new.png',
+      thumbnail: null,
       short_description: 'Created in test',
     });
     expect(
