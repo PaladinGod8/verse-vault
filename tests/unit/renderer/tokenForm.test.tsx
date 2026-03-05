@@ -339,7 +339,8 @@ describe('TokenForm', () => {
     });
 
     const payload = onSave.mock.calls[0][0] as TokenFormValues;
-    const parsedConfig = JSON.parse(payload.config!);
+    expect(payload.config).toBeDefined();
+    const parsedConfig = JSON.parse(payload.config);
     expect(parsedConfig.footprint.square_cells).toEqual([{ col: 0, row: 0 }]);
     expect(parsedConfig.footprint.width_cells).toBe(1);
     expect(parsedConfig.footprint.height_cells).toBe(1);
@@ -464,7 +465,7 @@ describe('TokenForm', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     const payload = onSave.mock.calls[0][0] as TokenFormValues;
     expect(payload.config).toBeDefined();
-    const parsedConfig = JSON.parse(payload.config!);
+    const parsedConfig = JSON.parse(payload.config);
     expect(parsedConfig.footprint.hex_cells).toEqual([{ q: 0, r: 0 }]);
     expect(parsedConfig.footprint.radius_cells).toBe(0.5);
   });
@@ -484,7 +485,8 @@ describe('TokenForm', () => {
 
     const initialFootprintEl =
       within(painterDialog).getByTestId('initial-footprint');
-    const initialFootprint = JSON.parse(initialFootprintEl.textContent!);
+    expect(initialFootprintEl.textContent).toBeTruthy();
+    const initialFootprint = JSON.parse(initialFootprintEl.textContent as string);
     expect(initialFootprint.grid_type).toBe('square');
     expect(initialFootprint.square_cells).toEqual([{ col: 0, row: 0 }]);
     expect(initialFootprint.width_cells).toBe(1);
@@ -509,7 +511,8 @@ describe('TokenForm', () => {
 
     const initialFootprintEl =
       within(painterDialog).getByTestId('initial-footprint');
-    const initialFootprint = JSON.parse(initialFootprintEl.textContent!);
+    expect(initialFootprintEl.textContent).toBeTruthy();
+    const initialFootprint = JSON.parse(initialFootprintEl.textContent as string);
     expect(initialFootprint.grid_type).toBe('hex');
     expect(initialFootprint.hex_cells).toEqual([{ q: 0, r: 0 }]);
     expect(initialFootprint.radius_cells).toBe(0.5);
@@ -594,7 +597,7 @@ describe('TokenForm', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     const payload = onSave.mock.calls[0][0] as TokenFormValues;
     expect(payload.config).toBeDefined();
-    const parsedConfig = JSON.parse(payload.config!);
+    const parsedConfig = JSON.parse(payload.config);
     expect(parsedConfig.footprint.square_cells).toEqual([{ col: 0, row: 0 }]);
     expect(payload.image_upload).toBeDefined();
   });
