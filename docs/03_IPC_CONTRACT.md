@@ -5,9 +5,11 @@
 
 ## Scope Note
 
-Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, and scene CRUD handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, scene CRUD handlers, and statblock CRUD channel constants in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
+
+StatBlock Step 01 (2026-03-05) adds 6 channel constants (`STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `STATBLOCKS_GET_BY_ID`, `STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, `STATBLOCKS_DELETE`) and shared `StatBlock` interface plus `DbApi.statblocks` method signatures; no handlers or preload wiring yet.
 
 Casting Range Overlay Step 01 (2026-03-05) extends `ABILITIES_ADD` and `ABILITIES_UPDATE` payloads with four new optional fields (`range_cells`, `aoe_shape`, `aoe_size_cells`, `target_type`) and updates the `Ability` response type accordingly; no new channels added.
 
@@ -124,6 +126,12 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.SCENES_UPDATE`               | `db:scenes:update`            | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; payload?: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                 | `Scene`                                                                                                          | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_DELETE`               | `db:scenes:delete`            | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main.ts:registerIpcHandlers` |
 | `IPC.SCENES_MOVE_TO_SESSION`      | `db:scenes:moveToSession`     | renderer -> main | `sceneId: number, newSessionId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `Scene`                                                                                                          | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_GET_ALL_BY_WORLD`    | `db:statblocks:getAllByWorld`    | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock[]`                                                                                                    | _(contract only — no handler yet)_ |
+| `IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN` | `db:statblocks:getAllByCampaign` | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `StatBlock[]`                                                                                                    | _(contract only — no handler yet)_ |
+| `IPC.STATBLOCKS_GET_BY_ID`           | `db:statblocks:getById`         | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `StatBlock \| null`                                                                                              | _(contract only — no handler yet)_ |
+| `IPC.STATBLOCKS_ADD`                 | `db:statblocks:add`             | renderer -> main | `{ world_id: number; campaign_id?: number; name: string; description?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock`                                                                                                      | _(contract only — no handler yet)_ |
+| `IPC.STATBLOCKS_UPDATE`              | `db:statblocks:update`          | renderer -> main | `id: number, data: { name?: string; description?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                         | `StatBlock`                                                                                                      | _(contract only — no handler yet)_ |
+| `IPC.STATBLOCKS_DELETE`              | `db:statblocks:delete`          | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | _(contract only — no handler yet)_ |
 
 ## Types Reference
 
@@ -510,6 +518,36 @@ interface DbApi {
     delete(id: number): Promise<{ id: number }>;
     moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
   };
+  statblocks: {
+    getAllByWorld(worldId: number): Promise<StatBlock[]>;
+    getAllByCampaign(campaignId: number): Promise<StatBlock[]>;
+    getById(id: number): Promise<StatBlock | null>;
+    add(data: {
+      world_id: number;
+      campaign_id?: number;
+      name: string;
+      description?: string;
+      config?: string;
+    }): Promise<StatBlock>;
+    update(
+      id: number,
+      data: { name?: string; description?: string; config?: string },
+    ): Promise<StatBlock>;
+    delete(id: number): Promise<{ id: number }>;
+  };
+}
+
+interface StatBlock {
+  id: number;
+  world_id: number;
+  campaign_id: number | null;
+  character_id: number | null;
+  name: string;
+  default_token_id: number | null;
+  description: string | null;
+  config: string; // JSON object; extensible for mechanics
+  created_at: string;
+  updated_at: string;
 }
 ```
 
