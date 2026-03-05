@@ -1018,6 +1018,18 @@
 - **IPC**: none
 - **Storage**: none
 
+### StatBlock Shared Contract (Step 01)
+
+- **Purpose**: define the complete type contract and IPC channel constants for the StatBlock feature; establishes the interface all downstream steps build on
+- **Status**: added on 2026-03-06
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.STATBLOCKS_GET_ALL_BY_WORLD`, `IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `IPC.STATBLOCKS_GET_BY_ID`, `IPC.STATBLOCKS_ADD`, `IPC.STATBLOCKS_UPDATE`, `IPC.STATBLOCKS_DELETE` — constants only
+- **Main handler**: none yet
+- **Preload bridge**: none yet; `DbApi.statblocks` method signatures defined in `forge.env.d.ts` only
+- **Storage**: no schema change in this step
+- **Types**: `forge.env.d.ts` adds `StatBlock` interface (`id`, `world_id`, `campaign_id`, `character_id`, `name`, `default_token_id`, `description`, `config`, `created_at`, `updated_at`) and `DbApi.statblocks` with `getAllByWorld/getAllByCampaign/getById/add/update/delete` signatures
+
 ---
 
 ## Where Do I Change X?

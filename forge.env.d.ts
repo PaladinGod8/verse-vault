@@ -463,6 +463,40 @@ declare global {
       delete(id: number): Promise<{ id: number }>;
       moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
     };
+    statblocks: {
+      getAllByWorld(worldId: number): Promise<StatBlock[]>;
+      getAllByCampaign(campaignId: number): Promise<StatBlock[]>;
+      getById(id: number): Promise<StatBlock | null>;
+      add(data: {
+        world_id: number;
+        campaign_id?: number;
+        name: string;
+        description?: string;
+        config?: string;
+      }): Promise<StatBlock>;
+      update(
+        id: number,
+        data: {
+          name?: string;
+          description?: string;
+          config?: string;
+        },
+      ): Promise<StatBlock>;
+      delete(id: number): Promise<{ id: number }>;
+    };
+  }
+
+  interface StatBlock {
+    id: number;
+    world_id: number;
+    campaign_id: number | null;
+    character_id: number | null;
+    name: string;
+    default_token_id: number | null;
+    description: string | null;
+    config: string;
+    created_at: string;
+    updated_at: string;
   }
 
   interface Window {

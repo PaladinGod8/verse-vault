@@ -69,4 +69,10 @@ export const IPC = {
   SCENES_UPDATE: 'db:scenes:update',
   SCENES_DELETE: 'db:scenes:delete',
   SCENES_MOVE_TO_SESSION: 'db:scenes:moveToSession',
+  STATBLOCKS_GET_ALL_BY_WORLD: 'db:statblocks:getAllByWorld',
+  STATBLOCKS_GET_ALL_BY_CAMPAIGN: 'db:statblocks:getAllByCampaign',
+  STATBLOCKS_GET_BY_ID: 'db:statblocks:getById',
+  STATBLOCKS_ADD: 'db:statblocks:add',
+  STATBLOCKS_UPDATE: 'db:statblocks:update',
+  STATBLOCKS_DELETE: 'db:statblocks:delete',
 } as const;
