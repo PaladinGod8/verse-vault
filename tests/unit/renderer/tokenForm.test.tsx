@@ -17,6 +17,7 @@ vi.mock(
       onClose,
       onConfirm,
       gridType,
+      initialFootprint,
     }: {
       onClose: () => void;
       onConfirm: (result: {
@@ -24,8 +25,14 @@ vi.mock(
         framing: TokenFramingConfig;
       }) => void;
       gridType: TokenGridType;
+      initialFootprint?: TokenFootprintConfig;
     }) => (
       <div role="dialog" aria-label="Footprint Painter">
+        {initialFootprint ? (
+          <span data-testid="initial-footprint">
+            {JSON.stringify(initialFootprint)}
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={() =>
@@ -36,7 +43,7 @@ vi.mock(
                       version: 1,
                       grid_type: 'hex',
                       hex_cells: [{ q: 0, r: 0 }],
-                      radius_cells: 1,
+                      radius_cells: 0.5,
                     }
                   : {
                       version: 1,
@@ -70,6 +77,7 @@ vi.mock(
       onClose,
       onConfirm,
       gridType,
+      initialFootprint,
     }: {
       onClose: () => void;
       onConfirm: (result: {
@@ -77,8 +85,14 @@ vi.mock(
         framing: TokenFramingConfig;
       }) => void;
       gridType: TokenGridType;
+      initialFootprint?: TokenFootprintConfig;
     }) => (
       <div role="dialog" aria-label="Footprint Painter">
+        {initialFootprint ? (
+          <span data-testid="initial-footprint">
+            {JSON.stringify(initialFootprint)}
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={() =>
@@ -89,7 +103,7 @@ vi.mock(
                       version: 1,
                       grid_type: 'hex',
                       hex_cells: [{ q: 0, r: 0 }],
-                      radius_cells: 1,
+                      radius_cells: 0.5,
                     }
                   : {
                       version: 1,
@@ -321,7 +335,14 @@ describe('TokenForm', () => {
       is_visible: 0,
       image_upload: undefined,
       clear_image: false,
+      config: expect.stringContaining('"square_cells"'),
     });
+
+    const payload = onSave.mock.calls[0][0] as TokenFormValues;
+    const parsedConfig = JSON.parse(payload.config!);
+    expect(parsedConfig.footprint.square_cells).toEqual([{ col: 0, row: 0 }]);
+    expect(parsedConfig.footprint.width_cells).toBe(1);
+    expect(parsedConfig.footprint.height_cells).toBe(1);
   });
 
   it('emits edit payload for no-change, replace, and clear image paths', async () => {
@@ -428,5 +449,155 @@ describe('TokenForm', () => {
   it('disables submit while saving', () => {
     render(<TokenForm onSave={vi.fn()} onClose={vi.fn()} isSaving />);
     expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
+  });
+
+  it('submits default 1-hex config when creating a hex token with no image', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+
+    render(<TokenForm onSave={onSave} onClose={vi.fn()} isSaving={false} />);
+
+    await user.selectOptions(screen.getByLabelText('Grid Type *'), 'hex');
+    await user.type(screen.getByLabelText('Name *'), 'Hex Token');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    const payload = onSave.mock.calls[0][0] as TokenFormValues;
+    expect(payload.config).toBeDefined();
+    const parsedConfig = JSON.parse(payload.config!);
+    expect(parsedConfig.footprint.hex_cells).toEqual([{ q: 0, r: 0 }]);
+    expect(parsedConfig.footprint.radius_cells).toBe(0.5);
+  });
+
+  it('passes default square initialFootprint to painter when creating with an image', async () => {
+    const imageFile = makeImageFile();
+
+    render(<TokenForm onSave={vi.fn()} onClose={vi.fn()} isSaving={false} />);
+
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: { files: [imageFile] },
+    });
+
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+
+    const initialFootprintEl = within(painterDialog).getByTestId(
+      'initial-footprint',
+    );
+    const initialFootprint = JSON.parse(initialFootprintEl.textContent!);
+    expect(initialFootprint.grid_type).toBe('square');
+    expect(initialFootprint.square_cells).toEqual([{ col: 0, row: 0 }]);
+    expect(initialFootprint.width_cells).toBe(1);
+    expect(initialFootprint.height_cells).toBe(1);
+  });
+
+  it('passes default hex initialFootprint to painter when creating a hex token with an image', async () => {
+    const user = userEvent.setup();
+    const imageFile = makeImageFile();
+
+    render(<TokenForm onSave={vi.fn()} onClose={vi.fn()} isSaving={false} />);
+
+    await user.selectOptions(screen.getByLabelText('Grid Type *'), 'hex');
+
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: { files: [imageFile] },
+    });
+
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+
+    const initialFootprintEl = within(painterDialog).getByTestId(
+      'initial-footprint',
+    );
+    const initialFootprint = JSON.parse(initialFootprintEl.textContent!);
+    expect(initialFootprint.grid_type).toBe('hex');
+    expect(initialFootprint.hex_cells).toEqual([{ q: 0, r: 0 }]);
+    expect(initialFootprint.radius_cells).toBe(0.5);
+  });
+
+  it('does not pass initialFootprint to painter in edit mode', async () => {
+    const imageFile = makeImageFile('new.png');
+
+    render(
+      <TokenForm
+        initialValues={{
+          name: 'Existing Token',
+          grid_type: 'square',
+          image_src: 'vv-media://token-images/old.png',
+          is_visible: 1,
+        }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        isSaving={false}
+      />,
+    );
+
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: { files: [imageFile] },
+    });
+
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+
+    expect(
+      within(painterDialog).queryByTestId('initial-footprint'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not inject default config when saving an existing token with no image change', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+
+    render(
+      <TokenForm
+        initialValues={{
+          name: 'Existing Token',
+          grid_type: 'square',
+          image_src: null,
+          is_visible: 1,
+        }}
+        onSave={onSave}
+        onClose={vi.fn()}
+        isSaving={false}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+
+    const payload = onSave.mock.calls[0][0] as TokenFormValues;
+    expect(payload.config).toBeUndefined();
+  });
+
+  it('uses painter result for config rather than default when painter is confirmed', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    const imageFile = makeImageFile();
+
+    render(<TokenForm onSave={onSave} onClose={vi.fn()} isSaving={false} />);
+
+    fireEvent.drop(getDropzoneButton(), {
+      dataTransfer: { files: [imageFile] },
+    });
+
+    const painterDialog = await screen.findByRole('dialog', {
+      name: 'Footprint Painter',
+    });
+    await user.click(
+      within(painterDialog).getByRole('button', { name: 'Confirm' }),
+    );
+
+    await user.type(screen.getByLabelText('Name *'), 'Wolf');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    const payload = onSave.mock.calls[0][0] as TokenFormValues;
+    expect(payload.config).toBeDefined();
+    const parsedConfig = JSON.parse(payload.config!);
+    expect(parsedConfig.footprint.square_cells).toEqual([{ col: 0, row: 0 }]);
+    expect(payload.image_upload).toBeDefined();
   });
 });
