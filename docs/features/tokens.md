@@ -11,7 +11,7 @@ Tokens are world-first scoped:
 - every token belongs to a world
 - campaigns can hold independent copied rows
 - copied campaign tokens do not stay linked to their world source row
-- token create/edit supports desktop image upload via drag-and-drop or file picker; uploaded files are persisted by main and stored as `image_src` file URLs
+- token create/edit supports desktop image upload via drag-and-drop or file picker; `TokenImageDropzone` is the sole image input mechanism — no URL text input
 
 ## 2. Data Shape
 
@@ -24,7 +24,7 @@ interface Token {
   campaign_id: number | null; // null = world-scoped; set = campaign-scoped copy
   grid_type: TokenGridType; // runtime compatibility shape: 'square' | 'hex'
   name: string;
-  image_src: string | null; // URL or local path; null if no image
+  image_src: string | null; // vv-media:// URL persisted by main; null if no image
   config: string; // JSON object text; may include additive footprint/framing metadata
   is_visible: number; // 1 = visible in runtime palette, 0 = hidden
   created_at: string; // ISO datetime string (SQLite datetime('now'))
@@ -316,7 +316,11 @@ Move advantages:
 
 ### Overview
 
-Token create/edit now supports desktop image upload through drag-and-drop or file picker. This solves the workflow gap where users previously had to manually paste paths/URLs for local assets.
+Token create/edit supports desktop image upload through drag-and-drop or file picker via
+`TokenImageDropzone`. File upload is the sole mechanism for setting a token image — there
+is no URL text input. Uploaded files are validated in the renderer, transferred to the main
+process via `window.db.tokens.importImage`, and stored under `userData/token-images/` as
+`vv-media://token-images/...` URLs.
 
 ### Architecture
 
@@ -373,6 +377,7 @@ Token create/edit now supports desktop image upload through drag-and-drop or fil
 
 ### Non-goals
 
+- No URL text input for token images; file upload is the only supported mechanism.
 - No image editing/cropping pipeline.
 - No bulk image upload for multiple tokens at once.
 - No cloud sync/distributed media storage for token image files.
