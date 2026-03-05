@@ -334,13 +334,26 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.up();
     await window.waitForTimeout(250);
 
+    // Use a rendered grid mode for zoom smoke checks so the frame always has
+    // stable visual structure even if tokens happen to be off-screen.
+    await reloadedGridModeSelect.selectOption('square');
+    await expect(reloadedGridModeSelect).toHaveValue('square');
+    await window.waitForTimeout(250);
+
     // Wheel zoom smoke test: zoom in then zoom out; canvas must remain functional.
     await window.mouse.move(centerX, centerY);
     const preZoomSnapshot = await runtimeCanvasAfterReload.screenshot();
-    // Scroll down (positive deltaY) → zoom in toward MAX_CAMERA_ZOOM (8)
-    await window.mouse.wheel(0, 5000);
-    await window.waitForTimeout(300);
-    const postZoomInSnapshot = await runtimeCanvasAfterReload.screenshot();
+    // Scroll down (positive deltaY) → zoom in toward MAX_CAMERA_ZOOM (8).
+    // Retry a few wheel steps to avoid flaky no-op snapshots on slow CI frames.
+    let postZoomInSnapshot = preZoomSnapshot;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await window.mouse.wheel(0, 1800);
+      await window.waitForTimeout(220);
+      postZoomInSnapshot = await runtimeCanvasAfterReload.screenshot();
+      if (!postZoomInSnapshot.equals(preZoomSnapshot)) {
+        break;
+      }
+    }
     expect(postZoomInSnapshot.equals(preZoomSnapshot)).toBe(false);
     // Scroll up (negative deltaY) → zoom out toward effective min
     await window.mouse.wheel(0, -20000);
