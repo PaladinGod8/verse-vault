@@ -952,9 +952,8 @@ export default function BattleMapRuntimePage() {
                 />
               ) : null}
 
-              {selectedRuntimeTokenInstanceId !== null &&
-              worldId !== null ? (
-                <div className="absolute right-3 top-3 w-56">
+              {selectedRuntimeTokenInstanceId !== null && worldId !== null ? (
+                <div className="absolute top-3 right-3 w-56">
                   <AbilityPickerPanel
                     worldId={worldId}
                     castingAbility={castingAbility}

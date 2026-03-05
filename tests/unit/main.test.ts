@@ -235,6 +235,10 @@ describe('main process', () => {
         pick_count: null,
         pick_timing: null,
         pick_is_permanent: 0,
+        range_cells: null,
+        aoe_shape: null,
+        aoe_size_cells: null,
+        target_type: null,
         created_at: '2026-01-01 00:00:00',
         updated_at: '2026-01-02 00:00:00',
       };
@@ -1048,6 +1052,10 @@ describe('main process', () => {
       null,
       null,
       0,
+      null,
+      null,
+      null,
+      null,
     );
     expect(abilitiesSelectByIdGetMock).toHaveBeenCalledWith(11);
     expect(abilityAddResult).toMatchObject({ id: 11 });
@@ -1187,6 +1195,126 @@ describe('main process', () => {
         type: 'passive',
       },
     ]);
+
+    // Casting range overlay field tests for ABILITIES_ADD
+    const abilityAddWithRangeResult = registeredIpcHandlers[IPC.ABILITIES_ADD](
+      {},
+      {
+        world_id: 1,
+        name: 'Arc Flash',
+        type: 'active',
+        range_cells: 6,
+        aoe_shape: 'circle',
+        aoe_size_cells: 3,
+        target_type: 'tile',
+      },
+    );
+    expect(abilitiesInsertRunMock).toHaveBeenCalledWith(
+      1,
+      'Arc Flash',
+      null,
+      'active',
+      null,
+      null,
+      '[]',
+      '[]',
+      '{}',
+      null,
+      null,
+      null,
+      0,
+      6,
+      'circle',
+      3,
+      'tile',
+    );
+    expect(abilityAddWithRangeResult).toMatchObject({ id: 11 });
+
+    // Test that new fields default to null when omitted
+    const abilityAddWithoutRangeResult = registeredIpcHandlers[
+      IPC.ABILITIES_ADD
+    ](
+      {},
+      {
+        world_id: 1,
+        name: 'Basic Move',
+        type: 'active',
+      },
+    );
+    expect(abilitiesInsertRunMock).toHaveBeenLastCalledWith(
+      1,
+      'Basic Move',
+      null,
+      'active',
+      null,
+      null,
+      '[]',
+      '[]',
+      '{}',
+      null,
+      null,
+      null,
+      0,
+      null,
+      null,
+      null,
+      null,
+    );
+    expect(abilityAddWithoutRangeResult).toMatchObject({ id: 11 });
+
+    // Casting range overlay field tests for ABILITIES_UPDATE - partial update
+    const abilityUpdateRangeOnlyResult = registeredIpcHandlers[
+      IPC.ABILITIES_UPDATE
+    ]({}, 20, {
+      range_cells: 5,
+    });
+    const abilityUpdateRangeSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE abilities SET') &&
+        sql.includes('range_cells = ?') &&
+        !sql.includes('aoe_shape = ?'),
+    )?.[0];
+    expect(abilityUpdateRangeSql).toContain("updated_at = datetime('now')");
+    expect(abilitiesUpdateRunMock).toHaveBeenCalledWith(5, 20);
+    expect(abilityUpdateRangeOnlyResult).toMatchObject({ id: 20 });
+
+    // Test UPDATE with explicit null to clear a field
+    const abilityUpdateClearShapeResult = registeredIpcHandlers[
+      IPC.ABILITIES_UPDATE
+    ]({}, 20, {
+      aoe_shape: null,
+    });
+    const abilityUpdateClearShapeSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE abilities SET') &&
+        sql.includes('aoe_shape = ?'),
+    )?.[0];
+    expect(abilityUpdateClearShapeSql).toBeDefined();
+    expect(abilitiesUpdateRunMock).toHaveBeenCalledWith(null, 20);
+    expect(abilityUpdateClearShapeResult).toMatchObject({ id: 20 });
+
+    // Test UPDATE with all casting fields
+    const abilityUpdateAllCastingResult = registeredIpcHandlers[
+      IPC.ABILITIES_UPDATE
+    ]({}, 20, {
+      range_cells: 8,
+      aoe_shape: 'cone',
+      aoe_size_cells: 4,
+      target_type: 'token',
+    });
+    const abilityUpdateAllCastingSql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('UPDATE abilities SET') &&
+        sql.includes('range_cells = ?') &&
+        sql.includes('aoe_shape = ?') &&
+        sql.includes('aoe_size_cells = ?') &&
+        sql.includes('target_type = ?'),
+    )?.[0];
+    expect(abilityUpdateAllCastingSql).toBeDefined();
+    expect(abilityUpdateAllCastingResult).toMatchObject({ id: 20 });
 
     // CAMPAIGNS
     const campaignsGetAllByWorldResult = registeredIpcHandlers[

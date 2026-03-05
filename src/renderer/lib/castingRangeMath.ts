@@ -168,7 +168,10 @@ export function getShapePolygon(
     const pts: PointData[] = [];
     for (let i = 0; i < segments; i++) {
       const a = (2 * Math.PI * i) / segments;
-      pts.push({ x: centerX + radius * Math.cos(a), y: centerY + radius * Math.sin(a) });
+      pts.push({
+        x: centerX + radius * Math.cos(a),
+        y: centerY + radius * Math.sin(a),
+      });
     }
     return polygonFromPoints(pts);
   }
@@ -266,7 +269,12 @@ export function getHighlightedSquareTiles(
 
   for (let col = colMin; col <= colMax; col++) {
     for (let row = rowMin; row <= rowMax; row++) {
-      const tile = new Rectangle(originX + col * safe, originY + row * safe, safe, safe);
+      const tile = new Rectangle(
+        originX + col * safe,
+        originY + row * safe,
+        safe,
+        safe,
+      );
       const clip = rectClipPolygon(tile);
       const coverage = intersectionArea(shapeVerts, clip);
       if (coverage / tileArea >= 0.5 - 1e-9) {
