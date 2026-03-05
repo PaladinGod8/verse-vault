@@ -4,6 +4,10 @@ import FootprintPainterModal, {
   type FootprintPainterResult,
 } from './FootprintPainterModal';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
+import {
+  buildSquareFootprintConfig,
+  buildHexFootprintConfig,
+} from '../../lib/tokenFootprintGeometry';
 
 const TOKEN_IMAGE_ALLOWED_MIME_TYPES = new Set([
   'image/png',
@@ -48,6 +52,15 @@ function validateTokenImageFile(file: File): string | null {
     return 'Image exceeds 5 MB limit.';
   }
   return null;
+}
+
+function defaultFootprintResult(
+  gridType: TokenGridType,
+): FootprintPainterResult {
+  if (gridType === 'hex') {
+    return buildHexFootprintConfig([{ q: 0, r: 0 }]);
+  }
+  return buildSquareFootprintConfig([{ col: 0, row: 0 }]);
 }
 
 export default function TokenForm({
@@ -137,6 +150,12 @@ export default function TokenForm({
         framing: footprintResult.framing,
       };
       config = JSON.stringify(configObj);
+    } else if (isCreateMode) {
+      const defaultResult = defaultFootprintResult(gridType);
+      config = JSON.stringify({
+        footprint: defaultResult.footprint,
+        framing: defaultResult.framing,
+      });
     }
 
     await onSave({
@@ -306,6 +325,11 @@ export default function TokenForm({
           onConfirm={handleFootprintPainterConfirm}
           imageSrc={pendingImagePreviewUrl}
           gridType={gridType}
+          initialFootprint={
+            isCreateMode
+              ? defaultFootprintResult(gridType).footprint
+              : undefined
+          }
         />
       ) : null}
     </form>
