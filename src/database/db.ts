@@ -378,7 +378,9 @@ function runAbilitiesRangeShapeTargetMigration(db: Database.Database): void {
   const addColumn = (sql: string) => {
     try {
       db.exec(sql);
-    } catch {}
+    } catch {
+      // intentional: ignore if column already exists
+    }
   };
   addColumn(`ALTER TABLE abilities ADD COLUMN range_cells INTEGER`);
   addColumn(
