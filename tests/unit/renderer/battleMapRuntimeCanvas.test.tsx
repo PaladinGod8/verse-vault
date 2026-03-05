@@ -357,7 +357,7 @@ function getTokenLayer(app: MockPixiApp): MockDisplayNode {
   if (!worldContainer) {
     throw new Error('Expected world container to be initialized');
   }
-  const tokenLayer = worldContainer.children[4];
+  const tokenLayer = worldContainer.children[5];
   if (!tokenLayer) {
     throw new Error('Expected token layer to be initialized');
   }
