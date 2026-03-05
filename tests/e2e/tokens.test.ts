@@ -286,9 +286,6 @@ async function createWorldScopedTokenViaForm(
   if (data.gridType !== undefined) {
     await dialog.getByLabel('Grid Type').selectOption(data.gridType);
   }
-  if (data.imageSrc !== undefined) {
-    await dialog.getByLabel('Image URL').fill(data.imageSrc);
-  }
   if (data.isVisible !== undefined) {
     const visibleCheckbox = dialog.getByRole('checkbox', { name: 'Visible' });
     const isChecked = await visibleCheckbox.isChecked();
@@ -405,9 +402,9 @@ test.describe('Token CRUD - World-Level', () => {
     await window.getByRole('button', { name: 'New Token' }).click();
     const dialog = window.getByRole('dialog', { name: 'New Token' });
     await expect(dialog).toBeVisible();
-    await dialog.getByLabel('Name').fill('Painter Empty Guard');
+    await dialog.getByLabel('Name').fill('Painter Default Cell Token');
     await dialog.locator('input[type="file"]').setInputFiles({
-      name: 'painter-empty.png',
+      name: 'painter-default.png',
       mimeType: 'image/png',
       buffer: PNG_IMAGE_A,
     });
@@ -416,11 +413,10 @@ test.describe('Token CRUD - World-Level', () => {
     const confirmButton = painterDialog.getByRole('button', {
       name: 'Confirm',
     });
-    await expect(confirmButton).toBeDisabled();
-    await expect(confirmButton).toHaveAttribute(
-      'title',
-      'Mark at least one cell to continue',
-    );
+    // Button is now enabled because default center cell is pre-painted
+    await expect(confirmButton).toBeEnabled();
+    // Title should be empty since button is enabled
+    await expect(confirmButton).toHaveAttribute('title', '');
 
     await clickPainterButton(painterDialog, 'Cancel');
     await expect(
