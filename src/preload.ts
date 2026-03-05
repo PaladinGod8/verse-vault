@@ -276,5 +276,17 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.WORLDS_DELETE, id),
     markViewed: (id: number): Promise<World> =>
       ipcRenderer.invoke(IPC.WORLDS_MARK_VIEWED, id),
+    importImage: (
+      payload: TokenImageImportPayload,
+    ): Promise<TokenImageImportResult> => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('World image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.WORLDS_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: payload.bytes,
+      });
+    },
   },
 });

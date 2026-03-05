@@ -6,14 +6,23 @@ type IpcHandler = (...args: unknown[]) => unknown;
 
 const registeredEvents: Record<string, EventHandler> = {};
 const registeredIpcHandlers: Record<string, IpcHandler> = {};
+type ProtocolHandler = (request: { url: string }) => Promise<Response>;
+const registeredProtocolHandlers: Record<string, ProtocolHandler> = {};
 
 const appOnMock = vi.fn((event: string, handler: EventHandler) => {
   registeredEvents[event] = handler;
 });
 const appQuitMock = vi.fn();
 const appGetPathMock = vi.fn(() => 'C:\\mock-user-data');
-const protocolHandleMock = vi.fn();
+const protocolHandleMock = vi.fn(
+  (protocol: string, handler: ProtocolHandler) => {
+    registeredProtocolHandlers[protocol] = handler;
+  },
+);
 const netFetchMock = vi.fn();
+const mkdirMock = vi.fn(() => Promise.resolve());
+const writeFileMock = vi.fn(() => Promise.resolve());
+const randomUUIDMock = vi.fn(() => 'test-uuid-1234');
 const ipcHandleMock = vi.fn((channel: string, handler: IpcHandler) => {
   registeredIpcHandlers[channel] = handler;
 });
@@ -68,6 +77,8 @@ async function importMainWithMocks() {
   for (const key of Object.keys(registeredEvents)) delete registeredEvents[key];
   for (const key of Object.keys(registeredIpcHandlers))
     delete registeredIpcHandlers[key];
+  for (const key of Object.keys(registeredProtocolHandlers))
+    delete registeredProtocolHandlers[key];
 
   vi.clearAllMocks();
 
@@ -88,6 +99,15 @@ async function importMainWithMocks() {
     net: {
       fetch: netFetchMock,
     },
+  }));
+  vi.doMock('node:crypto', () => ({
+    default: { randomUUID: randomUUIDMock },
+    randomUUID: randomUUIDMock,
+  }));
+  vi.doMock('node:fs/promises', () => ({
+    default: { mkdir: mkdirMock, writeFile: writeFileMock },
+    mkdir: mkdirMock,
+    writeFile: writeFileMock,
   }));
   vi.doMock('../../src/database/db', () => ({
     getDatabase: getDatabaseMock,
@@ -768,7 +788,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(67);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(68);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -869,6 +889,38 @@ describe('main process', () => {
       id: 7,
       last_viewed_at: '2026-01-01 00:00:00',
     });
+
+    const worldImportImageResult = await registeredIpcHandlers[
+      IPC.WORLDS_IMPORT_IMAGE
+    ]({}, {
+      fileName: 'thumbnail.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    });
+    expect(mkdirMock).toHaveBeenCalledWith(
+      expect.stringContaining('world-images'),
+      { recursive: true },
+    );
+    expect(writeFileMock).toHaveBeenCalledWith(
+      expect.stringContaining('world-images'),
+      expect.any(Uint8Array),
+    );
+    expect(worldImportImageResult).toMatchObject({
+      image_src: expect.stringMatching(/^vv-media:\/\/world-images\//),
+    });
+
+    // Test vv-media protocol handler serves world-images host
+    netFetchMock.mockResolvedValueOnce(new Response('img', { status: 200 }));
+    const worldMediaResponse = await registeredProtocolHandlers['vv-media']({
+      url: 'vv-media://world-images/test-image.png',
+    });
+    expect(worldMediaResponse.status).toBe(200);
+
+    // Test vv-media protocol handler returns 404 for unknown host
+    const unknownHostResponse = await registeredProtocolHandlers['vv-media']({
+      url: 'vv-media://unknown-host/test.png',
+    });
+    expect(unknownHostResponse.status).toBe(404);
 
     const levelsGetAllByWorldResult = registeredIpcHandlers[
       IPC.LEVELS_GET_ALL_BY_WORLD

@@ -260,6 +260,9 @@ declare global {
       ): Promise<World>;
       delete(id: number): Promise<{ id: number }>;
       markViewed(id: number): Promise<World>;
+      importImage(
+        payload: TokenImageImportPayload,
+      ): Promise<TokenImageImportResult>;
     };
     levels: {
       getAllByWorld(worldId: number): Promise<Level[]>;
