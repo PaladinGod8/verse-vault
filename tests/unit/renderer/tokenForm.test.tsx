@@ -486,7 +486,9 @@ describe('TokenForm', () => {
     const initialFootprintEl =
       within(painterDialog).getByTestId('initial-footprint');
     expect(initialFootprintEl.textContent).toBeTruthy();
-    const initialFootprint = JSON.parse(initialFootprintEl.textContent as string);
+    const initialFootprint = JSON.parse(
+      initialFootprintEl.textContent as string,
+    );
     expect(initialFootprint.grid_type).toBe('square');
     expect(initialFootprint.square_cells).toEqual([{ col: 0, row: 0 }]);
     expect(initialFootprint.width_cells).toBe(1);
@@ -512,7 +514,9 @@ describe('TokenForm', () => {
     const initialFootprintEl =
       within(painterDialog).getByTestId('initial-footprint');
     expect(initialFootprintEl.textContent).toBeTruthy();
-    const initialFootprint = JSON.parse(initialFootprintEl.textContent as string);
+    const initialFootprint = JSON.parse(
+      initialFootprintEl.textContent as string,
+    );
     expect(initialFootprint.grid_type).toBe('hex');
     expect(initialFootprint.hex_cells).toEqual([{ q: 0, r: 0 }]);
     expect(initialFootprint.radius_cells).toBe(0.5);
