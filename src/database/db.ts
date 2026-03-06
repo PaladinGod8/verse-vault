@@ -161,6 +161,34 @@ function initializeSchema(db: Database.Database): void {
   ensureTokenCampaignIdIndex(db);
   ensureTokenWorldIdIndex(db);
   runAbilitiesRangeShapeTargetMigration(db);
+  runStatBlocksSchemaMigration(db);
+}
+
+function runStatBlocksSchemaMigration(db: Database.Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS statblocks (
+        id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+        world_id              INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+        campaign_id           INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+        character_id          INTEGER REFERENCES characters(id) ON DELETE CASCADE,
+        name                  TEXT NOT NULL,
+        default_token_id      INTEGER REFERENCES tokens(id) ON DELETE SET NULL,
+        description           TEXT,
+        config                TEXT NOT NULL DEFAULT '{}',
+        created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_statblocks_world_id ON statblocks(world_id);
+      CREATE INDEX IF NOT EXISTS idx_statblocks_campaign_id ON statblocks(campaign_id);
+      CREATE INDEX IF NOT EXISTS idx_statblocks_character_id ON statblocks(character_id);
+      CREATE INDEX IF NOT EXISTS idx_statblocks_default_token_id ON statblocks(default_token_id);
+    `);
+  } catch (err) {
+    console.error('[db] Error running statblocks schema migration:', err);
+    throw err;
+  }
 }
 
 function runArcActMigration(db: Database.Database): void {

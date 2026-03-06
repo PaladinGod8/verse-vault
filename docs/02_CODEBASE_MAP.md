@@ -1030,6 +1030,18 @@
 - **Storage**: no schema change in this step
 - **Types**: `forge.env.d.ts` adds `StatBlock` interface (`id`, `world_id`, `campaign_id`, `character_id`, `name`, `default_token_id`, `description`, `config`, `created_at`, `updated_at`) and `DbApi.statblocks` with `getAllByWorld/getAllByCampaign/getById/add/update/delete` signatures
 
+### StatBlock Schema & Migration (Step 02)
+
+- **Purpose**: create the `statblocks` SQLite table and wire it into `initializeSchema()` so the persistent data layer is ready for future IPC handlers
+- **Status**: added on 2026-03-06
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: none in this step
+- **Main handler**: none yet
+- **Preload bridge**: none yet
+- **Storage**: `src/database/db.ts` adds `runStatBlocksSchemaMigration(db)` — creates `statblocks` table (`id`, `world_id` NOT NULL FK → worlds ON DELETE CASCADE, `campaign_id` nullable FK → campaigns ON DELETE CASCADE, `character_id` nullable FK → characters ON DELETE CASCADE, `name` NOT NULL, `default_token_id` nullable FK → tokens ON DELETE SET NULL, `description`, `config` NOT NULL DEFAULT '{}', `created_at`, `updated_at`) with indexes on `world_id`, `campaign_id`, `character_id`, and `default_token_id`; migration uses `CREATE TABLE IF NOT EXISTS` so it is safe and idempotent on existing databases; called as the last step in `initializeSchema()`
+- **Tests**: `tests/unit/database/statblocks.test.ts` — 8 mock-based unit tests covering table creation SQL, all column constraints, all 4 indexes, idempotency, and migration ordering
+
 ---
 
 ## Where Do I Change X?
