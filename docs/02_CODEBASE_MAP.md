@@ -1169,6 +1169,20 @@
 - **Types**: uses `PassiveScoreDefinition`, `StatBlockPassiveScoreValue` from `src/shared/statisticsTypes.ts` (Step 08); utilities `getPassiveScoreValue`/`setPassiveScoreValue` and `calculateAbilityModifier`/`calculateSaveModifier`/`formatModifier` from `src/renderer/lib/statblockStatisticsUtils.ts` and `src/renderer/lib/statisticsCalculations.ts`; no new types added
 - **Tests**: `tests/unit/renderer/components/statblocks.test.tsx` — all 29 existing StatBlockForm tests pass with new passive scores section; manual verification covers ability modifier calculations and read-only field behavior
 
+### StatBlock Card Display (Step 12)
+
+- **Purpose**: display key statistics on the StatBlockCard component to give users a quick overview of a character's vital stats; parse and show resource statistics (HP, MP, AC) and passive scores with modifiers directly on each card
+- **Status**: added on 2026-03-06
+- **UI**:
+  - `src/renderer/components/statblocks/StatBlockCard.tsx` — extended: imports `useState`, `useEffect` from React; imports types and utilities from `statisticsTypes`, `statblockStatisticsUtils`, and `statisticsCalculations`; adds state for parsed statistics config; parses statblock config JSON on mount/update via `parseStatBlockStatistics` (gracefully handles parse errors); displays first 3 resources with current/maximum values (e.g., HP: 7/7, MP: 5/5, AC: 15); displays all passive scores as compact badges with base value and calculated modifiers (e.g., STR 10 (+0)); uses defensive checks to handle missing/empty resources and passiveScores arrays; statistics section appears between the main card info and action buttons
+- **Store**: none
+- **IPC**: none; reads existing `statblocks.config` JSON from statblock objects
+- **Main handler**: unchanged
+- **Preload bridge**: unchanged
+- **Storage**: no schema change; uses existing `statblocks.config` JSON column
+- **Types**: uses `StatBlockStatisticsConfig` from `src/shared/statisticsTypes.ts`; utilities `parseStatBlockStatistics`, `getResourceValue`, `getPassiveScoreValue` from `src/renderer/lib/statblockStatisticsUtils.ts`; utility `formatModifier` from `src/renderer/lib/statisticsCalculations.ts`; no new types added
+- **Tests**: no new tests added; existing unit tests verify existing card behavior; statistics display relies on manual verification; defensive null/undefined checks prevent render errors
+
 ---
 
 ## Where Do I Change X?
