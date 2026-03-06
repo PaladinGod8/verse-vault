@@ -119,7 +119,11 @@ describe('World Config Migration', () => {
 
   it('is idempotent and does not alter worlds when config already exists', async () => {
     const { getDatabase, closeDatabase, execMock } = await loadDbModule({
-      worldsTableInfoRows: [{ name: 'id' }, { name: 'name' }, { name: 'config' }],
+      worldsTableInfoRows: [
+        { name: 'id' },
+        { name: 'name' },
+        { name: 'config' },
+      ],
     });
 
     getDatabase();
@@ -142,7 +146,9 @@ describe('World Config Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const executedSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const executedSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(executedSql).toContain(
       "ALTER TABLE worlds ADD COLUMN config TEXT NOT NULL DEFAULT '{}'",
     );

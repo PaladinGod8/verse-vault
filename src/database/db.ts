@@ -212,7 +212,9 @@ function runWorldConfigMigration(db: Database.Database): void {
 
     if (!hasConfig) {
       console.log('[db] Adding config column to worlds table...');
-      db.exec(`ALTER TABLE worlds ADD COLUMN config TEXT NOT NULL DEFAULT '{}'`);
+      db.exec(
+        `ALTER TABLE worlds ADD COLUMN config TEXT NOT NULL DEFAULT '{}'`,
+      );
       console.log('[db] World config column added successfully.');
     }
   } catch (err) {
