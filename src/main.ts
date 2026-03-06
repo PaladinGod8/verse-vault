@@ -2167,6 +2167,32 @@ function registerIpcHandlers() {
       .all(abilityId);
   });
 
+  // StatBlocks - Read Handlers (Step 03)
+  ipcMain.handle(IPC.STATBLOCKS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
+    return db
+      .prepare(
+        'SELECT * FROM statblocks WHERE world_id = ? ORDER BY updated_at DESC',
+      )
+      .all(worldId);
+  });
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN,
+    (_event, campaignId: number) => {
+      return db
+        .prepare(
+          'SELECT * FROM statblocks WHERE campaign_id = ? ORDER BY updated_at DESC',
+        )
+        .all(campaignId);
+    },
+  );
+
+  ipcMain.handle(IPC.STATBLOCKS_GET_BY_ID, (_event, id: number) => {
+    return (
+      db.prepare('SELECT * FROM statblocks WHERE id = ?').get(id) ?? null
+    );
+  });
+
   ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {

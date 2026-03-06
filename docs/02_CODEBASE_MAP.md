@@ -1042,6 +1042,19 @@
 - **Storage**: `src/database/db.ts` adds `runStatBlocksSchemaMigration(db)` — creates `statblocks` table (`id`, `world_id` NOT NULL FK → worlds ON DELETE CASCADE, `campaign_id` nullable FK → campaigns ON DELETE CASCADE, `character_id` nullable FK → characters ON DELETE CASCADE, `name` NOT NULL, `default_token_id` nullable FK → tokens ON DELETE SET NULL, `description`, `config` NOT NULL DEFAULT '{}', `created_at`, `updated_at`) with indexes on `world_id`, `campaign_id`, `character_id`, and `default_token_id`; migration uses `CREATE TABLE IF NOT EXISTS` so it is safe and idempotent on existing databases; called as the last step in `initializeSchema()`
 - **Tests**: `tests/unit/database/statblocks.test.ts` — 8 mock-based unit tests covering table creation SQL, all column constraints, all 4 indexes, idempotency, and migration ordering
 
+### StatBlock Read Handlers (Step 03)
+
+- **Purpose**: wire the 3 read-only IPC handlers for statblocks in the main process; no mutations or preload bridges in this step
+- **Status**: added on 2026-03-06
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.STATBLOCKS_GET_ALL_BY_WORLD`, `IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `IPC.STATBLOCKS_GET_BY_ID`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` — 3 read handlers added after `ABILITIES_GET_CHILDREN`; world/campaign-scoped lists ordered by `updated_at DESC`; `getById` returns row or `null`
+- **Preload bridge**: none yet (Steps 04-05)
+- **Storage**: no schema change in this step (uses `statblocks` table from Step 02)
+- **Types**: no new types; uses `StatBlock` interface from Step 01
+- **Tests**: `tests/unit/main.test.ts` — 4 assertions added: `getAllByWorld` returns array, `getAllByCampaign` returns array, `getById` returns matching row, `getById` returns `null` for missing id; handler count updated from 68 → 71
+
 ---
 
 ## Where Do I Change X?

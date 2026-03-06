@@ -447,6 +447,25 @@ describe('main process', () => {
     });
     const scenesSiblingIdsAllMock = vi.fn(() => [{ id: 51 }, { id: 52 }]);
 
+    const statblocksSelectAllByWorldMock = vi.fn(() => [
+      { id: 91, world_id: 1, name: 'Goblin Warrior', config: '{}' },
+    ]);
+    const statblocksSelectAllByCampaignMock = vi.fn(() => [
+      { id: 92, world_id: 1, campaign_id: 31, name: 'Orc Shaman', config: '{}' },
+    ]);
+    const statblocksSelectByIdGetMock = vi.fn((id: number) => {
+      if (id === 404) return null;
+      return {
+        id,
+        world_id: 1,
+        campaign_id: null,
+        name: `StatBlock ${id}`,
+        config: '{}',
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      };
+    });
+
     prepareMock.mockImplementation((sql: string) => {
       if (sql.includes('SELECT * FROM worlds ORDER BY updated_at DESC')) {
         return { all: worldsSelectAllMock };
@@ -760,6 +779,16 @@ describe('main process', () => {
         return { run: scenesDeleteRunMock };
       }
 
+      if (sql.includes('SELECT * FROM statblocks WHERE world_id = ?')) {
+        return { all: statblocksSelectAllByWorldMock };
+      }
+      if (sql.includes('SELECT * FROM statblocks WHERE campaign_id = ?')) {
+        return { all: statblocksSelectAllByCampaignMock };
+      }
+      if (sql.includes('SELECT * FROM statblocks WHERE id = ?')) {
+        return { get: statblocksSelectByIdGetMock };
+      }
+
       throw new Error(`Unexpected SQL: ${sql}`);
     });
 
@@ -792,7 +821,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(68);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(71);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -2222,6 +2251,36 @@ describe('main process', () => {
     expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(0, 51);
     expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 52);
     expect(moveSceneResult).toMatchObject({ id: 51, session_id: 41 });
+
+    // STATBLOCKS
+    const statblocksGetAllByWorldResult = registeredIpcHandlers[
+      IPC.STATBLOCKS_GET_ALL_BY_WORLD
+    ]({}, 1);
+    expect(statblocksSelectAllByWorldMock).toHaveBeenCalledTimes(1);
+    expect(statblocksSelectAllByWorldMock).toHaveBeenCalledWith(1);
+    expect(statblocksGetAllByWorldResult).toEqual([
+      { id: 91, world_id: 1, name: 'Goblin Warrior', config: '{}' },
+    ]);
+
+    const statblocksGetAllByCampaignResult = registeredIpcHandlers[
+      IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN
+    ]({}, 31);
+    expect(statblocksSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
+    expect(statblocksSelectAllByCampaignMock).toHaveBeenCalledWith(31);
+    expect(statblocksGetAllByCampaignResult).toEqual([
+      { id: 92, world_id: 1, campaign_id: 31, name: 'Orc Shaman', config: '{}' },
+    ]);
+
+    const statblockByIdResult = registeredIpcHandlers[
+      IPC.STATBLOCKS_GET_BY_ID
+    ]({}, 91);
+    expect(statblocksSelectByIdGetMock).toHaveBeenCalledWith(91);
+    expect(statblockByIdResult).toMatchObject({ id: 91 });
+
+    const missingStatblockResult = registeredIpcHandlers[
+      IPC.STATBLOCKS_GET_BY_ID
+    ]({}, 404);
+    expect(missingStatblockResult).toBeNull();
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);
