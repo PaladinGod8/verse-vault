@@ -219,3 +219,16 @@ export const DEFAULT_PASSIVE_SCORE_DEFINITIONS: PassiveScoreDefinition[] = [
     isDefault: true,
   },
 ];
+
+/**
+ * Generate default world configuration with statistics.
+ * Used when creating a new world without explicit config.
+ */
+export function getDefaultWorldConfig(): WorldStatisticsConfig {
+  return {
+    statistics: {
+      resources: DEFAULT_RESOURCE_DEFINITIONS,
+      passiveScores: DEFAULT_PASSIVE_SCORE_DEFINITIONS,
+    },
+  };
+}

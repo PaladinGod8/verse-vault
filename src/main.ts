@@ -10,11 +10,7 @@ import {
   ensureTokenConfigJsonText,
 } from './database/db';
 import { IPC } from './shared/ipcChannels';
-import {
-  DEFAULT_RESOURCE_DEFINITIONS,
-  DEFAULT_PASSIVE_SCORE_DEFINITIONS,
-} from './shared/statisticsTypes';
-import type { WorldStatisticsConfig } from './shared/statisticsTypes';
+import { getDefaultWorldConfig } from './shared/statisticsTypes';
 
 function isAbilityChildDuplicateError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
@@ -721,13 +717,7 @@ function registerIpcHandlers() {
         }
       } else {
         // Generate default config with statistics
-        const defaultConfig: WorldStatisticsConfig = {
-          statistics: {
-            resources: DEFAULT_RESOURCE_DEFINITIONS,
-            passiveScores: DEFAULT_PASSIVE_SCORE_DEFINITIONS,
-          },
-        };
-        config = JSON.stringify(defaultConfig);
+        config = JSON.stringify(getDefaultWorldConfig());
       }
 
       const stmt = db.prepare(
