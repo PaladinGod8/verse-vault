@@ -2193,6 +2193,104 @@ function registerIpcHandlers() {
     );
   });
 
+  // StatBlocks - Mutation Handlers (Step 04)
+  ipcMain.handle(
+    IPC.STATBLOCKS_ADD,
+    (
+      _event,
+      data: {
+        world_id: number;
+        campaign_id?: number | null;
+        name: string;
+        description?: string | null;
+        config?: string;
+      },
+    ) => {
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (!name) {
+        throw new Error('StatBlock name is required');
+      }
+
+      const result = db
+        .prepare(
+          'INSERT INTO statblocks (world_id, campaign_id, name, description, config) VALUES (?, ?, ?, ?, ?)',
+        )
+        .run(
+          data.world_id,
+          data.campaign_id ?? null,
+          name,
+          data.description ?? null,
+          data.config ?? '{}',
+        );
+
+      const statblock = db
+        .prepare('SELECT * FROM statblocks WHERE id = ?')
+        .get(result.lastInsertRowid);
+      if (!statblock) {
+        throw new Error('Failed to create statblock');
+      }
+      return statblock;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_UPDATE,
+    (
+      _event,
+      id: number,
+      data: { name?: string; description?: string | null; config?: string },
+    ) => {
+      const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
+      const hasDescription = Object.prototype.hasOwnProperty.call(
+        data,
+        'description',
+      );
+      const hasConfig = Object.prototype.hasOwnProperty.call(data, 'config');
+
+      const setClauses: string[] = [];
+      const values: Array<string | null> = [];
+
+      if (hasName) {
+        const trimmedName =
+          typeof data.name === 'string' ? data.name.trim() : '';
+        if (!trimmedName) {
+          throw new Error('StatBlock name cannot be empty');
+        }
+        setClauses.push('name = ?');
+        values.push(trimmedName);
+      }
+
+      if (hasDescription && data.description !== undefined) {
+        setClauses.push('description = ?');
+        values.push(data.description);
+      }
+
+      if (hasConfig && data.config !== undefined) {
+        setClauses.push('config = ?');
+        values.push(data.config);
+      }
+
+      const updateSql =
+        setClauses.length > 0
+          ? `UPDATE statblocks SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+          : "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?";
+      db.prepare(updateSql).run(...values, id);
+
+      const statblock = db
+        .prepare('SELECT * FROM statblocks WHERE id = ?')
+        .get(id);
+      if (!statblock) {
+        throw new Error('StatBlock not found');
+      }
+      return statblock;
+    },
+  );
+
+  ipcMain.handle(IPC.STATBLOCKS_DELETE, (_event, id: number) => {
+    db.prepare('DELETE FROM statblocks WHERE id = ?').run(id);
+    return { id };
+  });
+
   ipcMain.handle(
     IPC.VERSES_ADD,
     (_event, data: { text: string; reference?: string; tags?: string }) => {

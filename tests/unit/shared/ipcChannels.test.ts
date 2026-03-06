@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { IPC } from '../../../src/shared/ipcChannels';
 
 describe('IPC channels', () => {
-  it('defines all expected verse, world, level, ability, campaign, battlemap, arc, act, session, and scene channels', () => {
+  it('defines all expected verse, world, level, ability, campaign, battlemap, arc, act, session, scene, and statblock channels', () => {
     expect(IPC).toEqual({
       VERSES_GET_ALL: 'db:verses:getAll',
       VERSES_ADD: 'db:verses:add',
@@ -73,6 +73,12 @@ describe('IPC channels', () => {
       SCENES_UPDATE: 'db:scenes:update',
       SCENES_DELETE: 'db:scenes:delete',
       SCENES_MOVE_TO_SESSION: 'db:scenes:moveToSession',
+      STATBLOCKS_GET_ALL_BY_WORLD: 'db:statblocks:getAllByWorld',
+      STATBLOCKS_GET_ALL_BY_CAMPAIGN: 'db:statblocks:getAllByCampaign',
+      STATBLOCKS_GET_BY_ID: 'db:statblocks:getById',
+      STATBLOCKS_ADD: 'db:statblocks:add',
+      STATBLOCKS_UPDATE: 'db:statblocks:update',
+      STATBLOCKS_DELETE: 'db:statblocks:delete',
     });
   });
 });
