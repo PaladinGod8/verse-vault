@@ -16,6 +16,7 @@ declare global {
     thumbnail: string | null;
     short_description: string | null;
     last_viewed_at: string | null;
+    config: string;
     created_at: string;
     updated_at: string;
   }
@@ -253,6 +254,7 @@ declare global {
         name: string;
         thumbnail?: string | null;
         short_description?: string | null;
+        config?: string;
       }): Promise<World>;
       update(
         id: number,
@@ -260,6 +262,7 @@ declare global {
           name?: string;
           thumbnail?: string | null;
           short_description?: string | null;
+          config?: string;
         },
       ): Promise<World>;
       delete(id: number): Promise<{ id: number }>;
