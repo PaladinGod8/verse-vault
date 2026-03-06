@@ -33,6 +33,7 @@ Use these docs for orientation before major changes:
 - `docs/01_ARCHITECTURE.md`
 - `docs/02_CODEBASE_MAP.md`
 - `docs/03_IPC_CONTRACT.md`
+- `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`
 - `docs/features/`
 - `docs/CHECKLIST.md`
 
@@ -74,6 +75,11 @@ Default ownership:
 - Follow existing patterns in:
   - `tests/unit/App.test.tsx`
   - `tests/e2e/app.test.ts`
+- For final pre-merge validation, run the strict ordered quality gate in `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`.
+
+### Prompt-Splitting Requirement
+
+When an agent creates sequential implementation prompts under `docs/prompts/`, include a final step named `Final Quality Gate` that references `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` and requires all gates to pass in order.
 
 ### Phase 3 - Docs
 
