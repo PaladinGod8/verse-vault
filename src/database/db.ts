@@ -33,6 +33,7 @@ function initializeSchema(db: Database.Database): void {
       thumbnail TEXT,
       short_description TEXT,
       last_viewed_at TEXT,
+      config TEXT NOT NULL DEFAULT '{}',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )
@@ -172,6 +173,7 @@ function initializeSchema(db: Database.Database): void {
   ensureTokenWorldIdIndex(db);
   runAbilitiesRangeShapeTargetMigration(db);
   runStatBlocksSchemaMigration(db);
+  runWorldConfigMigration(db);
 }
 
 function runStatBlocksSchemaMigration(db: Database.Database): void {
@@ -197,6 +199,24 @@ function runStatBlocksSchemaMigration(db: Database.Database): void {
     `);
   } catch (err) {
     console.error('[db] Error running statblocks schema migration:', err);
+    throw err;
+  }
+}
+
+function runWorldConfigMigration(db: Database.Database): void {
+  try {
+    const tableInfo = db.pragma('table_info(worlds)') as Array<{
+      name: string;
+    }>;
+    const hasConfig = tableInfo.some((col) => col.name === 'config');
+
+    if (!hasConfig) {
+      console.log('[db] Adding config column to worlds table...');
+      db.exec(`ALTER TABLE worlds ADD COLUMN config TEXT NOT NULL DEFAULT '{}'`);
+      console.log('[db] World config column added successfully.');
+    }
+  } catch (err) {
+    console.error('[db] Error running world config migration:', err);
     throw err;
   }
 }
