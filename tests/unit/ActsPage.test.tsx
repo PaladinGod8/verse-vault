@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -519,10 +519,12 @@ describe('ActsPage', () => {
       await screen.findByText('Act One');
       await waitFor(() => expect(capturedOnDragEnd).toBeDefined());
 
-      (capturedOnDragEnd as (event: DragEndEvent) => void)({
-        active: { id: 1 },
-        over: { id: 2 },
-      } as unknown as DragEndEvent);
+      await act(async () => {
+        (capturedOnDragEnd as (event: DragEndEvent) => void)({
+          active: { id: 1 },
+          over: { id: 2 },
+        } as unknown as DragEndEvent);
+      });
 
       await waitFor(() => expect(window.db.acts.update).toHaveBeenCalled());
     });
@@ -542,10 +544,12 @@ describe('ActsPage', () => {
       await screen.findByText('Act One');
       await waitFor(() => expect(capturedOnDragEnd).toBeDefined());
 
-      (capturedOnDragEnd as (event: DragEndEvent) => void)({
-        active: { id: 1 },
-        over: { id: 2 },
-      } as unknown as DragEndEvent);
+      await act(async () => {
+        (capturedOnDragEnd as (event: DragEndEvent) => void)({
+          active: { id: 1 },
+          over: { id: 2 },
+        } as unknown as DragEndEvent);
+      });
 
       await waitFor(() =>
         expect(screen.getByText('Save failed')).toBeInTheDocument(),
@@ -561,10 +565,12 @@ describe('ActsPage', () => {
       await screen.findByText('Act One');
       await waitFor(() => expect(capturedOnDragEnd).toBeDefined());
 
-      (capturedOnDragEnd as (event: DragEndEvent) => void)({
-        active: { id: 1 },
-        over: { id: 1 },
-      } as unknown as DragEndEvent);
+      await act(async () => {
+        (capturedOnDragEnd as (event: DragEndEvent) => void)({
+          active: { id: 1 },
+          over: { id: 1 },
+        } as unknown as DragEndEvent);
+      });
 
       expect(window.db.acts.update).not.toHaveBeenCalled();
     });

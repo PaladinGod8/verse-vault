@@ -40,7 +40,10 @@ describe('preload - statblock methods', () => {
 
       const result = await api.statblocks.getAllByWorld(1);
 
-      expect(invokeMock).toHaveBeenCalledWith(IPC.STATBLOCKS_GET_ALL_BY_WORLD, 1);
+      expect(invokeMock).toHaveBeenCalledWith(
+        IPC.STATBLOCKS_GET_ALL_BY_WORLD,
+        1,
+      );
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(1);
     });
@@ -65,7 +68,10 @@ describe('preload - statblock methods', () => {
 
       const result = await api.statblocks.getAllByCampaign(2);
 
-      expect(invokeMock).toHaveBeenCalledWith(IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN, 2);
+      expect(invokeMock).toHaveBeenCalledWith(
+        IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN,
+        2,
+      );
       expect(result[0].campaign_id).toBe(2);
     });
 
@@ -90,7 +96,7 @@ describe('preload - statblock methods', () => {
 
       expect(invokeMock).toHaveBeenCalledWith(IPC.STATBLOCKS_GET_BY_ID, 1);
       expect(result).not.toBeNull();
-      expect(result!.id).toBe(1);
+      expect((result as { id: number }).id).toBe(1);
     });
 
     it('returns null when not found', async () => {
@@ -106,7 +112,11 @@ describe('preload - statblock methods', () => {
 
   describe('add', () => {
     it('invokes STATBLOCKS_ADD with payload and returns created statblock', async () => {
-      const payload = { world_id: 1, name: 'Barbarian', description: 'Strong fighter' };
+      const payload = {
+        world_id: 1,
+        name: 'Barbarian',
+        description: 'Strong fighter',
+      };
       invokeMock.mockResolvedValueOnce({ ...mockStatBlock, ...payload });
       await import('../../../src/preload');
       const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
@@ -123,22 +133,28 @@ describe('preload - statblock methods', () => {
       await import('../../../src/preload');
       const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
 
-      await expect(api.statblocks.add({ world_id: 1, name: '' })).rejects.toThrow(
-        'name is required',
-      );
+      await expect(
+        api.statblocks.add({ world_id: 1, name: '' }),
+      ).rejects.toThrow('name is required');
     });
   });
 
   describe('update', () => {
     it('invokes STATBLOCKS_UPDATE with id and data', async () => {
-      const updated = { ...mockStatBlock, name: 'Wizard', updated_at: '2026-03-06T01:00:00Z' };
+      const updated = {
+        ...mockStatBlock,
+        name: 'Wizard',
+        updated_at: '2026-03-06T01:00:00Z',
+      };
       invokeMock.mockResolvedValueOnce(updated);
       await import('../../../src/preload');
       const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
 
       const result = await api.statblocks.update(1, { name: 'Wizard' });
 
-      expect(invokeMock).toHaveBeenCalledWith(IPC.STATBLOCKS_UPDATE, 1, { name: 'Wizard' });
+      expect(invokeMock).toHaveBeenCalledWith(IPC.STATBLOCKS_UPDATE, 1, {
+        name: 'Wizard',
+      });
       expect(result.name).toBe('Wizard');
     });
 

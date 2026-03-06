@@ -28,6 +28,7 @@ The Phase 1 scaffold establishes the data model, IPC contracts, and preparatory 
 ### 2.2 IPC Channels & Handlers
 
 Define channel constants in `src/shared/ipcChannels.ts`:
+
 - `STATBLOCKS_GET_ALL_BY_WORLD`
 - `STATBLOCKS_GET_ALL_BY_CAMPAIGN`
 - `STATBLOCKS_GET_BY_ID`
@@ -38,6 +39,7 @@ Define channel constants in `src/shared/ipcChannels.ts`:
 - `STATBLOCKS_UNLINK_TOKEN` (remove default token link; future step)
 
 Implement handlers in `src/main.ts`:
+
 - All 6 core CRUD channels with appropriate world/campaign scoping and validation
 - Reads ordered by `updated_at DESC`
 - Add/Update validate required trimmed `name` field
@@ -75,11 +77,14 @@ interface DbApi {
       description?: string;
       config?: string;
     }): Promise<StatBlock>;
-    update(id: number, data: {
-      name?: string;
-      description?: string;
-      config?: string;
-    }): Promise<StatBlock>;
+    update(
+      id: number,
+      data: {
+        name?: string;
+        description?: string;
+        config?: string;
+      },
+    ): Promise<StatBlock>;
     delete(id: number): Promise<{ id: number }>;
   };
 }
@@ -88,6 +93,7 @@ interface DbApi {
 ### 2.4 Preload Bridge
 
 Wire bridge methods in `src/preload.ts`:
+
 - `window.db.statblocks.getAllByWorld(worldId)`
 - `window.db.statblocks.getAllByCampaign(campaignId)`
 - `window.db.statblocks.getById(id)`
@@ -98,26 +104,31 @@ Wire bridge methods in `src/preload.ts`:
 ### 2.5 Routing & UI Skeleton
 
 Add route in `src/renderer/App.tsx`:
+
 - `/world/:id/statblocks` (list page)
 - `/world/:id/statblocks/:statBlockId` (detail view, future phase)
 
 Create shell page components (no full implementation; basic scaffold only):
+
 - `src/renderer/pages/StatBlocksPage.tsx`: world-scoped list, create/edit/delete placeholders
 - `src/renderer/components/statblocks/StatBlockForm.tsx`: name + description + config JSON editor scaffold
 - `src/renderer/components/statblocks/StatBlockCard.tsx`: card display with name and linked token info
 
 Add sidebar nav link in `src/renderer/components/worlds/WorldSidebar.tsx`:
+
 - "StatBlocks" -> `/world/:id/statblocks`
 
 ### 2.6 Database Migration
 
 Add additive migration function `runStatBlocksSchemaMigration()` in `src/database/db.ts`:
+
 - Safely create `statblocks` table on startup if missing (no data loss on existing databases)
 - Called from `initializeSchema()`
 
 ### 2.7 Documentation
 
 Create/update:
+
 - `docs/features/statblocks.md` (this file, expanded with runtime/UI details after Phase 1)
 - `docs/02_CODEBASE_MAP.md`: add StatBlocks entry to Feature Map
 - `docs/03_IPC_CONTRACT.md`: add StatBlocks channels section
@@ -135,25 +146,30 @@ Create/update:
 ## 4. Affected Files
 
 ### Core IPC & Database Layer
+
 - `src/shared/ipcChannels.ts` (add 6+ constants)
 - `src/main.ts` (register 6+ handlers)
 - `src/database/db.ts` (schema + migration)
 - `forge.env.d.ts` (SharedTypes)
 
 ### Preload & Renderer Bridge
+
 - `src/preload.ts` (6+ bridge methods)
 
 ### Routing & Pages
+
 - `src/renderer/App.tsx` (add /statblocks routes)
 - `src/renderer/pages/StatBlocksPage.tsx` (new page, scaffold)
 - `src/renderer/pages/StatBlockDetailPage.tsx` (future phase; not in Phase 1)
 
 ### Components
+
 - `src/renderer/components/statblocks/StatBlockForm.tsx` (new, scaffold)
 - `src/renderer/components/statblocks/StatBlockCard.tsx` (new, scaffold)
 - `src/renderer/components/worlds/WorldSidebar.tsx` (add nav link)
 
 ### Documentation
+
 - `docs/features/statblocks.md` (living docs, Phase 1 version)
 - `docs/02_CODEBASE_MAP.md` (feature map entry)
 - `docs/03_IPC_CONTRACT.md` (channel documentation)
@@ -163,26 +179,31 @@ Create/update:
 **YES—this feature should be split into smaller sequential work items**, following the established patterns from tokens and abilities. Suggested breakdown:
 
 ### Phase 1a: Shared Contract & Channels (prep phase, no implementation yet)
+
 - Define `StatBlock` interface in `forge.env.d.ts`
 - Define `DbApi.statblocks` signatures
 - Add IPC channel constants in `src/shared/ipcChannels.ts`
 
 ### Phase 1b: Database Schema & Migration
+
 - Add migration function `runStatBlocksSchemaMigration()`
 - Create `statblocks` table schema
 - Wire migration call in `initializeSchema()`
 
 ### Phase 1c: Main Process Handlers
+
 - Register 6 CRUD handlers in `src/main.ts`
 - Add validation (required `name`, world FK, campaign FK if set)
 - Use `hasOwnProperty` partial update pattern
 - Order reads by `updated_at DESC`
 
 ### Phase 1d: Preload Bridges
+
 - Wire 6 bridge methods in `src/preload.ts`
 - Use typed `ipcRenderer.invoke` pattern (consistent with existing features)
 
 ### Phase 1e: Router & Pages (UI Scaffold)
+
 - Add routes in `src/renderer/App.tsx`
 - Create `StatBlocksPage.tsx` with loading/empty/list states (table scaffold)
 - Create `StatBlockForm.tsx` with name + description + config JSON editor scaffold
@@ -190,10 +211,12 @@ Create/update:
 - Add sidebar nav link
 
 ### Phase 1f: Tests
+
 - Unit tests for statblock schema, migrations, validation
 - E2E tests for CRUD workflows (create, read, list, update, delete)
 
 ### Phase 1g: Documentation & Cleanup
+
 - Update `docs/features/statblocks.md` with full Phase 1 behavior
 - Update `docs/02_CODEBASE_MAP.md` with statblocks entry
 - Update `docs/03_IPC_CONTRACT.md` with channel docs
@@ -202,26 +225,31 @@ Create/update:
 ### Future Phases (Out of Phase 1 Scope)
 
 **Phase 2: Token Association**
+
 - UI: Modal dialog to link/unlink default token
 - Handlers: `STATBLOCKS_LINK_TOKEN`, `STATBLOCKS_UNLINK_TOKEN`
 - Validation: Token must be in same world
 
 **Phase 3: Character Integration**
+
 - Character CRUD (separate entity)
 - Character ↔ StatBlock linking
 - Character form with statblock selector
 
 **Phase 4: Ability Integration & Config Schema**
+
 - Define `StatBlockConfig` schema (stats, resources, ability slot allocation)
 - Validation at IPC layer for mechanics structure
 - Ability slot manager UI
 
 **Phase 5: Runtime Modal & Token Integration**
+
 - Double-click token → open statblock modal (not separate window, but in-app modal)
 - Link runtime token selection to statblock display
 - Context-aware ability picker from statblock
 
 **Phase 6: Mechanics Implementations** (future, as user requests)
+
 - Dice rolling from ability scores
 - Resource tracking (HP, mana, action points)
 - Condition/status effect tracking
@@ -233,7 +261,7 @@ StatBlock is deliberately designed to accommodate future complexity without brea
 
 1. **Extensible Config**: The `config` JSON field can grow to include arbitrary mechanics (stats objects, resource pools, condition sets, ability slot blueprints, etc.) without schema changes. Phases 4+ define and validate structure incrementally.
 
-2. **Flexible Relationships**: 
+2. **Flexible Relationships**:
    - `character_id` is nullable; can link to future character entity without requiring it now.
    - `default_token_id` is nullable; tokens can exist without statblock association in Phase 1; Phase 2 makes linking explicit.
    - `campaign_id` is optional like tokens; supports world-first scoping but allows campaign-level variants.
@@ -249,6 +277,7 @@ StatBlock is deliberately designed to accommodate future complexity without brea
 ## Appendix: Sample Runtime Behavior (Phase 5+)
 
 In future battlemap runtime phase, a double-click on a token will:
+
 1. Look up the token's associated statblock (via `default_token_id` link)
 2. Fetch full statblock via `window.db.statblocks.getById()`
 3. Open an in-app modal (not electron BrowserWindow) displaying:
