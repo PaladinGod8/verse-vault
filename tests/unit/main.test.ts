@@ -451,7 +451,13 @@ describe('main process', () => {
       { id: 91, world_id: 1, name: 'Goblin Warrior', config: '{}' },
     ]);
     const statblocksSelectAllByCampaignMock = vi.fn(() => [
-      { id: 92, world_id: 1, campaign_id: 31, name: 'Orc Shaman', config: '{}' },
+      {
+        id: 92,
+        world_id: 1,
+        campaign_id: 31,
+        name: 'Orc Shaman',
+        config: '{}',
+      },
     ]);
     const statblocksInsertRunMock = vi.fn(() => ({ lastInsertRowid: 91 }));
     const statblocksUpdateRunMock = vi.fn();
@@ -2280,12 +2286,19 @@ describe('main process', () => {
     expect(statblocksSelectAllByCampaignMock).toHaveBeenCalledTimes(1);
     expect(statblocksSelectAllByCampaignMock).toHaveBeenCalledWith(31);
     expect(statblocksGetAllByCampaignResult).toEqual([
-      { id: 92, world_id: 1, campaign_id: 31, name: 'Orc Shaman', config: '{}' },
+      {
+        id: 92,
+        world_id: 1,
+        campaign_id: 31,
+        name: 'Orc Shaman',
+        config: '{}',
+      },
     ]);
 
-    const statblockByIdResult = registeredIpcHandlers[
-      IPC.STATBLOCKS_GET_BY_ID
-    ]({}, 91);
+    const statblockByIdResult = registeredIpcHandlers[IPC.STATBLOCKS_GET_BY_ID](
+      {},
+      91,
+    );
     expect(statblocksSelectByIdGetMock).toHaveBeenCalledWith(91);
     expect(statblockByIdResult).toMatchObject({ id: 91 });
 
@@ -2321,7 +2334,8 @@ describe('main process', () => {
       { description: 'A fierce goblin' },
     );
     const statblockUpdateSql = prepareMock.mock.calls.find(
-      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
+      ([sql]) =>
+        typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
     )?.[0];
     expect(statblockUpdateSql).toContain('description = ?');
     expect(statblockUpdateSql).not.toContain('name = ?');

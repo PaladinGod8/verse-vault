@@ -2188,9 +2188,7 @@ function registerIpcHandlers() {
   );
 
   ipcMain.handle(IPC.STATBLOCKS_GET_BY_ID, (_event, id: number) => {
-    return (
-      db.prepare('SELECT * FROM statblocks WHERE id = ?').get(id) ?? null
-    );
+    return db.prepare('SELECT * FROM statblocks WHERE id = ?').get(id) ?? null;
   });
 
   // StatBlocks - Mutation Handlers (Step 04)

@@ -159,7 +159,9 @@ export default function StatBlocksPage() {
     } catch (deleteError) {
       toast.error(
         'Failed to delete statblock.',
-        deleteError instanceof Error ? deleteError.message : 'Please try again.',
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Please try again.',
       );
     } finally {
       setDeletingId((current) => (current === sb.id ? null : current));

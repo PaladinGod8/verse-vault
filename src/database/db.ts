@@ -153,6 +153,16 @@ function initializeSchema(db: Database.Database): void {
     )
   `);
 
+  // `statblocks.character_id` references `characters(id)`. Keep this table
+  // present even before character features are implemented to avoid FK errors.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS characters (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   runArcActMigration(db);
   runSessionPlannedAtMigration(db);
   runTokenWorldIdMigration(db);

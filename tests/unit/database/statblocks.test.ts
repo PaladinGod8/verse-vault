@@ -68,7 +68,9 @@ describe('StatBlocks Schema Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS statblocks');
   });
 
@@ -77,13 +79,17 @@ describe('StatBlocks Schema Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain('world_id');
     expect(schemaSql).toContain('campaign_id');
     expect(schemaSql).toContain('character_id');
     expect(schemaSql).toContain('default_token_id');
     expect(schemaSql).toContain('description');
-    expect(schemaSql).toContain("config                TEXT NOT NULL DEFAULT '{}'");
+    expect(schemaSql).toContain(
+      "config                TEXT NOT NULL DEFAULT '{}'",
+    );
     expect(schemaSql).toContain('created_at            TEXT NOT NULL DEFAULT');
     expect(schemaSql).toContain('updated_at            TEXT NOT NULL DEFAULT');
   });
@@ -93,7 +99,9 @@ describe('StatBlocks Schema Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain(
       'world_id              INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE',
     );
@@ -104,7 +112,9 @@ describe('StatBlocks Schema Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain(
       'campaign_id           INTEGER REFERENCES campaigns(id) ON DELETE CASCADE',
     );
@@ -115,7 +125,9 @@ describe('StatBlocks Schema Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain(
       'default_token_id      INTEGER REFERENCES tokens(id) ON DELETE SET NULL',
     );
@@ -126,7 +138,9 @@ describe('StatBlocks Schema Migration', () => {
     getDatabase();
     closeDatabase();
 
-    const schemaSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
     expect(schemaSql).toContain(
       'CREATE INDEX IF NOT EXISTS idx_statblocks_world_id ON statblocks(world_id)',
     );
