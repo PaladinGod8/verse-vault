@@ -1055,6 +1055,31 @@
 - **Types**: no new types; uses `StatBlock` interface from Step 01
 - **Tests**: `tests/unit/main.test.ts` — 4 assertions added: `getAllByWorld` returns array, `getAllByCampaign` returns array, `getById` returns matching row, `getById` returns `null` for missing id; handler count updated from 68 → 71
 
+### StatBlock Mutation Handlers (Step 04)
+
+- **Purpose**: wire the 3 mutation IPC handlers for statblocks in the main process; preload bridges follow in Step 05
+- **Status**: added on 2026-03-06
+- **UI**: none in this step
+- **Store**: none yet
+- **IPC**: `IPC.STATBLOCKS_ADD`, `IPC.STATBLOCKS_UPDATE`, `IPC.STATBLOCKS_DELETE`
+- **Main handler**: `src/main.ts` -> `registerIpcHandlers()` — `STATBLOCKS_ADD` validates required trimmed `name`, inserts row and returns it via post-insert `SELECT`; `STATBLOCKS_UPDATE` uses `hasOwnProperty` partial updates for `name`/`description`/`config`, always refreshes `updated_at`, throws `'StatBlock not found'` if row missing; `STATBLOCKS_DELETE` deletes by id and returns `{ id }` (idempotent)
+- **Preload bridge**: none yet (Step 05)
+- **Storage**: no schema change in this step (uses `statblocks` table from Step 02)
+- **Types**: no new types; uses `StatBlock` interface from Step 01
+
+### StatBlock Preload Bridges (Step 05)
+
+- **Purpose**: wire all 6 statblock bridge methods in `src/preload.ts`, exposing the full statblock API to the renderer via `window.db.statblocks.*`
+- **Status**: added on 2026-03-06
+- **UI**: none in this step; renderer integration in Step 08
+- **Store**: none yet
+- **IPC**: all 6 channels — `IPC.STATBLOCKS_GET_ALL_BY_WORLD`, `IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `IPC.STATBLOCKS_GET_BY_ID`, `IPC.STATBLOCKS_ADD`, `IPC.STATBLOCKS_UPDATE`, `IPC.STATBLOCKS_DELETE`
+- **Main handler**: `src/main.ts` (from Steps 03-04)
+- **Preload bridge**: `src/preload.ts` — `window.db.statblocks.getAllByWorld(worldId)`, `window.db.statblocks.getAllByCampaign(campaignId)`, `window.db.statblocks.getById(id)`, `window.db.statblocks.add(data)`, `window.db.statblocks.update(id, data)`, `window.db.statblocks.delete(id)`
+- **Storage**: no schema change in this step
+- **Types**: no new types; uses `StatBlock` interface and `DbApi.statblocks` signatures from Step 01
+- **Tests**: `tests/unit/preload/statblocks.test.ts` — 12 tests covering all 6 bridge methods: correct IPC channel invocation, return value shapes, null/empty cases, and error propagation
+
 ---
 
 ## Where Do I Change X?

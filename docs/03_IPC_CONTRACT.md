@@ -15,6 +15,8 @@ StatBlock Step 03 (2026-03-06) wires 3 read handlers in main (`STATBLOCKS_GET_AL
 
 StatBlock Step 04 (2026-03-06) wires 3 mutation handlers in main (`STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, `STATBLOCKS_DELETE`); Step 05 wires preload bridges.
 
+StatBlock Step 05 (2026-03-06) wires all 6 preload bridges via `window.db.statblocks.*`, exposing the full statblock API to the renderer.
+
 Casting Range Overlay Step 01 (2026-03-05) extends `ABILITIES_ADD` and `ABILITIES_UPDATE` payloads with four new optional fields (`range_cells`, `aoe_shape`, `aoe_size_cells`, `target_type`) and updates the `Ability` response type accordingly; no new channels added.
 
 Abilities Step 07 (2026-02-27) exposes ability mutation bridges in preload (`window.db.abilities.add/update/delete/addChild/removeChild`) on top of Step 06 read bridges (`getAllByWorld/getById/getChildren`), with shared `Ability` + `AbilityChild` interfaces and full `DbApi.abilities` signatures aligned to all 8 channels.
@@ -628,4 +630,6 @@ interface StatBlock {
 - `SCENES_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `session_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
 - `SCENES_MOVE_TO_SESSION` runs inside a transaction, validates source scene + target session, returns unchanged row when target equals current `session_id`, appends moved scene to target tail (`MAX(sort_order) + 1`), resequences the old session, and returns the refreshed moved row.
 - Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`, and extended in Campaign Scenes Index Step 01 with `window.db.scenes.getAllByCampaign`.
+- StatBlock read handlers are wired in `main` for `STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, and `STATBLOCKS_GET_BY_ID` (Step 03); mutation handlers for `STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, and `STATBLOCKS_DELETE` are wired in Step 04.
+- StatBlock preload bridges are wired end-to-end in Step 05 via `window.db.statblocks.getAllByWorld/getAllByCampaign/getById/add/update/delete`.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

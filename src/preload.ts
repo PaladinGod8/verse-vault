@@ -263,6 +263,28 @@ contextBridge.exposeInMainWorld('db', {
     moveTo: (sceneId: number, newSessionId: number): Promise<Scene> =>
       ipcRenderer.invoke(IPC.SCENES_MOVE_TO_SESSION, sceneId, newSessionId),
   },
+  statblocks: {
+    getAllByWorld: (worldId: number): Promise<StatBlock[]> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_GET_ALL_BY_WORLD, worldId),
+    getAllByCampaign: (campaignId: number): Promise<StatBlock[]> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN, campaignId),
+    getById: (id: number): Promise<StatBlock | null> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_GET_BY_ID, id),
+    add: (data: {
+      world_id: number;
+      campaign_id?: number;
+      name: string;
+      description?: string;
+      config?: string;
+    }): Promise<StatBlock> => ipcRenderer.invoke(IPC.STATBLOCKS_ADD, data),
+    update: (
+      id: number,
+      data: { name?: string; description?: string; config?: string },
+    ): Promise<StatBlock> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number }> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_DELETE, id),
+  },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
     getById: (id: number): Promise<World | null> =>
