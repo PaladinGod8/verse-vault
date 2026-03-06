@@ -10,6 +10,7 @@
     "make": "electron-forge make",
     "dev": "electron-forge start",
     "publish": "electron-forge publish",
+    "type-check": "tsc --noEmit",
     "lint": "eslint --ext .ts,.tsx . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
