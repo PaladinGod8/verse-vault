@@ -109,7 +109,7 @@ export async function deleteWorld(page: Page, worldId: number): Promise<void> {
     .evaluate(async (id) => {
       await window.db.worlds.delete(id);
     }, worldId)
-    .catch(() => undefined);
+    .catch((): undefined => undefined);
 }
 
 export async function createCampaign(

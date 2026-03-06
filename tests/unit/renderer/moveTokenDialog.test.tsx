@@ -8,6 +8,7 @@ function buildToken(overrides: Partial<Token> = {}): Token {
     id: 1,
     world_id: 1,
     campaign_id: null,
+    grid_type: 'square',
     name: 'Wolf',
     image_src: null,
     config: '{}',

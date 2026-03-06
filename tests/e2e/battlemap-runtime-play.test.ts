@@ -140,7 +140,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
         nextSquareWorldTokenName,
         nextHexWorldTokenName,
       }) => {
-        const worlds = await window.db.worlds.getAll();
+        const worlds = await self.db.worlds.getAll();
         const world = worlds.find(
           (candidate) => candidate.name === nextWorldName,
         );
@@ -148,7 +148,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
           throw new Error('Unable to find world for runtime E2E setup.');
         }
 
-        const campaigns = await window.db.campaigns.getAllByWorld(world.id);
+        const campaigns = await self.db.campaigns.getAllByWorld(world.id);
         const campaign = campaigns.find(
           (candidate) => candidate.name === nextCampaignName,
         );
@@ -156,7 +156,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
           throw new Error('Unable to find campaign for runtime E2E setup.');
         }
 
-        const battlemaps = await window.db.battlemaps.getAllByWorld(world.id);
+        const battlemaps = await self.db.battlemaps.getAllByWorld(world.id);
         const battlemap = battlemaps.find(
           (candidate) => candidate.name === nextBattleMapName,
         );
@@ -164,7 +164,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
           throw new Error('Unable to find battlemap for runtime E2E setup.');
         }
 
-        await window.db.tokens.add({
+        await self.db.tokens.add({
           world_id: world.id,
           campaign_id: campaign.id,
           name: nextTokenName,
@@ -172,14 +172,14 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
           is_visible: 1,
         });
 
-        await window.db.tokens.add({
+        await self.db.tokens.add({
           world_id: world.id,
           name: nextSquareWorldTokenName,
           grid_type: 'square',
           is_visible: 1,
         });
 
-        await window.db.tokens.add({
+        await self.db.tokens.add({
           world_id: world.id,
           name: nextHexWorldTokenName,
           grid_type: 'hex',
@@ -234,7 +234,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
       .poll(
         async () =>
           window.evaluate(async (battleMapId) => {
-            const battlemap = await window.db.battlemaps.getById(battleMapId);
+            const battlemap = await self.db.battlemaps.getById(battleMapId);
             if (!battlemap) {
               return null;
             }

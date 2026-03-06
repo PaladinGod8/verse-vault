@@ -210,13 +210,13 @@ test('statblocks error states: invalid world id and world not found', async () =
 
     // Navigate to statblocks with non-numeric world id
     await window.evaluate(() => {
-      window.location.hash = '#/world/invalid/statblocks';
+      self.location.hash = '#/world/invalid/statblocks';
     });
     await expect(window.getByText('Invalid world id.')).toBeVisible();
 
     // Navigate to statblocks for a world that doesn't exist
     await window.evaluate(() => {
-      window.location.hash = '#/world/999999/statblocks';
+      self.location.hash = '#/world/999999/statblocks';
     });
     await expect(window.getByText('World not found.')).toBeVisible();
   } finally {

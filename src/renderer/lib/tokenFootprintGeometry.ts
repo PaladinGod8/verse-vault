@@ -15,7 +15,7 @@ function ensureInteger(value: unknown, fieldName: string): number {
   if (!Number.isInteger(value)) {
     throw new Error(`${fieldName} must be an integer`);
   }
-  return value;
+  return value as number;
 }
 
 function ensureNonEmptyCells<T>(cells: readonly T[], fieldName: string): void {

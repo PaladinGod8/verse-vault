@@ -202,7 +202,7 @@ describe('ActsPage', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   describe('load states', () => {

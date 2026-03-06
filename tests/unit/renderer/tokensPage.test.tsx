@@ -163,6 +163,7 @@ function buildWorld(overrides: Partial<World> = {}): World {
     thumbnail: null,
     short_description: null,
     last_viewed_at: null,
+    config: '{}',
     created_at: '2026-03-01 00:00:00',
     updated_at: '2026-03-01 00:00:00',
     ...overrides,
@@ -300,7 +301,7 @@ describe('TokensPage', () => {
         delete: vi.fn(),
         moveTo: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('renders loading state, table columns, scope labels, and copy action visibility', async () => {

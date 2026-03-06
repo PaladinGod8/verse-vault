@@ -487,7 +487,7 @@ describe('token IPC handlers', () => {
       expect.objectContaining({ recursive: true }),
     );
     expect(writeFileMock).toHaveBeenCalledTimes(1);
-    const [savedPath, savedBytes] = writeFileMock.mock.calls[0] as [
+    const [savedPath, savedBytes] = writeFileMock.mock.calls[0] as unknown as [
       string,
       Uint8Array,
     ];

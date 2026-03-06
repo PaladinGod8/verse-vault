@@ -18,6 +18,8 @@ const resizeObserverState = {
 type MockDisplayNode = {
   children: MockDisplayNode[];
   emit: (event: string, payload: unknown) => void;
+  scale: { x: number; y: number };
+  position: { x: number; y: number };
 };
 
 type MockPixiApp = {
@@ -314,20 +316,26 @@ function createFederatedPointerEvent(
 }
 
 function buildRuntimeConfig(
-  overrides: Partial<BattleMapRuntimeConfig> = {},
+  overrides: {
+    grid?: Partial<BattleMapRuntimeGridConfig>;
+    map?: Partial<BattleMapRuntimeMapConfig>;
+    camera?: Partial<BattleMapRuntimeCameraConfig>;
+  } = {},
 ): BattleMapRuntimeConfig {
+  const gridOverrides = overrides.grid ?? {};
+  const mapOverrides = overrides.map ?? {};
   return {
     grid: {
       mode: 'square',
       cellSize: 50,
       originX: 0,
       originY: 0,
-      ...(overrides.grid ?? {}),
+      ...gridOverrides,
     },
     map: {
       imageSrc: null,
       backgroundColor: '#000000',
-      ...(overrides.map ?? {}),
+      ...mapOverrides,
     },
     camera: {
       x: 0,
@@ -452,6 +460,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -478,6 +488,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -502,6 +514,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -547,6 +561,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -581,6 +597,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -615,6 +633,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -663,6 +683,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -689,6 +711,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -709,6 +733,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -761,6 +787,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -819,6 +847,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -841,6 +871,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -868,6 +900,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -893,6 +927,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -921,6 +957,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -971,6 +1009,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -997,6 +1037,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
     expect(
@@ -1021,6 +1063,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -1036,6 +1080,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 
@@ -1050,6 +1096,8 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
       />,
     );
 

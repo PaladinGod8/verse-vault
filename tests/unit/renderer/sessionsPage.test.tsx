@@ -57,10 +57,10 @@ vi.mock('@dnd-kit/core', () => ({
       {children}
     </div>
   ),
-  KeyboardSensor: function KeyboardSensor() {
+  KeyboardSensor: function KeyboardSensor(): null {
     return null;
   },
-  PointerSensor: function PointerSensor() {
+  PointerSensor: function PointerSensor(): null {
     return null;
   },
   closestCenter: vi.fn(),
@@ -257,7 +257,7 @@ describe('SessionsPage', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows error when world id is invalid', async () => {

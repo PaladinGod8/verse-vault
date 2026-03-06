@@ -1472,7 +1472,7 @@ describe('main process', () => {
       { world_id: 1, name: '  New BattleMap  ' },
     );
     const addedBattleMapConfig = JSON.parse(
-      battlemapsInsertRunMock.mock.calls[0][2] as string,
+      (battlemapsInsertRunMock.mock.calls[0] as unknown[])[2] as string,
     );
     expect(battlemapsInsertRunMock).toHaveBeenCalledWith(
       1,

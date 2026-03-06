@@ -34,6 +34,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     act_id: 2,
     name: 'Session Alpha',
     notes: null,
+    planned_at: null,
     sort_order: 0,
     created_at: '2026-01-01 00:00:00',
     updated_at: '2026-01-01 00:00:00',
@@ -128,7 +129,7 @@ describe('MoveSessionDialog', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows session name in dialog heading', async () => {

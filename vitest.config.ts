@@ -16,7 +16,6 @@ export default defineConfig({
     // every test file mocks all native modules (electron, better-sqlite3).
     // Vitest still isolates each file's module registry (isolate: true default).
     pool: isCoverageRun ? 'forks' : 'threads',
-    minWorkers: 2,
     maxWorkers: Math.max(2, os.cpus().length - 1),
 
     coverage: {
@@ -25,7 +24,6 @@ export default defineConfig({
       reportsDirectory: './coverage',
       clean: false,
       cleanOnRerun: false,
-      all: true,
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/test-setup.ts'],
       thresholds: {

@@ -26,6 +26,7 @@ function buildWorld(overrides: Partial<World> = {}): World {
     thumbnail: null,
     short_description: 'First world',
     last_viewed_at: null,
+    config: '{}',
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
@@ -63,6 +64,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     act_id: 1,
     name: 'Session One',
     notes: null,
+    planned_at: null,
     sort_order: 0,
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
@@ -153,7 +155,7 @@ describe('App routes', () => {
         delete: vi.fn(),
         moveTo: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('renders worlds home empty state when no worlds are returned', async () => {

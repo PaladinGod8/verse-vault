@@ -27,7 +27,7 @@ describe('PACKAGE_INCLUDE', () => {
   });
 
   it('does not contain bare /node_modules', () => {
-    expect(PACKAGE_INCLUDE.includes('/node_modules')).toBe(false);
+    expect(PACKAGE_INCLUDE).not.toContain('/node_modules');
   });
 });
 

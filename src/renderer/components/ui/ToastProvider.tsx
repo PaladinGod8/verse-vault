@@ -40,8 +40,8 @@ const DEFAULT_DURATION_MS = 4000;
 const MIN_DURATION_MS = 1000;
 const MAX_VISIBLE_TOASTS = 4;
 const NOOP_TOAST_ID = 'toast-noop';
-const noop = () => undefined;
-const noopToast = () => NOOP_TOAST_ID;
+const noop = (): void => undefined;
+const noopToast = (): string => NOOP_TOAST_ID;
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 

@@ -67,7 +67,7 @@ describe('AbilityPickerPanel', () => {
         removeChild: vi.fn(),
         getChildren: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows loading state while abilities are fetching', async () => {

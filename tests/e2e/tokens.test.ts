@@ -131,7 +131,7 @@ async function ensureWorldsLanding(window: Page) {
 
 async function createWorld(window: Page, name: string): Promise<number> {
   const created = await window.evaluate(async (worldName) => {
-    return window.db.worlds.add({ name: worldName });
+    return self.db.worlds.add({ name: worldName });
   }, name);
   return created.id;
 }
@@ -143,7 +143,7 @@ async function createCampaign(
 ): Promise<Campaign> {
   return window.evaluate(
     async ({ nextWorldId, campaignName }) =>
-      window.db.campaigns.add({
+      self.db.campaigns.add({
         world_id: nextWorldId,
         name: campaignName,
       }),
@@ -158,7 +158,7 @@ async function createBattleMap(
 ): Promise<BattleMap> {
   return window.evaluate(
     async ({ nextWorldId, battleMapName }) =>
-      window.db.battlemaps.add({
+      self.db.battlemaps.add({
         world_id: nextWorldId,
         name: battleMapName,
       }),
@@ -178,7 +178,7 @@ async function createTokenRecord(
   },
 ): Promise<Token> {
   return window.evaluate(async (payload) => {
-    return window.db.tokens.add({
+    return self.db.tokens.add({
       world_id: payload.worldId,
       campaign_id: payload.campaignId,
       name: payload.name,
@@ -313,13 +313,13 @@ test.afterEach(async () => {
       .evaluate(async (existingWorldId) => {
         await window.db.worlds.delete(existingWorldId);
       }, worldId)
-      .catch(() => undefined);
+      .catch((): undefined => undefined);
   }
 
   if (app && userDataDir) {
     await closeApp(app, userDataDir);
   } else if (app) {
-    await app.close().catch(() => undefined);
+    await app.close().catch((): undefined => undefined);
   }
 
   app = null;

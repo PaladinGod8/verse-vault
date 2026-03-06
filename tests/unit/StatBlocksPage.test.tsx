@@ -26,8 +26,10 @@ function buildWorld(overrides: Partial<World> = {}): World {
   return {
     id: 1,
     name: 'Test World',
-    description: 'A test world',
-    thumbnail_url: null,
+    thumbnail: null,
+    short_description: null,
+    last_viewed_at: null,
+    config: '{}',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -81,7 +83,7 @@ describe('StatBlocksPage', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   describe('world parameter validation', () => {

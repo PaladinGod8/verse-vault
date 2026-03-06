@@ -57,10 +57,10 @@ vi.mock('@dnd-kit/core', () => ({
       {children}
     </div>
   ),
-  KeyboardSensor: function KeyboardSensor() {
+  KeyboardSensor: function KeyboardSensor(): null {
     return null;
   },
-  PointerSensor: function PointerSensor() {
+  PointerSensor: function PointerSensor(): null {
     return null;
   },
   closestCenter: vi.fn(),
@@ -102,9 +102,10 @@ const actsGetAllByCampaignMock = vi.fn();
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 1,
-    campaign_id: 1,
+    act_id: 1,
     name: 'Session One',
     notes: 'Initial meeting',
+    planned_at: null,
     sort_order: 0,
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
@@ -243,7 +244,7 @@ describe('ScenesPage', () => {
         delete: scenesDeleteMock,
         moveTo: scenesMoveToMock,
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows error when world id is invalid', async () => {

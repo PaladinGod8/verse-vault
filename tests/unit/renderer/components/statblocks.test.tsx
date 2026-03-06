@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import StatBlockForm from '../../../../src/renderer/components/statblocks/StatBlockForm';
@@ -275,7 +275,7 @@ describe('StatBlockForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      const call = mockOnSubmit.mock.calls[0][0];
+      const call = (mockOnSubmit.mock.calls[0] as unknown[])[0];
       expect(call).not.toHaveProperty('campaign_id');
     });
   });
