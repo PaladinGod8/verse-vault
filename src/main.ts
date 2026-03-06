@@ -10,6 +10,11 @@ import {
   ensureTokenConfigJsonText,
 } from './database/db';
 import { IPC } from './shared/ipcChannels';
+import {
+  DEFAULT_RESOURCE_DEFINITIONS,
+  DEFAULT_PASSIVE_SCORE_DEFINITIONS,
+} from './shared/statisticsTypes';
+import type { WorldStatisticsConfig } from './shared/statisticsTypes';
 
 function isAbilityChildDuplicateError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
@@ -697,22 +702,38 @@ function registerIpcHandlers() {
         throw new Error('World name is required');
       }
 
-      const config = typeof data.config === 'string' ? data.config : '{}';
-      try {
-        JSON.parse(config);
-      } catch {
-        throw new Error('World config must be valid JSON');
+      const thumbnail =
+        typeof data.thumbnail === 'string' ? data.thumbnail : null;
+      const shortDescription =
+        typeof data.short_description === 'string'
+          ? data.short_description
+          : null;
+
+      // Use provided config or generate default
+      let config: string;
+      if (typeof data.config === 'string') {
+        config = data.config;
+        // Validate provided config is valid JSON
+        try {
+          JSON.parse(config);
+        } catch {
+          throw new Error('World config must be valid JSON');
+        }
+      } else {
+        // Generate default config with statistics
+        const defaultConfig: WorldStatisticsConfig = {
+          statistics: {
+            resources: DEFAULT_RESOURCE_DEFINITIONS,
+            passiveScores: DEFAULT_PASSIVE_SCORE_DEFINITIONS,
+          },
+        };
+        config = JSON.stringify(defaultConfig);
       }
 
       const stmt = db.prepare(
         'INSERT INTO worlds (name, thumbnail, short_description, config) VALUES (?, ?, ?, ?)',
       );
-      const result = stmt.run(
-        name,
-        data.thumbnail ?? null,
-        data.short_description ?? null,
-        config,
-      );
+      const result = stmt.run(name, thumbnail, shortDescription, config);
 
       const world = db
         .prepare('SELECT * FROM worlds WHERE id = ?')

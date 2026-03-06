@@ -18,8 +18,12 @@ export default function ResourceDefinitionForm({
 }: Props) {
   const [id, setId] = useState(initialValues?.id ?? '');
   const [name, setName] = useState(initialValues?.name ?? '');
-  const [abbreviation, setAbbreviation] = useState(initialValues?.abbreviation ?? '');
-  const [description, setDescription] = useState(initialValues?.description ?? '');
+  const [abbreviation, setAbbreviation] = useState(
+    initialValues?.abbreviation ?? '',
+  );
+  const [description, setDescription] = useState(
+    initialValues?.description ?? '',
+  );
   const [isDefault, setIsDefault] = useState(initialValues?.isDefault ?? true);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,11 +100,12 @@ export default function ResourceDefinitionForm({
           onChange={(e) => setId(e.target.value)}
           disabled={mode === 'edit' || isPending}
           placeholder="e.g., hp, mp, ac"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
           required
         />
         <p className="mt-1 text-xs text-slate-500">
-          Lowercase letters and underscores only. Cannot be changed after creation.
+          Lowercase letters and underscores only. Cannot be changed after
+          creation.
         </p>
       </div>
 
@@ -118,7 +123,7 @@ export default function ResourceDefinitionForm({
           onChange={(e) => setName(e.target.value)}
           disabled={isPending}
           placeholder="e.g., Hit Points"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50"
           required
         />
       </div>
@@ -137,7 +142,7 @@ export default function ResourceDefinitionForm({
           onChange={(e) => setAbbreviation(e.target.value)}
           disabled={isPending}
           placeholder="e.g., HP"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50"
           required
         />
       </div>
@@ -156,7 +161,7 @@ export default function ResourceDefinitionForm({
           disabled={isPending}
           placeholder="Optional description..."
           rows={2}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50"
         />
       </div>
 

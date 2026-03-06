@@ -9,7 +9,7 @@ Current channels cover an initial local content-record scaffold (`verses`) plus 
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
-World Config Step 02 (2026-03-06) extends world add/update handlers to accept and persist optional `config` field (JSON string for world-specific configuration like statistics definitions); validates config is valid JSON before persisting.
+World Config Step 02 (2026-03-06) extends world add/update handlers to accept and persist optional `config` field (JSON string for world-specific configuration like statistics definitions); validates config is valid JSON before persisting. Default Statistics Step 08 (2026-03-06) extends `WORLDS_ADD` handler to auto-populate `config` with D&D 5e-style default statistics (`DEFAULT_RESOURCE_DEFINITIONS` and `DEFAULT_PASSIVE_SCORE_DEFINITIONS` from `src/shared/statisticsTypes.ts` wrapped in a `WorldStatisticsConfig`) when not explicitly provided, while respecting explicitly-provided config values.
 
 StatBlock Step 01 (2026-03-05) adds 6 channel constants (`STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `STATBLOCKS_GET_BY_ID`, `STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, `STATBLOCKS_DELETE`) and shared `StatBlock` interface plus `DbApi.statblocks` method signatures; no handlers or preload wiring yet.
 
