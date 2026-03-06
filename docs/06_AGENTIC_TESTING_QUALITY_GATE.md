@@ -8,6 +8,7 @@ Use this as a copy-paste prompt when a feature branch is complete and needs a fi
 Run a final testing and quality-gate pass on the currently pushed feature changes.
 
 Context and constraints:
+
 - Follow repository rules in `AGENTS.md` and docs guardrails.
 - Keep Electron security boundary intact (`contextIsolation: true`, `nodeIntegration: false`, no Node APIs in renderer).
 - Use IPC constants from `src/shared/ipcChannels.ts`; no magic channel strings.
@@ -16,6 +17,7 @@ Context and constraints:
 - Keep each fix small, safe, and reversible.
 
 Required gate order (strict):
+
 1. Lint/format gate
 2. Unit test gate
 3. Coverage gate (>= 80%)
@@ -27,11 +29,13 @@ If you touch code at any gate, re-run all earlier gates before proceeding.
 Detailed instructions:
 
 ## Gate 1: Lint and Format
+
 - Run lint and format checks (repo standard commands).
 - Fix all lint/format issues.
 - Re-run until clean.
 
 ## Gate 2: Unit Tests
+
 - Run unit tests.
 - For failures:
   - Diagnose root cause.
@@ -41,6 +45,7 @@ Detailed instructions:
 - Re-run unit tests until all pass.
 
 ## Gate 3: Coverage (Minimum 80%)
+
 - Run coverage using the repository's unit test coverage command/mode.
 - Enforce overall repository coverage >= 80%.
 - Add focused tests where coverage is low, prioritizing:
@@ -50,6 +55,7 @@ Detailed instructions:
 - After adding tests, re-run lint + unit + coverage until all pass and coverage is >= 80%.
 
 ## Gate 4: E2E Tests
+
 - Run e2e tests in a reliable sequence.
 - Segment/serialize tests that share resources/state to avoid cross-test interference.
 - For failures:
@@ -59,12 +65,14 @@ Detailed instructions:
 - Repeat until all e2e tests pass.
 
 Execution behavior:
+
 - Be explicit about each command you run.
 - Stop hiding failures: surface failing files/tests and root cause.
 - Make minimal diffs and keep architecture boundaries intact.
 - Update hook-required living docs in the same commit step when touched files require it.
 
 Output format (required):
+
 1. Gate status summary:
    - Gate 1 Lint/Format: PASS/FAIL
    - Gate 2 Unit: PASS/FAIL
