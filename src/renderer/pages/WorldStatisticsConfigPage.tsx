@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import ResourceDefinitionForm from '../components/statistics/ResourceDefinitionForm';
+import ModalShell from '../components/ui/ModalShell';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useToast } from '../components/ui/ToastProvider';
+import type {
+  WorldStatisticsConfig,
+  ResourceStatisticDefinition,
+} from '../../shared/statisticsTypes';
 
 export default function WorldStatisticsConfigPage() {
   const { id } = useParams();
@@ -17,9 +25,15 @@ export default function WorldStatisticsConfigPage() {
     return parsed;
   }, [id]);
 
+  const toast = useToast();
   const [world, setWorld] = useState<World | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resources, setResources] = useState<ResourceStatisticDefinition[]>([]);
+  const [isCreateResourceOpen, setIsCreateResourceOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState<ResourceStatisticDefinition | null>(null);
+  const [pendingDeleteResource, setPendingDeleteResource] = useState<ResourceStatisticDefinition | null>(null);
+  const [isDeletingResource, setIsDeletingResource] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,6 +83,121 @@ export default function WorldStatisticsConfigPage() {
     };
   }, [worldId]);
 
+  // Parse world config and extract resources
+  useEffect(() => {
+    if (!world) {
+      setResources([]);
+      return;
+    }
+
+    try {
+      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      setResources(config.statistics?.resources ?? []);
+    } catch {
+      setResources([]);
+    }
+  }, [world]);
+
+  const handleCreateResource = async (data: ResourceStatisticDefinition) => {
+    if (!world) return;
+
+    try {
+      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const updatedResources = [...(config.statistics?.resources ?? []), data];
+
+      const updatedConfig: WorldStatisticsConfig = {
+        ...config,
+        statistics: {
+          ...config.statistics,
+          resources: updatedResources,
+        },
+      };
+
+      const updatedWorld = await window.db.worlds.update(world.id, {
+        config: JSON.stringify(updatedConfig),
+      });
+
+      setWorld(updatedWorld);
+      setIsCreateResourceOpen(false);
+      toast.success('Resource created.', `"${data.name}" was added.`);
+    } catch (err) {
+      toast.error(
+        'Failed to create resource.',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+      throw err;
+    }
+  };
+
+  const handleUpdateResource = async (data: ResourceStatisticDefinition) => {
+    if (!world || !editingResource) return;
+
+    try {
+      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const updatedResources = (config.statistics?.resources ?? []).map((r) =>
+        r.id === editingResource.id ? data : r,
+      );
+
+      const updatedConfig: WorldStatisticsConfig = {
+        ...config,
+        statistics: {
+          ...config.statistics,
+          resources: updatedResources,
+        },
+      };
+
+      const updatedWorld = await window.db.worlds.update(world.id, {
+        config: JSON.stringify(updatedConfig),
+      });
+
+      setWorld(updatedWorld);
+      setEditingResource(null);
+      toast.success('Resource updated.', `"${data.name}" was saved.`);
+    } catch (err) {
+      toast.error(
+        'Failed to update resource.',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+      throw err;
+    }
+  };
+
+  const handleDeleteResource = async () => {
+    if (!world || !pendingDeleteResource) return;
+
+    setIsDeletingResource(true);
+
+    try {
+      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const updatedResources = (config.statistics?.resources ?? []).filter(
+        (r) => r.id !== pendingDeleteResource.id,
+      );
+
+      const updatedConfig: WorldStatisticsConfig = {
+        ...config,
+        statistics: {
+          ...config.statistics,
+          resources: updatedResources,
+        },
+      };
+
+      const updatedWorld = await window.db.worlds.update(world.id, {
+        config: JSON.stringify(updatedConfig),
+      });
+
+      setWorld(updatedWorld);
+      toast.success('Resource deleted.', `"${pendingDeleteResource.name}" was removed.`);
+    } catch (err) {
+      toast.error(
+        'Failed to delete resource.',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setIsDeletingResource(false);
+      setPendingDeleteResource(null);
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       <WorldSidebar worldId={worldId} />
@@ -97,13 +226,65 @@ export default function WorldStatisticsConfigPage() {
         ) : world ? (
           <div className="space-y-8">
             <section>
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">
-                Primary Resources
-              </h2>
-              <p className="text-sm text-slate-600">
-                Resources have current and maximum values (e.g., HP, MP, AC).
-              </p>
-              {/* Resource CRUD will be added in Step 06 */}
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Primary Resources
+                </h2>
+                <button
+                  onClick={() => setIsCreateResourceOpen(true)}
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
+                >
+                  Add Resource
+                </button>
+              </div>
+
+              {resources.length === 0 ? (
+                <p className="text-sm text-slate-600">
+                  No resources defined yet. Add your first resource to get started.
+                </p>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-slate-200">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">ID</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">Abbreviation</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">Default</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {resources.map((resource) => (
+                        <tr key={resource.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-2 text-sm text-slate-900">{resource.id}</td>
+                          <td className="px-4 py-2 text-sm text-slate-900">{resource.name}</td>
+                          <td className="px-4 py-2 text-sm text-slate-700">{resource.abbreviation}</td>
+                          <td className="px-4 py-2 text-sm text-slate-700">
+                            {resource.isDefault ? 'Yes' : 'No'}
+                          </td>
+                          <td className="px-4 py-2 text-sm">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setEditingResource(resource)}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => setPendingDeleteResource(resource)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
 
             <section>
@@ -119,6 +300,58 @@ export default function WorldStatisticsConfigPage() {
           </div>
         ) : null}
       </main>
+
+      {/* Create Resource Modal */}
+      {isCreateResourceOpen ? (
+        <ModalShell
+          isOpen={isCreateResourceOpen}
+          onClose={() => setIsCreateResourceOpen(false)}
+          labelledBy="create-resource-title"
+          boxClassName="max-w-lg"
+        >
+          <h2 id="create-resource-title" className="mb-4 text-lg font-semibold text-slate-900">
+            Create Resource
+          </h2>
+          <ResourceDefinitionForm
+            mode="create"
+            existingIds={resources.map((r) => r.id)}
+            onSubmit={handleCreateResource}
+            onCancel={() => setIsCreateResourceOpen(false)}
+          />
+        </ModalShell>
+      ) : null}
+
+      {/* Edit Resource Modal */}
+      {editingResource ? (
+        <ModalShell
+          isOpen={editingResource !== null}
+          onClose={() => setEditingResource(null)}
+          labelledBy="edit-resource-title"
+          boxClassName="max-w-lg"
+        >
+          <h2 id="edit-resource-title" className="mb-4 text-lg font-semibold text-slate-900">
+            Edit Resource
+          </h2>
+          <ResourceDefinitionForm
+            mode="edit"
+            initialValues={editingResource}
+            existingIds={resources.map((r) => r.id)}
+            onSubmit={handleUpdateResource}
+            onCancel={() => setEditingResource(null)}
+          />
+        </ModalShell>
+      ) : null}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={pendingDeleteResource !== null}
+        title={`Delete "${pendingDeleteResource?.name ?? ''}"?`}
+        message="This will remove the resource definition. Existing statblock data will not be affected."
+        onConfirm={handleDeleteResource}
+        onCancel={() => setPendingDeleteResource(null)}
+        confirmLabel="Delete"
+        isConfirming={isDeletingResource}
+      />
     </div>
   );
 }
