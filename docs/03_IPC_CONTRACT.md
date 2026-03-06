@@ -568,7 +568,7 @@ interface StatBlock {
 - Worlds read path is wired end-to-end for `WORLDS_GET_ALL` and `WORLDS_GET_BY_ID` (`main` handlers + `window.db.worlds.getAll/getById` in preload).
 - Worlds create path is wired end-to-end for `WORLDS_ADD` (`main` handler + `window.db.worlds.add` in preload), with required trimmed-name validation in `main`.
 - Worlds mutation paths are wired end-to-end for `WORLDS_UPDATE`, `WORLDS_DELETE`, and `WORLDS_MARK_VIEWED` (`main` handlers + `window.db.worlds.update/delete/markViewed` in preload).
-- `WORLDS_UPDATE` updates only provided fields (`name`, `thumbnail`, `short_description`), validates `name` when present, and always refreshes `updated_at`.
+- `WORLDS_UPDATE` updates only provided fields (`name`, `thumbnail`, `short_description`, `config`), validates `name` when present, validates `config` as valid JSON when present, and always refreshes `updated_at`. The `config` field stores world-level statistics configuration as a JSON string.
 - `WORLDS_MARK_VIEWED` updates `last_viewed_at` and returns the refreshed row or `null` when the id does not exist.
 - `WORLDS_IMPORT_IMAGE` accepts `{ fileName, mimeType, bytes }`, requires `bytes` to be a non-empty `Uint8Array`, accepts only `image/png`, `image/jpeg`, `image/webp`, or `image/gif`, enforces a 5 MB size limit, writes under `app.getPath('userData')/world-images` using a unique filename (`timestamp-uuid.ext`), and returns `{ image_src }` as `vv-media://world-images/<encoded-file-name>`; validation reuses `ensureTokenImageImportPayload`; preload bridge is `window.db.worlds.importImage(payload)`.
 - `vv-media` protocol handler now serves both `token-images` and `world-images` hosts; host/path traversal guards apply to both directories.
