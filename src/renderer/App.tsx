@@ -12,6 +12,7 @@ import ActsPage from './pages/ActsPage';
 import SessionsPage from './pages/SessionsPage';
 import ScenesPage from './pages/ScenesPage';
 import TokensPage from './pages/TokensPage';
+import StatBlocksPage from './pages/StatBlocksPage';
 import { ToastProvider } from './components/ui/ToastProvider';
 import './index.css';
 
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
         <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
         <Route path="/world/:id/tokens" element={<TokensPage />} />
+        <Route path="/world/:id/statblocks" element={<StatBlocksPage />} />
         <Route
           path="/world/:id/battlemaps/:battleMapId/runtime"
           element={<BattleMapRuntimePage />}
