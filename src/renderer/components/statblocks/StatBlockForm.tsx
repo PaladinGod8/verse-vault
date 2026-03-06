@@ -2,16 +2,20 @@ import { FormEvent, useState, useEffect } from 'react';
 import type {
   WorldStatisticsConfig,
   ResourceStatisticDefinition,
+  PassiveScoreDefinition,
   StatBlockStatisticsConfig,
 } from '../../../shared/statisticsTypes';
 import {
   parseStatBlockStatistics,
   setResourceValue,
+  setPassiveScoreValue,
   initializeStatBlockStatistics,
   serializeStatBlockStatistics,
   getResourceValue,
+  getPassiveScoreValue,
 } from '../../lib/statblockStatisticsUtils';
 import ResourceStatisticInput from '../statistics/ResourceStatisticInput';
+import PassiveScoreInput from '../statistics/PassiveScoreInput';
 
 type StatBlockAddData = Parameters<DbApi['statblocks']['add']>[0];
 
@@ -54,6 +58,9 @@ export default function StatBlockForm({
   const [worldResources, setWorldResources] = useState<
     ResourceStatisticDefinition[]
   >([]);
+  const [worldPassiveScores, setWorldPassiveScores] = useState<
+    PassiveScoreDefinition[]
+  >([]);
   const [statisticsConfig, setStatisticsConfig] =
     useState<StatBlockStatisticsConfig | null>(null);
 
@@ -72,13 +79,16 @@ export default function StatBlockForm({
               existingWorld.config,
             );
             setWorldResources(worldConfig.statistics?.resources ?? []);
+            setWorldPassiveScores(worldConfig.statistics?.passiveScores ?? []);
           } catch {
             setWorldResources([]);
+            setWorldPassiveScores([]);
           }
         }
       } catch {
         if (isMounted) {
           setWorldResources([]);
+          setWorldPassiveScores([]);
         }
       }
     };
@@ -94,12 +104,14 @@ export default function StatBlockForm({
   useEffect(() => {
     if (mode === 'create') {
       // Initialize empty statistics for create mode
-      setStatisticsConfig(initializeStatBlockStatistics(worldResources, []));
+      setStatisticsConfig(
+        initializeStatBlockStatistics(worldResources, worldPassiveScores),
+      );
     } else if (initialData?.config) {
       // Parse existing statistics for edit mode
       setStatisticsConfig(parseStatBlockStatistics(initialData.config));
     }
-  }, [mode, initialData, worldResources]);
+  }, [mode, initialData, worldResources, worldPassiveScores]);
 
   const handleConfigChange = (value: string) => {
     setConfig(value);
@@ -132,8 +144,13 @@ export default function StatBlockForm({
     setSubmitError(null);
 
     try {
+      const hasResources =
+        Object.keys(statisticsConfig?.statistics?.resources ?? {}).length > 0;
+      const hasPassiveScores =
+        Object.keys(statisticsConfig?.statistics?.passiveScores ?? {}).length >
+        0;
       const finalConfig =
-        statisticsConfig && Object.keys(statisticsConfig.statistics?.resources ?? {}).length > 0
+        statisticsConfig && (hasResources || hasPassiveScores)
           ? serializeStatBlockStatistics(statisticsConfig)
           : trimmedConfig || '{}';
 
@@ -209,6 +226,32 @@ export default function StatBlockForm({
                 onChange={(value) => {
                   setStatisticsConfig((prev) =>
                     prev ? setResourceValue(prev, resource.id, value) : prev,
+                  );
+                }}
+                disabled={isSubmitting}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Passive Scores Section */}
+      {worldPassiveScores.length > 0 && statisticsConfig ? (
+        <div className="space-y-2 border-t border-slate-200 pt-4">
+          <h3 className="text-sm font-semibold text-slate-900">
+            Passive Scores
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {worldPassiveScores.map((passiveScore) => (
+              <PassiveScoreInput
+                key={passiveScore.id}
+                definition={passiveScore}
+                value={getPassiveScoreValue(statisticsConfig, passiveScore.id)}
+                onChange={(value) => {
+                  setStatisticsConfig((prev) =>
+                    prev
+                      ? setPassiveScoreValue(prev, passiveScore.id, value)
+                      : prev,
                   );
                 }}
                 disabled={isSubmitting}
