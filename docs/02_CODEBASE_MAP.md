@@ -1080,6 +1080,19 @@
 - **Types**: no new types; uses `StatBlock` interface and `DbApi.statblocks` signatures from Step 01
 - **Tests**: `tests/unit/preload/statblocks.test.ts` — 12 tests covering all 6 bridge methods: correct IPC channel invocation, return value shapes, null/empty cases, and error propagation
 
+### StatBlock Routing & Pages (Step 06)
+
+- **Purpose**: add routing infrastructure and scaffold the statblocks list page with basic navigation and delete UX
+- **Status**: added on 2026-03-06
+- **UI**: `src/renderer/App.tsx` (route `/world/:id/statblocks`), `src/renderer/components/worlds/WorldSidebar.tsx` (StatBlocks nav link with ShieldIcon), `src/renderer/pages/StatBlocksPage.tsx` (list page with empty/error/loading states, delete confirm dialog, scaffold New StatBlock button), `src/renderer/components/statblocks/StatBlockCard.tsx` (card scaffold for future modal steps)
+- **Store**: none yet
+- **IPC**: uses existing `IPC.WORLDS_GET_BY_ID` via `window.db.worlds.getById` and `IPC.STATBLOCKS_GET_ALL_BY_WORLD` / `IPC.STATBLOCKS_DELETE` via `window.db.statblocks.getAllByWorld` / `window.db.statblocks.delete`
+- **Main handler**: unchanged in this step (uses handlers from Steps 03-04)
+- **Preload bridge**: unchanged in this step (uses bridges from Step 05)
+- **Storage**: no schema change in this step
+- **Types**: no new types; uses `StatBlock` interface and `DbApi.statblocks` from Step 01
+- **Tests**: `tests/e2e/statblocks.test.ts` — E2E test covering sidebar navigation, empty state display, and New StatBlock button presence
+
 ---
 
 ## Where Do I Change X?
