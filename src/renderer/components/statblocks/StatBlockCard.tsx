@@ -73,7 +73,14 @@ export default function StatBlockCard({
             {statistics.resources.slice(0, 3).map((resource) => {
               // Show first 3 resources only (typically HP, MP, AC)
               const value = getResourceValue(statistics, resource.id);
-              if (!value) return null;
+              // Guard against missing value or invalid data
+              if (
+                !value ||
+                typeof value.current !== 'number' ||
+                typeof value.maximum !== 'number'
+              ) {
+                return null;
+              }
 
               return (
                 <div
@@ -81,7 +88,7 @@ export default function StatBlockCard({
                   className="flex items-baseline gap-1 text-sm"
                 >
                   <span className="font-medium text-slate-700">
-                    {resource.abbreviation}:
+                    {resource.abbreviation || 'STAT'}:
                   </span>
                   <span className="text-slate-900">
                     {value.current}/{value.maximum}

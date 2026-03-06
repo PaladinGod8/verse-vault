@@ -1,4 +1,4 @@
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, useState, useEffect, useMemo } from 'react';
 import type {
   WorldStatisticsConfig,
   ResourceStatisticDefinition,
@@ -113,6 +113,41 @@ export default function StatBlockForm({
     }
   }, [mode, initialData, worldResources, worldPassiveScores]);
 
+  // Filter statistics to only include those still defined in world config
+  const filteredStatistics = useMemo(() => {
+    if (!statisticsConfig) return null;
+
+    const validResourceIds = new Set(worldResources.map((r) => r.id));
+    const validPassiveScoreIds = new Set(worldPassiveScores.map((p) => p.id));
+
+    const resources = statisticsConfig.statistics?.resources ?? {};
+    const passiveScores = statisticsConfig.statistics?.passiveScores ?? {};
+
+    const filteredResources: typeof resources = {};
+    const filteredPassiveScores: typeof passiveScores = {};
+
+    // Only include resources that still exist in world config
+    for (const [id, value] of Object.entries(resources)) {
+      if (validResourceIds.has(id)) {
+        filteredResources[id] = value;
+      }
+    }
+
+    // Only include passive scores that still exist in world config
+    for (const [id, value] of Object.entries(passiveScores)) {
+      if (validPassiveScoreIds.has(id)) {
+        filteredPassiveScores[id] = value;
+      }
+    }
+
+    return {
+      statistics: {
+        resources: filteredResources,
+        passiveScores: filteredPassiveScores,
+      },
+    };
+  }, [statisticsConfig, worldResources, worldPassiveScores]);
+
   const handleConfigChange = (value: string) => {
     setConfig(value);
     try {
@@ -145,13 +180,13 @@ export default function StatBlockForm({
 
     try {
       const hasResources =
-        Object.keys(statisticsConfig?.statistics?.resources ?? {}).length > 0;
+        Object.keys(filteredStatistics?.statistics?.resources ?? {}).length > 0;
       const hasPassiveScores =
-        Object.keys(statisticsConfig?.statistics?.passiveScores ?? {}).length >
-        0;
+        Object.keys(filteredStatistics?.statistics?.passiveScores ?? {})
+          .length > 0;
       const finalConfig =
-        statisticsConfig && (hasResources || hasPassiveScores)
-          ? serializeStatBlockStatistics(statisticsConfig)
+        filteredStatistics && (hasResources || hasPassiveScores)
+          ? serializeStatBlockStatistics(filteredStatistics)
           : trimmedConfig || '{}';
 
       await onSubmit({
