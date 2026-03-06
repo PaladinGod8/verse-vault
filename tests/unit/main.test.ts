@@ -453,6 +453,9 @@ describe('main process', () => {
     const statblocksSelectAllByCampaignMock = vi.fn(() => [
       { id: 92, world_id: 1, campaign_id: 31, name: 'Orc Shaman', config: '{}' },
     ]);
+    const statblocksInsertRunMock = vi.fn(() => ({ lastInsertRowid: 91 }));
+    const statblocksUpdateRunMock = vi.fn();
+    const statblocksDeleteRunMock = vi.fn();
     const statblocksSelectByIdGetMock = vi.fn((id: number) => {
       if (id === 404) return null;
       return {
@@ -788,6 +791,15 @@ describe('main process', () => {
       if (sql.includes('SELECT * FROM statblocks WHERE id = ?')) {
         return { get: statblocksSelectByIdGetMock };
       }
+      if (sql.includes('INSERT INTO statblocks')) {
+        return { run: statblocksInsertRunMock };
+      }
+      if (sql.includes('UPDATE statblocks SET')) {
+        return { run: statblocksUpdateRunMock };
+      }
+      if (sql.includes('DELETE FROM statblocks WHERE id = ?')) {
+        return { run: statblocksDeleteRunMock };
+      }
 
       throw new Error(`Unexpected SQL: ${sql}`);
     });
@@ -821,7 +833,7 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(ipcHandleMock).toHaveBeenCalledTimes(71);
+    expect(ipcHandleMock).toHaveBeenCalledTimes(74);
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);
@@ -2281,6 +2293,64 @@ describe('main process', () => {
       IPC.STATBLOCKS_GET_BY_ID
     ]({}, 404);
     expect(missingStatblockResult).toBeNull();
+
+    const statblockAddResult = registeredIpcHandlers[IPC.STATBLOCKS_ADD](
+      {},
+      { world_id: 1, name: '  Goblin Warrior  ', config: '{}' },
+    );
+    expect(statblocksInsertRunMock).toHaveBeenCalledWith(
+      1,
+      null,
+      'Goblin Warrior',
+      null,
+      '{}',
+    );
+    expect(statblocksSelectByIdGetMock).toHaveBeenCalledWith(91);
+    expect(statblockAddResult).toMatchObject({ id: 91 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.STATBLOCKS_ADD](
+        {},
+        { world_id: 1, name: '   ' },
+      ),
+    ).toThrowError('StatBlock name is required');
+
+    const statblockUpdateResult = registeredIpcHandlers[IPC.STATBLOCKS_UPDATE](
+      {},
+      91,
+      { description: 'A fierce goblin' },
+    );
+    const statblockUpdateSql = prepareMock.mock.calls.find(
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
+    )?.[0];
+    expect(statblockUpdateSql).toContain('description = ?');
+    expect(statblockUpdateSql).not.toContain('name = ?');
+    expect(statblocksUpdateRunMock).toHaveBeenCalledWith('A fierce goblin', 91);
+    expect(statblockUpdateResult).toMatchObject({ id: 91 });
+
+    expect(() =>
+      registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 91, { name: '   ' }),
+    ).toThrowError('StatBlock name cannot be empty');
+
+    const statblockTimestampOnlyUpdateResult = registeredIpcHandlers[
+      IPC.STATBLOCKS_UPDATE
+    ]({}, 91, {});
+    const statblockTimestampOnlySql = prepareMock.mock.calls.find(
+      ([sql]) =>
+        sql ===
+        "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?",
+    )?.[0];
+    expect(statblockTimestampOnlySql).toBe(
+      "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?",
+    );
+    expect(statblockTimestampOnlyUpdateResult).toMatchObject({ id: 91 });
+
+    const statblockDeleteResult = registeredIpcHandlers[IPC.STATBLOCKS_DELETE](
+      {},
+      91,
+    );
+    expect(statblocksDeleteRunMock).toHaveBeenCalledWith(91);
+    expect(statblockDeleteResult).toEqual({ id: 91 });
 
     registeredEvents['before-quit']();
     expect(closeDatabaseMock).toHaveBeenCalledTimes(1);
