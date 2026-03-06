@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import type { WorldStatisticsConfig } from '../../shared/statisticsTypes';
 
 type StatBlockAddData = Parameters<DbApi['statblocks']['add']>[0];
 
@@ -35,6 +36,28 @@ export default function StatBlocksPage() {
   );
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<StatBlock | null>(null);
+
+  const worldStatistics = useMemo(() => {
+    if (!world?.config) {
+      return {
+        resources: [],
+        passiveScores: [],
+      };
+    }
+
+    try {
+      const parsed: WorldStatisticsConfig = JSON.parse(world.config);
+      return {
+        resources: parsed.statistics?.resources ?? [],
+        passiveScores: parsed.statistics?.passiveScores ?? [],
+      };
+    } catch {
+      return {
+        resources: [],
+        passiveScores: [],
+      };
+    }
+  }, [world?.config]);
 
   useEffect(() => {
     let isMounted = true;
@@ -221,6 +244,8 @@ export default function StatBlocksPage() {
               <StatBlockCard
                 key={sb.id}
                 statBlock={sb}
+                resourceDefinitions={worldStatistics.resources}
+                passiveScoreDefinitions={worldStatistics.passiveScores}
                 onEdit={(target) => {
                   setIsCreateOpen(false);
                   setEditingStatBlock(target);
