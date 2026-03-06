@@ -164,8 +164,20 @@ describe('statblockStatisticsUtils', () => {
         { id: 'mp', name: 'MP', abbreviation: 'MP', isDefault: false },
       ];
       const passiveScores = [
-        { id: 'str', name: 'STR', abbreviation: 'STR', type: 'ability_score' as const, isDefault: true },
-        { id: 'dex', name: 'DEX', abbreviation: 'DEX', type: 'ability_score' as const, isDefault: false },
+        {
+          id: 'str',
+          name: 'STR',
+          abbreviation: 'STR',
+          type: 'ability_score' as const,
+          isDefault: true,
+        },
+        {
+          id: 'dex',
+          name: 'DEX',
+          abbreviation: 'DEX',
+          type: 'ability_score' as const,
+          isDefault: false,
+        },
       ];
 
       const config = initializeStatBlockStatistics(resources, passiveScores);

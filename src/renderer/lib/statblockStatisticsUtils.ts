@@ -5,7 +5,10 @@ import type {
   ResourceStatisticDefinition,
   PassiveScoreDefinition,
 } from '../../shared/statisticsTypes';
-import { isResourceValue, isPassiveScoreValue } from '../../shared/statisticsTypes';
+import {
+  isResourceValue,
+  isPassiveScoreValue,
+} from '../../shared/statisticsTypes';
 
 /**
  * Parse statblock config and extract statistics.

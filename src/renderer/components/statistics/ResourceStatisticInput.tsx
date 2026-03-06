@@ -63,7 +63,7 @@ export default function ResourceStatisticInput({
         <div className="flex-1">
           <label
             htmlFor={`${definition.id}-current`}
-            className="block text-xs text-slate-600 mb-1"
+            className="mb-1 block text-xs text-slate-600"
           >
             Current
           </label>
@@ -74,7 +74,7 @@ export default function ResourceStatisticInput({
             onChange={(e) => handleCurrentChange(Number(e.target.value))}
             disabled={disabled}
             min={0}
-            className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50"
+            className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50"
           />
         </div>
         <div className="flex items-end pb-1">
@@ -83,7 +83,7 @@ export default function ResourceStatisticInput({
         <div className="flex-1">
           <label
             htmlFor={`${definition.id}-maximum`}
-            className="block text-xs text-slate-600 mb-1"
+            className="mb-1 block text-xs text-slate-600"
           >
             Maximum
           </label>
@@ -94,7 +94,7 @@ export default function ResourceStatisticInput({
             onChange={(e) => handleMaximumChange(Number(e.target.value))}
             disabled={disabled}
             min={0}
-            className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50"
+            className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50"
           />
         </div>
       </div>
