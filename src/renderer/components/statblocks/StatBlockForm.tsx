@@ -1,4 +1,17 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
+import type {
+  WorldStatisticsConfig,
+  ResourceStatisticDefinition,
+  StatBlockStatisticsConfig,
+} from '../../../shared/statisticsTypes';
+import {
+  parseStatBlockStatistics,
+  setResourceValue,
+  initializeStatBlockStatistics,
+  serializeStatBlockStatistics,
+  getResourceValue,
+} from '../../lib/statblockStatisticsUtils';
+import ResourceStatisticInput from '../statistics/ResourceStatisticInput';
 
 type StatBlockAddData = Parameters<DbApi['statblocks']['add']>[0];
 
@@ -38,8 +51,55 @@ export default function StatBlockForm({
   const [configError, setConfigError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [worldResources, setWorldResources] = useState<
+    ResourceStatisticDefinition[]
+  >([]);
+  const [statisticsConfig, setStatisticsConfig] =
+    useState<StatBlockStatisticsConfig | null>(null);
 
   const isEditMode = mode === 'edit';
+
+  // Load world and extract statistics definitions
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadWorld = async () => {
+      try {
+        const existingWorld = await window.db.worlds.getById(worldId);
+        if (isMounted && existingWorld) {
+          try {
+            const worldConfig: WorldStatisticsConfig = JSON.parse(
+              existingWorld.config,
+            );
+            setWorldResources(worldConfig.statistics?.resources ?? []);
+          } catch {
+            setWorldResources([]);
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setWorldResources([]);
+        }
+      }
+    };
+
+    void loadWorld();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [worldId]);
+
+  // Initialize or parse statblock statistics
+  useEffect(() => {
+    if (mode === 'create') {
+      // Initialize empty statistics for create mode
+      setStatisticsConfig(initializeStatBlockStatistics(worldResources, []));
+    } else if (initialData?.config) {
+      // Parse existing statistics for edit mode
+      setStatisticsConfig(parseStatBlockStatistics(initialData.config));
+    }
+  }, [mode, initialData, worldResources]);
 
   const handleConfigChange = (value: string) => {
     setConfig(value);
@@ -72,12 +132,17 @@ export default function StatBlockForm({
     setSubmitError(null);
 
     try {
+      const finalConfig =
+        statisticsConfig && Object.keys(statisticsConfig.statistics?.resources ?? {}).length > 0
+          ? serializeStatBlockStatistics(statisticsConfig)
+          : trimmedConfig || '{}';
+
       await onSubmit({
         world_id: worldId,
         ...(campaignId != null ? { campaign_id: campaignId } : {}),
         name: trimmedName,
         description: description.trim() || undefined,
-        config: trimmedConfig || '{}',
+        config: finalConfig,
       });
     } catch (error) {
       setSubmitError(
@@ -130,6 +195,28 @@ export default function StatBlockForm({
           disabled={isSubmitting}
         />
       </div>
+
+      {/* Resource Statistics Section */}
+      {worldResources.length > 0 && statisticsConfig ? (
+        <div className="space-y-2 border-t border-slate-200 pt-4">
+          <h3 className="text-sm font-semibold text-slate-900">Resources</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {worldResources.map((resource) => (
+              <ResourceStatisticInput
+                key={resource.id}
+                definition={resource}
+                value={getResourceValue(statisticsConfig, resource.id)}
+                onChange={(value) => {
+                  setStatisticsConfig((prev) =>
+                    prev ? setResourceValue(prev, resource.id, value) : prev,
+                  );
+                }}
+                disabled={isSubmitting}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="space-y-1">
         <label
