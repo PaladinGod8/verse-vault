@@ -889,7 +889,12 @@ describe('main process', () => {
         name: '  New World  ',
       },
     );
-    expect(worldsInsertRunMock).toHaveBeenCalledWith('New World', null, null);
+    expect(worldsInsertRunMock).toHaveBeenCalledWith(
+      'New World',
+      null,
+      null,
+      expect.any(String),
+    );
     expect(worldsSelectByIdGetMock).toHaveBeenCalledWith(6);
     expect(worldAddResult).toMatchObject({ id: 6 });
 

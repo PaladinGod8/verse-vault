@@ -208,6 +208,16 @@ function runWorldConfigMigration(db: Database.Database): void {
     const tableInfo = db.pragma('table_info(worlds)') as Array<{
       name: string;
     }>;
+
+    // Guard: if tableInfo is undefined or empty, the worlds table might not exist yet
+    // In that case, skip the migration as the table will be created with the config column
+    if (!tableInfo || !Array.isArray(tableInfo)) {
+      console.log(
+        '[db] Skipping world config migration: worlds table not found',
+      );
+      return;
+    }
+
     const hasConfig = tableInfo.some((col) => col.name === 'config');
 
     if (!hasConfig) {
