@@ -288,3 +288,27 @@ In future battlemap runtime phase, a double-click on a token will:
 4. Modal closes on Escape or "X" button; selection state remains on token
 
 This workflow requires Phase 2 (token linking), Phase 4 (config schema + ability integration), and Phase 5 (modal UI + runtime hooks).
+
+---
+
+## 7. Implementation Status
+
+### Phase 1: Scaffold (Steps 01-09) — ✅ Complete (2026-03-06)
+
+- **Step 01**: Shared Contract & Types — `StatBlock` interface, `DbApi.statblocks` signatures, IPC channel constants in `src/shared/ipcChannels.ts`
+- **Step 02**: Database Schema — `statblocks` table with world/campaign/character/token foreign keys, `config` JSON column, `runStatBlocksSchemaMigration()` migration
+- **Step 03-04**: Main Process Handlers — 6 CRUD handlers in `src/main.ts` with validation and ordering
+- **Step 05**: Preload Bridge — 6 bridge methods in `src/preload.ts` wiring IPC to renderer
+- **Step 06**: Router & Page Scaffold — `/world/:id/statblocks` route, `StatBlocksPage.tsx` list page, sidebar nav link
+- **Step 07**: Form & Card Components — `StatBlockForm.tsx` with name/description/config editor, `StatBlockCard.tsx` display component
+- **Step 08**: Unit Tests — `tests/unit/renderer/components/statblocks.test.tsx` covering form validation and card rendering
+- **Step 09**: E2E Tests — `tests/e2e/statblocks.test.ts` covering full CRUD workflow
+
+### Phase 2: Resource Statistics Integration (Steps 10+) — 🚧 In Progress
+
+- **Step 10** ✅ (2026-03-06): Resource UI — `ResourceStatisticInput.tsx` component with current/maximum validation, `StatBlockForm.tsx` extended to load world resource definitions and display resource inputs, automatic initialization/serialization of resource statistics in statblock config
+- **Future**: Passive score integration, statistics display on card, validation improvements
+
+### Phase 3+: Token Linking, Ability Integration, Runtime Modal — 📋 Planned
+
+TBD based on user requirements and feature priority.
