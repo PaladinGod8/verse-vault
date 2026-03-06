@@ -689,6 +689,7 @@ function registerIpcHandlers() {
         name: string;
         thumbnail?: string | null;
         short_description?: string | null;
+        config?: string;
       },
     ) => {
       const name = typeof data.name === 'string' ? data.name.trim() : '';
@@ -696,13 +697,21 @@ function registerIpcHandlers() {
         throw new Error('World name is required');
       }
 
+      const config = typeof data.config === 'string' ? data.config : '{}';
+      try {
+        JSON.parse(config);
+      } catch {
+        throw new Error('World config must be valid JSON');
+      }
+
       const stmt = db.prepare(
-        'INSERT INTO worlds (name, thumbnail, short_description) VALUES (?, ?, ?)',
+        'INSERT INTO worlds (name, thumbnail, short_description, config) VALUES (?, ?, ?, ?)',
       );
       const result = stmt.run(
         name,
         data.thumbnail ?? null,
         data.short_description ?? null,
+        config,
       );
 
       const world = db
@@ -724,6 +733,7 @@ function registerIpcHandlers() {
         name?: string;
         thumbnail?: string | null;
         short_description?: string | null;
+        config?: string;
       },
     ) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
@@ -735,6 +745,7 @@ function registerIpcHandlers() {
         data,
         'short_description',
       );
+      const hasConfig = Object.prototype.hasOwnProperty.call(data, 'config');
 
       const setClauses: string[] = [];
       const values: Array<string | null> = [];
@@ -749,14 +760,30 @@ function registerIpcHandlers() {
         values.push(trimmedName);
       }
 
-      if (hasThumbnail && data.thumbnail !== undefined) {
+      if (hasThumbnail) {
         setClauses.push('thumbnail = ?');
-        values.push(data.thumbnail);
+        values.push(typeof data.thumbnail === 'string' ? data.thumbnail : null);
       }
 
-      if (hasShortDescription && data.short_description !== undefined) {
+      if (hasShortDescription) {
         setClauses.push('short_description = ?');
-        values.push(data.short_description);
+        values.push(
+          typeof data.short_description === 'string'
+            ? data.short_description
+            : null,
+        );
+      }
+
+      if (hasConfig) {
+        const config = typeof data.config === 'string' ? data.config : '{}';
+        try {
+          JSON.parse(config);
+        } catch {
+          throw new Error('World config must be valid JSON');
+        }
+
+        setClauses.push('config = ?');
+        values.push(config);
       }
 
       const updateSql =
