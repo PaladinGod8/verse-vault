@@ -41,6 +41,7 @@ Core design intent:
 - [02_CODEBASE_MAP.md](02_CODEBASE_MAP.md) **(LIVING)** - where to change things
 - [03_IPC_CONTRACT.md](03_IPC_CONTRACT.md) **(LIVING)** - all IPC channels and payloads
 - [05_BUILD_RELEASE.md](05_BUILD_RELEASE.md) - packaging and release
+- [06_AGENTIC_TESTING_QUALITY_GATE.md](06_AGENTIC_TESTING_QUALITY_GATE.md) - cross-agent final testing prompt
 - [CHECKLIST.md](CHECKLIST.md) - feature workflow
 - [TODO.md](TODO.md) - roadmap and backlog
 - [adr/](adr/) - architectural decision records
