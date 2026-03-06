@@ -1093,6 +1093,22 @@
 - **Types**: no new types; uses `StatBlock` interface and `DbApi.statblocks` from Step 01
 - **Tests**: `tests/e2e/statblocks.test.ts` — E2E test covering sidebar navigation, empty state display, and New StatBlock button presence
 
+### StatBlock Form & Card Components (Step 07)
+
+- **Purpose**: implement full CRUD UI — create/edit form modal, card layout, and delete confirmation — completing the interactive statblock workflow
+- **Status**: added on 2026-03-06
+- **UI**:
+  - `src/renderer/components/statblocks/StatBlockForm.tsx` — new form component; fields: Name (required), Description (optional textarea), Config (JSON textarea with on-change validation and error message); `mode` prop switches create/edit copy; `initialData?: StatBlock` prefills edit mode; disables submit when name is empty or config JSON is invalid; follows `AbilityForm` Tailwind patterns
+  - `src/renderer/components/statblocks/StatBlockCard.tsx` — updated: adds `default_token_id` display ("Token ID: N") when present
+  - `src/renderer/pages/StatBlocksPage.tsx` — updated: replaces table with `StatBlockCard` grid; "New StatBlock" button opens `ModalShell` + `StatBlockForm` (create mode); Edit button on each card opens `ModalShell` + `StatBlockForm` (edit mode, prefilled); delete still uses `ConfirmDialog`; `handleCreate` calls `window.db.statblocks.add`, `handleUpdate` calls `window.db.statblocks.update`; toasts on success/failure
+- **Store**: none
+- **IPC**: uses existing `IPC.STATBLOCKS_ADD` and `IPC.STATBLOCKS_UPDATE` via `window.db.statblocks.add` / `.update` (from Steps 03-05); read and delete unchanged
+- **Main handler**: unchanged (uses handlers from Steps 03-04)
+- **Preload bridge**: unchanged (uses bridges from Step 05)
+- **Storage**: no schema change in this step
+- **Types**: no new types; uses `StatBlock` interface and `DbApi.statblocks` from Step 01
+- **Tests**: `tests/unit/renderer/components/statblocks.test.tsx` — 9 unit tests: 5 for `StatBlockForm` (empty create render, prefilled edit render, JSON validation error, disabled submit on empty name, enabled submit when name provided) and 4 for `StatBlockCard` (name/description render, token ID display, edit callback, delete callback)
+
 ---
 
 ## Where Do I Change X?

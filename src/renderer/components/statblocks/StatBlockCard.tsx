@@ -19,6 +19,11 @@ export default function StatBlockCard({
           {statBlock.description ? (
             <p className="text-sm text-slate-500">{statBlock.description}</p>
           ) : null}
+          {statBlock.default_token_id !== null ? (
+            <p className="text-xs text-slate-400">
+              Token ID: {statBlock.default_token_id}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 gap-3">
           <button
