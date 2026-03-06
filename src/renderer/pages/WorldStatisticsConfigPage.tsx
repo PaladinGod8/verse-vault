@@ -12,6 +12,28 @@ import type {
   PassiveScoreDefinition,
 } from '../../shared/statisticsTypes';
 
+function parseWorldStatisticsConfig(rawConfig: string): WorldStatisticsConfig {
+  try {
+    const parsed = JSON.parse(rawConfig) as WorldStatisticsConfig;
+
+    return {
+      ...parsed,
+      statistics: {
+        ...parsed.statistics,
+        resources: parsed.statistics?.resources ?? [],
+        passiveScores: parsed.statistics?.passiveScores ?? [],
+      },
+    };
+  } catch {
+    return {
+      statistics: {
+        resources: [],
+        passiveScores: [],
+      },
+    };
+  }
+}
+
 export default function WorldStatisticsConfigPage() {
   const { id } = useParams();
   const worldId = useMemo(() => {
@@ -104,12 +126,8 @@ export default function WorldStatisticsConfigPage() {
       return;
     }
 
-    try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
-      setResources(config.statistics?.resources ?? []);
-    } catch {
-      setResources([]);
-    }
+    const config = parseWorldStatisticsConfig(world.config);
+    setResources(config.statistics?.resources ?? []);
   }, [world]);
 
   // Parse world config and extract passive scores
@@ -119,19 +137,15 @@ export default function WorldStatisticsConfigPage() {
       return;
     }
 
-    try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
-      setPassiveScores(config.statistics?.passiveScores ?? []);
-    } catch {
-      setPassiveScores([]);
-    }
+    const config = parseWorldStatisticsConfig(world.config);
+    setPassiveScores(config.statistics?.passiveScores ?? []);
   }, [world]);
 
   const handleCreateResource = async (data: ResourceStatisticDefinition) => {
     if (!world) return;
 
     try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const config = parseWorldStatisticsConfig(world.config);
       const updatedResources = [...(config.statistics?.resources ?? []), data];
 
       const updatedConfig: WorldStatisticsConfig = {
@@ -162,7 +176,7 @@ export default function WorldStatisticsConfigPage() {
     if (!world || !editingResource) return;
 
     try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const config = parseWorldStatisticsConfig(world.config);
       const updatedResources = (config.statistics?.resources ?? []).map((r) =>
         r.id === editingResource.id ? data : r,
       );
@@ -197,7 +211,7 @@ export default function WorldStatisticsConfigPage() {
     setIsDeletingResource(true);
 
     try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const config = parseWorldStatisticsConfig(world.config);
       const updatedResources = (config.statistics?.resources ?? []).filter(
         (r) => r.id !== pendingDeleteResource.id,
       );
@@ -234,7 +248,7 @@ export default function WorldStatisticsConfigPage() {
     if (!world) return;
 
     try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const config = parseWorldStatisticsConfig(world.config);
       const updatedPassiveScores = [
         ...(config.statistics?.passiveScores ?? []),
         data,
@@ -268,7 +282,7 @@ export default function WorldStatisticsConfigPage() {
     if (!world || !editingPassiveScore) return;
 
     try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const config = parseWorldStatisticsConfig(world.config);
       const updatedPassiveScores = (config.statistics?.passiveScores ?? []).map(
         (ps) => (ps.id === editingPassiveScore.id ? data : ps),
       );
@@ -303,7 +317,7 @@ export default function WorldStatisticsConfigPage() {
     setIsDeletingPassiveScore(true);
 
     try {
-      const config: WorldStatisticsConfig = JSON.parse(world.config);
+      const config = parseWorldStatisticsConfig(world.config);
       const updatedPassiveScores = (
         config.statistics?.passiveScores ?? []
       ).filter((ps) => ps.id !== pendingDeletePassiveScore.id);

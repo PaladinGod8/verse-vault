@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { StatBlockStatisticsConfig } from '../../../shared/statisticsTypes';
+import type {
+  StatBlockStatisticsConfig,
+  ResourceStatisticDefinition,
+  PassiveScoreDefinition,
+} from '../../../shared/statisticsTypes';
 import {
   parseStatBlockStatistics,
   getResourceValue,
@@ -9,12 +13,16 @@ import { formatModifier } from '../../lib/statisticsCalculations';
 
 interface StatBlockCardProps {
   statBlock: StatBlock;
+  resourceDefinitions?: ResourceStatisticDefinition[];
+  passiveScoreDefinitions?: PassiveScoreDefinition[];
   onEdit: (sb: StatBlock) => void;
   onDelete: (id: number) => void;
 }
 
 export default function StatBlockCard({
   statBlock,
+  resourceDefinitions = [],
+  passiveScoreDefinitions = [],
   onEdit,
   onDelete,
 }: StatBlockCardProps) {
@@ -31,6 +39,30 @@ export default function StatBlockCard({
       }
     }
   }, [statBlock.config]);
+
+  const resourceValues = statistics?.statistics?.resources ?? {};
+  const passiveScoreValues = statistics?.statistics?.passiveScores ?? {};
+
+  const resourceDefinitionsToRender: ResourceStatisticDefinition[] =
+    resourceDefinitions.length > 0
+      ? resourceDefinitions.filter((resource) => resourceValues[resource.id])
+      : Object.keys(resourceValues).map((id) => ({
+          id,
+          name: id,
+          abbreviation: id.toUpperCase(),
+          isDefault: false,
+        }));
+
+  const passiveScoreDefinitionsToRender: PassiveScoreDefinition[] =
+    passiveScoreDefinitions.length > 0
+      ? passiveScoreDefinitions.filter((score) => passiveScoreValues[score.id])
+      : Object.keys(passiveScoreValues).map((id) => ({
+          id,
+          name: id,
+          abbreviation: id.toUpperCase(),
+          type: 'custom',
+          isDefault: false,
+        }));
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -67,10 +99,10 @@ export default function StatBlockCard({
       </div>
 
       {/* Statistics Summary */}
-      {statistics && statistics.resources && statistics.resources.length > 0 ? (
+      {statistics && Object.keys(resourceValues).length > 0 ? (
         <div className="mt-3 border-t border-slate-200 pt-3">
           <div className="flex flex-wrap gap-3">
-            {statistics.resources.slice(0, 3).map((resource) => {
+            {resourceDefinitionsToRender.slice(0, 3).map((resource) => {
               // Show first 3 resources only (typically HP, MP, AC)
               const value = getResourceValue(statistics, resource.id);
               // Guard against missing value or invalid data
@@ -99,9 +131,9 @@ export default function StatBlockCard({
           </div>
 
           {/* Show passive scores if present */}
-          {statistics.passiveScores && statistics.passiveScores.length > 0 ? (
+          {Object.keys(passiveScoreValues).length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-2">
-              {statistics.passiveScores.map((score) => {
+              {passiveScoreDefinitionsToRender.map((score) => {
                 const value = getPassiveScoreValue(statistics, score.id);
                 if (!value) return null;
 
