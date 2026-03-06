@@ -126,6 +126,10 @@ steps.push(
     },
   },
   {
+    name: 'Type check TypeScript',
+    run: () => runCommand(yarnCmd, ['type-check']),
+  },
+  {
     name: 'Run lint (strict, no warnings)',
     run: () => runCommand(yarnCmd, ['lint']),
   },
