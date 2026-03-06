@@ -39,7 +39,7 @@ beforeAll(() => {
 
   vi.stubGlobal('Image', MockImage as unknown as typeof Image);
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
-    () => mockCanvasContext as unknown as CanvasRenderingContext2D,
+    () => mockCanvasContext as unknown as GPUCanvasContext,
   );
 });
 

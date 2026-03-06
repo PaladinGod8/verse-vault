@@ -295,6 +295,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
+        activeGridMode="square"
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -320,6 +321,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
+        activeGridMode="square"
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -346,6 +348,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
+        activeGridMode="square"
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}

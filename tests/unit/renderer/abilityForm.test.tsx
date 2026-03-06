@@ -54,7 +54,7 @@ describe('AbilityForm', () => {
         removeChild: vi.fn(),
         getChildren: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
 
     levelsGetAllByWorldMock.mockResolvedValue([buildLevel()]);
   });

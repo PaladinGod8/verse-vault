@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type {
   PassiveScoreDefinition,
   PassiveScoreType,
-} from '../../shared/statisticsTypes';
+} from '../../../shared/statisticsTypes';
 
 type Props = {
   mode: 'create' | 'edit';

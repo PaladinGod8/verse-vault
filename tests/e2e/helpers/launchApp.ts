@@ -45,8 +45,8 @@ export async function closeApp(
   app: ElectronApplication,
   userDataDir: string,
 ): Promise<void> {
-  await app.close().catch(() => undefined);
+  await app.close().catch((): undefined => undefined);
   await fs
     .rm(userDataDir, { recursive: true, force: true })
-    .catch(() => undefined);
+    .catch((): undefined => undefined);
 }

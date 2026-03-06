@@ -322,9 +322,13 @@ export default function AbilityForm({
         pick_timing: isRosteringSubtype ? normalizedPickTiming : null,
         pick_is_permanent: isRosteringSubtype && pickIsPermanent ? 1 : 0,
         range_cells: isActiveType ? parsedRangeCells : null,
-        aoe_shape: isActiveType ? aoeShape || null : null,
+        aoe_shape: isActiveType
+          ? ((aoeShape || null) as Ability['aoe_shape'])
+          : null,
         aoe_size_cells: isActiveType ? parsedAoeSizeCells : null,
-        target_type: isActiveType ? targetType || null : null,
+        target_type: isActiveType
+          ? ((targetType || null) as Ability['target_type'])
+          : null,
       });
     } catch (error) {
       setSubmitError(

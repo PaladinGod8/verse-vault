@@ -56,7 +56,7 @@ test.afterEach(async () => {
   if (app && page && userDataDir) {
     await cleanupElectronApp({ app, page, userDataDir });
   } else if (app) {
-    await app.close().catch(() => undefined);
+    await app.close().catch((): undefined => undefined);
   }
 
   app = null;

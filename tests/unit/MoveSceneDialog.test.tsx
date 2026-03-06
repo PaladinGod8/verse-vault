@@ -153,7 +153,7 @@ describe('MoveSceneDialog', () => {
         delete: vi.fn(),
         moveTo: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows the scene name in the heading', async () => {

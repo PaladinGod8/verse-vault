@@ -41,6 +41,7 @@ function buildWorld(overrides: Partial<World> = {}): World {
     thumbnail: null,
     short_description: 'First world',
     last_viewed_at: null,
+    config: '{}',
     created_at: '2026-02-27 00:00:00',
     updated_at: '2026-02-27 00:00:00',
     ...overrides,
@@ -63,6 +64,10 @@ function buildAbility(overrides: Partial<Ability> = {}): Ability {
     pick_count: null,
     pick_timing: null,
     pick_is_permanent: 0,
+    range_cells: null,
+    aoe_shape: null,
+    aoe_size_cells: null,
+    target_type: null,
     created_at: '2026-02-27 00:00:00',
     updated_at: '2026-02-27 00:00:00',
     ...overrides,
@@ -116,7 +121,7 @@ describe('AbilitiesPage', () => {
         removeChild: vi.fn(),
         getChildren: vi.fn().mockResolvedValue([]),
       },
-    } as DbApi;
+    } as unknown as DbApi;
 
     levelsGetAllByWorldMock.mockResolvedValue([]);
   });

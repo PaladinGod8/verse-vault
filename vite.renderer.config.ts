@@ -1,3 +1,4 @@
+// @ts-expect-error - @tailwindcss/vite uses 'exports' field not supported by moduleResolution:node
 import tailwindcss from '@tailwindcss/vite';
 import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig } from 'vite';

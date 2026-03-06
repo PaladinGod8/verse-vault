@@ -129,7 +129,7 @@ describe('CampaignScenesPage', () => {
         delete: vi.fn(),
         moveTo: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows error when world id is invalid', async () => {

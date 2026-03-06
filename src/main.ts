@@ -273,7 +273,7 @@ function ensureScenePayloadJsonText(payload: unknown): string {
       const battleMapId = runtimePayload.battlemap_id;
       if (
         battleMapId !== null &&
-        (!Number.isInteger(battleMapId) || battleMapId <= 0)
+        (!Number.isInteger(battleMapId) || (battleMapId as number) <= 0)
       ) {
         throw new Error(
           'Scene payload runtime.battlemap_id must be a positive integer or null',

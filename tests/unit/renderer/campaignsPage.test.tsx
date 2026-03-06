@@ -34,6 +34,7 @@ function buildWorld(overrides: Partial<World> = {}): World {
     thumbnail: null,
     short_description: 'First world',
     last_viewed_at: null,
+    config: '{}',
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
@@ -128,7 +129,7 @@ describe('CampaignsPage', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows error when world id is invalid', async () => {

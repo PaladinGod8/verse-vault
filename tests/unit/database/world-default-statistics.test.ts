@@ -5,7 +5,7 @@ import path from 'path';
 import type {
   ResourceStatisticDefinition,
   PassiveScoreDefinition,
-} from '../../src/shared/statisticsTypes';
+} from '../../../src/shared/statisticsTypes';
 
 describe('World Default Statistics', () => {
   let electronApp: ElectronApplication;
@@ -25,7 +25,7 @@ describe('World Default Statistics', () => {
 
   it('should create world with default statistics when config not provided', async () => {
     const world = await window.evaluate(async () => {
-      return window.db.worlds.add({ name: 'Test World Default Stats' });
+      return self.db.worlds.add({ name: 'Test World Default Stats' });
     });
 
     expect(world.config).toBeDefined();
@@ -74,7 +74,7 @@ describe('World Default Statistics', () => {
     });
 
     const world = await window.evaluate(async (cfg) => {
-      return window.db.worlds.add({
+      return self.db.worlds.add({
         name: 'Test World Custom Config',
         config: cfg,
       });
@@ -90,7 +90,7 @@ describe('World Default Statistics', () => {
 
   it('should have isDefault=true for all default statistics', async () => {
     const world = await window.evaluate(async () => {
-      return window.db.worlds.add({ name: 'Test World Default Flags' });
+      return self.db.worlds.add({ name: 'Test World Default Flags' });
     });
 
     const config = JSON.parse(world.config);

@@ -126,7 +126,7 @@ async function importMainWithMocks() {
   }
 }
 
-const baseStatBlock = {
+const baseStatBlock: StatBlock = {
   id: 10,
   world_id: 1,
   campaign_id: null,

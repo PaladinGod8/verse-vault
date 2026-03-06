@@ -115,7 +115,7 @@ describe('MoveActDialog', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-    } as DbApi;
+    } as unknown as DbApi;
   });
 
   it('shows act name in dialog heading', async () => {

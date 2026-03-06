@@ -486,7 +486,14 @@ describe('BattleMapRuntimePage', () => {
         delete: vi.fn(),
         moveTo: vi.fn(),
       },
-    } as DbApi;
+      statblocks: {
+        getAllByWorld: vi.fn(),
+        getById: vi.fn(),
+        add: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+    } as unknown as DbApi;
 
     campaignsGetAllByWorldMock.mockResolvedValue([]);
     tokensGetAllByCampaignMock.mockResolvedValue([]);

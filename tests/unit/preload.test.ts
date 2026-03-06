@@ -110,6 +110,7 @@ describe('preload', () => {
     await api.tokens.getAllByCampaign(1);
     await api.tokens.getById(71);
     await api.tokens.add({
+      world_id: 1,
       campaign_id: 1,
       name: 'Token',
       image_src: 'token.png',
@@ -285,6 +286,7 @@ describe('preload', () => {
     );
     expect(invokeMock).toHaveBeenNthCalledWith(55, IPC.TOKENS_GET_BY_ID, 71);
     expect(invokeMock).toHaveBeenNthCalledWith(56, IPC.TOKENS_ADD, {
+      world_id: 1,
       campaign_id: 1,
       name: 'Token',
       image_src: 'token.png',
