@@ -30,7 +30,29 @@ function isAbilityChildDuplicateError(error: unknown): boolean {
   );
 }
 
+function isSqliteUniqueConstraintError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = 'code' in error && typeof error.code === 'string' ? error.code : '';
+  if (code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    return true;
+  }
+
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return error.message.includes('UNIQUE constraint failed');
+}
+
 type JsonRecord = Record<string, unknown>;
+
+type StatBlockSkillValue = {
+  key: string;
+  rank: number;
+};
 
 const BATTLEMAP_GRID_MODES = new Set(['square', 'hex', 'none']);
 const TOKEN_GRID_TYPES = new Set(['square', 'hex']);
@@ -295,6 +317,50 @@ function ensureBattleMapConfigJsonText(config: unknown): string {
   return JSON.stringify(normalizedConfig);
 }
 
+function normalizeStatBlockSkills(input: unknown): StatBlockSkillValue[] {
+  if (!Array.isArray(input)) {
+    throw new Error('StatBlock config skills must be an array');
+  }
+
+  const deduped = new Map<string, StatBlockSkillValue>();
+  input.forEach((entry, index) => {
+    if (!isJsonRecord(entry)) {
+      throw new Error(`StatBlock config skills[${index}] must be an object`);
+    }
+
+    const keyCandidate = typeof entry.key === 'string' ? entry.key.trim() : '';
+    if (!keyCandidate) {
+      throw new Error(`StatBlock config skills[${index}].key is required`);
+    }
+
+    const rank = ensureFiniteNumber(
+      entry.rank,
+      `StatBlock config skills[${index}].rank`,
+    );
+
+    deduped.set(keyCandidate, {
+      key: keyCandidate,
+      rank,
+    });
+  });
+
+  return [...deduped.values()].sort((a, b) => a.key.localeCompare(b.key));
+}
+
+function ensureStatBlockConfigJsonText(config: unknown): string {
+  const parsedConfig = parseJsonText(config, 'StatBlock config');
+  if (!isJsonRecord(parsedConfig)) {
+    throw new Error('StatBlock config must be a JSON object');
+  }
+
+  const normalizedConfig: JsonRecord = { ...parsedConfig };
+  if (Object.prototype.hasOwnProperty.call(parsedConfig, 'skills')) {
+    normalizedConfig.skills = normalizeStatBlockSkills(parsedConfig.skills);
+  }
+
+  return JSON.stringify(normalizedConfig);
+}
+
 function ensureTokenGridType(
   value: unknown,
   fieldName = 'grid_type',
@@ -439,6 +505,8 @@ function registerIpcHandlers() {
   const getSessionByIdStmt = db.prepare('SELECT * FROM sessions WHERE id = ?');
   const getSceneByIdStmt = db.prepare('SELECT * FROM scenes WHERE id = ?');
   const getTokenByIdStmt = db.prepare('SELECT * FROM tokens WHERE id = ?');
+  const getStatBlockByIdStmt = db.prepare('SELECT * FROM statblocks WHERE id = ?');
+  const getAbilityByIdStmt = db.prepare('SELECT * FROM abilities WHERE id = ?');
   const getArcByIdStmt = db.prepare('SELECT * FROM arcs WHERE id = ?');
   const getActByIdStmt = db.prepare('SELECT * FROM acts WHERE id = ?');
   const insertSessionStmt = db.prepare(
@@ -2217,7 +2285,9 @@ function registerIpcHandlers() {
           data.campaign_id ?? null,
           name,
           data.description ?? null,
-          data.config ?? '{}',
+          data.config === undefined
+            ? '{}'
+            : ensureStatBlockConfigJsonText(data.config),
         );
 
       const statblock = db
@@ -2263,7 +2333,7 @@ function registerIpcHandlers() {
 
       if (hasConfig && data.config !== undefined) {
         setClauses.push('config = ?');
-        values.push(data.config);
+        values.push(ensureStatBlockConfigJsonText(data.config));
       }
 
       const updateSql = setClauses.length > 0
@@ -2287,6 +2357,149 @@ function registerIpcHandlers() {
     db.prepare('DELETE FROM statblocks WHERE id = ?').run(id);
     return { id };
   });
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_LINK_TOKEN,
+    (_event, data: { statblock_id: number; token_id: number; }) => {
+      const statblock = getStatBlockByIdStmt.get(data.statblock_id) as
+        | StatBlock
+        | undefined;
+      if (!statblock) {
+        throw new Error('StatBlock not found');
+      }
+
+      const token = getTokenByIdStmt.get(data.token_id) as Token | undefined;
+      if (!token) {
+        throw new Error('Token not found');
+      }
+
+      if (token.world_id !== statblock.world_id) {
+        throw new Error('Token and StatBlock must belong to the same world');
+      }
+
+      try {
+        db.prepare(
+          'INSERT INTO statblock_token_links (statblock_id, token_id) VALUES (?, ?)',
+        ).run(data.statblock_id, data.token_id);
+      } catch (error) {
+        if (isSqliteUniqueConstraintError(error)) {
+          throw new Error('Token is already linked to a statblock');
+        }
+        throw error;
+      }
+
+      return data;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_UNLINK_TOKEN,
+    (_event, data: { statblock_id: number; token_id: number; }) => {
+      db.prepare(
+        'DELETE FROM statblock_token_links WHERE statblock_id = ? AND token_id = ?',
+      ).run(data.statblock_id, data.token_id);
+      return data;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_GET_LINKED_TOKENS,
+    (_event, statblockId: number): Token[] => {
+      return db
+        .prepare(
+          `
+          SELECT token.*
+          FROM statblock_token_links AS link
+          INNER JOIN tokens AS token ON token.id = link.token_id
+          WHERE link.statblock_id = ?
+          ORDER BY token.updated_at DESC, token.id DESC
+          `,
+        )
+        .all(statblockId) as Token[];
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_GET_LINKED_STATBLOCK,
+    (_event, tokenId: number): StatBlock | null => {
+      return (
+        db
+          .prepare(
+            `
+            SELECT statblock.*
+            FROM statblock_token_links AS link
+            INNER JOIN statblocks AS statblock ON statblock.id = link.statblock_id
+            WHERE link.token_id = ?
+            LIMIT 1
+            `,
+          )
+          .get(tokenId) as StatBlock | undefined
+      ) ?? null;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_ATTACH_ABILITY,
+    (_event, data: { statblock_id: number; ability_id: number; }) => {
+      const statblock = getStatBlockByIdStmt.get(data.statblock_id) as
+        | StatBlock
+        | undefined;
+      if (!statblock) {
+        throw new Error('StatBlock not found');
+      }
+
+      const ability = getAbilityByIdStmt.get(data.ability_id) as
+        | Ability
+        | undefined;
+      if (!ability) {
+        throw new Error('Ability not found');
+      }
+
+      if (ability.world_id !== statblock.world_id) {
+        throw new Error('Ability and StatBlock must belong to the same world');
+      }
+
+      try {
+        db.prepare(
+          'INSERT INTO statblock_ability_assignments (statblock_id, ability_id) VALUES (?, ?)',
+        ).run(data.statblock_id, data.ability_id);
+      } catch (error) {
+        if (isSqliteUniqueConstraintError(error)) {
+          throw new Error('Ability is already attached to statblock');
+        }
+        throw error;
+      }
+
+      return data;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_DETACH_ABILITY,
+    (_event, data: { statblock_id: number; ability_id: number; }) => {
+      db.prepare(
+        'DELETE FROM statblock_ability_assignments WHERE statblock_id = ? AND ability_id = ?',
+      ).run(data.statblock_id, data.ability_id);
+      return data;
+    },
+  );
+
+  ipcMain.handle(
+    IPC.STATBLOCKS_LIST_ABILITIES,
+    (_event, statblockId: number): Ability[] => {
+      return db
+        .prepare(
+          `
+          SELECT ability.*
+          FROM statblock_ability_assignments AS assignment
+          INNER JOIN abilities AS ability ON ability.id = assignment.ability_id
+          WHERE assignment.statblock_id = ?
+          ORDER BY ability.updated_at DESC, ability.id DESC
+          `,
+        )
+        .all(statblockId) as Ability[];
+    },
+  );
 
   ipcMain.handle(
     IPC.VERSES_ADD,

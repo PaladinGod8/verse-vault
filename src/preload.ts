@@ -270,6 +270,24 @@ contextBridge.exposeInMainWorld('db', {
       data: { name?: string; description?: string; config?: string; },
     ): Promise<StatBlock> => ipcRenderer.invoke(IPC.STATBLOCKS_UPDATE, id, data),
     delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.STATBLOCKS_DELETE, id),
+    linkToken: (data: StatBlockTokenLink): Promise<StatBlockTokenLink> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_LINK_TOKEN, data),
+    unlinkToken: (data: StatBlockTokenLink): Promise<StatBlockTokenLink> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_UNLINK_TOKEN, data),
+    getLinkedTokens: (statblockId: number): Promise<Token[]> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_GET_LINKED_TOKENS, statblockId),
+    getLinkedStatblock: (tokenId: number): Promise<StatBlock | null> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_GET_LINKED_STATBLOCK, tokenId),
+    attachAbility: (
+      data: StatBlockAbilityAssignment,
+    ): Promise<StatBlockAbilityAssignment> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_ATTACH_ABILITY, data),
+    detachAbility: (
+      data: StatBlockAbilityAssignment,
+    ): Promise<StatBlockAbilityAssignment> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_DETACH_ABILITY, data),
+    listAbilities: (statblockId: number): Promise<Ability[]> =>
+      ipcRenderer.invoke(IPC.STATBLOCKS_LIST_ABILITIES, statblockId),
   },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
