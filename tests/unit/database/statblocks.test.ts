@@ -161,7 +161,10 @@ describe('StatBlocks Schema Migration', () => {
     // Every statblock exec call uses IF NOT EXISTS — verify no unconditional CREATE TABLE
     const statblockExecCalls = execMock.mock.calls
       .map(([sql]) => String(sql))
-      .filter((sql) => sql.includes('statblocks'));
+      .filter((sql) =>
+        sql.includes('CREATE TABLE IF NOT EXISTS statblocks (')
+        || sql.includes('idx_statblocks_')
+      );
 
     for (const sql of statblockExecCalls) {
       if (sql.includes('CREATE TABLE')) {
@@ -185,5 +188,83 @@ describe('StatBlocks Schema Migration', () => {
       sql.includes('CREATE TABLE IF NOT EXISTS abilities')
     );
     expect(lastStatblockIndex).toBeGreaterThan(abilitiesIndex);
+  });
+
+  it('creates statblock-token linkage table and indexes', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+    getDatabase();
+    closeDatabase();
+
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS statblock_token_links');
+    expect(schemaSql).toContain('statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE');
+    expect(schemaSql).toContain('token_id     INTEGER NOT NULL REFERENCES tokens(id) ON DELETE CASCADE');
+    expect(schemaSql).toContain('UNIQUE (token_id)');
+    expect(schemaSql).toContain('UNIQUE (statblock_id, token_id)');
+    expect(schemaSql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_statblock_token_links_statblock_id',
+    );
+    expect(schemaSql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_statblock_token_links_token_id',
+    );
+  });
+
+  it('creates statblock-ability assignments table and indexes', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+    getDatabase();
+    closeDatabase();
+
+    const schemaSql = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .join('\n');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS statblock_ability_assignments');
+    expect(schemaSql).toContain('statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE');
+    expect(schemaSql).toContain('ability_id   INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE');
+    expect(schemaSql).toContain('UNIQUE (statblock_id, ability_id)');
+    expect(schemaSql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_statblock_ability_assignments_statblock_id',
+    );
+    expect(schemaSql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_statblock_ability_assignments_ability_id',
+    );
+  });
+
+  it('linkage migration is idempotent with IF NOT EXISTS guards', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+    getDatabase();
+    closeDatabase();
+
+    const linkageExecCalls = execMock.mock.calls
+      .map(([sql]) => String(sql))
+      .filter((sql) =>
+        sql.includes('statblock_token_links')
+        || sql.includes('statblock_ability_assignments')
+      );
+
+    for (const sql of linkageExecCalls) {
+      if (sql.includes('CREATE TABLE')) {
+        expect(sql).toContain('CREATE TABLE IF NOT EXISTS');
+      }
+      if (sql.includes('CREATE INDEX')) {
+        expect(sql).toContain('IF NOT EXISTS');
+      }
+    }
+  });
+
+  it('runs linkage migration after statblocks migration', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+    getDatabase();
+    closeDatabase();
+
+    const allSql = execMock.mock.calls.map(([sql]) => String(sql));
+    const statblocksMigrationIndex = allSql.findIndex((sql) =>
+      sql.includes('CREATE TABLE IF NOT EXISTS statblocks')
+    );
+    const linkageMigrationIndex = allSql.findIndex((sql) =>
+      sql.includes('CREATE TABLE IF NOT EXISTS statblock_token_links')
+    );
+    expect(linkageMigrationIndex).toBeGreaterThan(statblocksMigrationIndex);
   });
 });
