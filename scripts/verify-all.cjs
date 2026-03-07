@@ -9,41 +9,162 @@ const args = new Set(process.argv.slice(2));
 const runInstall = args.has('--install');
 const runDev = !args.has('--no-dev');
 
+const baseLogDir = path.resolve(process.cwd(), 'scripts', 'logs', 'pipeline');
+const latestLogPath = path.join(baseLogDir, 'latest.log');
+const latestMetaPath = path.join(baseLogDir, 'latest.json');
+
+function createRunId() {
+  const now = new Date();
+  const stamp = now
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\..+$/, '')
+    .replace('T', '-');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  const rand = Math.floor(Math.random() * 1_000_000)
+    .toString()
+    .padStart(6, '0');
+  return `${stamp}${ms}-${process.pid}-${rand}`;
+}
+
+const runId = createRunId();
+const runDir = path.join(baseLogDir, 'runs', runId);
+const runLogPath = path.join(runDir, 'run.log');
+const runMetaPath = path.join(runDir, 'meta.json');
+
+fs.mkdirSync(runDir, { recursive: true });
+fs.writeFileSync(runLogPath, '', 'utf8');
+
+const runMeta = {
+  runId,
+  status: 'running',
+  failedStep: null,
+  logs: {
+    runDir,
+    runLog: runLogPath,
+    latestLog: latestLogPath,
+    latestMeta: latestMetaPath,
+  },
+  steps: [],
+};
+
+let currentStepMeta = null;
+
+function appendRunLog(text) {
+  fs.appendFileSync(runLogPath, text, 'utf8');
+}
+
+function logLine(message) {
+  const line = `${message}\n`;
+  process.stdout.write(line);
+  appendRunLog(line);
+}
+
+function logErrorLine(message) {
+  const line = `${message}\n`;
+  process.stderr.write(line);
+  appendRunLog(line);
+}
+
+function slugify(parts) {
+  const text = parts
+    .filter(Boolean)
+    .join('-')
+    .toLowerCase();
+  const slug = text
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'command';
+}
+
+function ensureStepMeta() {
+  if (!currentStepMeta) {
+    throw new Error('runCommand called without active step metadata');
+  }
+}
+
 function runCommand(cmd, commandArgs, options = {}) {
+  ensureStepMeta();
+
+  const commandIndex = currentStepMeta.commands.length + 1;
+  const commandSlug = slugify([String(commandIndex), cmd, ...commandArgs]);
+  const commandDir = path.join(runDir, 'commands', commandSlug);
+  fs.mkdirSync(commandDir, { recursive: true });
+
+  const stdoutPath = path.join(commandDir, 'stdout.log');
+  const stderrPath = path.join(commandDir, 'stderr.log');
+  const combinedPath = path.join(commandDir, 'combined.log');
+
   const result = spawnSync(cmd, commandArgs, {
-    stdio: 'inherit',
+    stdio: 'pipe',
     shell: process.platform === 'win32',
     env: { ...process.env, ...(options.env || {}) },
+    encoding: 'utf8',
   });
 
+  const stdout = typeof result.stdout === 'string' ? result.stdout : '';
+  const stderr = typeof result.stderr === 'string' ? result.stderr : '';
+  const combined = `${stdout}${stderr}`;
+
+  fs.writeFileSync(stdoutPath, stdout, 'utf8');
+  fs.writeFileSync(stderrPath, stderr, 'utf8');
+  fs.writeFileSync(combinedPath, combined, 'utf8');
+
+  if (stdout) {
+    process.stdout.write(stdout);
+    appendRunLog(stdout);
+  }
+  if (stderr) {
+    process.stderr.write(stderr);
+    appendRunLog(stderr);
+  }
+
+  const commandMeta = {
+    command: cmd,
+    args: commandArgs,
+    status: 'passed',
+    exitCode: typeof result.status === 'number' ? result.status : null,
+    signal: result.signal ?? null,
+    logs: {
+      stdout: stdoutPath,
+      stderr: stderrPath,
+      combined: combinedPath,
+    },
+  };
+
   if (result.error) {
-    console.error(`[verify-all] Failed to start command: ${cmd}`);
-    console.error(result.error.message);
+    commandMeta.status = 'failed';
+    currentStepMeta.commands.push(commandMeta);
+    logErrorLine(`[verify-all] Failed to start command: ${cmd}`);
+    logErrorLine(result.error.message);
     return false;
   }
 
   if (typeof result.status === 'number') {
     if (result.status === 0) {
+      currentStepMeta.commands.push(commandMeta);
       return true;
     }
 
+    commandMeta.status = 'failed';
+    currentStepMeta.commands.push(commandMeta);
+
     if (!options.allowFailure) {
-      console.error(
-        `[verify-all] Command failed with exit code ${result.status}: ${cmd} ${
-          commandArgs.join(' ')
-        }`,
+      logErrorLine(
+        `[verify-all] Command failed with exit code ${result.status}: ${cmd} ${commandArgs.join(' ')}`,
       );
     }
     return false;
   }
 
   if (result.signal) {
-    console.error(
-      `[verify-all] Command terminated by signal: ${result.signal}`,
-    );
+    commandMeta.status = 'failed';
+    currentStepMeta.commands.push(commandMeta);
+    logErrorLine(`[verify-all] Command terminated by signal: ${result.signal}`);
     return false;
   }
 
+  currentStepMeta.commands.push(commandMeta);
   return true;
 }
 
@@ -67,14 +188,14 @@ function cleanDirectories(dirs) {
 
         if (err && lockErrorCodes.includes(err.code)) {
           if (attempt < 5) {
-            console.warn(
+            logLine(
               `[verify-all] Cleanup retry ${attempt}/5 for locked path: ${absolute} (${err.code})`,
             );
             sleep(200 * attempt);
             continue;
           }
 
-          console.warn(
+          logLine(
             `[verify-all] Skipping cleanup for locked path: ${absolute} (${err.code}).`,
           );
           removed = true;
@@ -89,6 +210,20 @@ function cleanDirectories(dirs) {
       throw new Error(`[verify-all] Failed to clean directory: ${absolute}`);
     }
   }
+}
+
+function finalizeRun() {
+  fs.mkdirSync(baseLogDir, { recursive: true });
+  fs.writeFileSync(runMetaPath, JSON.stringify(runMeta, null, 2), 'utf8');
+  fs.copyFileSync(runLogPath, latestLogPath);
+  fs.writeFileSync(latestMetaPath, JSON.stringify(runMeta, null, 2), 'utf8');
+}
+
+function failRun(stepName, exitCode = 1) {
+  runMeta.status = 'failed';
+  runMeta.failedStep = stepName ? { name: stepName } : null;
+  finalizeRun();
+  process.exit(exitCode);
 }
 
 const steps = [];
@@ -116,9 +251,7 @@ steps.push(
         return true;
       }
 
-      console.log(
-        '[verify-all] Formatting issues found. Running auto-format...',
-      );
+      logLine('[verify-all] Formatting issues found. Running auto-format...');
 
       if (!runCommand(yarnCmd, ['format'])) {
         return false;
@@ -164,15 +297,35 @@ if (runDev) {
   });
 }
 
-for (const [index, step] of steps.entries()) {
-  const stepNumber = `${index + 1}/${steps.length}`;
-  console.log(`\n[verify-all] ${stepNumber} ${step.name}`);
+try {
+  for (const [index, step] of steps.entries()) {
+    const stepNumber = `${index + 1}/${steps.length}`;
+    const stepMeta = {
+      name: step.name,
+      status: 'running',
+      commands: [],
+    };
+    runMeta.steps.push(stepMeta);
+    currentStepMeta = stepMeta;
 
-  const ok = step.run();
-  if (!ok) {
-    console.error(`[verify-all] Failed at step ${stepNumber}: ${step.name}`);
-    process.exit(1);
+    logLine(`\n[verify-all] ${stepNumber} ${step.name}`);
+
+    const ok = step.run();
+    if (!ok) {
+      stepMeta.status = 'failed';
+      logErrorLine(`[verify-all] Failed at step ${stepNumber}: ${step.name}`);
+      failRun(step.name, 1);
+    }
+
+    stepMeta.status = 'passed';
   }
-}
 
-console.log('\n[verify-all] Complete.');
+  runMeta.status = 'passed';
+  runMeta.failedStep = null;
+  logLine('\n[verify-all] Complete.');
+  finalizeRun();
+} catch (error) {
+  const message = error instanceof Error ? error.stack || error.message : String(error);
+  logErrorLine(`[verify-all] Unhandled error: ${message}`);
+  failRun(currentStepMeta ? currentStepMeta.name : null, 1);
+}
