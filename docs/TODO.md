@@ -156,12 +156,10 @@ Core workflows must function fully offline with local-first persistence.
 
 ### Formatter Performance
 
-- [ ] Evaluate prettierd (Rust-based) to replace prettier in CI
-  - Goal: Faster formatting checks in CI pipeline
-  - Repository: https://github.com/fsouza/prettierd
-  - Impact: Format check step performance improvement
-  - Current: `prettier --check .` in verify-all pipeline
-  - Proposed: `prettierd --check .` for faster execution
+- [x] Standardize formatter on dprint for local + CI workflows
+  - Current: `yarn format:check` and `yarn format`
+  - Files: `dprint.json`, `package.json` scripts
+  - Follow-up: monitor formatting step duration in CI as codebase grows
 
 ### CI Caching Strategy
 
@@ -211,12 +209,12 @@ High-value use cases for Docker in this project:
 
 **Phase 2: CI/CD Pipeline**
 
-- [ ] Set up GitHub Actions workflow (currently no CI exists)
-- [ ] Use Docker container from Phase 1 for consistent build environment
-- [ ] Implement caching strategies: yarn cache, Playwright browsers, node_modules layers
-- [ ] Parallel job execution (lint/type-check/unit-test/package/e2e)
-- [ ] Handle better-sqlite3 native module rebuild in isolated container (eliminates EPERM conflicts)
-- [ ] Ensure node-abi version alignment with Electron 35 ABI in container
+- [x] Set up GitHub Actions workflow with CI paper trail (`.github/workflows/ci.yml`)
+- [x] Parallel job execution where safe (`fast-checks` matrix + `package`, with `e2e` sequenced after `package`)
+- [x] Implement baseline caching strategy (`actions/setup-node` yarn cache + `actions/cache` for `.vite` and ESLint cache)
+- [ ] Evaluate Dockerized CI path for stricter environment parity with local scripts
+- [ ] Evaluate Playwright browser cache policy for self-hosted runner stability
+- [ ] Continue tuning better-sqlite3 rebuild reliability on self-hosted Windows runner
 
 **Phase 3: Cross-Platform Packaging**
 
@@ -268,11 +266,10 @@ Priority caching opportunities based on verify-all.cjs analysis:
   - Restore keys: eslint- (partial matches still save time)
   - Invalidation: on linted files or config change
 
-- [ ] Prettier cache: .prettiercache file
-  - Enable with: prettier --cache --check .
-  - Key: prettier-{{ hash(**/*.{ts,tsx,js,json,md}, prettier config) }}
-  - Restore keys: prettier- (safe to use partial matches)
-  - Invalidation: on formatted files or config change
+- [ ] dprint optimization strategy
+  - Current command: `yarn format:check` (dprint)
+  - Evaluate whether changed-file scoped formatting checks are needed for CI speed
+  - If added, document cache/scope behavior in `docs/features/github-actions-setup.md`
 
 **One-time Setup Caches (60+ seconds first run)**
 
@@ -299,10 +296,10 @@ Priority caching opportunities based on verify-all.cjs analysis:
 
 **Implementation Scripts**
 
-- [ ] Update package.json to enable ESLint and Prettier caching flags
-- [ ] Add cache:clean script: rm -rf node_modules/.cache .eslintcache .prettiercache .tsbuildinfo coverage test-results
+- [x] Update package.json to enable ESLint cache flags (`lint:cache`)
+- [ ] Add cache:clean script: clear local tool/test caches (`node_modules/.cache`, `.vite`, `coverage`, `playwright-report`, `test-results`)
 - [ ] Create cache validation utilities for verify-all.cjs
-- [ ] Document cache key patterns in .github/workflows/ when CI is added
+- [x] Document cache key patterns in `.github/workflows/ci.yml` and `docs/features/github-actions-setup.md`
 
 **Notes:**
 
@@ -314,10 +311,9 @@ Priority caching opportunities based on verify-all.cjs analysis:
 
 **Formatter Performance**
 
-- [ ] Evaluate replacing Prettier with prettierd (Rust-based) for faster CI formatting checks
-- [ ] Benchmark current Prettier performance in verify-all.cjs pipeline
-- [ ] Test prettierd compatibility with prettier-plugin-tailwindcss
-- [ ] Update CI scripts to use prettierd if performance gain is significant
+- [x] Adopt dprint as formatter for local and CI checks
+- [ ] Benchmark `yarn format:check` timing in `verify:rapid`, `verify:all`, and CI matrix jobs
+- [ ] If formatting time regresses, evaluate parallelized formatter checks by changed-files scope
 
 **Compiler & Bundler Optimization**
 

@@ -6,8 +6,8 @@
 
 - [ ] Implement feature (UI component, Zustand store, IPC handler, DB schema changes)
 - [ ] If new IPC channel: add constant to `src/shared/ipcChannels.ts` first
-- [ ] Run `yarn lint` and fix any errors
-- [ ] Run `yarn format`
+- [ ] Run `yarn verify:rapid` during implementation for fast local feedback
+- [ ] Run `yarn lint` and `yarn format:check` before committing code changes
 
 ### 2. Docs (mandatory)
 
@@ -20,7 +20,18 @@
 - [ ] Update scope language if needed so docs still reflect platform direction:
   - centralized + offline-first TTRPG campaign management + creative writing/worldbuilding
 
-### 3. ADR (only if an architectural decision was made)
+### 3. Local Quality Gate
+
+- [ ] Run `yarn verify:all` before push/PR (strict ordered gate: rebuild -> format/type/lint -> unit coverage -> package -> e2e)
+- [ ] If `verify:all` fails, fix only reported failures and rerun until green
+
+### 4. Remote CI Paper Trail
+
+- [ ] Push branch and open PR to `main`
+- [ ] Confirm GitHub Actions CI is green (`fast-checks`, `package`, `e2e`, `ci-summary`)
+- [ ] If CI fails, use workflow/job/step logs and artifacts (`coverage-report`, `packaged-app`, `playwright-report`) as debugging paper trail
+
+### 5. ADR (only if an architectural decision was made)
 
 Write a short ADR in `docs/adr/` if you:
 
@@ -31,7 +42,7 @@ Write a short ADR in `docs/adr/` if you:
 
 Otherwise, skip the ADR.
 
-### 4. Never
+### 6. Never
 
 - Do not create new doc files outside `docs/` or outside the files listed in `docs/00_INDEX.md`
 - Do not hardcode IPC channel strings; always use `src/shared/ipcChannels.ts`
