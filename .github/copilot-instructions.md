@@ -11,6 +11,7 @@ Use the 3-phase flow unless the user explicitly asks to combine steps:
 3. Docs
 
 For docs phase on normal feature work, only modify:
+
 - `docs/02_CODEBASE_MAP.md`
 - `docs/03_IPC_CONTRACT.md`
 
