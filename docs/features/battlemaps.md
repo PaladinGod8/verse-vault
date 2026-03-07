@@ -137,6 +137,22 @@ Also not in scope:
   - selecting a placed token focuses camera toward that token.
   - camera movement in runtime is session interaction; there is no dedicated runtime zoom control UI.
 
+### Runtime StatBlock Integration
+
+- Runtime ability picker is token-statblock driven (not world-ability-list driven):
+  - selected runtime token resolves `sourceTokenId`
+  - runtime calls `window.db.statblocks.getLinkedStatblock(sourceTokenId)`
+  - if linked, runtime loads abilities with `window.db.statblocks.listAbilities(statblock.id)`
+  - picker shows active abilities only (`ability.type === 'active'`)
+- Fallback states are explicit and safe:
+  - `Selected token has no source link.`
+  - `No linked statblock for this token.`
+- Token double left-click on the runtime canvas opens in-app `StatBlockPopup`.
+- Popup data source is the same linked statblock contract and includes:
+  - statblock name/description
+  - assigned abilities
+  - parsed resources, passive scores, and skills from `statblock.config`
+
 ### Runtime Camera Zoom
 
 **Zoom input and wheel direction mapping**
