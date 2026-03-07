@@ -2554,7 +2554,9 @@ app.on('ready', async () => {
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     try {
-      const { installExtension, REACT_DEVELOPER_TOOLS } = await import('electron-devtools-installer');
+      const { installExtension, REACT_DEVELOPER_TOOLS } = await import(
+        'electron-devtools-installer'
+      );
       await installExtension(REACT_DEVELOPER_TOOLS).catch((err: unknown) => {
         console.error('Failed to install React DevTools:', err);
       });

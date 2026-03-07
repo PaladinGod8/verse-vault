@@ -14,6 +14,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60000,
   retries: 0,
+  workers: 2, // cap Electron instances to avoid resource contention
   reporter: [['html', { open: 'never' }]],
   outputDir: 'test-results/',
   use: {
@@ -36,6 +37,7 @@ export default defineConfig({
       testMatch: [
         'abilities.test.ts',
         'battlemaps.test.ts',
+        'world-default-statistics.test.ts',
         'world-statistics-config.test.ts',
         'statblock-statistics.test.ts',
         'casting-range-overlay.test.ts',
