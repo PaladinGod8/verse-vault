@@ -44,6 +44,15 @@ Detailed instructions:
 - Re-run lint gate after code edits.
 - Re-run unit tests until all pass.
 
+Async and isolation checklist (fix before moving to Gate 3):
+
+- Every async mock call and user interaction is `await`ed.
+- Elements that appear after async operations use `findBy*` queries, not `getBy*`.
+- `vi.clearAllMocks()` and `window.db` re-assignment appear in `beforeEach`, not at module level.
+- `userEvent.setup()` is called per-test or in `beforeEach`, never shared across tests.
+- No `setTimeout`, `sleep`, or fixed delays — only async queries and mock resolution.
+- Flag any test that hangs or has a flaky timing window and treat it as a bug.
+
 ## Gate 3: Coverage (Minimum 80%)
 
 - Run coverage using the repository's unit test coverage command/mode.
@@ -63,6 +72,17 @@ Detailed instructions:
   - Fix e2e test code only when test assumptions/selectors/flow are outdated.
 - Re-run gates 1-3 when code/test edits are made, then re-run e2e.
 - Repeat until all e2e tests pass.
+
+Async and isolation checklist (required for every E2E test):
+
+- Every test calls `launchApp()` independently — never reuse an app instance across tests.
+- Every test wraps its body in `try/finally` and calls `closeApp(app, userDataDir)` in the `finally` block.
+- All waits use `waitForFunction`, `waitForSelector`, or `expect(locator).toBeVisible()` — never `page.waitForTimeout`.
+- After `launchApp()`, the test waits for a known stable UI element before asserting anything.
+- `smoke` and `medium` projects run with `fullyParallel: true` (up to 2 workers) — each test must be fully isolated with its own temp database directory.
+- `runtime` project runs with `fullyParallel: false` — tests still must be stateless and order-independent.
+- No shared file-system paths, database files, or process-level state between tests or workers.
+- Any test that hangs, leaks an Electron process, or leaves a temp directory is treated as a bug and fixed before this gate can pass.
 
 Execution behavior:
 

@@ -77,6 +77,25 @@ Default ownership:
   - `tests/e2e/app.test.ts`
 - For final pre-merge validation, run the strict ordered quality gate in `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`.
 
+#### Async and Race-Condition Rules
+
+Unit tests (Vitest + React Testing Library):
+
+- Always `await` every async mock call and every async user interaction.
+- Use `findBy*` queries (not `getBy*`) when an element appears after an async operation — `findBy*` retries automatically and will not cause a hanging test.
+- Call `vi.clearAllMocks()` in `beforeEach`; also re-assign `window.db` in `beforeEach` so mock state never leaks between tests.
+- Instantiate `userEvent.setup()` inside each test or in `beforeEach` — never share a user-event instance across tests.
+- Wrap async state updates that happen outside React's event system in `act(async () => { ... })`.
+- Never use `setTimeout`, `sleep`, or raw delays — replace with proper async queries or mock resolution.
+
+E2E tests (Playwright + Electron):
+
+- Call `launchApp()` per test, not per file — each test must own its isolated temporary SQLite database directory.
+- Always call `closeApp(app, userDataDir)` in a `finally` block so the app and temp dir are cleaned up even on failure.
+- Use `waitForFunction`, `waitForSelector`, or `expect(locator).toBeVisible()` for deterministic waits; never use `page.waitForTimeout`.
+- After `launchApp()`, wait for a known stable UI state (a heading, landmark, or specific element) before making any assertion.
+- Never share file-system paths, database files, or in-process state between parallel workers.
+
 ### Prompt-Splitting Requirement
 
 When an agent creates sequential implementation prompts under `docs/prompts/`, include a final step named `Final Quality Gate` that references `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` and requires all gates to pass in order.
