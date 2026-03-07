@@ -17,6 +17,10 @@ env:
   NODE_VERSION: '20'
   YARN_ENABLE_GLOBAL_CACHE: 'true'
 
+defaults:
+  run:
+    shell: cmd
+
 jobs:
   bootstrap:
     runs-on: self-hosted
@@ -225,14 +229,20 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Fail if any CI job failed
-        shell: pwsh
         run: |
-          $failed = @()
-          if ("${{ needs.fast-checks.result }}" -ne "success") { $failed += "fast-checks" }
-          if ("${{ needs.package.result }}" -ne "success") { $failed += "package" }
-          if ("${{ needs.e2e.result }}" -ne "success") { $failed += "e2e" }
-          if ($failed.Count -gt 0) {
-            Write-Error ("CI failed in: " + ($failed -join ", "))
-            exit 1
-          }
-          Write-Host "CI passed: all jobs succeeded."
+          set FAST_CHECKS=${{ needs.fast-checks.result }}
+          set PACKAGE=${{ needs.package.result }}
+          set E2E=${{ needs.e2e.result }}
+          if /I not "%FAST_CHECKS%"=="success" (
+            echo CI failed in: fast-checks
+            exit /b 1
+          )
+          if /I not "%PACKAGE%"=="success" (
+            echo CI failed in: package
+            exit /b 1
+          )
+          if /I not "%E2E%"=="success" (
+            echo CI failed in: e2e
+            exit /b 1
+          )
+          echo CI passed: all jobs succeeded.
