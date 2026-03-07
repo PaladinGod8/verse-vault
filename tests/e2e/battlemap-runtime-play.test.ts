@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { expect, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 async function getMainWindow(
   app: import('playwright').ElectronApplication,
@@ -60,11 +60,10 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
   try {
     const window = await getMainWindow(app);
     await app.evaluate(({ BrowserWindow }) => {
-      const win =
-        BrowserWindow.getAllWindows().find((candidate) => {
-          const url = candidate.webContents.getURL();
-          return !url.startsWith('devtools://');
-        }) ?? BrowserWindow.getAllWindows()[0];
+      const win = BrowserWindow.getAllWindows().find((candidate) => {
+        const url = candidate.webContents.getURL();
+        return !url.startsWith('devtools://');
+      }) ?? BrowserWindow.getAllWindows()[0];
       if (!win) {
         return;
       }
@@ -239,7 +238,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
               return null;
             }
             const parsed = JSON.parse(battlemap.config) as {
-              runtime?: { grid?: { mode?: string } };
+              runtime?: { grid?: { mode?: string; }; };
             };
             return parsed.runtime?.grid?.mode ?? 'square';
           }, seededRuntimeIds.battleMapId),

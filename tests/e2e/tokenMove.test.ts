@@ -1,9 +1,4 @@
-import {
-  test,
-  expect,
-  type ElectronApplication,
-  type Page,
-} from '@playwright/test';
+import { type ElectronApplication, expect, type Page, test } from '@playwright/test';
 import {
   cleanupElectronApp,
   createCampaign,
@@ -25,7 +20,7 @@ let page: Page | null = null;
 let worldId: number | null = null;
 let userDataDir: string | null = null;
 
-function requireContext(): { page: Page; worldId: number } {
+function requireContext(): { page: Page; worldId: number; } {
   if (!page || worldId === null) {
     throw new Error('Expected test context to be initialized.');
   }
@@ -143,8 +138,11 @@ test.describe('Token Move Flows', () => {
     const { page: window, worldId: targetWorldId } = requireContext();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tokenName = `Multi-Campaign Token ${unique}`;
-    const { campaignId: campaign1Id, campaignName: campaign1Name } =
-      await createCampaign(window, targetWorldId, `Campaign 1 ${unique}`);
+    const { campaignId: campaign1Id, campaignName: campaign1Name } = await createCampaign(
+      window,
+      targetWorldId,
+      `Campaign 1 ${unique}`,
+    );
     const { campaignName: campaign2Name } = await createCampaign(
       window,
       targetWorldId,

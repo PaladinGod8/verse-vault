@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../../../src/renderer/components/ui/ToastProvider';
 import type {
   PassiveScoreDefinition,
@@ -19,8 +19,8 @@ Object.defineProperty(window, 'db', {
 });
 
 vi.mock('../../../../src/renderer/components/worlds/WorldSidebar', () => ({
-  default: ({ worldId }: { worldId: number | null }) => (
-    <div data-testid="world-sidebar">world-{String(worldId)}</div>
+  default: ({ worldId }: { worldId: number | null; }) => (
+    <div data-testid='world-sidebar'>world-{String(worldId)}</div>
   ),
 }));
 
@@ -31,7 +31,7 @@ vi.mock('../../../../src/renderer/components/ui/ModalShell', () => ({
   }: {
     isOpen: boolean;
     children: React.ReactNode;
-  }) => (isOpen ? <div data-testid="modal">{children}</div> : null),
+  }) => (isOpen ? <div data-testid='modal'>{children}</div> : null),
 }));
 
 vi.mock('../../../../src/renderer/components/ui/ConfirmDialog', () => ({
@@ -48,15 +48,17 @@ vi.mock('../../../../src/renderer/components/ui/ConfirmDialog', () => ({
     onCancel: () => void;
     isConfirming?: boolean;
   }) =>
-    isOpen ? (
-      <div data-testid="confirm-dialog">
-        <p>{title}</p>
-        <button disabled={isConfirming} onClick={onConfirm}>
-          Confirm
-        </button>
-        <button onClick={onCancel}>Cancel</button>
-      </div>
-    ) : null,
+    isOpen
+      ? (
+        <div data-testid='confirm-dialog'>
+          <p>{title}</p>
+          <button disabled={isConfirming} onClick={onConfirm}>
+            Confirm
+          </button>
+          <button onClick={onCancel}>Cancel</button>
+        </div>
+      )
+      : null,
 }));
 
 vi.mock(
@@ -73,18 +75,17 @@ vi.mock(
       onCancel: () => void;
       initialValues?: ResourceStatisticDefinition;
     }) => {
-      const payload: ResourceStatisticDefinition =
-        mode === 'edit' && initialValues
-          ? {
-              ...initialValues,
-              name: `${initialValues.name} Updated`,
-            }
-          : {
-              id: 'energy',
-              name: 'Energy',
-              abbreviation: 'EN',
-              isDefault: false,
-            };
+      const payload: ResourceStatisticDefinition = mode === 'edit' && initialValues
+        ? {
+          ...initialValues,
+          name: `${initialValues.name} Updated`,
+        }
+        : {
+          id: 'energy',
+          name: 'Energy',
+          abbreviation: 'EN',
+          isDefault: false,
+        };
 
       return (
         <div data-testid={`resource-form-${mode}`}>
@@ -92,8 +93,7 @@ vi.mock(
             onClick={() =>
               void onSubmit(payload).catch(() => {
                 /* intentionally empty */
-              })
-            }
+              })}
           >
             Submit resource {mode}
           </button>
@@ -118,19 +118,18 @@ vi.mock(
       onCancel: () => void;
       initialValues?: PassiveScoreDefinition;
     }) => {
-      const payload: PassiveScoreDefinition =
-        mode === 'edit' && initialValues
-          ? {
-              ...initialValues,
-              name: `${initialValues.name} Updated`,
-            }
-          : {
-              id: 'insight',
-              name: 'Insight',
-              abbreviation: 'INS',
-              type: 'custom',
-              isDefault: false,
-            };
+      const payload: PassiveScoreDefinition = mode === 'edit' && initialValues
+        ? {
+          ...initialValues,
+          name: `${initialValues.name} Updated`,
+        }
+        : {
+          id: 'insight',
+          name: 'Insight',
+          abbreviation: 'INS',
+          type: 'custom',
+          isDefault: false,
+        };
 
       return (
         <div data-testid={`passive-form-${mode}`}>
@@ -138,8 +137,7 @@ vi.mock(
             onClick={() =>
               void onSubmit(payload).catch(() => {
                 /* intentionally empty */
-              })
-            }
+              })}
           >
             Submit passive {mode}
           </button>
@@ -158,10 +156,10 @@ function renderPage(route = '/world/1/statistics') {
       <ToastProvider>
         <Routes>
           <Route
-            path="/world/:id/statistics"
+            path='/world/:id/statistics'
             element={<WorldStatisticsConfigPage />}
           />
-          <Route path="*" element={<WorldStatisticsConfigPage />} />
+          <Route path='*' element={<WorldStatisticsConfigPage />} />
         </Routes>
       </ToastProvider>
     </MemoryRouter>,

@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import BattleMapForm from '../../../src/renderer/components/battlemaps/BattleMapForm';
 
 describe('BattleMapForm', () => {
@@ -62,7 +62,7 @@ describe('BattleMapForm', () => {
     const onSubmitEdit = vi.fn().mockRejectedValueOnce({ reason: 'unknown' });
     rerender(
       <BattleMapForm
-        mode="edit"
+        mode='edit'
         worldId={1}
         initialValues={{ name: 'Arena', config: '{}' }}
         onSubmit={onSubmitEdit}

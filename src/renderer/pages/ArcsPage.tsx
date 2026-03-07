@@ -1,15 +1,15 @@
 import {
+  closestCenter,
   DndContext,
+  type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
-  type DragEndEvent,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -70,47 +70,45 @@ function SortableArcRow({
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`border-b border-slate-100 last:border-0 ${
-        isDragging ? 'bg-slate-50' : ''
-      }`}
+      className={`border-b border-slate-100 last:border-0 ${isDragging ? 'bg-slate-50' : ''}`}
     >
-      <td className="w-28 px-4 py-3 text-slate-600">
-        <div className="flex items-center gap-2">
+      <td className='w-28 px-4 py-3 text-slate-600'>
+        <div className='flex items-center gap-2'>
           <button
-            type="button"
+            type='button'
             ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
-            className="inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60"
+            className='inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60'
             aria-label={`Reorder arc ${arc.name}`}
             disabled={isDeleting || isPersistingOrder}
           >
             ::
           </button>
-          <span className="tabular-nums">{sequence}</span>
+          <span className='tabular-nums'>{sequence}</span>
         </div>
       </td>
-      <td className="px-4 py-3 font-medium">{arc.name}</td>
-      <td className="px-4 py-3">
-        <div className="flex gap-3">
+      <td className='px-4 py-3 font-medium'>{arc.name}</td>
+      <td className='px-4 py-3'>
+        <div className='flex gap-3'>
           <Link
             to={`/world/${worldId}/campaign/${campaignId}/arc/${arc.id}/acts`}
-            className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
           >
             Acts
           </Link>
           <button
-            type="button"
+            type='button'
             onClick={() => onEdit(arc)}
-            className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
             disabled={isDeleting}
           >
             Edit
           </button>
           <button
-            type="button"
+            type='button'
             onClick={() => onDelete(arc)}
-            className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
@@ -189,8 +187,7 @@ export default function ArcsPage() {
       setReorderError(null);
 
       try {
-        const existingCampaign =
-          await window.db.campaigns.getById(parsedCampaignId);
+        const existingCampaign = await window.db.campaigns.getById(parsedCampaignId);
         if (!existingCampaign) {
           if (isMounted) {
             setCampaign(null);
@@ -199,8 +196,7 @@ export default function ArcsPage() {
           return;
         }
 
-        const arcsList =
-          await window.db.arcs.getAllByCampaign(parsedCampaignId);
+        const arcsList = await window.db.arcs.getAllByCampaign(parsedCampaignId);
         if (isMounted) {
           setCampaign(existingCampaign);
           setArcs(sortArcsByOrder(arcsList));
@@ -225,7 +221,7 @@ export default function ArcsPage() {
     };
   }, [worldId, parsedCampaignId]);
 
-  const handleCreateArc = async (data: { name: string }) => {
+  const handleCreateArc = async (data: { name: string; }) => {
     if (parsedCampaignId === null) {
       return;
     }
@@ -240,7 +236,7 @@ export default function ArcsPage() {
         sortArcsByOrder([
           newArc,
           ...prev.filter((arc) => arc.id !== newArc.id),
-        ]),
+        ])
       );
       setIsCreateOpen(false);
       toast.success('Arc created.', `"${newArc.name}" was added.`);
@@ -254,7 +250,7 @@ export default function ArcsPage() {
     }
   };
 
-  const handleUpdateArc = async (data: { name: string }) => {
+  const handleUpdateArc = async (data: { name: string; }) => {
     if (!editingArc) {
       return;
     }
@@ -266,7 +262,7 @@ export default function ArcsPage() {
       setArcs((prev) =>
         sortArcsByOrder(
           prev.map((arc) => (arc.id === updatedArc.id ? updatedArc : arc)),
-        ),
+        )
       );
       setEditingArc(null);
       toast.success('Arc updated.', `"${updatedArc.name}" was saved.`);
@@ -314,9 +310,7 @@ export default function ArcsPage() {
       );
     } finally {
       setDeletingId((current) => (current === arc.id ? null : current));
-      setPendingDeleteArc((current) =>
-        current?.id === arc.id ? null : current,
-      );
+      setPendingDeleteArc((current) => current?.id === arc.id ? null : current);
     }
   };
 
@@ -330,9 +324,9 @@ export default function ArcsPage() {
     const activeId = Number(active.id);
     const overId = Number(over.id);
     if (
-      !Number.isInteger(activeId) ||
-      !Number.isInteger(overId) ||
-      activeId === overId
+      !Number.isInteger(activeId)
+      || !Number.isInteger(overId)
+      || activeId === overId
     ) {
       return;
     }
@@ -366,7 +360,7 @@ export default function ArcsPage() {
         arcsWithSortOrderChanges.map((arc) =>
           window.db.arcs.update(arc.id, {
             sort_order: arc.sort_order,
-          }),
+          })
         ),
       );
     } catch (sortOrderError) {
@@ -377,8 +371,7 @@ export default function ArcsPage() {
       );
 
       try {
-        const canonicalArcs =
-          await window.db.arcs.getAllByCampaign(parsedCampaignId);
+        const canonicalArcs = await window.db.arcs.getAllByCampaign(parsedCampaignId);
         setArcs(sortArcsByOrder(canonicalArcs));
       } catch {
         setArcs(previousArcs);
@@ -389,167 +382,183 @@ export default function ArcsPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
             <Link
               to={`/world/${worldId}/campaigns`}
-              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
             >
               Back to campaigns
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {campaign ? `${campaign.name} — Arcs` : 'Arcs'}
             </h1>
           </div>
 
-          {worldId !== null && parsedCampaignId !== null ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              New Arc
-            </button>
-          ) : null}
+          {worldId !== null && parsedCampaignId !== null
+            ? (
+              <button
+                type='button'
+                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                onClick={() => setIsCreateOpen(true)}
+              >
+                New Arc
+              </button>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading arcs...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading arcs...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
-            {error}
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
+              {error}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && reorderError ? (
-          <section className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm">
-            {reorderError}
-          </section>
-        ) : null}
+        {!isLoading && !error && reorderError
+          ? (
+            <section className='rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm'>
+              {reorderError}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && arcs.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No arcs yet.</p>
-          </section>
-        ) : null}
+        {!isLoading && !error && arcs.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <p className='text-sm text-slate-600'>No arcs yet.</p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && arcs.length > 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => {
-                void handleReorderArcs(event);
-              }}
-            >
-              <table className="w-full text-sm text-slate-700">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Order
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <SortableContext
-                  items={sortedArcs.map((arc) => arc.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <tbody>
-                    {sortedArcs.map((arc, index) => (
-                      <SortableArcRow
-                        key={arc.id}
-                        arc={arc}
-                        sequence={index + 1}
-                        worldId={worldId}
-                        campaignId={parsedCampaignId}
-                        deletingId={deletingId}
-                        isPersistingOrder={isPersistingOrder}
-                        onEdit={(selectedArc) => {
-                          setIsCreateOpen(false);
-                          setEditingArc(selectedArc);
-                        }}
-                        onDelete={(selectedArc) => {
-                          handleRequestDeleteArc(selectedArc);
-                        }}
-                      />
-                    ))}
-                  </tbody>
-                </SortableContext>
-              </table>
-            </DndContext>
-          </section>
-        ) : null}
+        {!isLoading && !error && arcs.length > 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => {
+                  void handleReorderArcs(event);
+                }}
+              >
+                <table className='w-full text-sm text-slate-700'>
+                  <thead>
+                    <tr className='border-b border-slate-200'>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Order
+                      </th>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Name
+                      </th>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <SortableContext
+                    items={sortedArcs.map((arc) => arc.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <tbody>
+                      {sortedArcs.map((arc, index) => (
+                        <SortableArcRow
+                          key={arc.id}
+                          arc={arc}
+                          sequence={index + 1}
+                          worldId={worldId}
+                          campaignId={parsedCampaignId}
+                          deletingId={deletingId}
+                          isPersistingOrder={isPersistingOrder}
+                          onEdit={(selectedArc) => {
+                            setIsCreateOpen(false);
+                            setEditingArc(selectedArc);
+                          }}
+                          onDelete={(selectedArc) => {
+                            handleRequestDeleteArc(selectedArc);
+                          }}
+                        />
+                      ))}
+                    </tbody>
+                  </SortableContext>
+                </table>
+              </DndContext>
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen && parsedCampaignId !== null ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-arc-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="create-arc-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen && parsedCampaignId !== null
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-arc-title'
+            boxClassName='max-w-xl'
           >
-            New Arc
-          </h2>
-          <ArcForm
-            onSubmit={(data) => {
-              void handleCreateArc(data);
-            }}
-            onCancel={() => setIsCreateOpen(false)}
-            submitLabel="Create Arc"
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-arc-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              New Arc
+            </h2>
+            <ArcForm
+              onSubmit={(data) => {
+                void handleCreateArc(data);
+              }}
+              onCancel={() => setIsCreateOpen(false)}
+              submitLabel='Create Arc'
+            />
+          </ModalShell>
+        )
+        : null}
 
-      {editingArc !== null ? (
-        <ModalShell
-          isOpen={editingArc !== null}
-          onClose={() => setEditingArc(null)}
-          labelledBy="edit-arc-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="edit-arc-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingArc !== null
+        ? (
+          <ModalShell
+            isOpen={editingArc !== null}
+            onClose={() => setEditingArc(null)}
+            labelledBy='edit-arc-title'
+            boxClassName='max-w-xl'
           >
-            Edit Arc
-          </h2>
-          <ArcForm
-            initialValues={editingArc}
-            onSubmit={(data) => {
-              void handleUpdateArc(data);
-            }}
-            onCancel={() => setEditingArc(null)}
-            submitLabel="Save"
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-arc-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Arc
+            </h2>
+            <ArcForm
+              initialValues={editingArc}
+              onSubmit={(data) => {
+                void handleUpdateArc(data);
+              }}
+              onCancel={() => setEditingArc(null)}
+              submitLabel='Save'
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDeleteArc !== null}
         title={`Delete "${pendingDeleteArc?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDeleteArc();
         }}
         onCancel={() => setPendingDeleteArc(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />
     </div>

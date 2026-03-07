@@ -31,8 +31,7 @@ export default function CampaignsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [pendingDeleteCampaign, setPendingDeleteCampaign] =
-    useState<Campaign | null>(null);
+  const [pendingDeleteCampaign, setPendingDeleteCampaign] = useState<Campaign | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -118,9 +117,7 @@ export default function CampaignsPage() {
         editingCampaign.id,
         { name, summary },
       );
-      setCampaigns((prev) =>
-        prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)),
-      );
+      setCampaigns((prev) => prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)));
       setEditingCampaign(null);
       toast.success(
         'Campaign updated.',
@@ -162,185 +159,197 @@ export default function CampaignsPage() {
       );
     } finally {
       setDeletingId((current) => (current === campaign.id ? null : current));
-      setPendingDeleteCampaign((current) =>
-        current?.id === campaign.id ? null : current,
-      );
+      setPendingDeleteCampaign((current) => current?.id === campaign.id ? null : current);
     }
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
             <Link
               to={`/world/${worldId}`}
-              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
             >
               Back to world
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {world?.name ?? 'Campaigns'}
             </h1>
           </div>
 
-          {worldId !== null ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              New Campaign
-            </button>
-          ) : null}
+          {worldId !== null
+            ? (
+              <button
+                type='button'
+                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                onClick={() => setIsCreateOpen(true)}
+              >
+                New Campaign
+              </button>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading campaigns...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading campaigns...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
-            {error}
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
+              {error}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && campaigns.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No campaigns yet.</p>
-          </section>
-        ) : null}
+        {!isLoading && !error && campaigns.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <p className='text-sm text-slate-600'>No campaigns yet.</p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && campaigns.length > 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm text-slate-700">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Summary
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaigns.map((campaign) => (
-                  <tr
-                    key={campaign.id}
-                    className="border-b border-slate-100 last:border-0"
-                  >
-                    <td className="px-4 py-3 font-medium">{campaign.name}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {campaign.summary ?? '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <Link
-                          to={`/world/${worldId}/campaign/${campaign.id}/scenes`}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-                        >
-                          Scenes
-                        </Link>
-                        <Link
-                          to={`/world/${worldId}/campaign/${campaign.id}/arcs`}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-                        >
-                          Arcs
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreateOpen(false);
-                            setEditingCampaign(campaign);
-                          }}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === campaign.id}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleRequestDeleteCampaign(campaign);
-                          }}
-                          className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === campaign.id}
-                        >
-                          {deletingId === campaign.id
-                            ? 'Deleting...'
-                            : 'Delete'}
-                        </button>
-                      </div>
-                    </td>
+        {!isLoading && !error && campaigns.length > 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
+              <table className='w-full text-sm text-slate-700'>
+                <thead>
+                  <tr className='border-b border-slate-200'>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Name
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Summary
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        ) : null}
+                </thead>
+                <tbody>
+                  {campaigns.map((campaign) => (
+                    <tr
+                      key={campaign.id}
+                      className='border-b border-slate-100 last:border-0'
+                    >
+                      <td className='px-4 py-3 font-medium'>{campaign.name}</td>
+                      <td className='px-4 py-3 text-slate-500'>
+                        {campaign.summary ?? '—'}
+                      </td>
+                      <td className='px-4 py-3'>
+                        <div className='flex gap-3'>
+                          <Link
+                            to={`/world/${worldId}/campaign/${campaign.id}/scenes`}
+                            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
+                          >
+                            Scenes
+                          </Link>
+                          <Link
+                            to={`/world/${worldId}/campaign/${campaign.id}/arcs`}
+                            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
+                          >
+                            Arcs
+                          </Link>
+                          <button
+                            type='button'
+                            onClick={() => {
+                              setIsCreateOpen(false);
+                              setEditingCampaign(campaign);
+                            }}
+                            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+                            disabled={deletingId === campaign.id}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type='button'
+                            onClick={() => {
+                              handleRequestDeleteCampaign(campaign);
+                            }}
+                            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
+                            disabled={deletingId === campaign.id}
+                          >
+                            {deletingId === campaign.id
+                              ? 'Deleting...'
+                              : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen && worldId !== null ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-campaign-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="create-campaign-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen && worldId !== null
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-campaign-title'
+            boxClassName='max-w-xl'
           >
-            New Campaign
-          </h2>
-          <CampaignForm
-            mode="create"
-            worldId={worldId}
-            onSubmit={handleCreateCampaign}
-            onCancel={() => setIsCreateOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-campaign-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              New Campaign
+            </h2>
+            <CampaignForm
+              mode='create'
+              worldId={worldId}
+              onSubmit={handleCreateCampaign}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
-      {editingCampaign !== null ? (
-        <ModalShell
-          isOpen={editingCampaign !== null}
-          onClose={() => setEditingCampaign(null)}
-          labelledBy="edit-campaign-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="edit-campaign-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingCampaign !== null
+        ? (
+          <ModalShell
+            isOpen={editingCampaign !== null}
+            onClose={() => setEditingCampaign(null)}
+            labelledBy='edit-campaign-title'
+            boxClassName='max-w-xl'
           >
-            Edit Campaign
-          </h2>
-          <CampaignForm
-            mode="edit"
-            worldId={editingCampaign.world_id}
-            initialValues={editingCampaign}
-            onSubmit={handleUpdateCampaign}
-            onCancel={() => setEditingCampaign(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-campaign-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Campaign
+            </h2>
+            <CampaignForm
+              mode='edit'
+              worldId={editingCampaign.world_id}
+              initialValues={editingCampaign}
+              onSubmit={handleUpdateCampaign}
+              onCancel={() => setEditingCampaign(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDeleteCampaign !== null}
         title={`Delete "${pendingDeleteCampaign?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDeleteCampaign();
         }}
         onCancel={() => setPendingDeleteCampaign(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />
     </div>

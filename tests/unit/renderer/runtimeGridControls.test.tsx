@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import RuntimeGridControls from '../../../src/renderer/components/runtime/RuntimeGridControls';
 
 function buildGridConfig(
@@ -42,7 +42,7 @@ describe('RuntimeGridControls', () => {
       <RuntimeGridControls
         gridConfig={buildGridConfig()}
         isSaving={false}
-        saveError="Boom"
+        saveError='Boom'
         onChange={onChange}
       />,
     );

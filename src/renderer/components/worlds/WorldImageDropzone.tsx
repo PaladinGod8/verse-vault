@@ -38,8 +38,8 @@ export default function WorldImageDropzone({
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-slate-700">
+    <div className='space-y-2'>
+      <label className='block text-sm font-medium text-slate-700'>
         World Thumbnail Upload
       </label>
 
@@ -87,46 +87,47 @@ export default function WorldImageDropzone({
             setIsNativeDragOver(false);
             handleFiles(event.dataTransfer.files);
           }}
-          role="button"
+          role='button'
           aria-disabled={disabled}
           tabIndex={disabled ? -1 : 0}
         >
-          <p className="text-sm text-slate-700">
+          <p className='text-sm text-slate-700'>
             Drag an image here, or click to choose a file.
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className='mt-1 text-xs text-slate-500'>
             Accepted: PNG, JPEG, WEBP, GIF. Max 5 MB.
           </p>
 
-          {selectedFile ? (
-            <div className="mt-3 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-700">
-              <p className="font-medium text-slate-900">{selectedFile.name}</p>
-              <p className="mt-1">
-                {selectedFile.type || 'unknown type'} -{' '}
-                {formatFileSize(selectedFile.size)}
-              </p>
-              <button
-                type="button"
-                className="mt-2 text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (!disabled) onClearFile();
-                }}
-                disabled={disabled}
-              >
-                Remove selected file
-              </button>
-            </div>
-          ) : null}
+          {selectedFile
+            ? (
+              <div className='mt-3 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-700'>
+                <p className='font-medium text-slate-900'>{selectedFile.name}</p>
+                <p className='mt-1'>
+                  {selectedFile.type || 'unknown type'} - {formatFileSize(selectedFile.size)}
+                </p>
+                <button
+                  type='button'
+                  className='mt-2 text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!disabled) onClearFile();
+                  }}
+                  disabled={disabled}
+                >
+                  Remove selected file
+                </button>
+              </div>
+            )
+            : null}
         </div>
       </DndContext>
 
       <input
         id={inputId}
         ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
+        type='file'
+        accept='image/*'
+        className='hidden'
         onChange={(event) => {
           handleFiles(event.target.files);
           event.currentTarget.value = '';
@@ -134,7 +135,7 @@ export default function WorldImageDropzone({
         disabled={disabled}
       />
 
-      {error ? <p className="text-xs text-rose-600">{error}</p> : null}
+      {error ? <p className='text-xs text-rose-600'>{error}</p> : null}
     </div>
   );
 }

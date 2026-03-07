@@ -5,15 +5,15 @@ import { Polygon, Rectangle } from 'pixi.js';
 
 import {
   clampGridCellSize,
-  pointyHexCenterFromAxial,
-  getPointyHexVertexOffsets,
   getPointyHexRangeForBounds,
+  getPointyHexVertexOffsets,
+  pointyHexCenterFromAxial,
 } from './runtimeMath';
 
 export type AoeShape = 'circle' | 'rectangle' | 'cone' | 'line';
 
-export type HighlightedSquareTile = { col: number; row: number };
-export type HighlightedHexTile = { q: number; r: number };
+export type HighlightedSquareTile = { col: number; row: number; };
+export type HighlightedHexTile = { q: number; r: number; };
 
 export type CastingShapeParams = {
   shape: AoeShape | null; // null = point target (range circle only)
@@ -252,8 +252,9 @@ export function getHighlightedSquareTiles(
   const { shape, sizeCells } = params;
 
   const effectiveSizeCells = shape === null ? 0.5 : sizeCells;
-  const effectiveParams: CastingShapeParams =
-    shape === null ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 } : params;
+  const effectiveParams: CastingShapeParams = shape === null
+    ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 }
+    : params;
 
   const shapePoly = getShapePolygon(effectiveParams, casterX, casterY, safe);
   const shapeVerts = polygonVertices(shapePoly);
@@ -306,8 +307,9 @@ export function getHighlightedHexTiles(
   const { shape, sizeCells } = params;
 
   const effectiveSizeCells = shape === null ? 0.5 : sizeCells;
-  const effectiveParams: CastingShapeParams =
-    shape === null ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 } : params;
+  const effectiveParams: CastingShapeParams = shape === null
+    ? { shape: 'circle', sizeCells: 0.5, angleRad: 0 }
+    : params;
 
   const shapePoly = getShapePolygon(effectiveParams, casterX, casterY, safe);
   const shapeVerts = polygonVertices(shapePoly);

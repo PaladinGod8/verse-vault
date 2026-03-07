@@ -38,9 +38,7 @@ class BrowserWindowMock {
 
 const prepareMock = vi.fn();
 const transactionMock = vi.fn(
-  (callback: (...args: unknown[]) => unknown) =>
-    (...args: unknown[]) =>
-      callback(...args),
+  (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
 );
 const getDatabaseMock = vi.fn(() => ({
   prepare: prepareMock,
@@ -72,8 +70,9 @@ async function importMainWithMocks() {
   vi.clearAllMocks();
 
   for (const key of Object.keys(registeredEvents)) delete registeredEvents[key];
-  for (const key of Object.keys(registeredIpcHandlers))
+  for (const key of Object.keys(registeredIpcHandlers)) {
     delete registeredIpcHandlers[key];
+  }
 
   vi.doMock('electron-squirrel-startup', () => false);
   vi.doMock('electron', () => ({
@@ -206,8 +205,8 @@ function setupTokenMoveSqlMocks() {
       return { get: campaignGetMock };
     }
     if (
-      sql ===
-      "UPDATE tokens SET campaign_id = NULL, updated_at = datetime('now') WHERE id = ?"
+      sql
+        === "UPDATE tokens SET campaign_id = NULL, updated_at = datetime('now') WHERE id = ?"
     ) {
       return {
         run: (id: number) => {
@@ -220,8 +219,8 @@ function setupTokenMoveSqlMocks() {
       };
     }
     if (
-      sql ===
-      "UPDATE tokens SET campaign_id = ?, updated_at = datetime('now') WHERE id = ?"
+      sql
+        === "UPDATE tokens SET campaign_id = ?, updated_at = datetime('now') WHERE id = ?"
     ) {
       return { run: tokenUpdateMock };
     }

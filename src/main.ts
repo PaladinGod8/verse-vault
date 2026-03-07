@@ -4,10 +4,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
 import {
-  getDatabase,
   closeDatabase,
   db as dbHandlers,
   ensureTokenConfigJsonText,
+  getDatabase,
 } from './database/db';
 import { IPC } from './shared/ipcChannels';
 import { getDefaultWorldConfig } from './shared/statisticsTypes';
@@ -17,8 +17,7 @@ function isAbilityChildDuplicateError(error: unknown): boolean {
     return false;
   }
 
-  const code =
-    'code' in error && typeof error.code === 'string' ? error.code : '';
+  const code = 'code' in error && typeof error.code === 'string' ? error.code : '';
   if (code === 'SQLITE_CONSTRAINT_UNIQUE') {
     return true;
   }
@@ -112,8 +111,8 @@ function normalizeBattleMapRuntimeGridConfig(input: unknown): JsonRecord {
     ? grid.mode
     : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.grid.mode;
   if (
-    typeof modeCandidate !== 'string' ||
-    !BATTLEMAP_GRID_MODES.has(modeCandidate)
+    typeof modeCandidate !== 'string'
+    || !BATTLEMAP_GRID_MODES.has(modeCandidate)
   ) {
     throw new Error(
       "BattleMap config runtime.grid.mode must be one of: 'square', 'hex', 'none'",
@@ -121,9 +120,9 @@ function normalizeBattleMapRuntimeGridConfig(input: unknown): JsonRecord {
   }
 
   const cellSizeCandidate = Object.prototype.hasOwnProperty.call(
-    grid,
-    'cellSize',
-  )
+      grid,
+      'cellSize',
+    )
     ? grid.cellSize
     : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.grid.cellSize;
   const originXCandidate = Object.prototype.hasOwnProperty.call(grid, 'originX')
@@ -157,15 +156,15 @@ function normalizeBattleMapRuntimeMapConfig(input: unknown): JsonRecord {
 
   const map = isJsonRecord(input) ? input : {};
   const imageSrcCandidate = Object.prototype.hasOwnProperty.call(
-    map,
-    'imageSrc',
-  )
+      map,
+      'imageSrc',
+    )
     ? map.imageSrc
     : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.map.imageSrc;
   const backgroundColorCandidate = Object.prototype.hasOwnProperty.call(
-    map,
-    'backgroundColor',
-  )
+      map,
+      'backgroundColor',
+    )
     ? map.backgroundColor
     : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.map.backgroundColor;
 
@@ -187,11 +186,10 @@ function normalizeBattleMapRuntimeMapConfig(input: unknown): JsonRecord {
     );
   }
 
-  const imageSrc =
-    typeof imageSrcCandidate === 'string' &&
-    imageSrcCandidate.trim().length === 0
-      ? null
-      : imageSrcCandidate;
+  const imageSrc = typeof imageSrcCandidate === 'string'
+      && imageSrcCandidate.trim().length === 0
+    ? null
+    : imageSrcCandidate;
 
   return {
     imageSrc,
@@ -258,8 +256,8 @@ function ensureScenePayloadJsonText(payload: unknown): string {
   const parsedPayload = parseJsonText(payload, 'Scene payload');
 
   if (
-    isJsonRecord(parsedPayload) &&
-    Object.prototype.hasOwnProperty.call(parsedPayload, 'runtime')
+    isJsonRecord(parsedPayload)
+    && Object.prototype.hasOwnProperty.call(parsedPayload, 'runtime')
   ) {
     const runtimePayload = parsedPayload.runtime;
     if (!isJsonRecord(runtimePayload)) {
@@ -268,8 +266,8 @@ function ensureScenePayloadJsonText(payload: unknown): string {
     if (Object.prototype.hasOwnProperty.call(runtimePayload, 'battlemap_id')) {
       const battleMapId = runtimePayload.battlemap_id;
       if (
-        battleMapId !== null &&
-        (!Number.isInteger(battleMapId) || (battleMapId as number) <= 0)
+        battleMapId !== null
+        && (!Number.isInteger(battleMapId) || (battleMapId as number) <= 0)
       ) {
         throw new Error(
           'Scene payload runtime.battlemap_id must be a positive integer or null',
@@ -311,16 +309,14 @@ function ensureTokenImageImportPayload(payload: TokenImageImportPayload): {
   mimeType: keyof typeof TOKEN_IMAGE_MIME_TO_EXTENSION;
   bytes: Uint8Array;
 } {
-  const fileName =
-    typeof payload.fileName === 'string' ? payload.fileName.trim() : '';
+  const fileName = typeof payload.fileName === 'string' ? payload.fileName.trim() : '';
   if (!fileName) {
     throw new Error('Token image fileName is required');
   }
 
-  const mimeType =
-    typeof payload.mimeType === 'string'
-      ? payload.mimeType.trim().toLowerCase()
-      : '';
+  const mimeType = typeof payload.mimeType === 'string'
+    ? payload.mimeType.trim().toLowerCase()
+    : '';
   if (
     !Object.prototype.hasOwnProperty.call(
       TOKEN_IMAGE_MIME_TO_EXTENSION,
@@ -475,7 +471,7 @@ function registerIpcHandlers() {
       .prepare(
         'SELECT id FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
       )
-      .all(actId) as Array<{ id: number }>;
+      .all(actId) as Array<{ id: number; }>;
 
     siblingRows.forEach((row, index) => {
       updateSessionSortOrderStmt.run(index, row.id);
@@ -487,7 +483,7 @@ function registerIpcHandlers() {
       .prepare(
         'SELECT id FROM arcs WHERE campaign_id = ? ORDER BY sort_order ASC, id ASC',
       )
-      .all(campaignId) as Array<{ id: number }>;
+      .all(campaignId) as Array<{ id: number; }>;
     rows.forEach((row, index) => {
       updateArcSortOrderStmt.run(index, row.id);
     });
@@ -498,7 +494,7 @@ function registerIpcHandlers() {
       .prepare(
         'SELECT id FROM acts WHERE arc_id = ? ORDER BY sort_order ASC, id ASC',
       )
-      .all(arcId) as Array<{ id: number }>;
+      .all(arcId) as Array<{ id: number; }>;
     rows.forEach((row, index) => {
       updateActSortOrderStmt.run(index, row.id);
     });
@@ -509,7 +505,7 @@ function registerIpcHandlers() {
       .prepare(
         'SELECT id FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
       )
-      .all(sessionId) as Array<{ id: number }>;
+      .all(sessionId) as Array<{ id: number; }>;
 
     siblingRows.forEach((row, index) => {
       updateSceneSortOrderStmt.run(index, row.id);
@@ -524,16 +520,15 @@ function registerIpcHandlers() {
       planned_at?: string | null;
       sort_order?: number;
     }) => {
-      const sortOrder =
-        data.sort_order === undefined
-          ? (
-              db
-                .prepare(
-                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE act_id = ?',
-                )
-                .get(data.act_id) as { next_sort_order: number }
-            ).next_sort_order
-          : data.sort_order;
+      const sortOrder = data.sort_order === undefined
+        ? (
+          db
+            .prepare(
+              'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM sessions WHERE act_id = ?',
+            )
+            .get(data.act_id) as { next_sort_order: number; }
+        ).next_sort_order
+        : data.sort_order;
 
       const result = insertSessionStmt.run(
         data.act_id,
@@ -552,17 +547,16 @@ function registerIpcHandlers() {
   );
 
   const insertArc = db.transaction(
-    (data: { campaign_id: number; name: string; sort_order?: number }) => {
-      const sortOrder =
-        data.sort_order === undefined
-          ? (
-              db
-                .prepare(
-                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM arcs WHERE campaign_id = ?',
-                )
-                .get(data.campaign_id) as { next: number }
-            ).next
-          : data.sort_order;
+    (data: { campaign_id: number; name: string; sort_order?: number; }) => {
+      const sortOrder = data.sort_order === undefined
+        ? (
+          db
+            .prepare(
+              'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM arcs WHERE campaign_id = ?',
+            )
+            .get(data.campaign_id) as { next: number; }
+        ).next
+        : data.sort_order;
       const result = insertArcStmt.run(data.campaign_id, data.name, sortOrder);
       const arc = getArcByIdStmt.get(result.lastInsertRowid);
       if (!arc) throw new Error('Failed to create arc');
@@ -573,7 +567,7 @@ function registerIpcHandlers() {
   const deleteArcAndCompact = db.transaction((id: number) => {
     const arc = db
       .prepare('SELECT campaign_id FROM arcs WHERE id = ?')
-      .get(id) as { campaign_id: number } | undefined;
+      .get(id) as { campaign_id: number; } | undefined;
     if (!arc) return { id };
     db.prepare('DELETE FROM arcs WHERE id = ?').run(id);
     resequenceArcsInCampaign(arc.campaign_id);
@@ -581,17 +575,16 @@ function registerIpcHandlers() {
   });
 
   const insertAct = db.transaction(
-    (data: { arc_id: number; name: string; sort_order?: number }) => {
-      const sortOrder =
-        data.sort_order === undefined
-          ? (
-              db
-                .prepare(
-                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM acts WHERE arc_id = ?',
-                )
-                .get(data.arc_id) as { next: number }
-            ).next
-          : data.sort_order;
+    (data: { arc_id: number; name: string; sort_order?: number; }) => {
+      const sortOrder = data.sort_order === undefined
+        ? (
+          db
+            .prepare(
+              'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM acts WHERE arc_id = ?',
+            )
+            .get(data.arc_id) as { next: number; }
+        ).next
+        : data.sort_order;
       const result = insertActStmt.run(data.arc_id, data.name, sortOrder);
       const act = getActByIdStmt.get(result.lastInsertRowid);
       if (!act) throw new Error('Failed to create act');
@@ -601,7 +594,7 @@ function registerIpcHandlers() {
 
   const deleteActAndCompact = db.transaction((id: number) => {
     const act = db.prepare('SELECT arc_id FROM acts WHERE id = ?').get(id) as
-      | { arc_id: number }
+      | { arc_id: number; }
       | undefined;
     if (!act) return { id };
     db.prepare('DELETE FROM acts WHERE id = ?').run(id);
@@ -617,16 +610,15 @@ function registerIpcHandlers() {
       payload: string;
       sort_order?: number;
     }) => {
-      const sortOrder =
-        data.sort_order === undefined
-          ? (
-              db
-                .prepare(
-                  'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM scenes WHERE session_id = ?',
-                )
-                .get(data.session_id) as { next_sort_order: number }
-            ).next_sort_order
-          : data.sort_order;
+      const sortOrder = data.sort_order === undefined
+        ? (
+          db
+            .prepare(
+              'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order FROM scenes WHERE session_id = ?',
+            )
+            .get(data.session_id) as { next_sort_order: number; }
+        ).next_sort_order
+        : data.sort_order;
 
       const result = insertSceneStmt.run(
         data.session_id,
@@ -647,7 +639,7 @@ function registerIpcHandlers() {
   const deleteSessionAndCompact = db.transaction((id: number) => {
     const sessionToDelete = db
       .prepare('SELECT act_id FROM sessions WHERE id = ?')
-      .get(id) as { act_id: number } | undefined;
+      .get(id) as { act_id: number; } | undefined;
     if (!sessionToDelete) {
       return { id };
     }
@@ -660,7 +652,7 @@ function registerIpcHandlers() {
   const deleteSceneAndCompact = db.transaction((id: number) => {
     const sceneToDelete = db
       .prepare('SELECT session_id FROM scenes WHERE id = ?')
-      .get(id) as { session_id: number } | undefined;
+      .get(id) as { session_id: number; } | undefined;
     if (!sceneToDelete) {
       return { id };
     }
@@ -698,12 +690,10 @@ function registerIpcHandlers() {
         throw new Error('World name is required');
       }
 
-      const thumbnail =
-        typeof data.thumbnail === 'string' ? data.thumbnail : null;
-      const shortDescription =
-        typeof data.short_description === 'string'
-          ? data.short_description
-          : null;
+      const thumbnail = typeof data.thumbnail === 'string' ? data.thumbnail : null;
+      const shortDescription = typeof data.short_description === 'string'
+        ? data.short_description
+        : null;
 
       // Use provided config or generate default
       let config: string;
@@ -762,8 +752,7 @@ function registerIpcHandlers() {
       const values: Array<string | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('World name is required');
         }
@@ -797,10 +786,9 @@ function registerIpcHandlers() {
         values.push(config);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE worlds SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE worlds SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const world = db.prepare('SELECT * FROM worlds WHERE id = ?').get(id);
@@ -872,8 +860,7 @@ function registerIpcHandlers() {
       if (!name) {
         throw new Error('Level name is required');
       }
-      const category =
-        typeof data.category === 'string' ? data.category.trim() : '';
+      const category = typeof data.category === 'string' ? data.category.trim() : '';
       if (!category) {
         throw new Error('Level category is required');
       }
@@ -899,7 +886,7 @@ function registerIpcHandlers() {
     (
       _event,
       id: number,
-      data: { name?: string; category?: string; description?: string | null },
+      data: { name?: string; category?: string; description?: string | null; },
     ) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasCategory = Object.prototype.hasOwnProperty.call(
@@ -915,8 +902,7 @@ function registerIpcHandlers() {
       const values: Array<string | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('Level name cannot be empty');
         }
@@ -925,8 +911,7 @@ function registerIpcHandlers() {
       }
 
       if (hasCategory) {
-        const trimmedCategory =
-          typeof data.category === 'string' ? data.category.trim() : '';
+        const trimmedCategory = typeof data.category === 'string' ? data.category.trim() : '';
         if (!trimmedCategory) {
           throw new Error('Level category cannot be empty');
         }
@@ -939,10 +924,9 @@ function registerIpcHandlers() {
         values.push(data.description);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE levels SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE levels SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE levels SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE levels SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const level = db.prepare('SELECT * FROM levels WHERE id = ?').get(id);
@@ -1007,7 +991,7 @@ function registerIpcHandlers() {
     (
       _event,
       id: number,
-      data: { name?: string; summary?: string | null; config?: string },
+      data: { name?: string; summary?: string | null; config?: string; },
     ) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasSummary = Object.prototype.hasOwnProperty.call(data, 'summary');
@@ -1017,8 +1001,7 @@ function registerIpcHandlers() {
       const values: Array<string | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('Campaign name cannot be empty');
         }
@@ -1036,10 +1019,9 @@ function registerIpcHandlers() {
         values.push(data.config);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE campaigns SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE campaigns SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const campaign = db
@@ -1104,7 +1086,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.BATTLEMAPS_UPDATE,
-    (_event, id: number, data: { name?: string; config?: string }) => {
+    (_event, id: number, data: { name?: string; config?: string; }) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasConfig = Object.prototype.hasOwnProperty.call(data, 'config');
 
@@ -1112,8 +1094,7 @@ function registerIpcHandlers() {
       const values: string[] = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('BattleMap name cannot be empty');
         }
@@ -1126,10 +1107,11 @@ function registerIpcHandlers() {
         values.push(ensureBattleMapConfigJsonText(data.config));
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE battlemaps SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE battlemaps SET ${
+          setClauses.join(', ')
+        }, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const battleMap = db
@@ -1218,24 +1200,21 @@ function registerIpcHandlers() {
         throw new Error('Invalid world_id');
       }
       if (
-        data.campaign_id != null &&
-        (!Number.isInteger(data.campaign_id) || data.campaign_id <= 0)
+        data.campaign_id != null
+        && (!Number.isInteger(data.campaign_id) || data.campaign_id <= 0)
       ) {
         throw new Error('Invalid campaign_id');
       }
 
-      const config =
-        data.config === undefined
-          ? '{}'
-          : ensureTokenConfigJsonText(data.config);
-      const gridType =
-        data.grid_type === undefined
-          ? 'square'
-          : ensureTokenGridType(data.grid_type);
-      const isVisible =
-        data.is_visible === undefined
-          ? 1
-          : ensureSqliteBooleanNumber(data.is_visible, 'Token visibility');
+      const config = data.config === undefined
+        ? '{}'
+        : ensureTokenConfigJsonText(data.config);
+      const gridType = data.grid_type === undefined
+        ? 'square'
+        : ensureTokenGridType(data.grid_type);
+      const isVisible = data.is_visible === undefined
+        ? 1
+        : ensureSqliteBooleanNumber(data.is_visible, 'Token visibility');
       const campaignId = data.campaign_id ?? null;
 
       const result = db
@@ -1294,8 +1273,7 @@ function registerIpcHandlers() {
       const values: Array<string | number | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('Token name cannot be empty');
         }
@@ -1325,10 +1303,9 @@ function registerIpcHandlers() {
         );
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE tokens SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE tokens SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const token = getTokenByIdStmt.get(id) as Token | undefined;
@@ -1371,7 +1348,7 @@ function registerIpcHandlers() {
     IPC.ARCS_ADD,
     (
       _event,
-      data: { campaign_id: number; name: string; sort_order?: number },
+      data: { campaign_id: number; name: string; sort_order?: number; },
     ) => {
       const name = typeof data.name === 'string' ? data.name.trim() : '';
       if (!name) throw new Error('Arc name is required');
@@ -1385,7 +1362,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.ARCS_UPDATE,
-    (_event, id: number, data: { name?: string; sort_order?: number }) => {
+    (_event, id: number, data: { name?: string; sort_order?: number; }) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasSortOrder = Object.prototype.hasOwnProperty.call(
         data,
@@ -1395,8 +1372,7 @@ function registerIpcHandlers() {
       const values: Array<string | number | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) throw new Error('Arc name cannot be empty');
         setClauses.push('name = ?');
         values.push(trimmedName);
@@ -1406,10 +1382,9 @@ function registerIpcHandlers() {
         values.push(data.sort_order);
       }
 
-      const sql =
-        setClauses.length > 0
-          ? `UPDATE arcs SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE arcs SET updated_at = datetime('now') WHERE id = ?";
+      const sql = setClauses.length > 0
+        ? `UPDATE arcs SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE arcs SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(sql).run(...values, id);
 
       const arc = db.prepare('SELECT * FROM arcs WHERE id = ?').get(id);
@@ -1447,7 +1422,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.ACTS_ADD,
-    (_event, data: { arc_id: number; name: string; sort_order?: number }) => {
+    (_event, data: { arc_id: number; name: string; sort_order?: number; }) => {
       const name = typeof data.name === 'string' ? data.name.trim() : '';
       if (!name) throw new Error('Act name is required');
       return insertAct({
@@ -1460,7 +1435,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.ACTS_UPDATE,
-    (_event, id: number, data: { name?: string; sort_order?: number }) => {
+    (_event, id: number, data: { name?: string; sort_order?: number; }) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasSortOrder = Object.prototype.hasOwnProperty.call(
         data,
@@ -1470,8 +1445,7 @@ function registerIpcHandlers() {
       const values: Array<string | number | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) throw new Error('Act name cannot be empty');
         setClauses.push('name = ?');
         values.push(trimmedName);
@@ -1481,10 +1455,9 @@ function registerIpcHandlers() {
         values.push(data.sort_order);
       }
 
-      const sql =
-        setClauses.length > 0
-          ? `UPDATE acts SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE acts SET updated_at = datetime('now') WHERE id = ?";
+      const sql = setClauses.length > 0
+        ? `UPDATE acts SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE acts SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(sql).run(...values, id);
 
       const act = db.prepare('SELECT * FROM acts WHERE id = ?').get(id);
@@ -1505,13 +1478,13 @@ function registerIpcHandlers() {
           | Act
           | undefined;
         if (!act) throw new Error('Act not found');
-        const oldArcId = (act as unknown as { arc_id: number }).arc_id;
+        const oldArcId = (act as unknown as { arc_id: number; }).arc_id;
 
         const { next: newSortOrder } = db
           .prepare(
             'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM acts WHERE arc_id = ?',
           )
-          .get(newArcId) as { next: number };
+          .get(newArcId) as { next: number; };
 
         db.prepare(
           "UPDATE acts SET arc_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?",
@@ -1590,8 +1563,7 @@ function registerIpcHandlers() {
       const values: Array<string | number | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('Session name cannot be empty');
         }
@@ -1614,10 +1586,9 @@ function registerIpcHandlers() {
         values.push(data.sort_order);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE sessions SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE sessions SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(id);
@@ -1640,13 +1611,13 @@ function registerIpcHandlers() {
           .prepare('SELECT * FROM sessions WHERE id = ?')
           .get(sessionId) as Session | undefined;
         if (!session) throw new Error('Session not found');
-        const oldActId = (session as unknown as { act_id: number }).act_id;
+        const oldActId = (session as unknown as { act_id: number; }).act_id;
 
         const { next: newSortOrder } = db
           .prepare(
             'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM sessions WHERE act_id = ?',
           )
-          .get(newActId) as { next: number };
+          .get(newActId) as { next: number; };
 
         db.prepare(
           "UPDATE sessions SET act_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?",
@@ -1728,10 +1699,9 @@ function registerIpcHandlers() {
         throw new Error('Scene name is required');
       }
 
-      const payload =
-        data.payload === undefined
-          ? '{}'
-          : ensureScenePayloadJsonText(data.payload);
+      const payload = data.payload === undefined
+        ? '{}'
+        : ensureScenePayloadJsonText(data.payload);
 
       return insertScene({
         session_id: data.session_id,
@@ -1767,8 +1737,7 @@ function registerIpcHandlers() {
       const values: Array<string | number | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('Scene name cannot be empty');
         }
@@ -1791,10 +1760,9 @@ function registerIpcHandlers() {
         values.push(data.sort_order);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE scenes SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE scenes SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(id);
@@ -1825,7 +1793,7 @@ function registerIpcHandlers() {
           throw new Error('Target session not found');
         }
 
-        const oldSessionId = (scene as unknown as { session_id: number })
+        const oldSessionId = (scene as unknown as { session_id: number; })
           .session_id;
         if (newSessionId === oldSessionId) {
           return scene;
@@ -1835,7 +1803,7 @@ function registerIpcHandlers() {
           .prepare(
             'SELECT COALESCE(MAX(sort_order), -1) + 1 AS nextSortOrder FROM scenes WHERE session_id = ?',
           )
-          .get(newSessionId) as { nextSortOrder: number };
+          .get(newSessionId) as { nextSortOrder: number; };
 
         db.prepare(
           "UPDATE scenes SET session_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?",
@@ -1897,14 +1865,10 @@ function registerIpcHandlers() {
         throw new Error('Ability type is required');
       }
 
-      const rangeCells =
-        typeof data.range_cells === 'number' ? data.range_cells : null;
-      const aoeShape =
-        typeof data.aoe_shape === 'string' ? data.aoe_shape : null;
-      const aoeSizeCells =
-        typeof data.aoe_size_cells === 'number' ? data.aoe_size_cells : null;
-      const targetType =
-        typeof data.target_type === 'string' ? data.target_type : null;
+      const rangeCells = typeof data.range_cells === 'number' ? data.range_cells : null;
+      const aoeShape = typeof data.aoe_shape === 'string' ? data.aoe_shape : null;
+      const aoeSizeCells = typeof data.aoe_size_cells === 'number' ? data.aoe_size_cells : null;
+      const targetType = typeof data.target_type === 'string' ? data.target_type : null;
 
       const result = db
         .prepare(
@@ -2023,8 +1987,7 @@ function registerIpcHandlers() {
       const values: Array<string | number | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('Ability name cannot be empty');
         }
@@ -2038,8 +2001,7 @@ function registerIpcHandlers() {
       }
 
       if (hasType) {
-        const trimmedType =
-          typeof data.type === 'string' ? data.type.trim() : '';
+        const trimmedType = typeof data.type === 'string' ? data.type.trim() : '';
         if (!trimmedType) {
           throw new Error('Ability type cannot be empty');
         }
@@ -2112,10 +2074,9 @@ function registerIpcHandlers() {
         values.push(data.target_type ?? null);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE abilities SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE abilities SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const ability = db
@@ -2135,21 +2096,21 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.ABILITIES_ADD_CHILD,
-    (_event, data: { parent_id: number; child_id: number }) => {
+    (_event, data: { parent_id: number; child_id: number; }) => {
       if (data.parent_id === data.child_id) {
         throw new Error('Parent ability cannot be linked to itself');
       }
 
       const parent = db
         .prepare('SELECT id, world_id FROM abilities WHERE id = ?')
-        .get(data.parent_id) as { id: number; world_id: number } | undefined;
+        .get(data.parent_id) as { id: number; world_id: number; } | undefined;
       if (!parent) {
         throw new Error('Parent ability not found');
       }
 
       const child = db
         .prepare('SELECT id, world_id FROM abilities WHERE id = ?')
-        .get(data.child_id) as { id: number; world_id: number } | undefined;
+        .get(data.child_id) as { id: number; world_id: number; } | undefined;
       if (!child) {
         throw new Error('Child ability not found');
       }
@@ -2180,7 +2141,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.ABILITIES_REMOVE_CHILD,
-    (_event, data: { parent_id: number; child_id: number }) => {
+    (_event, data: { parent_id: number; child_id: number; }) => {
       db.prepare(
         'DELETE FROM ability_children WHERE parent_id = ? AND child_id = ?',
       ).run(data.parent_id, data.child_id);
@@ -2274,7 +2235,7 @@ function registerIpcHandlers() {
     (
       _event,
       id: number,
-      data: { name?: string; description?: string | null; config?: string },
+      data: { name?: string; description?: string | null; config?: string; },
     ) => {
       const hasName = Object.prototype.hasOwnProperty.call(data, 'name');
       const hasDescription = Object.prototype.hasOwnProperty.call(
@@ -2287,8 +2248,7 @@ function registerIpcHandlers() {
       const values: Array<string | null> = [];
 
       if (hasName) {
-        const trimmedName =
-          typeof data.name === 'string' ? data.name.trim() : '';
+        const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
         if (!trimmedName) {
           throw new Error('StatBlock name cannot be empty');
         }
@@ -2306,10 +2266,11 @@ function registerIpcHandlers() {
         values.push(data.config);
       }
 
-      const updateSql =
-        setClauses.length > 0
-          ? `UPDATE statblocks SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-          : "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?";
+      const updateSql = setClauses.length > 0
+        ? `UPDATE statblocks SET ${
+          setClauses.join(', ')
+        }, updated_at = datetime('now') WHERE id = ?`
+        : "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 
       const statblock = db
@@ -2329,7 +2290,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle(
     IPC.VERSES_ADD,
-    (_event, data: { text: string; reference?: string; tags?: string }) => {
+    (_event, data: { text: string; reference?: string; tags?: string; }) => {
       const stmt = db.prepare(
         'INSERT INTO verses (text, reference, tags) VALUES (?, ?, ?)',
       );
@@ -2349,7 +2310,7 @@ function registerIpcHandlers() {
     (
       _event,
       id: number,
-      data: { text?: string; reference?: string; tags?: string },
+      data: { text?: string; reference?: string; tags?: string; },
     ) => {
       db.prepare(
         `
@@ -2379,8 +2340,7 @@ app.on('ready', async () => {
   registerTokenImageProtocol();
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    const { installExtension, REACT_DEVELOPER_TOOLS } =
-      await import('electron-devtools-installer');
+    const { installExtension, REACT_DEVELOPER_TOOLS } = await import('electron-devtools-installer');
     await installExtension(REACT_DEVELOPER_TOOLS).catch((err: unknown) => {
       console.error('Failed to install React DevTools:', err);
     });

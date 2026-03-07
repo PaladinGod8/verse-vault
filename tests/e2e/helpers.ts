@@ -1,9 +1,4 @@
-import {
-  expect,
-  type ElectronApplication,
-  type Locator,
-  type Page,
-} from '@playwright/test';
+import { type ElectronApplication, expect, type Locator, type Page } from '@playwright/test';
 import { closeApp, launchApp } from './helpers/launchApp';
 
 export interface E2EAppContext {
@@ -17,11 +12,10 @@ export async function launchElectronApp(): Promise<E2EAppContext> {
   const firstWindow = await app.firstWindow();
 
   await app.evaluate(({ BrowserWindow }) => {
-    const win =
-      BrowserWindow.getAllWindows().find((candidate) => {
-        const url = candidate.webContents.getURL();
-        return !url.startsWith('devtools://');
-      }) ?? BrowserWindow.getAllWindows()[0];
+    const win = BrowserWindow.getAllWindows().find((candidate) => {
+      const url = candidate.webContents.getURL();
+      return !url.startsWith('devtools://');
+    }) ?? BrowserWindow.getAllWindows()[0];
     if (!win) {
       return;
     }
@@ -93,7 +87,7 @@ export async function ensureWorldsLanding(page: Page): Promise<void> {
 export async function createWorld(
   page: Page,
   worldName = `E2E World ${Date.now()}`,
-): Promise<{ worldId: number; worldName: string }> {
+): Promise<{ worldId: number; worldName: string; }> {
   const created = await page.evaluate(async (name) => {
     return window.db.worlds.add({ name });
   }, worldName);
@@ -116,7 +110,7 @@ export async function createCampaign(
   page: Page,
   worldId: number,
   campaignName = `E2E Campaign ${Date.now()}`,
-): Promise<{ campaignId: number; campaignName: string }> {
+): Promise<{ campaignId: number; campaignName: string; }> {
   const campaign = await page.evaluate(
     async ({ nextWorldId, nextCampaignName }) => {
       return window.db.campaigns.add({
@@ -160,7 +154,7 @@ export async function createWorldScopedToken(
     imageSrc?: string | null;
     isVisible?: number;
   },
-): Promise<{ tokenId: number; tokenName: string }> {
+): Promise<{ tokenId: number; tokenName: string; }> {
   const worldId = input.worldId ?? inferWorldIdFromUrl(page);
   const token = await page.evaluate(
     async (payload) => {
@@ -192,7 +186,7 @@ export async function createCampaignScopedToken(
     imageSrc?: string | null;
     isVisible?: number;
   },
-): Promise<{ tokenId: number; tokenName: string }> {
+): Promise<{ tokenId: number; tokenName: string; }> {
   const worldId = input.worldId ?? inferWorldIdFromUrl(page);
   const token = await page.evaluate(
     async (payload) => {
@@ -227,8 +221,8 @@ export async function goToTokensPage(
     const bodyText = document.body.textContent ?? '';
     const hasRows = document.querySelectorAll('tbody tr').length > 0;
     return (
-      !bodyText.includes('Loading tokens...') &&
-      (hasRows || bodyText.includes('No tokens yet.'))
+      !bodyText.includes('Loading tokens...')
+      && (hasRows || bodyText.includes('No tokens yet.'))
     );
   });
 }
@@ -242,8 +236,7 @@ export function getMoveButton(
   tokenName: string,
   moveType: 'to-campaign' | 'to-world',
 ): Locator {
-  const label =
-    moveType === 'to-campaign' ? 'Move to Campaign' : 'Move to World';
+  const label = moveType === 'to-campaign' ? 'Move to Campaign' : 'Move to World';
   return tokenRow(page, tokenName).getByRole('button', { name: label });
 }
 

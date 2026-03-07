@@ -1,13 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TokensPage from '../../../src/renderer/pages/TokensPage';
 
 if (!('createObjectURL' in URL)) {
@@ -56,38 +50,36 @@ vi.mock(
       }) => void;
       gridType: TokenGridType;
     }) => (
-      <div role="dialog" aria-label="Footprint Painter">
+      <div role='dialog' aria-label='Footprint Painter'>
         <button
-          type="button"
+          type='button'
           onClick={() =>
             onConfirm({
-              footprint:
-                gridType === 'hex'
-                  ? {
-                      version: 1,
-                      grid_type: 'hex',
-                      hex_cells: [{ q: 0, r: 0 }],
-                      radius_cells: 1,
-                    }
-                  : {
-                      version: 1,
-                      grid_type: 'square',
-                      square_cells: [{ col: 0, row: 0 }],
-                      width_cells: 1,
-                      height_cells: 1,
-                    },
+              footprint: gridType === 'hex'
+                ? {
+                  version: 1,
+                  grid_type: 'hex',
+                  hex_cells: [{ q: 0, r: 0 }],
+                  radius_cells: 1,
+                }
+                : {
+                  version: 1,
+                  grid_type: 'square',
+                  square_cells: [{ col: 0, row: 0 }],
+                  width_cells: 1,
+                  height_cells: 1,
+                },
               framing: {
                 center_x_cells: 0,
                 center_y_cells: 0,
                 extent_x_cells: 0.5,
                 extent_y_cells: 0.5,
               },
-            })
-          }
+            })}
         >
           Confirm
         </button>
-        <button type="button" onClick={onClose}>
+        <button type='button' onClick={onClose}>
           Cancel
         </button>
       </div>
@@ -109,38 +101,36 @@ vi.mock(
       }) => void;
       gridType: TokenGridType;
     }) => (
-      <div role="dialog" aria-label="Footprint Painter">
+      <div role='dialog' aria-label='Footprint Painter'>
         <button
-          type="button"
+          type='button'
           onClick={() =>
             onConfirm({
-              footprint:
-                gridType === 'hex'
-                  ? {
-                      version: 1,
-                      grid_type: 'hex',
-                      hex_cells: [{ q: 0, r: 0 }],
-                      radius_cells: 1,
-                    }
-                  : {
-                      version: 1,
-                      grid_type: 'square',
-                      square_cells: [{ col: 0, row: 0 }],
-                      width_cells: 1,
-                      height_cells: 1,
-                    },
+              footprint: gridType === 'hex'
+                ? {
+                  version: 1,
+                  grid_type: 'hex',
+                  hex_cells: [{ q: 0, r: 0 }],
+                  radius_cells: 1,
+                }
+                : {
+                  version: 1,
+                  grid_type: 'square',
+                  square_cells: [{ col: 0, row: 0 }],
+                  width_cells: 1,
+                  height_cells: 1,
+                },
               framing: {
                 center_x_cells: 0,
                 center_y_cells: 0,
                 extent_x_cells: 0.5,
                 extent_y_cells: 0.5,
               },
-            })
-          }
+            })}
         >
           Confirm
         </button>
-        <button type="button" onClick={onClose}>
+        <button type='button' onClick={onClose}>
           Cancel
         </button>
       </div>
@@ -203,7 +193,7 @@ function renderTokensPage(path = '/world/1/tokens') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id/tokens" element={<TokensPage />} />
+        <Route path='/world/:id/tokens' element={<TokensPage />} />
       </Routes>
     </MemoryRouter>,
   );

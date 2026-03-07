@@ -1,17 +1,17 @@
 import { useEffect, useRef } from 'react';
 // eslint-disable-next-line import/no-unresolved -- pixi.js exposes this via package exports; eslint-import resolver flags a false positive.
 import 'pixi.js/unsafe-eval';
-import {
-  Application,
-  Assets,
-  Circle,
-  Container,
-  Graphics,
-  Rectangle,
-  Sprite,
-} from 'pixi.js';
+import { Application, Assets, Circle, Container, Graphics, Rectangle, Sprite } from 'pixi.js';
 
 import type { FederatedPointerEvent } from 'pixi.js';
+import {
+  type CastingShapeParams,
+  getHighlightedHexTiles,
+  getHighlightedSquareTiles,
+  getShapePolygon,
+  type HighlightedHexTile,
+  type HighlightedSquareTile,
+} from '../../lib/castingRangeMath';
 import {
   clampCameraZoom,
   clampGridCellSize,
@@ -27,14 +27,6 @@ import {
   stepCameraCenterTowardTarget,
   worldDeltaFromScreenDelta,
 } from '../../lib/runtimeMath';
-import {
-  getHighlightedHexTiles,
-  getHighlightedSquareTiles,
-  getShapePolygon,
-  type CastingShapeParams,
-  type HighlightedHexTile,
-  type HighlightedSquareTile,
-} from '../../lib/castingRangeMath';
 
 export type RuntimeSceneToken = {
   instanceId: string;
@@ -62,7 +54,7 @@ type BattleMapRuntimeCanvasProps = {
   onTokenSelect: (tokenInstanceId: string | null) => void;
   onTokenMove: (
     tokenInstanceId: string,
-    position: { x: number; y: number },
+    position: { x: number; y: number; },
   ) => void;
   castingState: CastingState;
   onCastingAngleChange: (angleRad: number) => void;
@@ -139,7 +131,13 @@ const WHEEL_LINE_HEIGHT = 16;
 const WHEEL_PAGE_HEIGHT = 400;
 
 const TOKEN_FALLBACK_COLORS = [
-  0x22c55e, 0x0ea5e9, 0xf59e0b, 0xec4899, 0xeab308, 0x14b8a6, 0x8b5cf6,
+  0x22c55e,
+  0x0ea5e9,
+  0xf59e0b,
+  0xec4899,
+  0xeab308,
+  0x14b8a6,
+  0x8b5cf6,
 ];
 
 function hashTokenColor(seed: string): number {
@@ -153,7 +151,7 @@ function hashTokenColor(seed: string): number {
 function roundPointyHexAxial(
   q: number,
   r: number,
-): { roundedQ: number; roundedR: number } {
+): { roundedQ: number; roundedR: number; } {
   const x = q;
   const z = r;
   const y = -x - z;
@@ -181,15 +179,13 @@ function snapSquareTokenPosition(
   x: number,
   y: number,
   gridConfig: BattleMapRuntimeGridConfig,
-): { x: number; y: number } {
+): { x: number; y: number; } {
   const cellSize = clampGridCellSize(gridConfig.cellSize);
   return {
-    x:
-      gridConfig.originX +
-      (Math.floor((x - gridConfig.originX) / cellSize) + 0.5) * cellSize,
-    y:
-      gridConfig.originY +
-      (Math.floor((y - gridConfig.originY) / cellSize) + 0.5) * cellSize,
+    x: gridConfig.originX
+      + (Math.floor((x - gridConfig.originX) / cellSize) + 0.5) * cellSize,
+    y: gridConfig.originY
+      + (Math.floor((y - gridConfig.originY) / cellSize) + 0.5) * cellSize,
   };
 }
 
@@ -197,7 +193,7 @@ function snapHexTokenPosition(
   x: number,
   y: number,
   gridConfig: BattleMapRuntimeGridConfig,
-): { x: number; y: number } {
+): { x: number; y: number; } {
   const cellSize = clampGridCellSize(gridConfig.cellSize);
   const radius = cellSize * 0.5;
   const shiftedX = x - gridConfig.originX;
@@ -218,7 +214,7 @@ function snapTokenPositionToGrid(
   x: number,
   y: number,
   gridConfig: BattleMapRuntimeGridConfig,
-): { x: number; y: number } {
+): { x: number; y: number; } {
   if (gridConfig.mode === 'none') {
     return { x, y };
   }
@@ -273,11 +269,13 @@ export default function BattleMapRuntimeCanvas({
   const removePointerMoveListenerRef = useRef<(() => void) | null>(null);
   const castingStateRef = useRef<CastingState>(castingState);
   const onCastingAngleChangeRef = useRef(onCastingAngleChange);
-  const overlayTileCacheRef = useRef<{
-    key: string;
-    squareTiles: HighlightedSquareTile[] | null;
-    hexTiles: HighlightedHexTile[] | null;
-  } | null>(null);
+  const overlayTileCacheRef = useRef<
+    {
+      key: string;
+      squareTiles: HighlightedSquareTile[] | null;
+      hexTiles: HighlightedHexTile[] | null;
+    } | null
+  >(null);
 
   const removeMapSprite = () => {
     const sprite = mapSpriteRef.current;
@@ -318,8 +316,8 @@ export default function BattleMapRuntimeCanvas({
 
   const getTokenByInstanceId = (tokenInstanceId: string) => {
     return (
-      tokensRef.current.find((token) => token.instanceId === tokenInstanceId) ??
-      null
+      tokensRef.current.find((token) => token.instanceId === tokenInstanceId)
+        ?? null
     );
   };
 
@@ -411,8 +409,8 @@ export default function BattleMapRuntimeCanvas({
 
     if (normalizedImageSrc) {
       if (
-        display.imageSrc === normalizedImageSrc &&
-        display.body instanceof Sprite
+        display.imageSrc === normalizedImageSrc
+        && display.body instanceof Sprite
       ) {
         syncTokenDisplayStyle(token, display, pixelSize, isSelected);
         return;
@@ -622,10 +620,9 @@ export default function BattleMapRuntimeCanvas({
 
     let nextX: number;
     let nextY: number;
-    const pointerPosition =
-      clientX !== undefined && clientY !== undefined
-        ? getWorldPointFromClient(clientX, clientY)
-        : null;
+    const pointerPosition = clientX !== undefined && clientY !== undefined
+      ? getWorldPointFromClient(clientX, clientY)
+      : null;
     if (pointerPosition) {
       nextX = pointerPosition.x - activeDrag.offsetX;
       nextY = pointerPosition.y - activeDrag.offsetY;
@@ -781,8 +778,8 @@ export default function BattleMapRuntimeCanvas({
       const nextX = pointerPosition.x - activeDrag.offsetX;
       const nextY = pointerPosition.y - activeDrag.offsetY;
       if (
-        Math.abs(nextX - token.x) > 0.01 ||
-        Math.abs(nextY - token.y) > 0.01
+        Math.abs(nextX - token.x) > 0.01
+        || Math.abs(nextY - token.y) > 0.01
       ) {
         activeDrag.didMove = true;
       }
@@ -859,8 +856,7 @@ export default function BattleMapRuntimeCanvas({
         tokenDisplayMap.set(token.instanceId, display);
       }
 
-      const isSelected =
-        selectedTokenInstanceIdRef.current === token.instanceId;
+      const isSelected = selectedTokenInstanceIdRef.current === token.instanceId;
       display.container.zIndex = isSelected ? 10000 : index;
       syncTokenDisplayBody(token, display, tokenPixelSize, isSelected);
     });
@@ -921,9 +917,10 @@ export default function BattleMapRuntimeCanvas({
     // 3. Tile highlights (skip for mode = 'none')
     if (gridConfig.mode !== 'none') {
       const sizeCells = ability.aoe_size_cells ?? 1;
-      const isAngleDependent =
-        ability.aoe_shape === 'cone' || ability.aoe_shape === 'line';
-      const cacheKey = `${casterX}:${casterY}:${ability.id}:${isAngleDependent ? angleRad : 0}:${cellSize}`;
+      const isAngleDependent = ability.aoe_shape === 'cone' || ability.aoe_shape === 'line';
+      const cacheKey = `${casterX}:${casterY}:${ability.id}:${
+        isAngleDependent ? angleRad : 0
+      }:${cellSize}`;
 
       let squareTiles: HighlightedSquareTile[] | null = null;
       let hexTiles: HighlightedHexTile[] | null = null;
@@ -976,9 +973,9 @@ export default function BattleMapRuntimeCanvas({
         }
         for (const tile of squareTiles) {
           if (
-            isTokenTarget &&
-            occupiedKeys &&
-            !occupiedKeys.has(`${tile.col}:${tile.row}`)
+            isTokenTarget
+            && occupiedKeys
+            && !occupiedKeys.has(`${tile.col}:${tile.row}`)
           ) {
             continue;
           }
@@ -1005,9 +1002,9 @@ export default function BattleMapRuntimeCanvas({
         const vertexOffsets = getPointyHexVertexOffsets(cellSize);
         for (const tile of hexTiles) {
           if (
-            isTokenTarget &&
-            occupiedKeys &&
-            !occupiedKeys.has(`${tile.q}:${tile.r}`)
+            isTokenTarget
+            && occupiedKeys
+            && !occupiedKeys.has(`${tile.q}:${tile.r}`)
           ) {
             continue;
           }
@@ -1163,10 +1160,10 @@ export default function BattleMapRuntimeCanvas({
           cellSize,
         );
         if (
-          center.x < bounds.left - linePadding ||
-          center.x > bounds.right + linePadding ||
-          center.y < bounds.top - linePadding ||
-          center.y > bounds.bottom + linePadding
+          center.x < bounds.left - linePadding
+          || center.x > bounds.right + linePadding
+          || center.y < bounds.top - linePadding
+          || center.y > bounds.bottom + linePadding
         ) {
           continue;
         }
@@ -1379,12 +1376,11 @@ export default function BattleMapRuntimeCanvas({
 
         event.preventDefault();
 
-        const normalizedDelta =
-          event.deltaMode === 1
-            ? event.deltaY * WHEEL_LINE_HEIGHT
-            : event.deltaMode === 2
-              ? event.deltaY * WHEEL_PAGE_HEIGHT
-              : event.deltaY;
+        const normalizedDelta = event.deltaMode === 1
+          ? event.deltaY * WHEEL_LINE_HEIGHT
+          : event.deltaMode === 2
+          ? event.deltaY * WHEEL_PAGE_HEIGHT
+          : event.deltaY;
 
         const factor = Math.pow(WHEEL_ZOOM_BASE, normalizedDelta);
         const camera = cameraStateRef.current;
@@ -1401,10 +1397,8 @@ export default function BattleMapRuntimeCanvas({
           return;
         }
 
-        const screenX =
-          ((event.clientX - rect.left) / rect.width) * app.screen.width;
-        const screenY =
-          ((event.clientY - rect.top) / rect.height) * app.screen.height;
+        const screenX = ((event.clientX - rect.left) / rect.width) * app.screen.width;
+        const screenY = ((event.clientY - rect.top) / rect.height) * app.screen.height;
         const halfVpW = app.screen.width * 0.5;
         const halfVpH = app.screen.height * 0.5;
 

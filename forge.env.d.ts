@@ -243,9 +243,9 @@ declare global {
       }): Promise<Verse>;
       update(
         id: number,
-        data: { text?: string; reference?: string; tags?: string },
+        data: { text?: string; reference?: string; tags?: string; },
       ): Promise<Verse>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
     worlds: {
       getAll(): Promise<World[]>;
@@ -265,7 +265,7 @@ declare global {
           config?: string;
         },
       ): Promise<World>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
       markViewed(id: number): Promise<World>;
       importImage(
         payload: TokenImageImportPayload,
@@ -282,9 +282,9 @@ declare global {
       }): Promise<Level>;
       update(
         id: number,
-        data: { name?: string; category?: string; description?: string | null },
+        data: { name?: string; category?: string; description?: string | null; },
       ): Promise<Level>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
     abilities: {
       getAllByWorld(worldId: number): Promise<Ability[]>;
@@ -329,7 +329,7 @@ declare global {
           target_type?: 'tile' | 'token' | null;
         },
       ): Promise<Ability>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
       addChild(data: AbilityChild): Promise<AbilityChild>;
       removeChild(data: AbilityChild): Promise<AbilityChild>;
       getChildren(abilityId: number): Promise<Ability[]>;
@@ -345,9 +345,9 @@ declare global {
       }): Promise<Campaign>;
       update(
         id: number,
-        data: { name?: string; summary?: string | null; config?: string },
+        data: { name?: string; summary?: string | null; config?: string; },
       ): Promise<Campaign>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
     battlemaps: {
       getAllByWorld(worldId: number): Promise<BattleMap[]>;
@@ -359,9 +359,9 @@ declare global {
       }): Promise<BattleMap>;
       update(
         id: number,
-        data: { name?: string; config?: string },
+        data: { name?: string; config?: string; },
       ): Promise<BattleMap>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
     tokens: {
       getAllByWorld(worldId: number): Promise<Token[]>;
@@ -390,7 +390,7 @@ declare global {
       ): Promise<Token>;
       moveToWorld(tokenId: number): Promise<Token>;
       moveToCampaign(tokenId: number, targetCampaignId: number): Promise<Token>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
     arcs: {
       getAllByCampaign(campaignId: number): Promise<Arc[]>;
@@ -402,9 +402,9 @@ declare global {
       }): Promise<Arc>;
       update(
         id: number,
-        data: { name?: string; sort_order?: number },
+        data: { name?: string; sort_order?: number; },
       ): Promise<Arc>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
     acts: {
       getAllByArc(arcId: number): Promise<Act[]>;
@@ -417,9 +417,9 @@ declare global {
       }): Promise<Act>;
       update(
         id: number,
-        data: { name?: string; sort_order?: number },
+        data: { name?: string; sort_order?: number; },
       ): Promise<Act>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
       moveTo(actId: number, newArcId: number): Promise<Act>;
     };
     sessions: {
@@ -441,7 +441,7 @@ declare global {
           sort_order?: number;
         },
       ): Promise<Session>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
       moveTo(sessionId: number, newActId: number): Promise<Session>;
     };
     scenes: {
@@ -464,7 +464,7 @@ declare global {
           sort_order?: number;
         },
       ): Promise<Scene>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
       moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
     };
     statblocks: {
@@ -486,7 +486,7 @@ declare global {
           config?: string;
         },
       ): Promise<StatBlock>;
-      delete(id: number): Promise<{ id: number }>;
+      delete(id: number): Promise<{ id: number; }>;
     };
   }
 

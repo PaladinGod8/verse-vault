@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import PassiveScoreDefinitionForm from '../../../../../src/renderer/components/statistics/PassiveScoreDefinitionForm';
 
 describe('PassiveScoreDefinitionForm', () => {
@@ -9,7 +9,7 @@ describe('PassiveScoreDefinitionForm', () => {
 
     render(
       <PassiveScoreDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={[]}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -32,7 +32,7 @@ describe('PassiveScoreDefinitionForm', () => {
 
     render(
       <PassiveScoreDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={['pb']}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -56,7 +56,7 @@ describe('PassiveScoreDefinitionForm', () => {
 
     render(
       <PassiveScoreDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={[]}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -91,7 +91,7 @@ describe('PassiveScoreDefinitionForm', () => {
 
     render(
       <PassiveScoreDefinitionForm
-        mode="edit"
+        mode='edit'
         initialValues={{
           id: 'pb',
           name: 'Proficiency Bonus',
@@ -132,7 +132,7 @@ describe('PassiveScoreDefinitionForm', () => {
 
     render(
       <PassiveScoreDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={[]}
         onSubmit={onSubmit}
         onCancel={vi.fn()}

@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BattleMapsPage from '../../../src/renderer/pages/BattleMapsPage';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
@@ -57,7 +57,7 @@ function renderBattleMapsPage(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
+        <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -67,9 +67,9 @@ function renderBattleMapsPageWithRuntimeRoute(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id/battlemaps" element={<BattleMapsPage />} />
+        <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
         <Route
-          path="/world/:id/battlemaps/:battleMapId/runtime"
+          path='/world/:id/battlemaps/:battleMapId/runtime'
           element={<div>Runtime Route</div>}
         />
       </Routes>

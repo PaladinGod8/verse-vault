@@ -109,9 +109,7 @@ export default function WorldsHomePage() {
 
     try {
       await window.db.worlds.delete(world.id);
-      setWorlds((previousWorlds) =>
-        previousWorlds.filter((item) => item.id !== world.id),
-      );
+      setWorlds((previousWorlds) => previousWorlds.filter((item) => item.id !== world.id));
       setLoadError(null);
       setEditingWorld((current) => (current?.id === world.id ? null : current));
       toast.success('World deleted.', `"${world.name}" was removed.`);
@@ -124,130 +122,140 @@ export default function WorldsHomePage() {
       );
     } finally {
       setDeletingWorldId((current) => (current === world.id ? null : current));
-      setPendingDeleteWorld((current) =>
-        current?.id === world.id ? null : current,
-      );
+      setPendingDeleteWorld((current) => current?.id === world.id ? null : current);
     }
   };
 
   return (
     <>
-      <main className="space-y-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+      <main className='space-y-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-1'>
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               Worlds
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className='text-sm text-slate-600'>
               Create, edit, and delete your worlds from one place.
             </p>
           </div>
 
           <button
-            type="button"
-            className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            type='button'
+            className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
             onClick={() => setIsCreateOpen(true)}
           >
             Create world
           </button>
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading worlds...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading worlds...
+            </section>
+          )
+          : null}
 
-        {!isLoading && loadError ? (
-          <section className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm">
-            {loadError}
-          </section>
-        ) : null}
+        {!isLoading && loadError
+          ? (
+            <section className='rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm'>
+              {loadError}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !loadError && worlds.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              No worlds yet
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Create your first world to get started.
-            </p>
-          </section>
-        ) : null}
+        {!isLoading && !loadError && worlds.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <h2 className='text-lg font-semibold text-slate-900'>
+                No worlds yet
+              </h2>
+              <p className='mt-2 text-sm text-slate-600'>
+                Create your first world to get started.
+              </p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !loadError && worlds.length > 0 ? (
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {worlds.map((world) => (
-              <WorldCard
-                key={world.id}
-                world={world}
-                onOpen={() => navigate(`/world/${world.id}`)}
-                onEdit={() => {
-                  setIsCreateOpen(false);
-                  setEditingWorld(world);
-                }}
-                onDelete={() => {
-                  handleRequestDeleteWorld(world);
-                }}
-                isDeleting={deletingWorldId === world.id}
-              />
-            ))}
-          </section>
-        ) : null}
+        {!isLoading && !loadError && worlds.length > 0
+          ? (
+            <section className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+              {worlds.map((world) => (
+                <WorldCard
+                  key={world.id}
+                  world={world}
+                  onOpen={() => navigate(`/world/${world.id}`)}
+                  onEdit={() => {
+                    setIsCreateOpen(false);
+                    setEditingWorld(world);
+                  }}
+                  onDelete={() => {
+                    handleRequestDeleteWorld(world);
+                  }}
+                  isDeleting={deletingWorldId === world.id}
+                />
+              ))}
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-world-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="create-world-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-world-title'
+            boxClassName='max-w-xl'
           >
-            Create world
-          </h2>
-          <WorldForm
-            mode="create"
-            onSubmit={handleCreateWorld}
-            onCancel={() => setIsCreateOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-world-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Create world
+            </h2>
+            <WorldForm
+              mode='create'
+              onSubmit={handleCreateWorld}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
-      {editingWorld ? (
-        <ModalShell
-          isOpen={editingWorld !== null}
-          onClose={() => setEditingWorld(null)}
-          labelledBy="edit-world-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="edit-world-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingWorld
+        ? (
+          <ModalShell
+            isOpen={editingWorld !== null}
+            onClose={() => setEditingWorld(null)}
+            labelledBy='edit-world-title'
+            boxClassName='max-w-xl'
           >
-            Edit world
-          </h2>
-          <WorldForm
-            mode="edit"
-            initialValues={editingWorld}
-            onSubmit={handleUpdateWorld}
-            onCancel={() => setEditingWorld(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-world-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit world
+            </h2>
+            <WorldForm
+              mode='edit'
+              initialValues={editingWorld}
+              onSubmit={handleUpdateWorld}
+              onCancel={() => setEditingWorld(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDeleteWorld !== null}
         title={`Delete "${pendingDeleteWorld?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDeleteWorld();
         }}
         onCancel={() => setPendingDeleteWorld(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingWorldId !== null}
       />
     </>

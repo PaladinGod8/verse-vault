@@ -91,15 +91,13 @@ function ToastNotice({ toast, onDismiss }: ToastNoticeProps) {
       role={toast.variant === 'error' ? 'alert' : 'status'}
       className={`alert ${variantClassMap[toast.variant]} shadow-lg`}
     >
-      <div className="min-w-0">
-        <p className="truncate font-semibold">{toast.title}</p>
-        {toast.description ? (
-          <p className="mt-1 text-xs opacity-80">{toast.description}</p>
-        ) : null}
+      <div className='min-w-0'>
+        <p className='truncate font-semibold'>{toast.title}</p>
+        {toast.description ? <p className='mt-1 text-xs opacity-80'>{toast.description}</p> : null}
       </div>
       <button
-        type="button"
-        className="btn btn-ghost btn-xs"
+        type='button'
+        className='btn btn-ghost btn-xs'
         onClick={() => onDismiss(toast.id)}
         aria-label={`Dismiss notification: ${toast.title}`}
       >
@@ -109,7 +107,7 @@ function ToastNotice({ toast, onDismiss }: ToastNoticeProps) {
   );
 }
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export function ToastProvider({ children }: { children: ReactNode; }) {
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
   const idRef = useRef(0);
 
@@ -168,9 +166,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast toast-top toast-end z-[70]" aria-live="polite">
+      <div className='toast toast-top toast-end z-[70]' aria-live='polite'>
         {toasts.map((toast) => (
-          <ToastNotice key={toast.id} toast={toast} onDismiss={dismissToast} />
+          <ToastNotice
+            key={toast.id}
+            toast={toast}
+            onDismiss={dismissToast}
+          />
         ))}
       </div>
     </ToastContext.Provider>

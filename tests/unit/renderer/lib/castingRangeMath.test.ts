@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  getShapePolygon,
-  getHighlightedSquareTiles,
-  getHighlightedHexTiles,
   type CastingShapeParams,
+  getHighlightedHexTiles,
+  getHighlightedSquareTiles,
+  getShapePolygon,
 } from '../../../../src/renderer/lib/castingRangeMath';
 
 describe('castingRangeMath', () => {

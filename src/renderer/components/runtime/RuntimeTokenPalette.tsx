@@ -1,4 +1,4 @@
-import { useMemo, useState, type MouseEvent } from 'react';
+import { type MouseEvent, useMemo, useState } from 'react';
 import type { RuntimeSceneToken } from './BattleMapRuntimeCanvas';
 
 type RuntimeTokenPaletteProps = {
@@ -58,7 +58,7 @@ export default function RuntimeTokenPalette({
   const [hoveredTokenImageSrc, setHoveredTokenImageSrc] = useState<
     string | null
   >(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number; } | null>(
     null,
   );
 
@@ -122,8 +122,7 @@ export default function RuntimeTokenPalette({
     event: MouseEvent<HTMLLIElement>,
     token: Token,
   ) => {
-    const normalizedImageSrc =
-      typeof token.image_src === 'string' ? token.image_src.trim() : '';
+    const normalizedImageSrc = typeof token.image_src === 'string' ? token.image_src.trim() : '';
     if (!normalizedImageSrc) {
       return;
     }
@@ -147,21 +146,21 @@ export default function RuntimeTokenPalette({
         key={token.id}
         onMouseEnter={(event) => handleTokenMouseEnter(event, token)}
         onMouseLeave={clearHoverPreview}
-        className="flex items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-900/80 px-3 py-2"
+        className='flex items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-900/80 px-3 py-2'
       >
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-slate-100">
+        <div className='min-w-0'>
+          <p className='truncate text-sm font-medium text-slate-100'>
             {token.name}
           </p>
-          <p className="text-xs text-slate-400">
+          <p className='text-xs text-slate-400'>
             {token.is_visible === 1 ? 'Visible' : 'Invisible'}
           </p>
         </div>
         <button
-          type="button"
+          type='button'
           onClick={() => onAddToken(token)}
           disabled={isPlaced}
-          className="shrink-0 rounded border border-slate-600 px-2 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className='shrink-0 rounded border border-slate-600 px-2 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-50'
         >
           {isPlaced ? 'Placed' : 'Add'}
         </button>
@@ -170,66 +169,69 @@ export default function RuntimeTokenPalette({
   };
 
   return (
-    <section className="space-y-4 border-b border-slate-800 px-6 py-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-300 uppercase">
+    <section className='space-y-4 border-b border-slate-800 px-6 py-4'>
+      <div className='flex items-center justify-between gap-3'>
+        <h2 className='text-sm font-semibold tracking-wide text-slate-300 uppercase'>
           Runtime Tokens
         </h2>
-        <label className="inline-flex items-center gap-2 text-xs text-slate-300">
+        <label className='inline-flex items-center gap-2 text-xs text-slate-300'>
           <input
-            type="checkbox"
+            type='checkbox'
             checked={showInvisibleTokens}
-            onChange={(event) =>
-              onShowInvisibleTokensChange(event.target.checked)
-            }
-            className="size-3 rounded border-slate-600 bg-slate-950 text-slate-100"
+            onChange={(event) => onShowInvisibleTokensChange(event.target.checked)}
+            className='size-3 rounded border-slate-600 bg-slate-950 text-slate-100'
           />
           Show invisible tokens
         </label>
       </div>
 
-      {activeGridMode === 'none' ? (
-        <div className="rounded-lg border border-amber-300/40 bg-amber-900/20 px-3 py-2">
-          <p className="text-xs text-amber-200">
-            Grid mode is <strong>none</strong>. All tokens are available, but
-            grid-type mismatches may affect placement behavior.
-          </p>
-        </div>
-      ) : null}
+      {activeGridMode === 'none'
+        ? (
+          <div className='rounded-lg border border-amber-300/40 bg-amber-900/20 px-3 py-2'>
+            <p className='text-xs text-amber-200'>
+              Grid mode is{' '}
+              <strong>none</strong>. All tokens are available, but grid-type mismatches may affect
+              placement behavior.
+            </p>
+          </div>
+        )
+        : null}
 
-      <div className="space-y-4">
-        <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-          <h3 className="text-xs font-medium tracking-wide text-slate-300 uppercase">
+      <div className='space-y-4'>
+        <div className='space-y-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3'>
+          <h3 className='text-xs font-medium tracking-wide text-slate-300 uppercase'>
             World Tokens
           </h3>
 
-          {isLoadingWorldTokens ? (
-            <p className="text-xs text-slate-300">Loading world tokens...</p>
-          ) : null}
+          {isLoadingWorldTokens
+            ? <p className='text-xs text-slate-300'>Loading world tokens...</p>
+            : null}
 
-          {worldTokenLoadError ? (
-            <p className="text-xs text-rose-300">{worldTokenLoadError}</p>
-          ) : null}
+          {worldTokenLoadError
+            ? <p className='text-xs text-rose-300'>{worldTokenLoadError}</p>
+            : null}
 
-          {!isLoadingWorldTokens &&
-          !worldTokenLoadError &&
-          filteredWorldTokens.length === 0 ? (
-            <p className="text-xs text-slate-400">No world tokens available.</p>
-          ) : null}
+          {!isLoadingWorldTokens
+              && !worldTokenLoadError
+              && filteredWorldTokens.length === 0
+            ? <p className='text-xs text-slate-400'>No world tokens available.</p>
+            : null}
 
-          {!isLoadingWorldTokens &&
-          !worldTokenLoadError &&
-          filteredWorldTokens.length > 0 ? (
-            <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
-              {filteredWorldTokens.map((token) => renderTokenRow(token))}
-            </ul>
-          ) : null}
+          {!isLoadingWorldTokens
+              && !worldTokenLoadError
+              && filteredWorldTokens.length > 0
+            ? (
+              <ul className='max-h-48 space-y-2 overflow-y-auto pr-1'>
+                {filteredWorldTokens.map((token) => renderTokenRow(token))}
+              </ul>
+            )
+            : null}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-            <label className="space-y-2">
-              <span className="text-xs font-medium tracking-wide text-slate-300 uppercase">
+        <div className='grid gap-4 lg:grid-cols-2'>
+          <div className='space-y-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3'>
+            <label className='space-y-2'>
+              <span className='text-xs font-medium tracking-wide text-slate-300 uppercase'>
                 Campaign
               </span>
               <select
@@ -247,9 +249,9 @@ export default function RuntimeTokenPalette({
                   }
                 }}
                 disabled={isLoadingCampaigns || campaigns.length === 0}
-                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                className='w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60'
               >
-                <option value="">Select campaign</option>
+                <option value=''>Select campaign</option>
                 {campaigns.map((campaign) => (
                   <option key={campaign.id} value={campaign.id}>
                     {campaign.name}
@@ -258,111 +260,120 @@ export default function RuntimeTokenPalette({
               </select>
             </label>
 
-            {campaignLoadError ? (
-              <p className="text-xs text-rose-300">{campaignLoadError}</p>
-            ) : null}
+            {campaignLoadError
+              ? <p className='text-xs text-rose-300'>{campaignLoadError}</p>
+              : null}
 
-            {isLoadingTokens ? (
-              <p className="text-xs text-slate-300">
-                Loading campaign tokens...
-              </p>
-            ) : null}
+            {isLoadingTokens
+              ? (
+                <p className='text-xs text-slate-300'>
+                  Loading campaign tokens...
+                </p>
+              )
+              : null}
 
-            {tokenLoadError ? (
-              <p className="text-xs text-rose-300">{tokenLoadError}</p>
-            ) : null}
+            {tokenLoadError ? <p className='text-xs text-rose-300'>{tokenLoadError}</p> : null}
 
-            {!isLoadingTokens &&
-            !tokenLoadError &&
-            filteredTokens.length === 0 ? (
-              <p className="text-xs text-slate-400">
-                No tokens available for this campaign.
-              </p>
-            ) : null}
+            {!isLoadingTokens
+                && !tokenLoadError
+                && filteredTokens.length === 0
+              ? (
+                <p className='text-xs text-slate-400'>
+                  No tokens available for this campaign.
+                </p>
+              )
+              : null}
 
-            {!isLoadingTokens && filteredTokens.length > 0 ? (
-              <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
-                {filteredTokens.map((token) => renderTokenRow(token))}
-              </ul>
-            ) : null}
+            {!isLoadingTokens && filteredTokens.length > 0
+              ? (
+                <ul className='max-h-48 space-y-2 overflow-y-auto pr-1'>
+                  {filteredTokens.map((token) => renderTokenRow(token))}
+                </ul>
+              )
+              : null}
           </div>
 
-          <div className="space-y-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-            <h3 className="text-xs font-medium tracking-wide text-slate-300 uppercase">
+          <div className='space-y-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3'>
+            <h3 className='text-xs font-medium tracking-wide text-slate-300 uppercase'>
               Scene Tokens ({placedTokens.length})
             </h3>
 
-            {placedTokens.length === 0 ? (
-              <p className="text-xs text-slate-400">
-                Add world or campaign tokens to place them in runtime.
-              </p>
-            ) : null}
+            {placedTokens.length === 0
+              ? (
+                <p className='text-xs text-slate-400'>
+                  Add world or campaign tokens to place them in runtime.
+                </p>
+              )
+              : null}
 
-            {sortedPlacedTokens.length > 0 ? (
-              <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
-                {sortedPlacedTokens.map((token) => {
-                  const isSelected =
-                    selectedTokenInstanceId === token.instanceId;
+            {sortedPlacedTokens.length > 0
+              ? (
+                <ul className='max-h-48 space-y-2 overflow-y-auto pr-1'>
+                  {sortedPlacedTokens.map((token) => {
+                    const isSelected = selectedTokenInstanceId === token.instanceId;
 
-                  return (
-                    <li
-                      key={token.instanceId}
-                      className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 ${
-                        isSelected
-                          ? 'border-sky-500 bg-sky-500/10'
-                          : 'border-slate-800 bg-slate-900/80'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => onSelectPlacedToken(token.instanceId)}
-                        className="min-w-0 flex-1 text-left"
+                    return (
+                      <li
+                        key={token.instanceId}
+                        className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 ${
+                          isSelected
+                            ? 'border-sky-500 bg-sky-500/10'
+                            : 'border-slate-800 bg-slate-900/80'
+                        }`}
                       >
-                        <p className="truncate text-sm font-medium text-slate-100">
-                          {token.name}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {token.sourceMissing
-                            ? 'Source missing'
-                            : token.isVisible
+                        <button
+                          type='button'
+                          onClick={() => onSelectPlacedToken(token.instanceId)}
+                          className='min-w-0 flex-1 text-left'
+                        >
+                          <p className='truncate text-sm font-medium text-slate-100'>
+                            {token.name}
+                          </p>
+                          <p className='text-xs text-slate-400'>
+                            {token.sourceMissing
+                              ? 'Source missing'
+                              : token.isVisible
                               ? 'Visible'
                               : 'Invisible'}
-                        </p>
-                      </button>
+                          </p>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => onRemovePlacedToken(token.instanceId)}
-                        className="shrink-0 rounded border border-rose-600/70 px-2 py-1 text-xs font-medium text-rose-200 transition hover:border-rose-500 hover:text-rose-100"
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
+                        <button
+                          type='button'
+                          onClick={() => onRemovePlacedToken(token.instanceId)}
+                          className='shrink-0 rounded border border-rose-600/70 px-2 py-1 text-xs font-medium text-rose-200 transition hover:border-rose-500 hover:text-rose-100'
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )
+              : null}
           </div>
         </div>
       </div>
 
-      {hoveredTokenId !== null && hoveredTokenImageSrc && tooltipPos ? (
-        <div
-          className="pointer-events-none fixed z-50 rounded-lg border border-slate-700 bg-slate-900 p-1 shadow-xl"
-          style={{
-            left: Math.max(8, tooltipPos.x),
-            top: Math.max(8, tooltipPos.y),
-          }}
-        >
-          <img
-            key={hoveredTokenId}
-            src={hoveredTokenImageSrc}
-            alt=""
-            className="h-36 w-36 rounded object-cover"
-            onError={clearHoverPreview}
-          />
-        </div>
-      ) : null}
+      {hoveredTokenId !== null && hoveredTokenImageSrc && tooltipPos
+        ? (
+          <div
+            className='pointer-events-none fixed z-50 rounded-lg border border-slate-700 bg-slate-900 p-1 shadow-xl'
+            style={{
+              left: Math.max(8, tooltipPos.x),
+              top: Math.max(8, tooltipPos.y),
+            }}
+          >
+            <img
+              key={hoveredTokenId}
+              src={hoveredTokenImageSrc}
+              alt=''
+              className='h-36 w-36 rounded object-cover'
+              onError={clearHoverPreview}
+            />
+          </div>
+        )
+        : null}
     </section>
   );
 }

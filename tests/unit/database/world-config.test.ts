@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 async function loadDbModule(options?: {
-  worldsTableInfoRows?: Array<{ name: string }>;
-  tokenTableInfoRows?: Array<{ name: string; notnull?: number }>;
-  sessionTableInfoRows?: Array<{ name: string }>;
+  worldsTableInfoRows?: Array<{ name: string; }>;
+  tokenTableInfoRows?: Array<{ name: string; notnull?: number; }>;
+  sessionTableInfoRows?: Array<{ name: string; }>;
 }) {
   const appGetPathMock = vi.fn(() => 'C:/fake-user-data');
   const worldsTableInfoRows = options?.worldsTableInfoRows ?? [
@@ -31,9 +31,7 @@ async function loadDbModule(options?: {
   const closeMock = vi.fn();
   const databaseCtorMock = vi.fn();
   const transactionMock = vi.fn(
-    (callback: (...args: unknown[]) => unknown) =>
-      (...args: unknown[]) =>
-        callback(...args),
+    (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
   );
 
   const sessionTableInfoRows = options?.sessionTableInfoRows ?? [
@@ -97,10 +95,9 @@ describe('World Config Migration', () => {
   });
 
   it('runs additive migration when existing worlds table lacks config', async () => {
-    const { getDatabase, closeDatabase, execMock, pragmaMock } =
-      await loadDbModule({
-        worldsTableInfoRows: [{ name: 'id' }, { name: 'name' }],
-      });
+    const { getDatabase, closeDatabase, execMock, pragmaMock } = await loadDbModule({
+      worldsTableInfoRows: [{ name: 'id' }, { name: 'name' }],
+    });
 
     getDatabase();
     closeDatabase();
@@ -109,8 +106,8 @@ describe('World Config Migration', () => {
     expect(
       execMock.mock.calls.some(
         ([sql]) =>
-          typeof sql === 'string' &&
-          sql.includes(
+          typeof sql === 'string'
+          && sql.includes(
             "ALTER TABLE worlds ADD COLUMN config TEXT NOT NULL DEFAULT '{}'",
           ),
       ),
@@ -132,8 +129,8 @@ describe('World Config Migration', () => {
     expect(
       execMock.mock.calls.some(
         ([sql]) =>
-          typeof sql === 'string' &&
-          sql.includes('ALTER TABLE worlds ADD COLUMN config'),
+          typeof sql === 'string'
+          && sql.includes('ALTER TABLE worlds ADD COLUMN config'),
       ),
     ).toBe(false);
   });

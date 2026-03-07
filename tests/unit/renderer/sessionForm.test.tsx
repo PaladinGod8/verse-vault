@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import SessionForm from '../../../src/renderer/components/sessions/SessionForm';
 
 describe('SessionForm', () => {
@@ -37,7 +37,7 @@ describe('SessionForm', () => {
   it('normalizes initial planned_at values for edit mode', () => {
     const { unmount } = render(
       <SessionForm
-        mode="edit"
+        mode='edit'
         actId={1}
         initialValues={{
           name: 'Session One',
@@ -56,7 +56,7 @@ describe('SessionForm', () => {
     unmount();
     render(
       <SessionForm
-        mode="edit"
+        mode='edit'
         actId={1}
         initialValues={{
           name: 'Session One',
@@ -74,7 +74,7 @@ describe('SessionForm', () => {
     unmount();
     render(
       <SessionForm
-        mode="edit"
+        mode='edit'
         actId={1}
         initialValues={{
           name: 'Session One',
@@ -104,7 +104,7 @@ describe('SessionForm', () => {
     const onSubmitEdit = vi.fn().mockRejectedValueOnce({ reason: 'unknown' });
     rerender(
       <SessionForm
-        mode="edit"
+        mode='edit'
         actId={1}
         initialValues={{ name: 'Session One', notes: null, planned_at: null }}
         onSubmit={onSubmitEdit}

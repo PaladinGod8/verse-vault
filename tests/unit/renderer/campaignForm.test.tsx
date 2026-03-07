@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import CampaignForm from '../../../src/renderer/components/campaigns/CampaignForm';
 
 describe('CampaignForm', () => {
@@ -48,7 +48,7 @@ describe('CampaignForm', () => {
     const onSubmitEdit = vi.fn().mockRejectedValueOnce({ reason: 'unknown' });
     rerender(
       <CampaignForm
-        mode="edit"
+        mode='edit'
         worldId={1}
         initialValues={{ name: 'Campaign One', summary: null }}
         onSubmit={onSubmitEdit}

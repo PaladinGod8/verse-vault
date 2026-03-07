@@ -1,8 +1,8 @@
-import { _electron as electron } from 'playwright';
 import { type ElectronApplication } from '@playwright/test';
-import path from 'path';
-import os from 'os';
 import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
+import { _electron as electron } from 'playwright';
 
 // Resolved relative to this helper file: tests/e2e/helpers/ -> project root
 const mainJs = path.join(__dirname, '../../../.vite/build/main.js');

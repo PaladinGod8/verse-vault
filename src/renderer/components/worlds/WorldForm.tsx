@@ -89,8 +89,8 @@ export default function WorldForm({
         error instanceof Error
           ? error.message
           : isEditMode
-            ? 'Failed to save world changes.'
-            : 'Failed to create world.',
+          ? 'Failed to save world changes.'
+          : 'Failed to create world.',
       );
     } finally {
       setIsSubmitting(false);
@@ -98,47 +98,49 @@ export default function WorldForm({
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-1">
+    <form className='space-y-4' onSubmit={handleSubmit}>
+      <div className='space-y-1'>
         <label
-          htmlFor="world-name"
-          className="block text-sm font-medium text-slate-800"
+          htmlFor='world-name'
+          className='block text-sm font-medium text-slate-800'
         >
           Name
         </label>
         <input
-          id="world-name"
-          type="text"
+          id='world-name'
+          type='text'
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          placeholder="Enter world name"
+          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          placeholder='Enter world name'
           autoFocus
           disabled={isSubmitting}
           required
         />
       </div>
 
-      {thumbnailSrc && !thumbnailFile ? (
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-slate-800">
-            Current thumbnail
-          </p>
-          <img
-            src={thumbnailSrc}
-            alt="Current world thumbnail"
-            className="h-24 w-auto rounded-lg border border-slate-200 object-cover"
-          />
-          <button
-            type="button"
-            className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={handleThumbnailClear}
-            disabled={isSubmitting || isImportingImage}
-          >
-            Remove thumbnail
-          </button>
-        </div>
-      ) : null}
+      {thumbnailSrc && !thumbnailFile
+        ? (
+          <div className='space-y-1'>
+            <p className='text-sm font-medium text-slate-800'>
+              Current thumbnail
+            </p>
+            <img
+              src={thumbnailSrc}
+              alt='Current world thumbnail'
+              className='h-24 w-auto rounded-lg border border-slate-200 object-cover'
+            />
+            <button
+              type='button'
+              className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+              onClick={handleThumbnailClear}
+              disabled={isSubmitting || isImportingImage}
+            >
+              Remove thumbnail
+            </button>
+          </div>
+        )
+        : null}
 
       <WorldImageDropzone
         selectedFile={thumbnailFile}
@@ -148,41 +150,43 @@ export default function WorldForm({
         disabled={isSubmitting || isImportingImage}
       />
 
-      <div className="space-y-1">
+      <div className='space-y-1'>
         <label
-          htmlFor="world-short-description"
-          className="block text-sm font-medium text-slate-800"
+          htmlFor='world-short-description'
+          className='block text-sm font-medium text-slate-800'
         >
           Short description (optional)
         </label>
         <textarea
-          id="world-short-description"
+          id='world-short-description'
           value={shortDescription}
           onChange={(event) => setShortDescription(event.target.value)}
-          className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          placeholder="A quick summary of this world."
+          className='min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          placeholder='A quick summary of this world.'
           disabled={isSubmitting}
         />
       </div>
 
-      {submitError ? (
-        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {submitError}
-        </p>
-      ) : null}
+      {submitError
+        ? (
+          <p className='rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
+            {submitError}
+          </p>
+        )
+        : null}
 
-      <div className="flex justify-end gap-2">
+      <div className='flex justify-end gap-2'>
         <button
-          type="button"
+          type='button'
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
           disabled={isSubmitting || isImportingImage}
         >
           Cancel
         </button>
         <button
-          type="submit"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          type='submit'
+          className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
           disabled={isSubmitting || isImportingImage}
         >
           {isSubmitting
@@ -190,8 +194,8 @@ export default function WorldForm({
               ? 'Saving...'
               : 'Creating...'
             : isEditMode
-              ? 'Save changes'
-              : 'Create world'}
+            ? 'Save changes'
+            : 'Create world'}
         </button>
       </div>
     </form>

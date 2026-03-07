@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import SceneForm from '../../../src/renderer/components/scenes/SceneForm';
 
 describe('SceneForm', () => {
@@ -57,7 +57,7 @@ describe('SceneForm', () => {
     const onSubmitEdit = vi.fn().mockRejectedValueOnce({ reason: 'unknown' });
     rerender(
       <SceneForm
-        mode="edit"
+        mode='edit'
         sessionId={1}
         initialValues={{ name: 'Act opener', notes: null, payload: '{}' }}
         onSubmit={onSubmitEdit}

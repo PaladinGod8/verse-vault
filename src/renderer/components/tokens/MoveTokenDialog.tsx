@@ -53,8 +53,8 @@ export default function MoveTokenDialog({
     () =>
       selectedCampaignId === null
         ? null
-        : (campaigns.find((campaign) => campaign.id === selectedCampaignId) ??
-          null),
+        : (campaigns.find((campaign) => campaign.id === selectedCampaignId)
+          ?? null),
     [campaigns, selectedCampaignId],
   );
 
@@ -64,8 +64,7 @@ export default function MoveTokenDialog({
     setError(null);
 
     try {
-      const campaignId =
-        mode === 'toCampaign' ? (selectedCampaignId ?? undefined) : undefined;
+      const campaignId = mode === 'toCampaign' ? (selectedCampaignId ?? undefined) : undefined;
       await onConfirm(token, campaignId);
     } catch (caughtError) {
       setError(toErrorMessage(caughtError));
@@ -77,76 +76,76 @@ export default function MoveTokenDialog({
       isOpen={isOpen}
       onClose={onCancel}
       labelledBy={titleId}
-      boxClassName="max-w-lg"
+      boxClassName='max-w-lg'
     >
-      <h2 id={titleId} className="text-base-content text-lg font-semibold">
+      <h2 id={titleId} className='text-base-content text-lg font-semibold'>
         {mode === 'toWorld' ? 'Move Token to World' : 'Move Token to Campaign'}
       </h2>
 
-      <p className="text-base-content/90 mt-3 text-sm">
+      <p className='text-base-content/90 mt-3 text-sm'>
         {mode === 'toWorld'
           ? `Move "${token.name}" to World? It will no longer be campaign-scoped.`
           : `Move "${token.name}" to "${targetCampaign?.name ?? '...'}"?`}
       </p>
 
-      {mode === 'toCampaign' ? (
-        <div className="mt-4">
-          <label htmlFor="move-token-campaign" className="label px-0 pb-1">
-            <span className="label-text">Target Campaign</span>
-          </label>
-          <select
-            id="move-token-campaign"
-            className="select select-bordered w-full"
-            value={selectedCampaignId ?? ''}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              setSelectedCampaignId(Number.isNaN(value) ? null : value);
-            }}
-            disabled={isPending || campaigns.length === 0}
-          >
-            <option value="" disabled>
-              Select a campaign...
-            </option>
-            {campaigns.map((campaign) => (
-              <option key={campaign.id} value={campaign.id}>
-                {campaign.name}
+      {mode === 'toCampaign'
+        ? (
+          <div className='mt-4'>
+            <label htmlFor='move-token-campaign' className='label px-0 pb-1'>
+              <span className='label-text'>Target Campaign</span>
+            </label>
+            <select
+              id='move-token-campaign'
+              className='select select-bordered w-full'
+              value={selectedCampaignId ?? ''}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                setSelectedCampaignId(Number.isNaN(value) ? null : value);
+              }}
+              disabled={isPending || campaigns.length === 0}
+            >
+              <option value='' disabled>
+                Select a campaign...
               </option>
-            ))}
-          </select>
-          {campaigns.length === 0 ? (
-            <p className="text-base-content/70 mt-2 text-sm">
-              No campaigns available in this world.
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+              {campaigns.map((campaign) => (
+                <option key={campaign.id} value={campaign.id}>
+                  {campaign.name}
+                </option>
+              ))}
+            </select>
+            {campaigns.length === 0
+              ? (
+                <p className='text-base-content/70 mt-2 text-sm'>
+                  No campaigns available in this world.
+                </p>
+              )
+              : null}
+          </div>
+        )
+        : null}
 
-      {error ? <p className="text-error mt-3 text-sm">{error}</p> : null}
+      {error ? <p className='text-error mt-3 text-sm'>{error}</p> : null}
 
-      <div className="modal-action mt-5">
+      <div className='modal-action mt-5'>
         <button
-          type="button"
+          type='button'
           onClick={onCancel}
-          className="btn btn-ghost"
+          className='btn btn-ghost'
           disabled={isPending}
         >
           Cancel
         </button>
         <button
-          type="button"
+          type='button'
           onClick={() => {
             void handleConfirm();
           }}
-          className="btn btn-primary"
-          disabled={
-            isPending ||
-            (mode === 'toCampaign' &&
-              (selectedCampaignId === null || campaigns.length === 0))
-          }
+          className='btn btn-primary'
+          disabled={isPending
+            || (mode === 'toCampaign'
+              && (selectedCampaignId === null || campaigns.length === 0))}
         >
-          {isPending ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : null}
+          {isPending ? <span className='loading loading-spinner loading-xs' /> : null}
           <span>{isPending ? 'Moving...' : 'Move'}</span>
         </button>
       </div>

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import LevelForm from '../components/levels/LevelForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
-import LevelForm from '../components/levels/LevelForm';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 type AddLevelInput = Parameters<DbApi['levels']['add']>[0];
@@ -120,9 +120,7 @@ export default function LevelsPage() {
         category,
         description,
       });
-      setLevels((prev) =>
-        prev.map((l) => (l.id === updatedLevel.id ? updatedLevel : l)),
-      );
+      setLevels((prev) => prev.map((l) => (l.id === updatedLevel.id ? updatedLevel : l)));
       setEditingLevel(null);
       toast.success('Level updated.', `"${updatedLevel.name}" was saved.`);
     } catch (updateError) {
@@ -161,175 +159,187 @@ export default function LevelsPage() {
       );
     } finally {
       setDeletingId((current) => (current === level.id ? null : current));
-      setPendingDeleteLevel((current) =>
-        current?.id === level.id ? null : current,
-      );
+      setPendingDeleteLevel((current) => current?.id === level.id ? null : current);
     }
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
             <Link
               to={`/world/${worldId}`}
-              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
             >
               Back to world
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {world?.name ?? 'Levels'}
             </h1>
           </div>
 
-          {worldId !== null ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              New Level
-            </button>
-          ) : null}
+          {worldId !== null
+            ? (
+              <button
+                type='button'
+                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                onClick={() => setIsCreateOpen(true)}
+              >
+                New Level
+              </button>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading levels...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading levels...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
-            {error}
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
+              {error}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && levels.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No levels yet.</p>
-          </section>
-        ) : null}
+        {!isLoading && !error && levels.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <p className='text-sm text-slate-600'>No levels yet.</p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && levels.length > 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm text-slate-700">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Category
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Description
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {levels.map((level) => (
-                  <tr
-                    key={level.id}
-                    className="border-b border-slate-100 last:border-0"
-                  >
-                    <td className="px-4 py-3 font-medium">{level.name}</td>
-                    <td className="px-4 py-3">{level.category}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {level.description ?? '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreateOpen(false);
-                            setEditingLevel(level);
-                          }}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === level.id}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleRequestDeleteLevel(level);
-                          }}
-                          className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === level.id}
-                        >
-                          {deletingId === level.id ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
-                    </td>
+        {!isLoading && !error && levels.length > 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
+              <table className='w-full text-sm text-slate-700'>
+                <thead>
+                  <tr className='border-b border-slate-200'>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Name
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Category
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Description
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        ) : null}
+                </thead>
+                <tbody>
+                  {levels.map((level) => (
+                    <tr
+                      key={level.id}
+                      className='border-b border-slate-100 last:border-0'
+                    >
+                      <td className='px-4 py-3 font-medium'>{level.name}</td>
+                      <td className='px-4 py-3'>{level.category}</td>
+                      <td className='px-4 py-3 text-slate-500'>
+                        {level.description ?? '—'}
+                      </td>
+                      <td className='px-4 py-3'>
+                        <div className='flex gap-3'>
+                          <button
+                            type='button'
+                            onClick={() => {
+                              setIsCreateOpen(false);
+                              setEditingLevel(level);
+                            }}
+                            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+                            disabled={deletingId === level.id}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type='button'
+                            onClick={() => {
+                              handleRequestDeleteLevel(level);
+                            }}
+                            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
+                            disabled={deletingId === level.id}
+                          >
+                            {deletingId === level.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen && worldId !== null ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-level-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="create-level-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen && worldId !== null
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-level-title'
+            boxClassName='max-w-xl'
           >
-            New Level
-          </h2>
-          <LevelForm
-            mode="create"
-            worldId={worldId}
-            onSubmit={handleCreateLevel}
-            onCancel={() => setIsCreateOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-level-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              New Level
+            </h2>
+            <LevelForm
+              mode='create'
+              worldId={worldId}
+              onSubmit={handleCreateLevel}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
-      {editingLevel !== null ? (
-        <ModalShell
-          isOpen={editingLevel !== null}
-          onClose={() => setEditingLevel(null)}
-          labelledBy="edit-level-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="edit-level-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingLevel !== null
+        ? (
+          <ModalShell
+            isOpen={editingLevel !== null}
+            onClose={() => setEditingLevel(null)}
+            labelledBy='edit-level-title'
+            boxClassName='max-w-xl'
           >
-            Edit Level
-          </h2>
-          <LevelForm
-            mode="edit"
-            worldId={editingLevel.world_id}
-            initialValues={editingLevel}
-            onSubmit={handleUpdateLevel}
-            onCancel={() => setEditingLevel(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-level-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Level
+            </h2>
+            <LevelForm
+              mode='edit'
+              worldId={editingLevel.world_id}
+              initialValues={editingLevel}
+              onSubmit={handleUpdateLevel}
+              onCancel={() => setEditingLevel(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDeleteLevel !== null}
         title={`Delete "${pendingDeleteLevel?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDeleteLevel();
         }}
         onCancel={() => setPendingDeleteLevel(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />
     </div>

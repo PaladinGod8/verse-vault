@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AbilityForm from '../../../src/renderer/components/abilities/AbilityForm';
 
 const levelsGetAllByWorldMock = vi.fn();
@@ -256,7 +256,7 @@ describe('AbilityForm', () => {
 
     render(
       <AbilityForm
-        mode="edit"
+        mode='edit'
         worldId={7}
         initialValues={{
           name: 'Existing ability',
@@ -278,7 +278,7 @@ describe('AbilityForm', () => {
   it('formats initial JSON values for editor readability', async () => {
     render(
       <AbilityForm
-        mode="edit"
+        mode='edit'
         worldId={5}
         initialValues={{
           name: 'Existing ability',
@@ -354,7 +354,7 @@ describe('AbilityForm', () => {
   it('pre-fills with initialValues in edit mode including casting fields', async () => {
     render(
       <AbilityForm
-        mode="edit"
+        mode='edit'
         worldId={1}
         initialValues={{
           name: 'Arc Flash',

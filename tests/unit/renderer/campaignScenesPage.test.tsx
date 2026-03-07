@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CampaignScenesPage from '../../../src/renderer/pages/CampaignScenesPage';
 
 const campaignsGetByIdMock = vi.fn();
@@ -45,7 +45,7 @@ function renderCampaignScenesPage(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
-          path="/world/:id/campaign/:campaignId/scenes"
+          path='/world/:id/campaign/:campaignId/scenes'
           element={<CampaignScenesPage />}
         />
       </Routes>

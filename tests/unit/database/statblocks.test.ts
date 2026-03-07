@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 async function loadDbModule(options?: {
-  tableInfoRows?: Array<{ name: string }>;
-  tokenTableInfoRows?: Array<{ name: string; notnull?: number }>;
+  tableInfoRows?: Array<{ name: string; }>;
+  tokenTableInfoRows?: Array<{ name: string; notnull?: number; }>;
 }) {
   const appGetPathMock = vi.fn(() => 'C:/fake-user-data');
   const tokenTableInfoRows = options?.tokenTableInfoRows ?? [
@@ -20,9 +20,7 @@ async function loadDbModule(options?: {
   const closeMock = vi.fn();
   const databaseCtorMock = vi.fn();
   const transactionMock = vi.fn(
-    (callback: (...args: unknown[]) => unknown) =>
-      (...args: unknown[]) =>
-        callback(...args),
+    (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
   );
   const tableInfoRows = options?.tableInfoRows ?? [
     { name: 'act_id' },
@@ -181,12 +179,10 @@ describe('StatBlocks Schema Migration', () => {
     closeDatabase();
 
     const allSql = execMock.mock.calls.map(([sql]) => String(sql));
-    const lastStatblockIndex = allSql.findLastIndex((sql) =>
-      sql.includes('statblocks'),
-    );
+    const lastStatblockIndex = allSql.findLastIndex((sql) => sql.includes('statblocks'));
     // statblocks migration SQL should come after abilities table creation
     const abilitiesIndex = allSql.findIndex((sql) =>
-      sql.includes('CREATE TABLE IF NOT EXISTS abilities'),
+      sql.includes('CREATE TABLE IF NOT EXISTS abilities')
     );
     expect(lastStatblockIndex).toBeGreaterThan(abilitiesIndex);
   });

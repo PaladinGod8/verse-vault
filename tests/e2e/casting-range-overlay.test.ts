@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchElectronApp, cleanupElectronApp } from './helpers';
+import { expect, test } from '@playwright/test';
+import { cleanupElectronApp, launchElectronApp } from './helpers';
 
 test('casting range overlay renders and tracks pointer in runtime', async () => {
   const context = await launchElectronApp();

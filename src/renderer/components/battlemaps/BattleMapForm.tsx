@@ -61,8 +61,8 @@ export default function BattleMapForm({
         error instanceof Error
           ? error.message
           : isEditMode
-            ? 'Failed to save BattleMap changes.'
-            : 'Failed to create BattleMap.',
+          ? 'Failed to save BattleMap changes.'
+          : 'Failed to create BattleMap.',
       );
     } finally {
       setIsSubmitting(false);
@@ -70,62 +70,64 @@ export default function BattleMapForm({
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-1">
+    <form className='space-y-4' onSubmit={handleSubmit}>
+      <div className='space-y-1'>
         <label
-          htmlFor="battlemap-name"
-          className="block text-sm font-medium text-slate-800"
+          htmlFor='battlemap-name'
+          className='block text-sm font-medium text-slate-800'
         >
           Name
         </label>
         <input
-          id="battlemap-name"
-          type="text"
+          id='battlemap-name'
+          type='text'
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          placeholder="Enter BattleMap name"
+          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          placeholder='Enter BattleMap name'
           autoFocus
           disabled={isSubmitting}
           required
         />
       </div>
 
-      <div className="space-y-1">
+      <div className='space-y-1'>
         <label
-          htmlFor="battlemap-config"
-          className="block text-sm font-medium text-slate-800"
+          htmlFor='battlemap-config'
+          className='block text-sm font-medium text-slate-800'
         >
           Config JSON (optional)
         </label>
         <textarea
-          id="battlemap-config"
+          id='battlemap-config'
           value={config}
           onChange={(event) => setConfig(event.target.value)}
-          className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          placeholder="{}"
+          className='min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          placeholder='{}'
           disabled={isSubmitting}
         />
       </div>
 
-      {submitError ? (
-        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {submitError}
-        </p>
-      ) : null}
+      {submitError
+        ? (
+          <p className='rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
+            {submitError}
+          </p>
+        )
+        : null}
 
-      <div className="flex justify-end gap-2">
+      <div className='flex justify-end gap-2'>
         <button
-          type="button"
+          type='button'
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
           disabled={isSubmitting}
         >
           Cancel
         </button>
         <button
-          type="submit"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          type='submit'
+          className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
           disabled={isSubmitting}
         >
           {isSubmitting
@@ -133,8 +135,8 @@ export default function BattleMapForm({
               ? 'Saving...'
               : 'Creating...'
             : isEditMode
-              ? 'Save changes'
-              : 'Create BattleMap'}
+            ? 'Save changes'
+            : 'Create BattleMap'}
         </button>
       </div>
     </form>

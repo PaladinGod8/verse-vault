@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import WorldSidebar from '../components/worlds/WorldSidebar';
-import ResourceDefinitionForm from '../components/statistics/ResourceDefinitionForm';
-import PassiveScoreDefinitionForm from '../components/statistics/PassiveScoreDefinitionForm';
-import ModalShell from '../components/ui/ModalShell';
-import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { useToast } from '../components/ui/ToastProvider';
 import type {
-  WorldStatisticsConfig,
-  ResourceStatisticDefinition,
   PassiveScoreDefinition,
+  ResourceStatisticDefinition,
+  WorldStatisticsConfig,
 } from '../../shared/statisticsTypes';
+import PassiveScoreDefinitionForm from '../components/statistics/PassiveScoreDefinitionForm';
+import ResourceDefinitionForm from '../components/statistics/ResourceDefinitionForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ModalShell from '../components/ui/ModalShell';
+import { useToast } from '../components/ui/ToastProvider';
+import WorldSidebar from '../components/worlds/WorldSidebar';
 
 function parseWorldStatisticsConfig(rawConfig: string): WorldStatisticsConfig {
   try {
@@ -55,20 +55,21 @@ export default function WorldStatisticsConfigPage() {
   const [error, setError] = useState<string | null>(null);
   const [resources, setResources] = useState<ResourceStatisticDefinition[]>([]);
   const [isCreateResourceOpen, setIsCreateResourceOpen] = useState(false);
-  const [editingResource, setEditingResource] =
-    useState<ResourceStatisticDefinition | null>(null);
-  const [pendingDeleteResource, setPendingDeleteResource] =
-    useState<ResourceStatisticDefinition | null>(null);
+  const [editingResource, setEditingResource] = useState<ResourceStatisticDefinition | null>(null);
+  const [pendingDeleteResource, setPendingDeleteResource] = useState<
+    ResourceStatisticDefinition | null
+  >(null);
   const [isDeletingResource, setIsDeletingResource] = useState(false);
   const [passiveScores, setPassiveScores] = useState<PassiveScoreDefinition[]>(
     [],
   );
-  const [isCreatePassiveScoreOpen, setIsCreatePassiveScoreOpen] =
-    useState(false);
-  const [editingPassiveScore, setEditingPassiveScore] =
-    useState<PassiveScoreDefinition | null>(null);
-  const [pendingDeletePassiveScore, setPendingDeletePassiveScore] =
-    useState<PassiveScoreDefinition | null>(null);
+  const [isCreatePassiveScoreOpen, setIsCreatePassiveScoreOpen] = useState(false);
+  const [editingPassiveScore, setEditingPassiveScore] = useState<PassiveScoreDefinition | null>(
+    null,
+  );
+  const [pendingDeletePassiveScore, setPendingDeletePassiveScore] = useState<
+    PassiveScoreDefinition | null
+  >(null);
   const [isDeletingPassiveScore, setIsDeletingPassiveScore] = useState(false);
 
   useEffect(() => {
@@ -178,7 +179,7 @@ export default function WorldStatisticsConfigPage() {
     try {
       const config = parseWorldStatisticsConfig(world.config);
       const updatedResources = (config.statistics?.resources ?? []).map((r) =>
-        r.id === editingResource.id ? data : r,
+        r.id === editingResource.id ? data : r
       );
 
       const updatedConfig: WorldStatisticsConfig = {
@@ -351,318 +352,332 @@ export default function WorldStatisticsConfigPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="space-y-2">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='space-y-2'>
           <Link
             to={worldId !== null ? `/world/${worldId}` : '/'}
-            className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+            className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
           >
             Back to world
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
             Statistics Configuration
           </h1>
-          {world ? (
-            <p className="text-sm text-slate-600">
-              Configure game system statistics for <strong>{world.name}</strong>
-            </p>
-          ) : null}
+          {world
+            ? (
+              <p className='text-sm text-slate-600'>
+                Configure game system statistics for <strong>{world.name}</strong>
+              </p>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <p className="text-sm text-slate-600">Loading...</p>
-        ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
-        ) : world ? (
-          <div className="space-y-8">
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Primary Resources
-                </h2>
-                <button
-                  onClick={() => setIsCreateResourceOpen(true)}
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
-                >
-                  Add Resource
-                </button>
-              </div>
-
-              {resources.length === 0 ? (
-                <p className="text-sm text-slate-600">
-                  No resources defined yet. Add your first resource to get
-                  started.
-                </p>
-              ) : (
-                <div className="overflow-hidden rounded-lg border border-slate-200">
-                  <table className="w-full">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          ID
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Name
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Abbreviation
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Default
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {resources.map((resource) => (
-                        <tr key={resource.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-2 text-sm text-slate-900">
-                            {resource.id}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-900">
-                            {resource.name}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-700">
-                            {resource.abbreviation}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-700">
-                            {resource.isDefault ? 'Yes' : 'No'}
-                          </td>
-                          <td className="px-4 py-2 text-sm">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => setEditingResource(resource)}
-                                className="text-blue-600 hover:text-blue-800"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setPendingDeleteResource(resource)
-                                }
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+        {isLoading
+          ? <p className='text-sm text-slate-600'>Loading...</p>
+          : error
+          ? <p className='text-sm text-red-600'>{error}</p>
+          : world
+          ? (
+            <div className='space-y-8'>
+              <section>
+                <div className='mb-4 flex items-center justify-between'>
+                  <h2 className='text-lg font-semibold text-slate-900'>
+                    Primary Resources
+                  </h2>
+                  <button
+                    onClick={() => setIsCreateResourceOpen(true)}
+                    className='rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700'
+                  >
+                    Add Resource
+                  </button>
                 </div>
-              )}
-            </section>
 
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Core Ability Scores & Passive Scores
-                </h2>
-                <button
-                  onClick={() => setIsCreatePassiveScoreOpen(true)}
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
-                >
-                  Add Passive Score
-                </button>
-              </div>
+                {resources.length === 0
+                  ? (
+                    <p className='text-sm text-slate-600'>
+                      No resources defined yet. Add your first resource to get started.
+                    </p>
+                  )
+                  : (
+                    <div className='overflow-hidden rounded-lg border border-slate-200'>
+                      <table className='w-full'>
+                        <thead className='bg-slate-50'>
+                          <tr>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              ID
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Name
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Abbreviation
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Default
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className='divide-y divide-slate-200'>
+                          {resources.map((resource) => (
+                            <tr key={resource.id} className='hover:bg-slate-50'>
+                              <td className='px-4 py-2 text-sm text-slate-900'>
+                                {resource.id}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-900'>
+                                {resource.name}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-700'>
+                                {resource.abbreviation}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-700'>
+                                {resource.isDefault ? 'Yes' : 'No'}
+                              </td>
+                              <td className='px-4 py-2 text-sm'>
+                                <div className='flex gap-2'>
+                                  <button
+                                    onClick={() =>
+                                      setEditingResource(resource)}
+                                    className='text-blue-600 hover:text-blue-800'
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setPendingDeleteResource(resource)}
+                                    className='text-red-600 hover:text-red-800'
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+              </section>
 
-              {passiveScores.length === 0 ? (
-                <p className="text-sm text-slate-600">
-                  No passive scores defined yet. Add your first passive score to
-                  get started.
-                </p>
-              ) : (
-                <div className="overflow-hidden rounded-lg border border-slate-200">
-                  <table className="w-full">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          ID
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Name
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Abbreviation
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Type
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Default
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {passiveScores.map((ps) => (
-                        <tr key={ps.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-2 text-sm text-slate-900">
-                            {ps.id}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-900">
-                            {ps.name}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-700">
-                            {ps.abbreviation}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-700">
-                            {ps.type === 'ability_score'
-                              ? 'Ability'
-                              : ps.type === 'proficiency_bonus'
-                                ? 'PB'
-                                : 'Custom'}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-slate-700">
-                            {ps.isDefault ? 'Yes' : 'No'}
-                          </td>
-                          <td className="px-4 py-2 text-sm">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => setEditingPassiveScore(ps)}
-                                className="text-blue-600 hover:text-blue-800"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => setPendingDeletePassiveScore(ps)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <section>
+                <div className='mb-4 flex items-center justify-between'>
+                  <h2 className='text-lg font-semibold text-slate-900'>
+                    Core Ability Scores & Passive Scores
+                  </h2>
+                  <button
+                    onClick={() => setIsCreatePassiveScoreOpen(true)}
+                    className='rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700'
+                  >
+                    Add Passive Score
+                  </button>
                 </div>
-              )}
-            </section>
-          </div>
-        ) : null}
+
+                {passiveScores.length === 0
+                  ? (
+                    <p className='text-sm text-slate-600'>
+                      No passive scores defined yet. Add your first passive score to get started.
+                    </p>
+                  )
+                  : (
+                    <div className='overflow-hidden rounded-lg border border-slate-200'>
+                      <table className='w-full'>
+                        <thead className='bg-slate-50'>
+                          <tr>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              ID
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Name
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Abbreviation
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Type
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Default
+                            </th>
+                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className='divide-y divide-slate-200'>
+                          {passiveScores.map((ps) => (
+                            <tr key={ps.id} className='hover:bg-slate-50'>
+                              <td className='px-4 py-2 text-sm text-slate-900'>
+                                {ps.id}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-900'>
+                                {ps.name}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-700'>
+                                {ps.abbreviation}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-700'>
+                                {ps.type === 'ability_score'
+                                  ? 'Ability'
+                                  : ps.type === 'proficiency_bonus'
+                                  ? 'PB'
+                                  : 'Custom'}
+                              </td>
+                              <td className='px-4 py-2 text-sm text-slate-700'>
+                                {ps.isDefault ? 'Yes' : 'No'}
+                              </td>
+                              <td className='px-4 py-2 text-sm'>
+                                <div className='flex gap-2'>
+                                  <button
+                                    onClick={() => setEditingPassiveScore(ps)}
+                                    className='text-blue-600 hover:text-blue-800'
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => setPendingDeletePassiveScore(ps)}
+                                    className='text-red-600 hover:text-red-800'
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+              </section>
+            </div>
+          )
+          : null}
       </main>
 
       {/* Create Resource Modal */}
-      {isCreateResourceOpen ? (
-        <ModalShell
-          isOpen={isCreateResourceOpen}
-          onClose={() => setIsCreateResourceOpen(false)}
-          labelledBy="create-resource-title"
-          boxClassName="max-w-lg"
-        >
-          <h2
-            id="create-resource-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateResourceOpen
+        ? (
+          <ModalShell
+            isOpen={isCreateResourceOpen}
+            onClose={() => setIsCreateResourceOpen(false)}
+            labelledBy='create-resource-title'
+            boxClassName='max-w-lg'
           >
-            Create Resource
-          </h2>
-          <ResourceDefinitionForm
-            mode="create"
-            existingIds={resources.map((r) => r.id)}
-            onSubmit={handleCreateResource}
-            onCancel={() => setIsCreateResourceOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-resource-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Create Resource
+            </h2>
+            <ResourceDefinitionForm
+              mode='create'
+              existingIds={resources.map((r) => r.id)}
+              onSubmit={handleCreateResource}
+              onCancel={() => setIsCreateResourceOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       {/* Edit Resource Modal */}
-      {editingResource ? (
-        <ModalShell
-          isOpen={editingResource !== null}
-          onClose={() => setEditingResource(null)}
-          labelledBy="edit-resource-title"
-          boxClassName="max-w-lg"
-        >
-          <h2
-            id="edit-resource-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingResource
+        ? (
+          <ModalShell
+            isOpen={editingResource !== null}
+            onClose={() => setEditingResource(null)}
+            labelledBy='edit-resource-title'
+            boxClassName='max-w-lg'
           >
-            Edit Resource
-          </h2>
-          <ResourceDefinitionForm
-            mode="edit"
-            initialValues={editingResource}
-            existingIds={resources.map((r) => r.id)}
-            onSubmit={handleUpdateResource}
-            onCancel={() => setEditingResource(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-resource-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Resource
+            </h2>
+            <ResourceDefinitionForm
+              mode='edit'
+              initialValues={editingResource}
+              existingIds={resources.map((r) => r.id)}
+              onSubmit={handleUpdateResource}
+              onCancel={() => setEditingResource(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={pendingDeleteResource !== null}
         title={`Delete "${pendingDeleteResource?.name ?? ''}"?`}
-        message="This will remove the resource definition. Existing statblock data will not be affected."
+        message='This will remove the resource definition. Existing statblock data will not be affected.'
         onConfirm={handleDeleteResource}
         onCancel={() => setPendingDeleteResource(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={isDeletingResource}
       />
 
       {/* Create Passive Score Modal */}
-      {isCreatePassiveScoreOpen ? (
-        <ModalShell
-          isOpen={isCreatePassiveScoreOpen}
-          onClose={() => setIsCreatePassiveScoreOpen(false)}
-          labelledBy="create-passive-score-title"
-          boxClassName="max-w-lg"
-        >
-          <h2
-            id="create-passive-score-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreatePassiveScoreOpen
+        ? (
+          <ModalShell
+            isOpen={isCreatePassiveScoreOpen}
+            onClose={() => setIsCreatePassiveScoreOpen(false)}
+            labelledBy='create-passive-score-title'
+            boxClassName='max-w-lg'
           >
-            Create Passive Score
-          </h2>
-          <PassiveScoreDefinitionForm
-            mode="create"
-            existingIds={passiveScores.map((ps) => ps.id)}
-            onSubmit={handleCreatePassiveScore}
-            onCancel={() => setIsCreatePassiveScoreOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-passive-score-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Create Passive Score
+            </h2>
+            <PassiveScoreDefinitionForm
+              mode='create'
+              existingIds={passiveScores.map((ps) => ps.id)}
+              onSubmit={handleCreatePassiveScore}
+              onCancel={() => setIsCreatePassiveScoreOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       {/* Edit Passive Score Modal */}
-      {editingPassiveScore ? (
-        <ModalShell
-          isOpen={editingPassiveScore !== null}
-          onClose={() => setEditingPassiveScore(null)}
-          labelledBy="edit-passive-score-title"
-          boxClassName="max-w-lg"
-        >
-          <h2
-            id="edit-passive-score-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingPassiveScore
+        ? (
+          <ModalShell
+            isOpen={editingPassiveScore !== null}
+            onClose={() => setEditingPassiveScore(null)}
+            labelledBy='edit-passive-score-title'
+            boxClassName='max-w-lg'
           >
-            Edit Passive Score
-          </h2>
-          <PassiveScoreDefinitionForm
-            mode="edit"
-            initialValues={editingPassiveScore}
-            existingIds={passiveScores.map((ps) => ps.id)}
-            onSubmit={handleUpdatePassiveScore}
-            onCancel={() => setEditingPassiveScore(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-passive-score-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Passive Score
+            </h2>
+            <PassiveScoreDefinitionForm
+              mode='edit'
+              initialValues={editingPassiveScore}
+              existingIds={passiveScores.map((ps) => ps.id)}
+              onSubmit={handleUpdatePassiveScore}
+              onCancel={() => setEditingPassiveScore(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       {/* Delete Passive Score Confirmation */}
       <ConfirmDialog
         isOpen={pendingDeletePassiveScore !== null}
         title={`Delete "${pendingDeletePassiveScore?.name ?? ''}"?`}
-        message="This will remove the passive score definition. Existing statblock data will not be affected."
+        message='This will remove the passive score definition. Existing statblock data will not be affected.'
         onConfirm={handleDeletePassiveScore}
         onCancel={() => setPendingDeletePassiveScore(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={isDeletingPassiveScore}
       />
     </div>

@@ -1,14 +1,11 @@
 import type {
-  StatBlockStatisticsConfig,
-  StatBlockResourceValue,
-  StatBlockPassiveScoreValue,
-  ResourceStatisticDefinition,
   PassiveScoreDefinition,
+  ResourceStatisticDefinition,
+  StatBlockPassiveScoreValue,
+  StatBlockResourceValue,
+  StatBlockStatisticsConfig,
 } from '../../shared/statisticsTypes';
-import {
-  isResourceValue,
-  isPassiveScoreValue,
-} from '../../shared/statisticsTypes';
+import { isPassiveScoreValue, isResourceValue } from '../../shared/statisticsTypes';
 
 /**
  * Parse statblock config and extract statistics.

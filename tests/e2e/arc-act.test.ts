@@ -1,10 +1,5 @@
-import {
-  test,
-  expect,
-  type ElectronApplication,
-  type Page,
-} from '@playwright/test';
-import { launchApp as electronLaunchApp, closeApp } from './helpers/launchApp';
+import { type ElectronApplication, expect, type Page, test } from '@playwright/test';
+import { closeApp, launchApp as electronLaunchApp } from './helpers/launchApp';
 
 // Unique suffix so repeated test runs don't collide on existing DB rows.
 const TS = Date.now();

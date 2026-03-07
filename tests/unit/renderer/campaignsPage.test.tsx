@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CampaignsPage from '../../../src/renderer/pages/CampaignsPage';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
@@ -58,13 +58,13 @@ function renderCampaignsPage(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id/campaigns" element={<CampaignsPage />} />
+        <Route path='/world/:id/campaigns' element={<CampaignsPage />} />
         <Route
-          path="/world/:id/campaign/:campaignId/scenes"
+          path='/world/:id/campaign/:campaignId/scenes'
           element={<div>Campaign Scenes Page</div>}
         />
         <Route
-          path="/world/:id/campaign/:campaignId/arcs"
+          path='/world/:id/campaign/:campaignId/arcs'
           element={<div>Arcs Page</div>}
         />
       </Routes>

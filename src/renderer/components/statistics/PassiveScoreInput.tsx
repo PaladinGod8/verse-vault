@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type {
   PassiveScoreDefinition,
   StatBlockPassiveScoreValue,
@@ -53,68 +53,73 @@ export default function PassiveScoreInput({
   const abilityModifier = isAbilityScore
     ? calculateAbilityModifier(baseValue)
     : null;
-  const saveModifier =
-    isAbilityScore && value?.saveDC
-      ? calculateSaveModifier(value.saveDC)
-      : null;
+  const saveModifier = isAbilityScore && value?.saveDC
+    ? calculateSaveModifier(value.saveDC)
+    : null;
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-slate-700">
+    <div className='space-y-2'>
+      <label className='block text-sm font-medium text-slate-700'>
         {definition.name} ({definition.abbreviation})
       </label>
-      {definition.description ? (
-        <p className="text-xs text-slate-500">{definition.description}</p>
-      ) : null}
+      {definition.description
+        ? <p className='text-xs text-slate-500'>{definition.description}</p>
+        : null}
 
-      <div className="flex gap-2">
-        <div className="flex-1">
+      <div className='flex gap-2'>
+        <div className='flex-1'>
           <label
             htmlFor={`${definition.id}-base`}
-            className="mb-1 block text-xs text-slate-600"
+            className='mb-1 block text-xs text-slate-600'
           >
             Base Value
           </label>
           <input
-            type="number"
+            type='number'
             id={`${definition.id}-base`}
             value={baseValue}
             onChange={(e) => handleBaseValueChange(Number(e.target.value))}
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50"
+            className='w-full rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50'
           />
         </div>
 
-        {isAbilityScore && abilityModifier !== null ? (
-          <>
-            <div className="flex-1">
-              <label className="mb-1 block text-xs text-slate-600">
-                Ability Modifier
-              </label>
-              <div className="flex h-8 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-sm font-medium text-slate-700">
-                {formatModifier(abilityModifier)}
-              </div>
-            </div>
-
-            {saveModifier !== null ? (
-              <div className="flex-1">
-                <label className="mb-1 block text-xs text-slate-600">
-                  Save Modifier
+        {isAbilityScore && abilityModifier !== null
+          ? (
+            <>
+              <div className='flex-1'>
+                <label className='mb-1 block text-xs text-slate-600'>
+                  Ability Modifier
                 </label>
-                <div className="flex h-8 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-sm font-medium text-slate-700">
-                  {formatModifier(saveModifier)}
+                <div className='flex h-8 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-sm font-medium text-slate-700'>
+                  {formatModifier(abilityModifier)}
                 </div>
               </div>
-            ) : null}
-          </>
-        ) : null}
+
+              {saveModifier !== null
+                ? (
+                  <div className='flex-1'>
+                    <label className='mb-1 block text-xs text-slate-600'>
+                      Save Modifier
+                    </label>
+                    <div className='flex h-8 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-sm font-medium text-slate-700'>
+                      {formatModifier(saveModifier)}
+                    </div>
+                  </div>
+                )
+                : null}
+            </>
+          )
+          : null}
       </div>
 
-      {isAbilityScore ? (
-        <p className="text-xs text-slate-500">
-          Modifier formula: floor((base - 10) / 2)
-        </p>
-      ) : null}
+      {isAbilityScore
+        ? (
+          <p className='text-xs text-slate-500'>
+            Modifier formula: floor((base - 10) / 2)
+          </p>
+        )
+        : null}
     </div>
   );
 }

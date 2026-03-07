@@ -172,8 +172,7 @@ describe('normalizeTokenImageSrc', () => {
     });
 
     it('handles Linux full path', () => {
-      const url =
-        'file:///home/user/.local/share/verse-vault/token-images/orc_warrior.png';
+      const url = 'file:///home/user/.local/share/verse-vault/token-images/orc_warrior.png';
       const result = normalizeTokenImageSrc(url);
       expect(result).toBe('vv-media://token-images/orc_warrior.png');
     });

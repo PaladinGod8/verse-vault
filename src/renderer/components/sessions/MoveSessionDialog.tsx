@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import ModalShell from '../ui/ModalShell';
 
-type ActWithArcName = Act & { arc_name: string };
+type ActWithArcName = Act & { arc_name: string; };
 
 type Props = {
   session: Session;
@@ -61,46 +61,46 @@ export default function MoveSessionDialog({
     <ModalShell
       isOpen
       onClose={onCancel}
-      labelledBy="move-session-title"
-      boxClassName="max-w-md"
+      labelledBy='move-session-title'
+      boxClassName='max-w-md'
     >
       <h2
-        id="move-session-title"
-        className="mb-4 text-lg font-semibold text-slate-800"
+        id='move-session-title'
+        className='mb-4 text-lg font-semibold text-slate-800'
       >
         Move &ldquo;{session.name}&rdquo; to Act
       </h2>
 
-      {loading && <p className="text-sm text-slate-500">Loading acts...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {loading && <p className='text-sm text-slate-500'>Loading acts...</p>}
+      {error && <p className='text-sm text-red-600'>{error}</p>}
 
       {!loading && !error && grouped.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className='text-sm text-slate-500'>
           No other Acts available in this Campaign.
         </p>
       )}
 
       {!loading && !error && grouped.length > 0 && (
-        <div className="mb-4 max-h-64 overflow-y-auto rounded border border-slate-200">
+        <div className='mb-4 max-h-64 overflow-y-auto rounded border border-slate-200'>
           {grouped.map(({ arc, acts }) => (
             <div key={arc.id}>
-              <div className="bg-slate-50 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <div className='bg-slate-50 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase'>
                 {arc.name}
               </div>
               {acts.map((act) => (
                 <label
                   key={act.id}
-                  className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-slate-50"
+                  className='flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-slate-50'
                 >
                   <input
-                    type="radio"
-                    name="target-act"
+                    type='radio'
+                    name='target-act'
                     value={act.id}
                     checked={selectedActId === act.id}
                     onChange={() => setSelectedActId(act.id)}
-                    className="accent-slate-800"
+                    className='accent-slate-800'
                   />
-                  <span className="text-sm text-slate-700">{act.name}</span>
+                  <span className='text-sm text-slate-700'>{act.name}</span>
                 </label>
               ))}
             </div>
@@ -108,19 +108,19 @@ export default function MoveSessionDialog({
         </div>
       )}
 
-      <div className="flex justify-end gap-3">
+      <div className='flex justify-end gap-3'>
         <button
-          type="button"
+          type='button'
           onClick={onCancel}
-          className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className='rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
         >
           Cancel
         </button>
         <button
-          type="button"
+          type='button'
           disabled={selectedActId === null || loading}
           onClick={() => selectedActId !== null && onConfirm(selectedActId)}
-          className="rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className='rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50'
         >
           Move
         </button>

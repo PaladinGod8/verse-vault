@@ -96,7 +96,7 @@ describe('preload - statblock methods', () => {
 
       expect(invokeMock).toHaveBeenCalledWith(IPC.STATBLOCKS_GET_BY_ID, 1);
       expect(result).not.toBeNull();
-      expect((result as { id: number }).id).toBe(1);
+      expect((result as { id: number; }).id).toBe(1);
     });
 
     it('returns null when not found', async () => {

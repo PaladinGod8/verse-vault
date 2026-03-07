@@ -12,10 +12,10 @@ type AddAbilityInput = Parameters<DbApi['abilities']['add']>[0];
 function isAbilityChildManagerSupported(ability: Ability): boolean {
   const subtype = ability.passive_subtype;
   return (
-    ability.type === 'passive' &&
-    (subtype === 'linchpin' ||
-      subtype === 'keystone' ||
-      subtype === 'rostering')
+    ability.type === 'passive'
+    && (subtype === 'linchpin'
+      || subtype === 'keystone'
+      || subtype === 'rostering')
   );
 }
 
@@ -45,22 +45,21 @@ export default function AbilitiesPage() {
     number | null
   >(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [pendingDeleteAbility, setPendingDeleteAbility] =
-    useState<Ability | null>(null);
+  const [pendingDeleteAbility, setPendingDeleteAbility] = useState<Ability | null>(null);
   const managingChildrenAbility = useMemo(
     () =>
       managingChildrenAbilityId === null
         ? null
         : (abilities.find(
-            (ability) => ability.id === managingChildrenAbilityId,
-          ) ?? null),
+          (ability) => ability.id === managingChildrenAbilityId,
+        ) ?? null),
     [abilities, managingChildrenAbilityId],
   );
 
   useEffect(() => {
     if (
-      managingChildrenAbilityId !== null &&
-      managingChildrenAbility === null
+      managingChildrenAbilityId !== null
+      && managingChildrenAbility === null
     ) {
       setManagingChildrenAbilityId(null);
     }
@@ -162,9 +161,7 @@ export default function AbilitiesPage() {
           pick_is_permanent: data.pick_is_permanent ?? 0,
         },
       );
-      setAbilities((prev) =>
-        prev.map((a) => (a.id === updatedAbility.id ? updatedAbility : a)),
-      );
+      setAbilities((prev) => prev.map((a) => (a.id === updatedAbility.id ? updatedAbility : a)));
       setEditingAbility(null);
       toast.success('Ability updated.', `"${updatedAbility.name}" was saved.`);
     } catch (updateError) {
@@ -193,9 +190,7 @@ export default function AbilitiesPage() {
     try {
       await window.db.abilities.delete(ability.id);
       setAbilities((prev) => prev.filter((a) => a.id !== ability.id));
-      setManagingChildrenAbilityId((current) =>
-        current === ability.id ? null : current,
-      );
+      setManagingChildrenAbilityId((current) => current === ability.id ? null : current);
       toast.success('Ability deleted.', `"${ability.name}" was removed.`);
     } catch (deleteError) {
       toast.error(
@@ -206,225 +201,241 @@ export default function AbilitiesPage() {
       );
     } finally {
       setDeletingId((current) => (current === ability.id ? null : current));
-      setPendingDeleteAbility((current) =>
-        current?.id === ability.id ? null : current,
-      );
+      setPendingDeleteAbility((current) => current?.id === ability.id ? null : current);
     }
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
             <Link
               to={`/world/${worldId}`}
-              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
             >
               Back to world
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {world?.name ?? 'Abilities'}
             </h1>
           </div>
 
-          {worldId !== null ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              New Ability
-            </button>
-          ) : null}
+          {worldId !== null
+            ? (
+              <button
+                type='button'
+                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                onClick={() => setIsCreateOpen(true)}
+              >
+                New Ability
+              </button>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading abilities...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading abilities...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
-            {error}
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
+              {error}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && abilities.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No abilities yet.</p>
-          </section>
-        ) : null}
+        {!isLoading && !error && abilities.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <p className='text-sm text-slate-600'>No abilities yet.</p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && abilities.length > 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm text-slate-700">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Type
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Subtype
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Trigger
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {abilities.map((ability) => (
-                  <tr
-                    key={ability.id}
-                    className="border-b border-slate-100 last:border-0"
-                  >
-                    <td className="px-4 py-3 font-medium">{ability.name}</td>
-                    <td className="px-4 py-3">{ability.type}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {ability.passive_subtype || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {ability.trigger || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreateOpen(false);
-                            setEditingAbility(ability);
-                            setManagingChildrenAbilityId(null);
-                          }}
-                          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === ability.id}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleRequestDeleteAbility(ability);
-                          }}
-                          className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingId === ability.id}
-                        >
-                          {deletingId === ability.id ? 'Deleting...' : 'Delete'}
-                        </button>
-                        {isAbilityChildManagerSupported(ability) ? (
+        {!isLoading && !error && abilities.length > 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
+              <table className='w-full text-sm text-slate-700'>
+                <thead>
+                  <tr className='border-b border-slate-200'>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Name
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Type
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Subtype
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Trigger
+                    </th>
+                    <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {abilities.map((ability) => (
+                    <tr
+                      key={ability.id}
+                      className='border-b border-slate-100 last:border-0'
+                    >
+                      <td className='px-4 py-3 font-medium'>{ability.name}</td>
+                      <td className='px-4 py-3'>{ability.type}</td>
+                      <td className='px-4 py-3 text-slate-500'>
+                        {ability.passive_subtype || 'N/A'}
+                      </td>
+                      <td className='px-4 py-3 text-slate-500'>
+                        {ability.trigger || 'N/A'}
+                      </td>
+                      <td className='px-4 py-3'>
+                        <div className='flex gap-3'>
                           <button
-                            type="button"
+                            type='button'
                             onClick={() => {
                               setIsCreateOpen(false);
-                              setEditingAbility(null);
-                              setManagingChildrenAbilityId(ability.id);
+                              setEditingAbility(ability);
+                              setManagingChildrenAbilityId(null);
                             }}
-                            className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
                             disabled={deletingId === ability.id}
                           >
-                            Manage children
+                            Edit
                           </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        ) : null}
+                          <button
+                            type='button'
+                            onClick={() => {
+                              handleRequestDeleteAbility(ability);
+                            }}
+                            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
+                            disabled={deletingId === ability.id}
+                          >
+                            {deletingId === ability.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                          {isAbilityChildManagerSupported(ability)
+                            ? (
+                              <button
+                                type='button'
+                                onClick={() => {
+                                  setIsCreateOpen(false);
+                                  setEditingAbility(null);
+                                  setManagingChildrenAbilityId(ability.id);
+                                }}
+                                className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+                                disabled={deletingId === ability.id}
+                              >
+                                Manage children
+                              </button>
+                            )
+                            : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen && worldId !== null ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-ability-title"
-          boxClassName="max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
-        >
-          <h2
-            id="create-ability-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen && worldId !== null
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-ability-title'
+            boxClassName='max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto'
           >
-            New Ability
-          </h2>
-          <AbilityForm
-            mode="create"
-            worldId={worldId}
-            onSubmit={handleCreateAbility}
-            onCancel={() => setIsCreateOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
-
-      {managingChildrenAbility !== null ? (
-        <ModalShell
-          isOpen={managingChildrenAbility !== null}
-          onClose={() => setManagingChildrenAbilityId(null)}
-          labelledBy="manage-ability-children-title"
-          boxClassName="max-w-4xl"
-        >
-          <h2
-            id="manage-ability-children-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
-          >
-            Manage children - {managingChildrenAbility.name}
-          </h2>
-          <AbilityChildrenManager
-            parentAbility={managingChildrenAbility}
-            abilities={abilities}
-          />
-          <div className="mt-6 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setManagingChildrenAbilityId(null)}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            <h2
+              id='create-ability-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
             >
-              Close
-            </button>
-          </div>
-        </ModalShell>
-      ) : null}
+              New Ability
+            </h2>
+            <AbilityForm
+              mode='create'
+              worldId={worldId}
+              onSubmit={handleCreateAbility}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
-      {editingAbility !== null ? (
-        <ModalShell
-          isOpen={editingAbility !== null}
-          onClose={() => setEditingAbility(null)}
-          labelledBy="edit-ability-title"
-          boxClassName="max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
-        >
-          <h2
-            id="edit-ability-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {managingChildrenAbility !== null
+        ? (
+          <ModalShell
+            isOpen={managingChildrenAbility !== null}
+            onClose={() => setManagingChildrenAbilityId(null)}
+            labelledBy='manage-ability-children-title'
+            boxClassName='max-w-4xl'
           >
-            Edit Ability
-          </h2>
-          <AbilityForm
-            mode="edit"
-            worldId={editingAbility.world_id}
-            initialValues={editingAbility}
-            onSubmit={handleUpdateAbility}
-            onCancel={() => setEditingAbility(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='manage-ability-children-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Manage children - {managingChildrenAbility.name}
+            </h2>
+            <AbilityChildrenManager
+              parentAbility={managingChildrenAbility}
+              abilities={abilities}
+            />
+            <div className='mt-6 flex justify-end'>
+              <button
+                type='button'
+                onClick={() => setManagingChildrenAbilityId(null)}
+                className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
+              >
+                Close
+              </button>
+            </div>
+          </ModalShell>
+        )
+        : null}
+
+      {editingAbility !== null
+        ? (
+          <ModalShell
+            isOpen={editingAbility !== null}
+            onClose={() => setEditingAbility(null)}
+            labelledBy='edit-ability-title'
+            boxClassName='max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto'
+          >
+            <h2
+              id='edit-ability-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Ability
+            </h2>
+            <AbilityForm
+              mode='edit'
+              worldId={editingAbility.world_id}
+              initialValues={editingAbility}
+              onSubmit={handleUpdateAbility}
+              onCancel={() => setEditingAbility(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDeleteAbility !== null}
         title={`Delete "${pendingDeleteAbility?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDeleteAbility();
         }}
         onCancel={() => setPendingDeleteAbility(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />
     </div>

@@ -25,25 +25,24 @@ export default function ConfirmDialog({
   confirmTone = 'danger',
 }: ConfirmDialogProps) {
   const titleId = useId();
-  const confirmButtonClass =
-    confirmTone === 'danger' ? 'btn btn-error' : 'btn btn-primary';
+  const confirmButtonClass = confirmTone === 'danger' ? 'btn btn-error' : 'btn btn-primary';
 
   return (
     <ModalShell
       isOpen={isOpen}
       onClose={onCancel}
       labelledBy={titleId}
-      boxClassName="max-w-lg"
+      boxClassName='max-w-lg'
     >
-      <h2 id={titleId} className="text-base-content text-lg font-semibold">
+      <h2 id={titleId} className='text-base-content text-lg font-semibold'>
         {title}
       </h2>
-      <p className="text-base-content/80 mt-2 text-sm">{message}</p>
+      <p className='text-base-content/80 mt-2 text-sm'>{message}</p>
 
-      <div className="mt-6 flex justify-end gap-2">
+      <div className='mt-6 flex justify-end gap-2'>
         <button
-          type="button"
-          className="btn btn-ghost"
+          type='button'
+          className='btn btn-ghost'
           onClick={onCancel}
           disabled={isConfirming}
           autoFocus
@@ -51,14 +50,12 @@ export default function ConfirmDialog({
           {cancelLabel}
         </button>
         <button
-          type="button"
+          type='button'
           className={confirmButtonClass}
           onClick={onConfirm}
           disabled={isConfirming}
         >
-          {isConfirming ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : null}
+          {isConfirming ? <span className='loading loading-spinner loading-xs' /> : null}
           <span>{confirmLabel}</span>
         </button>
       </div>

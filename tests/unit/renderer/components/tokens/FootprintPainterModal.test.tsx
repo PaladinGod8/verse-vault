@@ -1,5 +1,5 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import FootprintPainterModal from '../../../../../src/renderer/components/tokens/FootprintPainterModal';
 
 type MockCanvasContext = {
@@ -89,8 +89,8 @@ describe('FootprintPainterModal', () => {
         isOpen
         onClose={vi.fn()}
         onConfirm={onConfirm}
-        imageSrc="blob:ok"
-        gridType="square"
+        imageSrc='blob:ok'
+        gridType='square'
         initialFootprint={{
           version: 1,
           grid_type: 'square',
@@ -119,8 +119,8 @@ describe('FootprintPainterModal', () => {
         isOpen
         onClose={vi.fn()}
         onConfirm={onConfirm}
-        imageSrc="blob:ok"
-        gridType="square"
+        imageSrc='blob:ok'
+        gridType='square'
       />,
     );
 
@@ -164,8 +164,8 @@ describe('FootprintPainterModal', () => {
         isOpen
         onClose={vi.fn()}
         onConfirm={vi.fn()}
-        imageSrc="blob:ok"
-        gridType="square"
+        imageSrc='blob:ok'
+        gridType='square'
       />,
     );
 
@@ -191,8 +191,8 @@ describe('FootprintPainterModal', () => {
         isOpen
         onClose={vi.fn()}
         onConfirm={onConfirm}
-        imageSrc="blob:ok"
-        gridType="hex"
+        imageSrc='blob:ok'
+        gridType='hex'
       />,
     );
 
@@ -235,8 +235,8 @@ describe('FootprintPainterModal', () => {
         isOpen
         onClose={onClose}
         onConfirm={vi.fn()}
-        imageSrc="blob:error"
-        gridType="square"
+        imageSrc='blob:error'
+        gridType='square'
       />,
     );
 

@@ -6,8 +6,8 @@
 yarn install        # installs deps + rebuilds native modules (postinstall)
 yarn start          # dev mode with hot reload
 yarn lint           # ESLint check
-yarn format:check   # Prettier check (no writes)
-yarn format         # auto-format
+yarn format:check   # dprint check (no writes)
+yarn format         # auto-format with dprint
 ```
 
 ## Product Direction

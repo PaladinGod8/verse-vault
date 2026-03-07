@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WorldForm from '../../../src/renderer/components/worlds/WorldForm';
 
 const mockImportImage = vi.fn();
@@ -69,7 +69,7 @@ describe('WorldForm', () => {
 
     render(
       <WorldForm
-        mode="edit"
+        mode='edit'
         initialValues={{
           name: 'Alpha',
           thumbnail: null,
@@ -89,7 +89,7 @@ describe('WorldForm', () => {
 
   describe('thumbnail upload', () => {
     it('calls importImage and disables submit during upload (success path)', async () => {
-      let resolveImport!: (v: { image_src: string }) => void;
+      let resolveImport!: (v: { image_src: string; }) => void;
       mockImportImage.mockReturnValue(
         new Promise((res) => {
           resolveImport = res;
@@ -118,7 +118,7 @@ describe('WorldForm', () => {
       await waitFor(() =>
         expect(
           screen.getByRole('button', { name: 'Create world' }),
-        ).toBeEnabled(),
+        ).toBeEnabled()
       );
 
       expect(mockImportImage).toHaveBeenCalledWith(
@@ -170,9 +170,7 @@ describe('WorldForm', () => {
         new File([new Uint8Array([1])], 'cover.png', { type: 'image/png' }),
       );
 
-      await waitFor(() =>
-        expect(screen.getByText('cover.png')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('cover.png')).toBeInTheDocument());
 
       await user.click(
         screen.getByRole('button', { name: 'Remove selected file' }),
@@ -202,7 +200,7 @@ describe('WorldForm', () => {
       await waitFor(() =>
         expect(
           screen.getByRole('button', { name: 'Create world' }),
-        ).toBeEnabled(),
+        ).toBeEnabled()
       );
       await user.click(screen.getByRole('button', { name: 'Create world' }));
 
@@ -211,7 +209,7 @@ describe('WorldForm', () => {
           expect.objectContaining({
             thumbnail: 'vv-media://world-images/t.png',
           }),
-        ),
+        )
       );
     });
 
@@ -226,14 +224,14 @@ describe('WorldForm', () => {
       await waitFor(() =>
         expect(onSubmit).toHaveBeenCalledWith(
           expect.objectContaining({ thumbnail: null }),
-        ),
+        )
       );
     });
 
     it('shows existing thumbnail preview in edit mode', () => {
       render(
         <WorldForm
-          mode="edit"
+          mode='edit'
           initialValues={{
             name: 'Alpha',
             thumbnail: 'vv-media://world-images/existing.png',
@@ -258,7 +256,7 @@ describe('WorldForm', () => {
       const user = userEvent.setup();
       render(
         <WorldForm
-          mode="edit"
+          mode='edit'
           initialValues={{
             name: 'Alpha',
             thumbnail: 'vv-media://world-images/existing.png',
@@ -280,7 +278,7 @@ describe('WorldForm', () => {
       await waitFor(() =>
         expect(onSubmit).toHaveBeenCalledWith(
           expect.objectContaining({ thumbnail: null }),
-        ),
+        )
       );
     });
 
@@ -292,7 +290,7 @@ describe('WorldForm', () => {
       const user = userEvent.setup();
       const { container } = render(
         <WorldForm
-          mode="edit"
+          mode='edit'
           initialValues={{
             name: 'Alpha',
             thumbnail: 'vv-media://world-images/existing.png',
@@ -317,9 +315,7 @@ describe('WorldForm', () => {
       );
 
       // After upload, the new file appears in the dropzone; existing preview hidden
-      await waitFor(() =>
-        expect(screen.getByText('new.png')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('new.png')).toBeInTheDocument());
       expect(
         screen.queryByRole('img', { name: 'Current world thumbnail' }),
       ).not.toBeInTheDocument();
@@ -330,7 +326,7 @@ describe('WorldForm', () => {
           expect.objectContaining({
             thumbnail: 'vv-media://world-images/new.png',
           }),
-        ),
+        )
       );
     });
   });

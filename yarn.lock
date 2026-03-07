@@ -161,6 +161,51 @@
   dependencies:
     tslib "^2.0.0"
 
+"@dprint/darwin-arm64@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/darwin-arm64/-/darwin-arm64-0.47.6.tgz#0362427995c6581292a67764a21b393f65700fef"
+  integrity sha512-DrtKVOH7Ue6QYsqsUfUwBlTkSZNF2j35xqyI6KimUT1ulgUPocLG53JC/Aej9KuSCPmt4M3J40xxPKRgIM4jPA==
+
+"@dprint/darwin-x64@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/darwin-x64/-/darwin-x64-0.47.6.tgz#9f19ae5d8ee007fa337e2d920f4a1024a325349f"
+  integrity sha512-p16a4lMbAo4RngbNTAmtREnIRI/cOcZFy5wHPIzbCDnnHI+4UyHiAypTrpF8U8EYx1tw3hgih2MyAuupa9Gfag==
+
+"@dprint/linux-arm64-glibc@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/linux-arm64-glibc/-/linux-arm64-glibc-0.47.6.tgz#a3a3e651cb35dd8734407d4915d87f3718f2ef18"
+  integrity sha512-WHphnk0oXpNzwJ9cjbddOL+hEZkXTvHxcA2pM1h1kWCBa5m+4qh0fg8YCktckMfHx1qdQuZYWRoT4l7yQbzWYA==
+
+"@dprint/linux-arm64-musl@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/linux-arm64-musl/-/linux-arm64-musl-0.47.6.tgz#0a37b1547b0bb9610d8b956682ffb090c0f50adf"
+  integrity sha512-/2cSPudajg8J0U69ldNZkJx5QiKZNh+ohNVM9leWZ8v6GXN6sJDHX3T6hzS3ohIb03YOCiLOrJZDy9j3+fSgdQ==
+
+"@dprint/linux-riscv64-glibc@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/linux-riscv64-glibc/-/linux-riscv64-glibc-0.47.6.tgz#65aa0cfe1c25bf5312f265b3d18c02d1fb112404"
+  integrity sha512-RMHJ3Zuzpls426upHlAveVwlGMi8oBLzhiCauyC/yWQl3CkGTAYdyhEpGnux0+RxacysfIL2bd8ourx4K0Sx3w==
+
+"@dprint/linux-x64-glibc@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/linux-x64-glibc/-/linux-x64-glibc-0.47.6.tgz#a799c12f4eef368ea312d4be1bfe9b2b83c17aad"
+  integrity sha512-4zbVsx/a8lHkRyAjfW0PNlN5IMwOJfFapgXNYJowWNO7X3j3m1jYJWovjmdZls+d6pDeOHoanMWtq95wd7zTeQ==
+
+"@dprint/linux-x64-musl@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/linux-x64-musl/-/linux-x64-musl-0.47.6.tgz#b0c7da4e3990d2b9bc2095ce5ba4c43502ef2062"
+  integrity sha512-0C13t4OVzomgQjvUyD5IrRyjLDhGuOtqMo00uJlwn3QHucfgOBqkjyQ5fq7T6+grBse0m14/EWblvSbYkZpyDw==
+
+"@dprint/win32-arm64@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/win32-arm64/-/win32-arm64-0.47.6.tgz#7a256b8eb075146b0344480d686de4132998a1cc"
+  integrity sha512-UOkeFMBdGIuGNwfkrJdVM9eNiRMdbZRRGVy0Cdo2AXn/FCDVqZ74KJkvYVcoUE27GCytHi4Sp1s4at7659WCOw==
+
+"@dprint/win32-x64@0.47.6":
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/@dprint/win32-x64/-/win32-x64-0.47.6.tgz#d85729326de6aa105c88af9644295cb1e2117f9a"
+  integrity sha512-i9xwXR8V8Jk/wU1gsYKx15eb0ypBRbRZFkHsnHfC0ZBimcfEOibGnGcfv+UCUcumXtnV46TnBqaJW7H70J1J+A==
+
 "@electron-forge/cli@^7.11.0":
   version "7.11.1"
   resolved "https://registry.yarnpkg.com/@electron-forge/cli/-/cli-7.11.1.tgz#ff87cb22b3b8b340ef9a6cf3e6bc356a675718e9"
@@ -3056,6 +3101,21 @@ dom-accessibility-api@^0.6.3:
   resolved "https://registry.yarnpkg.com/dom-accessibility-api/-/dom-accessibility-api-0.6.3.tgz#993e925cc1d73f2c662e7d75dd5a5445259a8fd8"
   integrity sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==
 
+dprint@^0.47.4:
+  version "0.47.6"
+  resolved "https://registry.yarnpkg.com/dprint/-/dprint-0.47.6.tgz#baf1dcf6e59b2297edce122bd3ecbc0d890893da"
+  integrity sha512-vCQC+IMHVZbISA5pxEj+yshQbozmQoVFA4lzcLlqJ8rzIAH8U+1DKvesN/2Uv3Bqz6rMW6W4WY7pYJQljmiZ8w==
+  optionalDependencies:
+    "@dprint/darwin-arm64" "0.47.6"
+    "@dprint/darwin-x64" "0.47.6"
+    "@dprint/linux-arm64-glibc" "0.47.6"
+    "@dprint/linux-arm64-musl" "0.47.6"
+    "@dprint/linux-riscv64-glibc" "0.47.6"
+    "@dprint/linux-x64-glibc" "0.47.6"
+    "@dprint/linux-x64-musl" "0.47.6"
+    "@dprint/win32-arm64" "0.47.6"
+    "@dprint/win32-x64" "0.47.6"
+
 earcut@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/earcut/-/earcut-3.0.2.tgz#d478a29aaf99acf418151493048aa197d0512248"
@@ -5707,16 +5767,6 @@ prelude-ls@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.2.1.tgz#debc6489d7a6e6b0e7611888cec880337d316396"
   integrity sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==
-
-prettier-plugin-tailwindcss@^0.7.2:
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/prettier-plugin-tailwindcss/-/prettier-plugin-tailwindcss-0.7.2.tgz#8de2039fc0363b8532ef5a2d3fc9e2c1b6ca3bd4"
-  integrity sha512-LkphyK3Fw+q2HdMOoiEHWf93fNtYJwfamoKPl7UwtjFQdei/iIBoX11G6j706FzN3ymX9mPVi97qIY8328vdnA==
-
-prettier@^3.8.1:
-  version "3.8.1"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.8.1.tgz#edf48977cf991558f4fcbd8a3ba6015ba2a3a173"
-  integrity sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==
 
 pretty-format@^27.0.2:
   version "27.5.1"

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ModalShell from '../ui/ModalShell';
 
 export type FootprintPainterResult = {
@@ -135,8 +135,9 @@ export default function FootprintPainterModal({
 
   // Draw main canvas
   useEffect(() => {
-    if (!isOpen || !imageLoaded || !canvasRef.current || !imageRef.current)
+    if (!isOpen || !imageLoaded || !canvasRef.current || !imageRef.current) {
       return;
+    }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -179,12 +180,13 @@ export default function FootprintPainterModal({
   // Draw overview canvas
   useEffect(() => {
     if (
-      !isOpen ||
-      !imageLoaded ||
-      !overviewCanvasRef.current ||
-      !imageRef.current
-    )
+      !isOpen
+      || !imageLoaded
+      || !overviewCanvasRef.current
+      || !imageRef.current
+    ) {
       return;
+    }
 
     const canvas = overviewCanvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -254,10 +256,10 @@ export default function FootprintPainterModal({
       const localY = y - offsetY;
 
       if (
-        localX < 0 ||
-        localY < 0 ||
-        localX > scaledWidth ||
-        localY > scaledHeight
+        localX < 0
+        || localY < 0
+        || localX > scaledWidth
+        || localY > scaledHeight
       ) {
         return;
       }
@@ -372,28 +374,27 @@ export default function FootprintPainterModal({
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      ariaLabel="Footprint Painter"
-      className="pointer-events-none z-[1100] px-0"
-      boxClassName="max-w-6xl w-full h-[90vh] flex flex-col p-0 pointer-events-auto"
+      ariaLabel='Footprint Painter'
+      className='pointer-events-none z-[1100] px-0'
+      boxClassName='max-w-6xl w-full h-[90vh] flex flex-col p-0 pointer-events-auto'
       closeOnBackdrop={false}
     >
-      <div className="flex h-full flex-col">
+      <div className='flex h-full flex-col'>
         {/* Header */}
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <div className='border-b border-slate-200 px-6 py-4'>
+          <h2 className='text-xl font-semibold text-slate-900'>
             Paint Token Footprint
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Click or drag to mark occupied cells. Save requires at least one
-            cell.
+          <p className='mt-1 text-sm text-slate-600'>
+            Click or drag to mark occupied cells. Save requires at least one cell.
           </p>
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-4 border-b border-slate-200 px-6 py-3">
-          <div className="flex gap-2">
+        <div className='flex items-center gap-4 border-b border-slate-200 px-6 py-3'>
+          <div className='flex gap-2'>
             <button
-              type="button"
+              type='button'
               onClick={() => setToolMode('brush')}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 toolMode === 'brush'
@@ -404,7 +405,7 @@ export default function FootprintPainterModal({
               Brush
             </button>
             <button
-              type="button"
+              type='button'
               onClick={() => setToolMode('eraser')}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 toolMode === 'eraser'
@@ -415,61 +416,62 @@ export default function FootprintPainterModal({
               Eraser
             </button>
           </div>
-          <div className="text-sm text-slate-600">
-            Occupied: {occupiedCells.size}{' '}
-            {occupiedCells.size === 1 ? 'cell' : 'cells'}
+          <div className='text-sm text-slate-600'>
+            Occupied: {occupiedCells.size} {occupiedCells.size === 1 ? 'cell' : 'cells'}
           </div>
         </div>
 
         {/* Canvas Area */}
-        <div className="relative flex-1 overflow-hidden">
-          {!imageLoaded ? (
-            <div className="flex h-full items-center justify-center">
-              <span className="loading loading-spinner loading-lg text-slate-400" />
-            </div>
-          ) : (
-            <>
-              <canvas
-                ref={canvasRef}
-                width={800}
-                height={600}
-                className="absolute inset-0 cursor-crosshair"
-                onMouseDown={handleCanvasMouseDown}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={handleCanvasMouseLeave}
-              />
-              {/* Overview Panel */}
-              <div
-                className="absolute rounded-lg border-2 border-slate-300 bg-white shadow-lg"
-                style={{
-                  top: OVERVIEW_MARGIN,
-                  right: OVERVIEW_MARGIN,
-                  width: OVERVIEW_SIZE,
-                  height: OVERVIEW_SIZE,
-                }}
-              >
-                <canvas
-                  ref={overviewCanvasRef}
-                  width={OVERVIEW_SIZE}
-                  height={OVERVIEW_SIZE}
-                  className="rounded-lg"
-                />
+        <div className='relative flex-1 overflow-hidden'>
+          {!imageLoaded
+            ? (
+              <div className='flex h-full items-center justify-center'>
+                <span className='loading loading-spinner loading-lg text-slate-400' />
               </div>
-            </>
-          )}
+            )
+            : (
+              <>
+                <canvas
+                  ref={canvasRef}
+                  width={800}
+                  height={600}
+                  className='absolute inset-0 cursor-crosshair'
+                  onMouseDown={handleCanvasMouseDown}
+                  onMouseMove={handleCanvasMouseMove}
+                  onMouseUp={handleCanvasMouseUp}
+                  onMouseLeave={handleCanvasMouseLeave}
+                />
+                {/* Overview Panel */}
+                <div
+                  className='absolute rounded-lg border-2 border-slate-300 bg-white shadow-lg'
+                  style={{
+                    top: OVERVIEW_MARGIN,
+                    right: OVERVIEW_MARGIN,
+                    width: OVERVIEW_SIZE,
+                    height: OVERVIEW_SIZE,
+                  }}
+                >
+                  <canvas
+                    ref={overviewCanvasRef}
+                    width={OVERVIEW_SIZE}
+                    height={OVERVIEW_SIZE}
+                    className='rounded-lg'
+                  />
+                </div>
+              </>
+            )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
-          <button type="button" onClick={onClose} className="btn btn-ghost">
+        <div className='flex justify-end gap-3 border-t border-slate-200 px-6 py-4'>
+          <button type='button' onClick={onClose} className='btn btn-ghost'>
             Cancel
           </button>
           <button
-            type="button"
+            type='button'
             onClick={handleConfirm}
             disabled={!canConfirm}
-            className="btn btn-primary"
+            className='btn btn-primary'
             title={!canConfirm ? 'Mark at least one cell to continue' : ''}
           >
             Confirm

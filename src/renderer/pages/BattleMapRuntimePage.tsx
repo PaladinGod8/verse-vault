@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Link,
-  useBeforeUnload,
-  useNavigate,
-  useParams,
-} from 'react-router-dom';
+import { Link, useBeforeUnload, useNavigate, useParams } from 'react-router-dom';
 import AbilityPickerPanel from '../components/runtime/AbilityPickerPanel';
 import BattleMapRuntimeCanvas, {
   type RuntimeSceneToken,
@@ -30,7 +25,7 @@ const SQRT_3 = Math.sqrt(3);
 function roundPointyHexAxial(
   q: number,
   r: number,
-): { roundedQ: number; roundedR: number } {
+): { roundedQ: number; roundedR: number; } {
   const x = q;
   const z = r;
   const y = -x - z;
@@ -58,7 +53,7 @@ function snapTokenPositionToGrid(
   x: number,
   y: number,
   gridConfig: BattleMapRuntimeGridConfig,
-): { x: number; y: number } {
+): { x: number; y: number; } {
   if (gridConfig.mode === 'none') {
     return { x, y };
   }
@@ -66,12 +61,10 @@ function snapTokenPositionToGrid(
   const cellSize = clampGridCellSize(gridConfig.cellSize);
   if (gridConfig.mode === 'square') {
     return {
-      x:
-        gridConfig.originX +
-        (Math.floor((x - gridConfig.originX) / cellSize) + 0.5) * cellSize,
-      y:
-        gridConfig.originY +
-        (Math.floor((y - gridConfig.originY) / cellSize) + 0.5) * cellSize,
+      x: gridConfig.originX
+        + (Math.floor((x - gridConfig.originX) / cellSize) + 0.5) * cellSize,
+      y: gridConfig.originY
+        + (Math.floor((y - gridConfig.originY) / cellSize) + 0.5) * cellSize,
     };
   }
 
@@ -90,14 +83,13 @@ function snapTokenPositionToGrid(
 function getTokenPlacementPosition(
   existingCount: number,
   runtimeConfig: BattleMapRuntimeConfig,
-): { x: number; y: number } {
+): { x: number; y: number; } {
   const cellSize = clampGridCellSize(runtimeConfig.grid.cellSize);
   const row = Math.floor(existingCount / TOKEN_PLACEMENT_COLUMNS);
   const column = existingCount % TOKEN_PLACEMENT_COLUMNS;
-  const offsetX =
-    (column - Math.floor(TOKEN_PLACEMENT_COLUMNS / 2)) *
-    cellSize *
-    TOKEN_PLACEMENT_OFFSET_FACTOR;
+  const offsetX = (column - Math.floor(TOKEN_PLACEMENT_COLUMNS / 2))
+    * cellSize
+    * TOKEN_PLACEMENT_OFFSET_FACTOR;
   const offsetY = row * cellSize * TOKEN_PLACEMENT_OFFSET_FACTOR;
 
   return snapTokenPositionToGrid(
@@ -137,16 +129,16 @@ export default function BattleMapRuntimePage() {
     return parsed;
   }, [battleMapId]);
 
-  const battleMapsRoute =
-    worldId !== null ? `/world/${worldId}/battlemaps` : '/';
+  const battleMapsRoute = worldId !== null ? `/world/${worldId}/battlemaps` : '/';
 
   const [battleMap, setBattleMap] = useState<BattleMap | null>(null);
-  const [battleMapConfig, setBattleMapConfig] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
-  const [runtimeConfig, setRuntimeConfig] =
-    useState<BattleMapRuntimeConfig | null>(null);
+  const [battleMapConfig, setBattleMapConfig] = useState<
+    Record<
+      string,
+      unknown
+    > | null
+  >(null);
+  const [runtimeConfig, setRuntimeConfig] = useState<BattleMapRuntimeConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSavingRuntimeConfig, setIsSavingRuntimeConfig] = useState(false);
@@ -170,8 +162,9 @@ export default function BattleMapRuntimePage() {
     string | null
   >(null);
   const [runtimeTokens, setRuntimeTokens] = useState<RuntimeSceneToken[]>([]);
-  const [selectedRuntimeTokenInstanceId, setSelectedRuntimeTokenInstanceId] =
-    useState<string | null>(null);
+  const [selectedRuntimeTokenInstanceId, setSelectedRuntimeTokenInstanceId] = useState<
+    string | null
+  >(null);
   const [showInvisibleTokens, setShowInvisibleTokens] = useState(true);
   const [castingAbility, setCastingAbility] = useState<Ability | null>(null);
   const [castingAngleRad, setCastingAngleRad] = useState<number>(0);
@@ -199,9 +192,9 @@ export default function BattleMapRuntimePage() {
 
     const currentRuntimeKey = serializeRuntimeConfig(currentRuntimeConfig);
     return (
-      currentRuntimeKey !== lastPersistedRuntimeConfigKeyRef.current ||
-      runtimeSaveTimerRef.current !== null ||
-      activeRuntimeSavePromiseRef.current !== null
+      currentRuntimeKey !== lastPersistedRuntimeConfigKeyRef.current
+      || runtimeSaveTimerRef.current !== null
+      || activeRuntimeSavePromiseRef.current !== null
     );
   }, []);
 
@@ -248,8 +241,7 @@ export default function BattleMapRuntimePage() {
       );
       battleMapConfigRef.current = parsedRuntimeState.battleMapConfig;
       runtimeConfigRef.current = parsedRuntimeState.runtimeConfig;
-      lastPersistedRuntimeConfigKeyRef.current =
-        parsedRuntimeState.runtimeConfigKey;
+      lastPersistedRuntimeConfigKeyRef.current = parsedRuntimeState.runtimeConfigKey;
       setBattleMap(updatedBattleMap);
       setBattleMapConfig(parsedRuntimeState.battleMapConfig);
       setRuntimeConfig(parsedRuntimeState.runtimeConfig);
@@ -432,8 +424,8 @@ export default function BattleMapRuntimePage() {
           );
           return currentTokens.map((runtimeToken) => {
             if (
-              runtimeToken.campaignId !== null ||
-              runtimeToken.sourceTokenId === null
+              runtimeToken.campaignId !== null
+              || runtimeToken.sourceTokenId === null
             ) {
               return runtimeToken;
             }
@@ -481,9 +473,8 @@ export default function BattleMapRuntimePage() {
       return;
     }
 
-    const hasSelectedCampaign =
-      selectedCampaignId !== null &&
-      campaigns.some((campaign) => campaign.id === selectedCampaignId);
+    const hasSelectedCampaign = selectedCampaignId !== null
+      && campaigns.some((campaign) => campaign.id === selectedCampaignId);
     if (hasSelectedCampaign) {
       return;
     }
@@ -508,8 +499,7 @@ export default function BattleMapRuntimePage() {
       setCampaignTokenLoadError(null);
 
       try {
-        const tokens =
-          await window.db.tokens.getAllByCampaign(selectedCampaignId);
+        const tokens = await window.db.tokens.getAllByCampaign(selectedCampaignId);
         if (!isMounted) {
           return;
         }
@@ -524,8 +514,8 @@ export default function BattleMapRuntimePage() {
           const tokenById = new Map(tokens.map((token) => [token.id, token]));
           return currentTokens.map((runtimeToken) => {
             if (
-              runtimeToken.campaignId !== selectedCampaignId ||
-              runtimeToken.sourceTokenId === null
+              runtimeToken.campaignId !== selectedCampaignId
+              || runtimeToken.sourceTokenId === null
             ) {
               return runtimeToken;
             }
@@ -623,8 +613,7 @@ export default function BattleMapRuntimePage() {
       setError(null);
 
       try {
-        const existingBattleMap =
-          await window.db.battlemaps.getById(parsedBattleMapId);
+        const existingBattleMap = await window.db.battlemaps.getById(parsedBattleMapId);
         if (!existingBattleMap || existingBattleMap.world_id !== worldId) {
           if (isMounted) {
             setBattleMap(null);
@@ -652,8 +641,7 @@ export default function BattleMapRuntimePage() {
             runtimeConfigRef.current = parsedRuntimeState.runtimeConfig;
             setRuntimeTokens([]);
             setSelectedRuntimeTokenInstanceId(null);
-            lastPersistedRuntimeConfigKeyRef.current =
-              parsedRuntimeState.runtimeConfigKey;
+            lastPersistedRuntimeConfigKeyRef.current = parsedRuntimeState.runtimeConfigKey;
           }
         } catch {
           if (isMounted) {
@@ -742,8 +730,8 @@ export default function BattleMapRuntimePage() {
     }
 
     if (
-      currentRuntimeConfig.grid.mode !== 'none' &&
-      token.grid_type !== currentRuntimeConfig.grid.mode
+      currentRuntimeConfig.grid.mode !== 'none'
+      && token.grid_type !== currentRuntimeConfig.grid.mode
     ) {
       return;
     }
@@ -752,9 +740,9 @@ export default function BattleMapRuntimePage() {
     setRuntimeTokens((currentTokens) => {
       const existingRuntimeToken = currentTokens.find(
         (runtimeToken) =>
-          runtimeToken.campaignId === token.campaign_id &&
-          runtimeToken.sourceTokenId === token.id &&
-          !runtimeToken.sourceMissing,
+          runtimeToken.campaignId === token.campaign_id
+          && runtimeToken.sourceTokenId === token.id
+          && !runtimeToken.sourceMissing,
       );
       if (existingRuntimeToken) {
         nextSelectedTokenInstanceId = existingRuntimeToken.instanceId;
@@ -796,14 +784,14 @@ export default function BattleMapRuntimePage() {
 
   const handleMoveRuntimeToken = (
     tokenInstanceId: string,
-    position: { x: number; y: number },
+    position: { x: number; y: number; },
   ) => {
     setRuntimeTokens((currentTokens) =>
       currentTokens.map((runtimeToken) =>
         runtimeToken.instanceId === tokenInstanceId
           ? { ...runtimeToken, x: position.x, y: position.y }
-          : runtimeToken,
-      ),
+          : runtimeToken
+      )
     );
   };
 
@@ -811,12 +799,12 @@ export default function BattleMapRuntimePage() {
     setRuntimeTokens((currentTokens) =>
       currentTokens.filter(
         (runtimeToken) => runtimeToken.instanceId !== tokenInstanceId,
-      ),
+      )
     );
     setSelectedRuntimeTokenInstanceId((currentSelectedTokenInstanceId) =>
       currentSelectedTokenInstanceId === tokenInstanceId
         ? null
-        : currentSelectedTokenInstanceId,
+        : currentSelectedTokenInstanceId
     );
   };
 
@@ -834,136 +822,146 @@ export default function BattleMapRuntimePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="flex items-start justify-between gap-4 border-b border-slate-800 px-6 py-4">
-        <div className="space-y-2">
+    <div className='min-h-screen bg-slate-950 text-slate-100'>
+      <header className='flex items-start justify-between gap-4 border-b border-slate-800 px-6 py-4'>
+        <div className='space-y-2'>
           <Link
             to={battleMapsRoute}
             onClick={(event) => {
               event.preventDefault();
               void handleExitRuntime();
             }}
-            className="inline-flex items-center text-sm font-medium text-slate-300 transition hover:text-white"
+            className='inline-flex items-center text-sm font-medium text-slate-300 transition hover:text-white'
           >
             Back to BattleMaps
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
+          <h1 className='text-2xl font-semibold tracking-tight text-white'>
             {battleMap ? `${battleMap.name} Runtime` : 'BattleMap Runtime'}
           </h1>
         </div>
 
         <button
-          type="button"
+          type='button'
           onClick={() => {
             void handleExitRuntime();
           }}
-          className="shrink-0 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white"
+          className='shrink-0 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white'
         >
           Exit Runtime
         </button>
       </header>
 
-      <main className="p-6">
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-6 text-sm text-slate-300 shadow-sm">
-            Loading runtime...
-          </section>
-        ) : null}
+      <main className='p-6'>
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-800 bg-slate-900/40 p-6 text-sm text-slate-300 shadow-sm'>
+              Loading runtime...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="max-w-2xl space-y-4 rounded-xl border border-amber-300/40 bg-amber-100 p-6 text-amber-900 shadow-sm">
-            <h2 className="text-lg font-semibold">Runtime unavailable</h2>
-            <p className="text-sm">{error}</p>
-            <button
-              type="button"
-              onClick={() => {
-                void handleExitRuntime();
-              }}
-              className="inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-950"
-            >
-              Exit Runtime
-            </button>
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='max-w-2xl space-y-4 rounded-xl border border-amber-300/40 bg-amber-100 p-6 text-amber-900 shadow-sm'>
+              <h2 className='text-lg font-semibold'>Runtime unavailable</h2>
+              <p className='text-sm'>{error}</p>
+              <button
+                type='button'
+                onClick={() => {
+                  void handleExitRuntime();
+                }}
+                className='inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-950'
+              >
+                Exit Runtime
+              </button>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error ? (
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-sm">
-            <div className="border-b border-slate-800 px-6 py-4">
-              <h2 className="text-lg font-semibold text-white">
-                Runtime Canvas
-              </h2>
-              <p className="text-sm text-slate-300">
-                Grid settings persist automatically. Token placement and
-                movement are runtime-only for this session.
-              </p>
-            </div>
+        {!isLoading && !error
+          ? (
+            <div className='overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-sm'>
+              <div className='border-b border-slate-800 px-6 py-4'>
+                <h2 className='text-lg font-semibold text-white'>
+                  Runtime Canvas
+                </h2>
+                <p className='text-sm text-slate-300'>
+                  Grid settings persist automatically. Token placement and movement are runtime-only
+                  for this session.
+                </p>
+              </div>
 
-            {runtimeConfig ? (
-              <RuntimeGridControls
-                gridConfig={runtimeConfig.grid}
-                isSaving={isSavingRuntimeConfig}
-                saveError={runtimeSaveError}
-                onChange={handleGridConfigChange}
+              {runtimeConfig
+                ? (
+                  <RuntimeGridControls
+                    gridConfig={runtimeConfig.grid}
+                    isSaving={isSavingRuntimeConfig}
+                    saveError={runtimeSaveError}
+                    onChange={handleGridConfigChange}
+                  />
+                )
+                : null}
+
+              <RuntimeTokenPalette
+                campaigns={campaigns}
+                selectedCampaignId={selectedCampaignId}
+                isLoadingCampaigns={isLoadingCampaigns}
+                campaignLoadError={campaignLoadError}
+                worldTokens={worldTokens}
+                isLoadingWorldTokens={isLoadingWorldTokens}
+                worldTokenLoadError={worldTokenLoadError}
+                tokens={campaignTokens}
+                isLoadingTokens={isLoadingCampaignTokens}
+                tokenLoadError={campaignTokenLoadError}
+                placedTokens={runtimeTokens}
+                selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
+                showInvisibleTokens={showInvisibleTokens}
+                activeGridMode={runtimeConfig.grid.mode}
+                onShowInvisibleTokensChange={setShowInvisibleTokens}
+                onSelectCampaign={handleCampaignSelectionChange}
+                onAddToken={handleAddRuntimeToken}
+                onSelectPlacedToken={handleSelectRuntimeToken}
+                onRemovePlacedToken={handleRemoveRuntimeToken}
               />
-            ) : null}
 
-            <RuntimeTokenPalette
-              campaigns={campaigns}
-              selectedCampaignId={selectedCampaignId}
-              isLoadingCampaigns={isLoadingCampaigns}
-              campaignLoadError={campaignLoadError}
-              worldTokens={worldTokens}
-              isLoadingWorldTokens={isLoadingWorldTokens}
-              worldTokenLoadError={worldTokenLoadError}
-              tokens={campaignTokens}
-              isLoadingTokens={isLoadingCampaignTokens}
-              tokenLoadError={campaignTokenLoadError}
-              placedTokens={runtimeTokens}
-              selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
-              showInvisibleTokens={showInvisibleTokens}
-              activeGridMode={runtimeConfig.grid.mode}
-              onShowInvisibleTokensChange={setShowInvisibleTokens}
-              onSelectCampaign={handleCampaignSelectionChange}
-              onAddToken={handleAddRuntimeToken}
-              onSelectPlacedToken={handleSelectRuntimeToken}
-              onRemovePlacedToken={handleRemoveRuntimeToken}
-            />
-
-            <div className="relative h-[55vh] min-h-[320px]">
-              {runtimeConfig ? (
-                <BattleMapRuntimeCanvas
-                  runtimeConfig={runtimeConfig}
-                  tokens={runtimeTokens}
-                  selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
-                  onTokenSelect={handleSelectRuntimeToken}
-                  onTokenMove={handleMoveRuntimeToken}
-                  castingState={
-                    castingAbility !== null && selectedToken !== null
-                      ? {
+              <div className='relative h-[55vh] min-h-[320px]'>
+                {runtimeConfig
+                  ? (
+                    <BattleMapRuntimeCanvas
+                      runtimeConfig={runtimeConfig}
+                      tokens={runtimeTokens}
+                      selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
+                      onTokenSelect={handleSelectRuntimeToken}
+                      onTokenMove={handleMoveRuntimeToken}
+                      castingState={castingAbility !== null && selectedToken !== null
+                        ? {
                           casterX: selectedToken.x,
                           casterY: selectedToken.y,
                           ability: castingAbility,
                           angleRad: castingAngleRad,
                         }
-                      : null
-                  }
-                  onCastingAngleChange={setCastingAngleRad}
-                  className="h-full w-full"
-                />
-              ) : null}
+                        : null}
+                      onCastingAngleChange={setCastingAngleRad}
+                      className='h-full w-full'
+                    />
+                  )
+                  : null}
 
-              {selectedRuntimeTokenInstanceId !== null && worldId !== null ? (
-                <div className="absolute top-3 right-3 w-56">
-                  <AbilityPickerPanel
-                    worldId={worldId}
-                    castingAbility={castingAbility}
-                    onAbilitySelect={setCastingAbility}
-                  />
-                </div>
-              ) : null}
+                {selectedRuntimeTokenInstanceId !== null && worldId !== null
+                  ? (
+                    <div className='absolute top-3 right-3 w-56'>
+                      <AbilityPickerPanel
+                        worldId={worldId}
+                        castingAbility={castingAbility}
+                        onAbilitySelect={setCastingAbility}
+                      />
+                    </div>
+                  )
+                  : null}
+              </div>
             </div>
-          </div>
-        ) : null}
+          )
+          : null}
       </main>
     </div>
   );

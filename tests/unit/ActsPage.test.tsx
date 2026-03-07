@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within, act } from '@testing-library/react';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import type { DragEndEvent } from '@dnd-kit/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ActsPage from '../../src/renderer/pages/ActsPage';
 
@@ -27,8 +27,7 @@ vi.mock('../../src/renderer/components/ui/ToastProvider', () => ({
 let capturedOnDragEnd: ((event: DragEndEvent) => void) | undefined;
 
 vi.mock('@dnd-kit/core', async () => {
-  const actual =
-    await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
+  const actual = await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
   return {
     ...actual,
     DndContext: ({
@@ -45,15 +44,12 @@ vi.mock('@dnd-kit/core', async () => {
 });
 
 vi.mock('@dnd-kit/sortable', async () => {
-  const actual =
-    await vi.importActual<typeof import('@dnd-kit/sortable')>(
-      '@dnd-kit/sortable',
-    );
+  const actual = await vi.importActual<typeof import('@dnd-kit/sortable')>(
+    '@dnd-kit/sortable',
+  );
   return {
     ...actual,
-    SortableContext: ({ children }: { children: React.ReactNode }) => (
-      <>{children}</>
-    ),
+    SortableContext: ({ children }: { children: React.ReactNode; }) => <>{children}</>,
     useSortable: vi.fn().mockReturnValue({
       attributes: {},
       listeners: {},
@@ -82,7 +78,7 @@ vi.mock('../../src/renderer/components/acts/MoveActDialog', () => ({
     onConfirm: (arcId: number) => void;
     onCancel: () => void;
   }) => (
-    <div role="dialog" aria-label="Move Act">
+    <div role='dialog' aria-label='Move Act'>
       <p>Move {act.name}</p>
       <button onClick={() => onConfirm(99)}>Confirm Move</button>
       <button onClick={onCancel}>Cancel Move</button>
@@ -119,7 +115,7 @@ function renderPage() {
     <MemoryRouter initialEntries={['/world/1/campaign/1/arc/1/acts']}>
       <Routes>
         <Route
-          path="/world/:id/campaign/:campaignId/arc/:arcId/acts"
+          path='/world/:id/campaign/:campaignId/arc/:arcId/acts'
           element={<ActsPage />}
         />
       </Routes>
@@ -371,9 +367,7 @@ describe('ActsPage', () => {
         within(confirmDialog).getByRole('button', { name: 'Delete' }),
       );
 
-      await waitFor(() =>
-        expect(screen.queryByText('Act One')).not.toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.queryByText('Act One')).not.toBeInTheDocument());
       expect(window.db.acts.delete).toHaveBeenCalledWith(1);
       expect(toastSuccessMock).toHaveBeenCalledWith(
         'Act deleted.',
@@ -422,9 +416,7 @@ describe('ActsPage', () => {
         within(confirmDialog).getByRole('button', { name: 'Delete' }),
       );
 
-      await waitFor(() =>
-        expect(window.db.acts.delete).toHaveBeenCalledWith(1),
-      );
+      await waitFor(() => expect(window.db.acts.delete).toHaveBeenCalledWith(1));
       expect(screen.getByText('Act One')).toBeInTheDocument();
       expect(toastErrorMock).toHaveBeenCalledWith(
         'Failed to delete act.',
@@ -464,9 +456,7 @@ describe('ActsPage', () => {
       await user.click(screen.getByRole('button', { name: 'Move' }));
       await user.click(screen.getByRole('button', { name: 'Confirm Move' }));
 
-      await waitFor(() =>
-        expect(screen.queryByText('Act One')).not.toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.queryByText('Act One')).not.toBeInTheDocument());
       expect(window.db.acts.moveTo).toHaveBeenCalledWith(1, 99);
     });
 
@@ -551,9 +541,7 @@ describe('ActsPage', () => {
         } as unknown as DragEndEvent);
       });
 
-      await waitFor(() =>
-        expect(screen.getByText('Save failed')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('Save failed')).toBeInTheDocument());
     });
 
     it('no-ops when active and over are the same item', async () => {

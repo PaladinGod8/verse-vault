@@ -2,8 +2,8 @@ import path from 'path';
 import { describe, expect, it, vi } from 'vitest';
 
 async function loadDbModule(options?: {
-  tableInfoRows?: Array<{ name: string }>;
-  tokenTableInfoRows?: Array<{ name: string }>;
+  tableInfoRows?: Array<{ name: string; }>;
+  tokenTableInfoRows?: Array<{ name: string; }>;
   prepareImplementation?: (sql: string) => {
     all?: (...args: unknown[]) => unknown;
     get?: (...args: unknown[]) => unknown;
@@ -25,9 +25,7 @@ async function loadDbModule(options?: {
   const closeMock = vi.fn();
   const databaseCtorMock = vi.fn();
   const transactionMock = vi.fn(
-    (callback: (...args: unknown[]) => unknown) =>
-      (...args: unknown[]) =>
-        callback(...args),
+    (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
   );
   const tableInfoRows = options?.tableInfoRows ?? [
     { name: 'act_id' },
@@ -37,9 +35,9 @@ async function loadDbModule(options?: {
   const prepareMock = options?.prepareImplementation
     ? vi.fn((sql: string) => options.prepareImplementation?.(sql))
     : vi.fn().mockReturnValue({
-        all: () => tableInfoRows,
-        run: vi.fn(),
-      });
+      all: () => tableInfoRows,
+      run: vi.fn(),
+    });
 
   class FakeDatabase {
     pragma = pragmaMock;
@@ -161,8 +159,8 @@ describe('database', () => {
     expect(
       execMock.mock.calls.some(
         ([sql]) =>
-          typeof sql === 'string' &&
-          sql.includes('ALTER TABLE sessions ADD COLUMN planned_at TEXT'),
+          typeof sql === 'string'
+          && sql.includes('ALTER TABLE sessions ADD COLUMN planned_at TEXT'),
       ),
     ).toBe(true);
   });
@@ -201,14 +199,14 @@ describe('database', () => {
           return { all: campaignsSelectAllMock };
         }
         if (
-          sql ===
-          "INSERT INTO arcs (campaign_id, name, sort_order) VALUES (?, 'Arc 1', 0)"
+          sql
+            === "INSERT INTO arcs (campaign_id, name, sort_order) VALUES (?, 'Arc 1', 0)"
         ) {
           return { run: arcInsertRunMock };
         }
         if (
-          sql ===
-          "INSERT INTO acts (arc_id, name, sort_order) VALUES (?, 'Act 1', 0)"
+          sql
+            === "INSERT INTO acts (arc_id, name, sort_order) VALUES (?, 'Act 1', 0)"
         ) {
           return { run: actInsertRunMock };
         }
@@ -216,8 +214,8 @@ describe('database', () => {
           return { all: legacySessionsSelectAllMock };
         }
         if (
-          sql ===
-          'INSERT INTO sessions_new (id, act_id, name, notes, planned_at, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          sql
+            === 'INSERT INTO sessions_new (id, act_id, name, notes, planned_at, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         ) {
           return { run: insertNewSessionRunMock };
         }
@@ -253,8 +251,7 @@ describe('database', () => {
   });
 
   it('closes and resets the singleton', async () => {
-    const { getDatabase, closeDatabase, closeMock, databaseCtorMock } =
-      await loadDbModule();
+    const { getDatabase, closeDatabase, closeMock, databaseCtorMock } = await loadDbModule();
 
     getDatabase();
     closeDatabase();
@@ -332,7 +329,7 @@ describe('database', () => {
             version: 2,
           },
         }),
-      ),
+      )
     ).toThrowError('Token config footprint.version must be 1');
 
     expect(() =>
@@ -342,7 +339,7 @@ describe('database', () => {
             grid_type: 'triangle',
           },
         }),
-      ),
+      )
     ).toThrowError(
       "Token config footprint.grid_type must be 'square' or 'hex'",
     );
@@ -354,7 +351,7 @@ describe('database', () => {
             square_cells: [{ col: 0.5, row: 1 }],
           },
         }),
-      ),
+      )
     ).toThrowError(
       'Token config footprint.square_cells[0].col must be an integer',
     );
@@ -366,7 +363,7 @@ describe('database', () => {
             radius_cells: 0,
           },
         }),
-      ),
+      )
     ).toThrowError(
       'Token config footprint.radius_cells must be greater than 0',
     );

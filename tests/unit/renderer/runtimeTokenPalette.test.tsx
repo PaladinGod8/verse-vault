@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
-import RuntimeTokenPalette from '../../../src/renderer/components/runtime/RuntimeTokenPalette';
+import { describe, expect, it, vi } from 'vitest';
 import type { RuntimeSceneToken } from '../../../src/renderer/components/runtime/BattleMapRuntimeCanvas';
+import RuntimeTokenPalette from '../../../src/renderer/components/runtime/RuntimeTokenPalette';
 
 function buildToken(overrides: Partial<Token> = {}): Token {
   return {
@@ -61,7 +61,7 @@ function renderPalette(
       placedTokens={[]}
       selectedTokenInstanceId={null}
       showInvisibleTokens
-      activeGridMode="square"
+      activeGridMode='square'
       onShowInvisibleTokensChange={onShowInvisibleTokensChange}
       onSelectCampaign={onSelectCampaign}
       onAddToken={onAddToken}
@@ -195,7 +195,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
-        activeGridMode="square"
+        activeGridMode='square'
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -214,14 +214,14 @@ describe('RuntimeTokenPalette', () => {
         campaignLoadError={null}
         worldTokens={[]}
         isLoadingWorldTokens={false}
-        worldTokenLoadError="World token load failed"
+        worldTokenLoadError='World token load failed'
         tokens={[]}
         isLoadingTokens={false}
         tokenLoadError={null}
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
-        activeGridMode="square"
+        activeGridMode='square'
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -247,7 +247,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
-        activeGridMode="square"
+        activeGridMode='square'
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -295,7 +295,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
-        activeGridMode="square"
+        activeGridMode='square'
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -311,17 +311,17 @@ describe('RuntimeTokenPalette', () => {
         campaigns={[]}
         selectedCampaignId={null}
         isLoadingCampaigns={false}
-        campaignLoadError="Campaign load failed"
+        campaignLoadError='Campaign load failed'
         worldTokens={[]}
         isLoadingWorldTokens={false}
         worldTokenLoadError={null}
         tokens={[]}
         isLoadingTokens={false}
-        tokenLoadError="Token load failed"
+        tokenLoadError='Token load failed'
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
-        activeGridMode="square"
+        activeGridMode='square'
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}
@@ -348,7 +348,7 @@ describe('RuntimeTokenPalette', () => {
         placedTokens={[]}
         selectedTokenInstanceId={null}
         showInvisibleTokens
-        activeGridMode="square"
+        activeGridMode='square'
         onShowInvisibleTokensChange={vi.fn()}
         onSelectCampaign={vi.fn()}
         onAddToken={vi.fn()}

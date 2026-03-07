@@ -132,8 +132,8 @@ interface TokenConfigShape {
   footprint?: {
     version?: 1;
     grid_type?: 'square' | 'hex';
-    square_cells?: Array<{ col: number; row: number }>;
-    hex_cells?: Array<{ q: number; r: number }>;
+    square_cells?: Array<{ col: number; row: number; }>;
+    hex_cells?: Array<{ q: number; r: number; }>;
     width_cells?: number;
     height_cells?: number;
     radius_cells?: number;

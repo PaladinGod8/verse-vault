@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import TokenImageDropzone from '../../../src/renderer/components/tokens/TokenImageDropzone';
 
 function makeImageFile(
@@ -137,7 +137,7 @@ describe('TokenImageDropzone', () => {
         selectedFile={null}
         onFileSelect={vi.fn()}
         onClearFile={vi.fn()}
-        error="Image exceeds 5 MB limit."
+        error='Image exceeds 5 MB limit.'
       />,
     );
 

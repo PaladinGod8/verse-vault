@@ -1,11 +1,5 @@
-import {
-  test,
-  expect,
-  type ElectronApplication,
-  type Locator,
-  type Page,
-} from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { type ElectronApplication, expect, type Locator, type Page, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 let app: ElectronApplication | null = null;
 let page: Page | null = null;
@@ -50,7 +44,7 @@ function sceneTokensSection(window: Page): Locator {
     .locator('..');
 }
 
-function requirePageAndWorld(): { page: Page; worldId: number } {
+function requirePageAndWorld(): { page: Page; worldId: number; } {
   if (!page || worldId === null) {
     throw new Error('Expected test page and world to be initialized.');
   }
@@ -64,11 +58,10 @@ async function launchElectronApp(): Promise<Page> {
 
   const firstWindow = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => {
-    const win =
-      BrowserWindow.getAllWindows().find((candidate) => {
-        const url = candidate.webContents.getURL();
-        return !url.startsWith('devtools://');
-      }) ?? BrowserWindow.getAllWindows()[0];
+    const win = BrowserWindow.getAllWindows().find((candidate) => {
+      const url = candidate.webContents.getURL();
+      return !url.startsWith('devtools://');
+    }) ?? BrowserWindow.getAllWindows()[0];
     if (!win) {
       return;
     }
@@ -213,11 +206,13 @@ async function paintFootprintAndConfirm(window: Page) {
   const confirmButton = painterDialog.getByRole('button', { name: 'Confirm' });
 
   // Click several points to avoid image-fit edge cases across viewport/OS.
-  for (const point of [
-    { x: 400, y: 300 },
-    { x: 300, y: 250 },
-    { x: 500, y: 350 },
-  ]) {
+  for (
+    const point of [
+      { x: 400, y: 300 },
+      { x: 300, y: 250 },
+      { x: 500, y: 350 },
+    ]
+  ) {
     await painterCanvas.click({ position: point });
     if (await confirmButton.isEnabled()) {
       break;
@@ -246,8 +241,8 @@ async function goToTokensPage(window: Page, targetWorldId: number) {
     const bodyText = document.body.textContent ?? '';
     const hasRows = document.querySelectorAll('tbody tr').length > 0;
     return (
-      !bodyText.includes('Loading tokens...') &&
-      (hasRows || bodyText.includes('No tokens yet.'))
+      !bodyText.includes('Loading tokens...')
+      && (hasRows || bodyText.includes('No tokens yet.'))
     );
   });
 }
@@ -276,7 +271,7 @@ async function createWorldScopedTokenViaForm(
     gridType?: TokenGridType;
     imageSrc?: string;
     isVisible?: boolean;
-    imageUpload?: { name: string; mimeType: string; buffer: Buffer };
+    imageUpload?: { name: string; mimeType: string; buffer: Buffer; };
   },
 ) {
   await window.getByRole('button', { name: 'New Token' }).click();
@@ -564,8 +559,7 @@ test.describe('Token CRUD - World-Level', () => {
       },
     });
     const existingRow = tokenRow(window, 'Invalid Upload Guard');
-    const stableSrc =
-      await tokenThumbnailImage(existingRow).getAttribute('src');
+    const stableSrc = await tokenThumbnailImage(existingRow).getAttribute('src');
     expect(stableSrc).toBeTruthy();
 
     await existingRow.getByRole('button', { name: 'Edit' }).click();

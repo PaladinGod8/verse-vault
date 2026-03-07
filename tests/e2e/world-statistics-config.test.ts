@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { closeApp, launchApp } from './helpers/launchApp';
 
 async function prepareWindow(page: Page): Promise<void> {

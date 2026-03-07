@@ -85,7 +85,7 @@ interface DbApi {
         config?: string;
       },
     ): Promise<StatBlock>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
   };
 }
 ```

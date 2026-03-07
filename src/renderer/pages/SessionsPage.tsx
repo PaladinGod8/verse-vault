@@ -1,15 +1,15 @@
 import {
+  closestCenter,
   DndContext,
+  type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
-  type DragEndEvent,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -99,59 +99,57 @@ function SortableSessionRow({
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`border-b border-slate-100 last:border-0 ${
-        isDragging ? 'bg-slate-50' : ''
-      }`}
+      className={`border-b border-slate-100 last:border-0 ${isDragging ? 'bg-slate-50' : ''}`}
     >
-      <td className="w-28 px-4 py-3 text-slate-600">
-        <div className="flex items-center gap-2">
+      <td className='w-28 px-4 py-3 text-slate-600'>
+        <div className='flex items-center gap-2'>
           <button
-            type="button"
+            type='button'
             ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
-            className="inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60"
+            className='inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60'
             aria-label={`Reorder session ${session.name}`}
             disabled={isDeleting || isPersistingOrder}
           >
             ::
           </button>
-          <span className="tabular-nums">{sequence}</span>
+          <span className='tabular-nums'>{sequence}</span>
         </div>
       </td>
-      <td className="px-4 py-3 font-medium">{session.name}</td>
-      <td className="px-4 py-3 text-slate-500">{session.notes ?? '-'}</td>
-      <td className="px-4 py-3 text-slate-500">
+      <td className='px-4 py-3 font-medium'>{session.name}</td>
+      <td className='px-4 py-3 text-slate-500'>{session.notes ?? '-'}</td>
+      <td className='px-4 py-3 text-slate-500'>
         {formatPlannedAt(session.planned_at)}
       </td>
-      <td className="px-4 py-3">
-        <div className="flex gap-3">
+      <td className='px-4 py-3'>
+        <div className='flex gap-3'>
           <Link
             to={`/world/${worldId}/campaign/${campaignId}/arc/${arcId}/act/${actId}/session/${session.id}/scenes`}
-            className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
           >
             Scenes
           </Link>
           <button
-            type="button"
+            type='button'
             onClick={() => onEdit(session)}
-            className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
             disabled={isDeleting}
           >
             Edit
           </button>
           <button
-            type="button"
+            type='button'
             onClick={() => onMove(session)}
             disabled={isDeleting || isPersistingOrder}
-            className="text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className='text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50'
           >
             Move
           </button>
           <button
-            type="button"
+            type='button'
             onClick={() => onDelete(session)}
-            className="text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
@@ -218,8 +216,7 @@ export default function SessionsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [pendingDeleteSession, setPendingDeleteSession] =
-    useState<Session | null>(null);
+  const [pendingDeleteSession, setPendingDeleteSession] = useState<Session | null>(null);
   const [isPersistingOrder, setIsPersistingOrder] = useState(false);
   const [movingSession, setMovingSession] = useState<Session | null>(null);
 
@@ -241,10 +238,10 @@ export default function SessionsPage() {
     let isMounted = true;
 
     if (
-      worldId === null ||
-      parsedCampaignId === null ||
-      parsedArcId === null ||
-      parsedActId === null
+      worldId === null
+      || parsedCampaignId === null
+      || parsedArcId === null
+      || parsedActId === null
     ) {
       setAct(null);
       setSessions([]);
@@ -304,7 +301,7 @@ export default function SessionsPage() {
         sortSessionsByOrder([
           newSession,
           ...prev.filter((session) => session.id !== newSession.id),
-        ]),
+        ])
       );
       setIsCreateOpen(false);
       toast.success('Session created.', `"${newSession.name}" was added.`);
@@ -338,10 +335,8 @@ export default function SessionsPage() {
       setReorderError(null);
       setSessions((prev) =>
         sortSessionsByOrder(
-          prev.map((session) =>
-            session.id === updatedSession.id ? updatedSession : session,
-          ),
-        ),
+          prev.map((session) => session.id === updatedSession.id ? updatedSession : session),
+        )
       );
       setEditingSession(null);
       toast.success('Session updated.', `"${updatedSession.name}" was saved.`);
@@ -390,9 +385,7 @@ export default function SessionsPage() {
       );
     } finally {
       setDeletingId((current) => (current === session.id ? null : current));
-      setPendingDeleteSession((current) =>
-        current?.id === session.id ? null : current,
-      );
+      setPendingDeleteSession((current) => current?.id === session.id ? null : current);
     }
   };
 
@@ -430,9 +423,9 @@ export default function SessionsPage() {
     const activeId = Number(active.id);
     const overId = Number(over.id);
     if (
-      !Number.isInteger(activeId) ||
-      !Number.isInteger(overId) ||
-      activeId === overId
+      !Number.isInteger(activeId)
+      || !Number.isInteger(overId)
+      || activeId === overId
     ) {
       return;
     }
@@ -472,7 +465,7 @@ export default function SessionsPage() {
         sessionsWithSortOrderChanges.map((session) =>
           window.db.sessions.update(session.id, {
             sort_order: session.sort_order,
-          }),
+          })
         ),
       );
     } catch (sortOrderError) {
@@ -483,8 +476,7 @@ export default function SessionsPage() {
       );
 
       try {
-        const canonicalSessions =
-          await window.db.sessions.getAllByAct(parsedActId);
+        const canonicalSessions = await window.db.sessions.getAllByAct(parsedActId);
         setSessions(sortSessionsByOrder(canonicalSessions));
       } catch {
         setSessions(previousSessions);
@@ -495,210 +487,228 @@ export default function SessionsPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <nav className="flex items-center gap-2 text-sm text-slate-500">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
+            <nav className='flex items-center gap-2 text-sm text-slate-500'>
               <Link
                 to={`/world/${worldId}/campaigns`}
-                className="font-medium transition hover:text-slate-900"
+                className='font-medium transition hover:text-slate-900'
               >
                 Campaign
               </Link>
               <span>/</span>
               <Link
                 to={`/world/${worldId}/campaign/${parsedCampaignId}/arcs`}
-                className="font-medium transition hover:text-slate-900"
+                className='font-medium transition hover:text-slate-900'
               >
                 Arc
               </Link>
               <span>/</span>
               <Link
                 to={`/world/${worldId}/campaign/${parsedCampaignId}/arc/${parsedArcId}/acts`}
-                className="font-medium transition hover:text-slate-900"
+                className='font-medium transition hover:text-slate-900'
               >
                 Act
               </Link>
               <span>/</span>
-              <span className="text-slate-700">Sessions</span>
+              <span className='text-slate-700'>Sessions</span>
             </nav>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {act ? `${act.name} — Sessions` : 'Sessions'}
             </h1>
           </div>
 
-          {worldId !== null && parsedActId !== null ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              New Session
-            </button>
-          ) : null}
+          {worldId !== null && parsedActId !== null
+            ? (
+              <button
+                type='button'
+                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                onClick={() => setIsCreateOpen(true)}
+              >
+                New Session
+              </button>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading sessions...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading sessions...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
-            {error}
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
+              {error}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && reorderError ? (
-          <section className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm">
-            {reorderError}
-          </section>
-        ) : null}
+        {!isLoading && !error && reorderError
+          ? (
+            <section className='rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm'>
+              {reorderError}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && sessions.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No sessions yet.</p>
-          </section>
-        ) : null}
+        {!isLoading && !error && sessions.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <p className='text-sm text-slate-600'>No sessions yet.</p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && sessions.length > 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => {
-                void handleReorderSessions(event);
-              }}
-            >
-              <table className="w-full text-sm text-slate-700">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Order
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Notes
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Planned
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-500">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <SortableContext
-                  items={sortedSessions.map((session) => session.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <tbody>
-                    {sortedSessions.map((session, index) => (
-                      <SortableSessionRow
-                        key={session.id}
-                        session={session}
-                        sequence={index + 1}
-                        worldId={worldId}
-                        campaignId={parsedCampaignId}
-                        arcId={parsedArcId}
-                        actId={parsedActId}
-                        deletingId={deletingId}
-                        isPersistingOrder={isPersistingOrder}
-                        onEdit={(selectedSession) => {
-                          setIsCreateOpen(false);
-                          setEditingSession(selectedSession);
-                        }}
-                        onDelete={(selectedSession) => {
-                          handleRequestDeleteSession(selectedSession);
-                        }}
-                        onMove={(selectedSession) => {
-                          setMovingSession(selectedSession);
-                        }}
-                      />
-                    ))}
-                  </tbody>
-                </SortableContext>
-              </table>
-            </DndContext>
-          </section>
-        ) : null}
+        {!isLoading && !error && sessions.length > 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => {
+                  void handleReorderSessions(event);
+                }}
+              >
+                <table className='w-full text-sm text-slate-700'>
+                  <thead>
+                    <tr className='border-b border-slate-200'>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Order
+                      </th>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Name
+                      </th>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Notes
+                      </th>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Planned
+                      </th>
+                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <SortableContext
+                    items={sortedSessions.map((session) => session.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <tbody>
+                      {sortedSessions.map((session, index) => (
+                        <SortableSessionRow
+                          key={session.id}
+                          session={session}
+                          sequence={index + 1}
+                          worldId={worldId}
+                          campaignId={parsedCampaignId}
+                          arcId={parsedArcId}
+                          actId={parsedActId}
+                          deletingId={deletingId}
+                          isPersistingOrder={isPersistingOrder}
+                          onEdit={(selectedSession) => {
+                            setIsCreateOpen(false);
+                            setEditingSession(selectedSession);
+                          }}
+                          onDelete={(selectedSession) => {
+                            handleRequestDeleteSession(selectedSession);
+                          }}
+                          onMove={(selectedSession) => {
+                            setMovingSession(selectedSession);
+                          }}
+                        />
+                      ))}
+                    </tbody>
+                  </SortableContext>
+                </table>
+              </DndContext>
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen && parsedActId !== null ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-session-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="create-session-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen && parsedActId !== null
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-session-title'
+            boxClassName='max-w-xl'
           >
-            New Session
-          </h2>
-          <SessionForm
-            mode="create"
-            actId={parsedActId}
-            onSubmit={handleCreateSession}
-            onCancel={() => setIsCreateOpen(false)}
+            <h2
+              id='create-session-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              New Session
+            </h2>
+            <SessionForm
+              mode='create'
+              actId={parsedActId}
+              onSubmit={handleCreateSession}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
+
+      {movingSession !== null
+          && parsedCampaignId !== null
+          && parsedActId !== null
+        ? (
+          <MoveSessionDialog
+            session={movingSession}
+            currentActId={parsedActId}
+            campaignId={parsedCampaignId}
+            onConfirm={(newActId) => {
+              void handleMoveConfirm(newActId);
+            }}
+            onCancel={() => {
+              setMovingSession(null);
+            }}
           />
-        </ModalShell>
-      ) : null}
+        )
+        : null}
 
-      {movingSession !== null &&
-      parsedCampaignId !== null &&
-      parsedActId !== null ? (
-        <MoveSessionDialog
-          session={movingSession}
-          currentActId={parsedActId}
-          campaignId={parsedCampaignId}
-          onConfirm={(newActId) => {
-            void handleMoveConfirm(newActId);
-          }}
-          onCancel={() => {
-            setMovingSession(null);
-          }}
-        />
-      ) : null}
-
-      {editingSession !== null ? (
-        <ModalShell
-          isOpen={editingSession !== null}
-          onClose={() => setEditingSession(null)}
-          labelledBy="edit-session-title"
-          boxClassName="max-w-xl"
-        >
-          <h2
-            id="edit-session-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingSession !== null
+        ? (
+          <ModalShell
+            isOpen={editingSession !== null}
+            onClose={() => setEditingSession(null)}
+            labelledBy='edit-session-title'
+            boxClassName='max-w-xl'
           >
-            Edit Session
-          </h2>
-          <SessionForm
-            mode="edit"
-            actId={editingSession.act_id}
-            initialValues={editingSession}
-            onSubmit={handleUpdateSession}
-            onCancel={() => setEditingSession(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-session-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit Session
+            </h2>
+            <SessionForm
+              mode='edit'
+              actId={editingSession.act_id}
+              initialValues={editingSession}
+              onSubmit={handleUpdateSession}
+              onCancel={() => setEditingSession(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDeleteSession !== null}
         title={`Delete "${pendingDeleteSession?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDeleteSession();
         }}
         onCancel={() => setPendingDeleteSession(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />
     </div>
