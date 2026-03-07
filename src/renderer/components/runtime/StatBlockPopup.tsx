@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { parseStatBlockSkills, parseStatBlockStatistics } from '../../lib/statblockStatisticsUtils';
 import ModalShell from '../ui/ModalShell';
-import {
-  parseStatBlockSkills,
-  parseStatBlockStatistics,
-} from '../../lib/statblockStatisticsUtils';
 
 type StatBlockPopupProps = {
   isOpen: boolean;
@@ -109,8 +106,7 @@ export default function StatBlockPopup({
 
     const statistics = parseStatBlockStatistics(statBlock.config);
     return Object.entries(statistics.statistics?.passiveScores ?? {}).filter(
-      (entry): entry is [string, { baseValue: number; }] =>
-        typeof entry[1]?.baseValue === 'number',
+      (entry): entry is [string, { baseValue: number; }] => typeof entry[1]?.baseValue === 'number',
     );
   }, [statBlock]);
 

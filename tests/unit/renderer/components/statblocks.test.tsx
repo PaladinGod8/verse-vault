@@ -158,7 +158,12 @@ describe('StatBlockForm', () => {
 
     await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
 
-    const payload = mockOnSubmit.mock.calls[0]![0];
+    const firstSubmitCall = mockOnSubmit.mock.calls[0];
+    expect(firstSubmitCall).toBeDefined();
+    if (!firstSubmitCall) {
+      throw new Error('Expected submit handler to be called once.');
+    }
+    const payload = firstSubmitCall[0];
     expect(payload.statblock.world_id).toBe(1);
     expect(payload.statblock.name).toBe('Ranger');
     expect(payload.statblock.description).toBe('Scout');
@@ -225,7 +230,12 @@ describe('StatBlockForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
-    const payload = mockOnSubmit.mock.calls[0]![0];
+    const firstSubmitCall = mockOnSubmit.mock.calls[0];
+    expect(firstSubmitCall).toBeDefined();
+    if (!firstSubmitCall) {
+      throw new Error('Expected submit handler to be called once.');
+    }
+    const payload = firstSubmitCall[0];
     expect(payload.abilityIds).toEqual([1]);
 
     const parsedConfig = JSON.parse(payload.statblock.config) as Record<
