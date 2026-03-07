@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { WorldStatisticsConfig } from '../../shared/statisticsTypes';
 import StatBlockCard from '../components/statblocks/StatBlockCard';
-import StatBlockForm from '../components/statblocks/StatBlockForm';
+import StatBlockForm, {
+  type StatBlockFormSubmitData,
+} from '../components/statblocks/StatBlockForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
-
-type StatBlockAddData = Parameters<DbApi['statblocks']['add']>[0];
 
 export default function StatBlocksPage() {
   const toast = useToast();
@@ -27,7 +27,10 @@ export default function StatBlocksPage() {
   }, [id]);
 
   const [world, setWorld] = useState<World | null>(null);
+  const [worldAbilities, setWorldAbilities] = useState<Ability[]>([]);
   const [statblocks, setStatblocks] = useState<StatBlock[]>([]);
+  const [assignedAbilitiesByStatBlockId, setAssignedAbilitiesByStatBlockId] =
+    useState<Record<number, Ability[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -59,66 +62,138 @@ export default function StatBlocksPage() {
     }
   }, [world?.config]);
 
+  const loadData = useCallback(async () => {
+    if (worldId === null) {
+      setWorld(null);
+      setWorldAbilities([]);
+      setStatblocks([]);
+      setAssignedAbilitiesByStatBlockId({});
+      setError('Invalid world id.');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const existingWorld = await window.db.worlds.getById(worldId);
+      if (!existingWorld) {
+        setWorld(null);
+        setWorldAbilities([]);
+        setStatblocks([]);
+        setAssignedAbilitiesByStatBlockId({});
+        setError('World not found.');
+        return;
+      }
+
+      const [list, abilities] = await Promise.all([
+        window.db.statblocks.getAllByWorld(worldId),
+        window.db.abilities.getAllByWorld(worldId),
+      ]);
+
+      const linkedAbilityEntries = await Promise.all(
+        list.map(async (statblock) => {
+          const linkedAbilities = await window.db.statblocks.listAbilities(
+            statblock.id,
+          );
+          return [statblock.id, linkedAbilities] as const;
+        }),
+      );
+
+      setWorld(existingWorld);
+      setWorldAbilities(abilities);
+      setStatblocks(list);
+      setAssignedAbilitiesByStatBlockId(Object.fromEntries(linkedAbilityEntries));
+    } catch {
+      setWorld(null);
+      setWorldAbilities([]);
+      setStatblocks([]);
+      setAssignedAbilitiesByStatBlockId({});
+      setError('Unable to load statblocks right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [worldId]);
+
   useEffect(() => {
     let isMounted = true;
 
-    if (worldId === null) {
-      setWorld(null);
-      setStatblocks([]);
-      setError('Invalid world id.');
-      setIsLoading(false);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const existingWorld = await window.db.worlds.getById(worldId);
-        if (!existingWorld) {
-          if (isMounted) {
-            setWorld(null);
-            setStatblocks([]);
-            setError('World not found.');
-          }
-          return;
-        }
-
-        const list = await window.db.statblocks.getAllByWorld(worldId);
-        if (isMounted) {
-          setWorld(existingWorld);
-          setStatblocks(list);
-        }
-      } catch {
-        if (isMounted) {
-          setWorld(null);
-          setStatblocks([]);
-          setError('Unable to load statblocks right now.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+    void (async () => {
+      await loadData();
+      if (!isMounted) {
+        return;
       }
-    };
-
-    void loadData();
+    })();
 
     return () => {
       isMounted = false;
     };
-  }, [worldId]);
+  }, [loadData]);
 
-  const handleCreate = async (data: StatBlockAddData) => {
+  const syncAbilityAssignments = useCallback(
+    async (
+      statblockId: number,
+      previousAbilityIds: number[],
+      nextAbilityIds: number[],
+    ) => {
+      const allowedAbilityIds = new Set(worldAbilities.map((ability) => ability.id));
+      const previous = new Set(previousAbilityIds.filter((id) => allowedAbilityIds.has(id)));
+      const next = new Set(nextAbilityIds.filter((id) => allowedAbilityIds.has(id)));
+
+      const toDetach = [...previous].filter((id) => !next.has(id));
+      const toAttach = [...next].filter((id) => !previous.has(id));
+
+      await Promise.all([
+        ...toDetach.map((abilityId) =>
+          window.db.statblocks.detachAbility({
+            statblock_id: statblockId,
+            ability_id: abilityId,
+          })
+        ),
+        ...toAttach.map((abilityId) =>
+          window.db.statblocks.attachAbility({
+            statblock_id: statblockId,
+            ability_id: abilityId,
+          })
+        ),
+      ]);
+    },
+    [worldAbilities],
+  );
+
+  const handleCreate = async (payload: StatBlockFormSubmitData) => {
+    const allowedAbilityIds = new Set(worldAbilities.map((ability) => ability.id));
+    const requestedAbilityIds = payload.abilityIds.filter((id) =>
+      allowedAbilityIds.has(id)
+    );
+
     try {
-      const newStatBlock = await window.db.statblocks.add(data);
+      const newStatBlock = await window.db.statblocks.add(payload.statblock);
+      try {
+        await Promise.all(
+          requestedAbilityIds.map((abilityId) =>
+            window.db.statblocks.attachAbility({
+              statblock_id: newStatBlock.id,
+              ability_id: abilityId,
+            })
+          ),
+        );
+      } catch (assignmentError) {
+        await window.db.statblocks.delete(newStatBlock.id);
+        throw assignmentError;
+      }
+
       setStatblocks((prev) => [
         newStatBlock,
         ...prev.filter((sb) => sb.id !== newStatBlock.id),
       ]);
+      setAssignedAbilitiesByStatBlockId((prev) => ({
+        ...prev,
+        [newStatBlock.id]: worldAbilities.filter((ability) =>
+          requestedAbilityIds.includes(ability.id)
+        ),
+      }));
       setIsCreateOpen(false);
       toast.success('StatBlock created.', `"${newStatBlock.name}" was added.`);
     } catch (createError) {
@@ -132,23 +207,41 @@ export default function StatBlocksPage() {
     }
   };
 
-  const handleUpdate = async (data: StatBlockAddData) => {
+  const handleUpdate = async (payload: StatBlockFormSubmitData) => {
     if (!editingStatBlock) {
       return;
     }
+
+    const existingAbilityIds =
+      assignedAbilitiesByStatBlockId[editingStatBlock.id]?.map((ability) =>
+        ability.id
+      ) ?? [];
 
     try {
       const updatedStatBlock = await window.db.statblocks.update(
         editingStatBlock.id,
         {
-          name: data.name,
-          description: data.description,
-          config: data.config,
+          name: payload.statblock.name,
+          description: payload.statblock.description,
+          config: payload.statblock.config,
         },
       );
+
+      await syncAbilityAssignments(
+        editingStatBlock.id,
+        existingAbilityIds,
+        payload.abilityIds,
+      );
+
       setStatblocks((prev) =>
         prev.map((sb) => sb.id === updatedStatBlock.id ? updatedStatBlock : sb)
       );
+      setAssignedAbilitiesByStatBlockId((prev) => ({
+        ...prev,
+        [updatedStatBlock.id]: worldAbilities.filter((ability) =>
+          payload.abilityIds.includes(ability.id)
+        ),
+      }));
       setEditingStatBlock(null);
       toast.success(
         'StatBlock updated.',
@@ -161,6 +254,7 @@ export default function StatBlocksPage() {
           ? updateError.message
           : 'Please try again.',
       );
+      void loadData();
       throw updateError;
     }
   };
@@ -176,6 +270,11 @@ export default function StatBlocksPage() {
     try {
       await window.db.statblocks.delete(sb.id);
       setStatblocks((prev) => prev.filter((s) => s.id !== sb.id));
+      setAssignedAbilitiesByStatBlockId((prev) => {
+        const next = { ...prev };
+        delete next[sb.id];
+        return next;
+      });
       toast.success('StatBlock deleted.', `"${sb.name}" was removed.`);
     } catch (deleteError) {
       toast.error(
@@ -251,6 +350,7 @@ export default function StatBlocksPage() {
                 <StatBlockCard
                   key={sb.id}
                   statBlock={sb}
+                  assignedAbilities={assignedAbilitiesByStatBlockId[sb.id] ?? []}
                   resourceDefinitions={worldStatistics.resources}
                   passiveScoreDefinitions={worldStatistics.passiveScores}
                   onEdit={(target) => {
@@ -274,7 +374,7 @@ export default function StatBlocksPage() {
             isOpen={isCreateOpen}
             onClose={() => setIsCreateOpen(false)}
             labelledBy='create-statblock-title'
-            boxClassName='max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto'
+            boxClassName='max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto'
           >
             <h2
               id='create-statblock-title'
@@ -285,6 +385,7 @@ export default function StatBlocksPage() {
             <StatBlockForm
               mode='create'
               worldId={worldId}
+              availableAbilities={worldAbilities}
               onSubmit={handleCreate}
               onCancel={() => setIsCreateOpen(false)}
             />
@@ -298,7 +399,7 @@ export default function StatBlocksPage() {
             isOpen={editingStatBlock !== null}
             onClose={() => setEditingStatBlock(null)}
             labelledBy='edit-statblock-title'
-            boxClassName='max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto'
+            boxClassName='max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto'
           >
             <h2
               id='edit-statblock-title'
@@ -310,6 +411,9 @@ export default function StatBlocksPage() {
               mode='edit'
               worldId={editingStatBlock.world_id}
               initialData={editingStatBlock}
+              availableAbilities={worldAbilities}
+              initialAbilityIds={(assignedAbilitiesByStatBlockId[editingStatBlock.id] ?? [])
+                .map((ability) => ability.id)}
               onSubmit={handleUpdate}
               onCancel={() => setEditingStatBlock(null)}
             />

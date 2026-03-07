@@ -6,6 +6,7 @@ import type {
 } from '../../../shared/statisticsTypes';
 import {
   getPassiveScoreValue,
+  parseStatBlockSkills,
   getResourceValue,
   parseStatBlockStatistics,
 } from '../../lib/statblockStatisticsUtils';
@@ -13,6 +14,7 @@ import { formatModifier } from '../../lib/statisticsCalculations';
 
 interface StatBlockCardProps {
   statBlock: StatBlock;
+  assignedAbilities?: Ability[];
   resourceDefinitions?: ResourceStatisticDefinition[];
   passiveScoreDefinitions?: PassiveScoreDefinition[];
   onEdit: (sb: StatBlock) => void;
@@ -21,22 +23,30 @@ interface StatBlockCardProps {
 
 export default function StatBlockCard({
   statBlock,
+  assignedAbilities = [],
   resourceDefinitions = [],
   passiveScoreDefinitions = [],
   onEdit,
   onDelete,
 }: StatBlockCardProps) {
   const [statistics, setStatistics] = useState<StatBlockStatisticsConfig | null>(null);
+  const [skills, setSkills] = useState<StatBlockSkillValue[]>([]);
 
   // Parse statistics config
   useEffect(() => {
     if (statBlock.config) {
       try {
         setStatistics(parseStatBlockStatistics(statBlock.config));
+        setSkills(parseStatBlockSkills(statBlock.config));
       } catch {
         setStatistics(null);
+        setSkills([]);
       }
+      return;
     }
+
+    setStatistics(null);
+    setSkills([]);
   }, [statBlock.config]);
 
   const resourceValues = statistics?.statistics?.resources ?? {};
@@ -164,6 +174,60 @@ export default function StatBlockCard({
                 </div>
               )
               : null}
+          </div>
+        )
+        : null}
+
+      {assignedAbilities.length > 0
+        ? (
+          <div className='mt-3 border-t border-slate-200 pt-3'>
+            <h3 className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+              Abilities
+            </h3>
+            <div className='flex flex-wrap gap-2'>
+              {assignedAbilities.slice(0, 4).map((ability) => (
+                <span
+                  key={ability.id}
+                  className='rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700'
+                >
+                  {ability.name}
+                </span>
+              ))}
+              {assignedAbilities.length > 4
+                ? (
+                  <span className='rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600'>
+                    +{assignedAbilities.length - 4} more
+                  </span>
+                )
+                : null}
+            </div>
+          </div>
+        )
+        : null}
+
+      {skills.length > 0
+        ? (
+          <div className='mt-3 border-t border-slate-200 pt-3'>
+            <h3 className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+              Skills
+            </h3>
+            <div className='flex flex-wrap gap-2'>
+              {skills.slice(0, 4).map((skill) => (
+                <span
+                  key={skill.key}
+                  className='rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700'
+                >
+                  {skill.key}: {skill.rank}
+                </span>
+              ))}
+              {skills.length > 4
+                ? (
+                  <span className='rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600'>
+                    +{skills.length - 4} more
+                  </span>
+                )
+                : null}
+            </div>
           </div>
         )
         : null}

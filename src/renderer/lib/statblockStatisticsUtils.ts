@@ -7,6 +7,30 @@ import type {
 } from '../../shared/statisticsTypes';
 import { isPassiveScoreValue, isResourceValue } from '../../shared/statisticsTypes';
 
+type JsonObject = Record<string, unknown>;
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function normalizeSkills(skills: StatBlockSkillValue[]): StatBlockSkillValue[] {
+  const deduped = new Map<string, StatBlockSkillValue>();
+
+  skills.forEach((skill) => {
+    const key = typeof skill.key === 'string' ? skill.key.trim() : '';
+    if (!key || typeof skill.rank !== 'number' || !Number.isFinite(skill.rank)) {
+      return;
+    }
+
+    deduped.set(key, {
+      key,
+      rank: skill.rank,
+    });
+  });
+
+  return [...deduped.values()].sort((a, b) => a.key.localeCompare(b.key));
+}
+
 /**
  * Parse statblock config and extract statistics.
  * Returns empty statistics structure if parsing fails.
@@ -14,22 +38,20 @@ import { isPassiveScoreValue, isResourceValue } from '../../shared/statisticsTyp
 export function parseStatBlockStatistics(
   configJson: string,
 ): StatBlockStatisticsConfig {
-  try {
-    const config: StatBlockStatisticsConfig = JSON.parse(configJson);
-    return {
-      statistics: {
-        resources: config.statistics?.resources ?? {},
-        passiveScores: config.statistics?.passiveScores ?? {},
-      },
-    };
-  } catch {
-    return {
-      statistics: {
-        resources: {},
-        passiveScores: {},
-      },
-    };
-  }
+  const config = parseStatBlockConfigObject(configJson);
+  const statistics = isJsonObject(config.statistics) ? config.statistics : {};
+
+  const resources = isJsonObject(statistics.resources) ? statistics.resources : {};
+  const passiveScores = isJsonObject(statistics.passiveScores)
+    ? statistics.passiveScores
+    : {};
+
+  return {
+    statistics: {
+      resources: resources as Record<string, StatBlockResourceValue>,
+      passiveScores: passiveScores as Record<string, StatBlockPassiveScoreValue>,
+    },
+  };
 }
 
 /**
@@ -136,4 +158,66 @@ export function serializeStatBlockStatistics(
   config: StatBlockStatisticsConfig,
 ): string {
   return JSON.stringify(config);
+}
+
+/**
+ * Parse statblock config to a JSON object. Returns {} on parse failure.
+ */
+export function parseStatBlockConfigObject(configJson: string): JsonObject {
+  try {
+    const parsed = JSON.parse(configJson);
+    return isJsonObject(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Parse and sanitize skills from statblock config.
+ */
+export function parseStatBlockSkills(configJson: string): StatBlockSkillValue[] {
+  const config = parseStatBlockConfigObject(configJson);
+  if (!Array.isArray(config.skills)) {
+    return [];
+  }
+
+  const parsedSkills = config.skills
+    .filter((entry) => isJsonObject(entry))
+    .map((entry) => ({
+      key: typeof entry.key === 'string' ? entry.key : '',
+      rank: typeof entry.rank === 'number' ? entry.rank : Number.NaN,
+    }));
+
+  return normalizeSkills(parsedSkills);
+}
+
+/**
+ * Merge editor-managed sections back into the statblock config JSON.
+ */
+export function serializeStatBlockEditorConfig(params: {
+  baseConfig: JsonObject;
+  statistics: StatBlockStatisticsConfig | null;
+  skills: StatBlockSkillValue[];
+}): string {
+  const nextConfig: JsonObject = { ...params.baseConfig };
+
+  delete nextConfig.statistics;
+  delete nextConfig.skills;
+
+  const resources = params.statistics?.statistics?.resources ?? {};
+  const passiveScores = params.statistics?.statistics?.passiveScores ?? {};
+
+  if (Object.keys(resources).length > 0 || Object.keys(passiveScores).length > 0) {
+    nextConfig.statistics = {
+      resources,
+      passiveScores,
+    };
+  }
+
+  const normalizedSkills = normalizeSkills(params.skills);
+  if (normalizedSkills.length > 0) {
+    nextConfig.skills = normalizedSkills;
+  }
+
+  return JSON.stringify(nextConfig);
 }

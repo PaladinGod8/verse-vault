@@ -1219,6 +1219,22 @@
 
 ---
 
+### StatBlock Unified Editor (Integration Step 03)
+
+- **Purpose**: unify statblock editing into one modal flow for statistics, ability assignment, and MVP skills while preserving existing config compatibility
+- **Status**: added on 2026-03-07
+- **UI**:
+  - `src/renderer/pages/StatBlocksPage.tsx` â€” extended: loads world abilities (`window.db.abilities.getAllByWorld`) and per-statblock assigned abilities (`window.db.statblocks.listAbilities`), passes assignment state into create/edit modals, applies assignment diffs on edit (`detachAbility` + `attachAbility`), applies selected assignments on create, and keeps local assignment state synced for card rendering and delete cleanup
+  - `src/renderer/components/statblocks/StatBlockForm.tsx` â€” extended: replaces free-form config editing with structured unified sections (resources, passive scores, abilities checklist, and MVP skills rows), adds `StatBlockFormSubmitData` payload (`statblock` + `abilityIds`), enforces same-world ability options, and serializes editor-managed config sections through shared helpers
+  - `src/renderer/components/statblocks/StatBlockCard.tsx` â€” extended: renders assigned ability chips and parsed skills summary in addition to statistics preview
+- **Store**: none
+- **IPC**: uses existing `window.db.abilities.getAllByWorld` plus statblock assignment channels through preload (`window.db.statblocks.listAbilities/attachAbility/detachAbility`); no new channels
+- **Main handler**: unchanged
+- **Preload bridge**: unchanged
+- **Storage**: no schema change; statblock config JSON now round-trips unknown keys while editor-managed `statistics` and `skills` sections are updated deterministically
+- **Types**: no new global types; uses existing `StatBlockSkillValue`/`StatBlockConfig` contracts and introduces local renderer submit type `StatBlockFormSubmitData`
+- **Tests**: none added in this code step (Phase 2 will add/update tests)
+
 ## Where Do I Change X?
 
 | Task                       | Where                                                                                                        |
