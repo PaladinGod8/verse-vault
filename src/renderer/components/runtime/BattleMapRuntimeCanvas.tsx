@@ -52,6 +52,7 @@ type BattleMapRuntimeCanvasProps = {
   tokens: RuntimeSceneToken[];
   selectedTokenInstanceId: string | null;
   onTokenSelect: (tokenInstanceId: string | null) => void;
+  onTokenDoubleClick: (tokenInstanceId: string) => void;
   onTokenMove: (
     tokenInstanceId: string,
     position: { x: number; y: number; },
@@ -129,6 +130,7 @@ const CAMERA_FOCUS_SNAP_DISTANCE = 0.5;
 const WHEEL_ZOOM_BASE = 1.001;
 const WHEEL_LINE_HEIGHT = 16;
 const WHEEL_PAGE_HEIGHT = 400;
+const TOKEN_DOUBLE_CLICK_INTERVAL_MS = 280;
 
 const TOKEN_FALLBACK_COLORS = [
   0x22c55e,
@@ -237,6 +239,7 @@ export default function BattleMapRuntimeCanvas({
   tokens,
   selectedTokenInstanceId,
   onTokenSelect,
+  onTokenDoubleClick,
   onTokenMove,
   castingState,
   onCastingAngleChange,
@@ -258,6 +261,7 @@ export default function BattleMapRuntimeCanvas({
   });
   const runtimeCameraKeyRef = useRef(getCameraConfigKey(runtimeConfig.camera));
   const onTokenSelectRef = useRef(onTokenSelect);
+  const onTokenDoubleClickRef = useRef(onTokenDoubleClick);
   const onTokenMoveRef = useRef(onTokenMove);
   const tokenDisplaysRef = useRef<Map<string, TokenDisplay>>(new Map());
   const activeTokenDragRef = useRef<ActiveTokenDrag | null>(null);
@@ -276,6 +280,10 @@ export default function BattleMapRuntimeCanvas({
       hexTiles: HighlightedHexTile[] | null;
     } | null
   >(null);
+  const lastTokenPointerUpRef = useRef<{
+    tokenInstanceId: string;
+    timestampMs: number;
+  } | null>(null);
 
   const removeMapSprite = () => {
     const sprite = mapSpriteRef.current;
@@ -645,7 +653,24 @@ export default function BattleMapRuntimeCanvas({
       }
       onTokenMoveRef.current(activeDrag.tokenInstanceId, snappedPosition);
       if (!activeDrag.didMove) {
+        const nowMs = Date.now();
+        const lastPointerUp = lastTokenPointerUpRef.current;
+        if (
+          lastPointerUp
+          && lastPointerUp.tokenInstanceId === activeDrag.tokenInstanceId
+          && nowMs - lastPointerUp.timestampMs <= TOKEN_DOUBLE_CLICK_INTERVAL_MS
+        ) {
+          lastTokenPointerUpRef.current = null;
+          onTokenDoubleClickRef.current(activeDrag.tokenInstanceId);
+          return;
+        }
+        lastTokenPointerUpRef.current = {
+          tokenInstanceId: activeDrag.tokenInstanceId,
+          timestampMs: nowMs,
+        };
         startCameraFocusAnimation(snappedPosition.x, snappedPosition.y);
+      } else {
+        lastTokenPointerUpRef.current = null;
       }
       return;
     }
@@ -1238,6 +1263,10 @@ export default function BattleMapRuntimeCanvas({
   }, [onTokenMove]);
 
   useEffect(() => {
+    onTokenDoubleClickRef.current = onTokenDoubleClick;
+  }, [onTokenDoubleClick]);
+
+  useEffect(() => {
     runtimeConfigRef.current = runtimeConfig;
     const nextCameraKey = getCameraConfigKey(runtimeConfig.camera);
     if (nextCameraKey !== runtimeCameraKeyRef.current) {
@@ -1364,6 +1393,7 @@ export default function BattleMapRuntimeCanvas({
         if (activeTokenDragRef.current) {
           return;
         }
+        lastTokenPointerUpRef.current = null;
         onTokenSelectRef.current(null);
         startCameraPan(event);
       });
