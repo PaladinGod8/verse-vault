@@ -2553,10 +2553,14 @@ app.on('ready', async () => {
   registerTokenImageProtocol();
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    const { installExtension, REACT_DEVELOPER_TOOLS } = await import('electron-devtools-installer');
-    await installExtension(REACT_DEVELOPER_TOOLS).catch((err: unknown) => {
-      console.error('Failed to install React DevTools:', err);
-    });
+    try {
+      const { installExtension, REACT_DEVELOPER_TOOLS } = await import('electron-devtools-installer');
+      await installExtension(REACT_DEVELOPER_TOOLS).catch((err: unknown) => {
+        console.error('Failed to install React DevTools:', err);
+      });
+    } catch (err) {
+      console.error('Failed to load React DevTools installer:', err);
+    }
   }
 
   createWindow();
