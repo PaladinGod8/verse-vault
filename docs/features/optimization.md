@@ -88,11 +88,11 @@ module registry.
 `playwright.config.ts` groups E2E tests by weight/complexity into three projects, each with its
 own parallelization strategy:
 
-| Project   | fullyParallel | Files                                                                                                                               | Strategy                             |
-| --------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `smoke`   | `true`        | `app.test.ts`, `statblocks-crud.test.ts`, `statblocks.test.ts`                                                                     | Lightweight fast tests — max workers |
+| Project   | fullyParallel | Files                                                                                                                                                              | Strategy                             |
+| --------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| `smoke`   | `true`        | `app.test.ts`, `statblocks-crud.test.ts`, `statblocks.test.ts`                                                                                                     | Lightweight fast tests — max workers |
 | `medium`  | `true`        | `abilities.test.ts`, `battlemaps.test.ts`, `world-statistics-config.test.ts`, `statblock-statistics.test.ts`, `casting-range-overlay.test.ts`, `tokenMove.test.ts` | Medium-weight tests — max workers    |
-| `runtime` | `false`       | `arc-act.test.ts`, `battlemap-runtime-play.test.ts`, `tokens.test.ts`                                                              | Heavy flows — conservative workers   |
+| `runtime` | `false`       | `arc-act.test.ts`, `battlemap-runtime-play.test.ts`, `tokens.test.ts`                                                                                              | Heavy flows — conservative workers   |
 
 Each worker is an independent OS process that runs one test file at a time, with its own Electron
 instance and SQLite database. `fullyParallel: true` enables Playwright to distribute tests across

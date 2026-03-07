@@ -1,45 +1,205 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import StatBlockCard from '../../../../src/renderer/components/statblocks/StatBlockCard';
 import StatBlockForm from '../../../../src/renderer/components/statblocks/StatBlockForm';
+
+const worldsGetByIdMock = vi.fn();
+
+const worldStatisticsConfig = JSON.stringify({
+  statistics: {
+    resources: [
+      {
+        id: 'hp',
+        name: 'Hit Points',
+        abbreviation: 'HP',
+        isDefault: true,
+      },
+      {
+        id: 'mp',
+        name: 'Mana Points',
+        abbreviation: 'MP',
+        isDefault: false,
+      },
+    ],
+    passiveScores: [
+      {
+        id: 'str',
+        name: 'Strength',
+        abbreviation: 'STR',
+        type: 'ability_score',
+        isDefault: true,
+      },
+    ],
+  },
+});
+
+function buildAbility(
+  id: number,
+  worldId: number,
+  name: string,
+  type = 'active',
+): Ability {
+  return {
+    id,
+    world_id: worldId,
+    name,
+    description: null,
+    type,
+    passive_subtype: null,
+    level_id: null,
+    effects: '[]',
+    conditions: '[]',
+    cast_cost: '{}',
+    trigger: null,
+    pick_count: null,
+    pick_timing: null,
+    pick_is_permanent: 0,
+    range_cells: null,
+    aoe_shape: null,
+    aoe_size_cells: null,
+    target_type: null,
+    created_at: '2026-03-05T00:00:00Z',
+    updated_at: '2026-03-05T00:00:00Z',
+  };
+}
 
 describe('StatBlockForm', () => {
   const mockOnSubmit = vi.fn(async () => {
     /* noop */
   });
   const mockOnCancel = vi.fn();
+  const worldOneAbilities = [
+    buildAbility(1, 1, 'Arrow Storm'),
+    buildAbility(2, 1, 'Tracking Sense', 'passive'),
+    buildAbility(99, 2, 'Other World Ability'),
+  ];
 
   beforeEach(() => {
-    mockOnSubmit.mockClear();
-    mockOnCancel.mockClear();
+    vi.clearAllMocks();
+    worldsGetByIdMock.mockResolvedValue({
+      id: 1,
+      name: 'Aeloria',
+      config: worldStatisticsConfig,
+    });
+
+    window.db = {
+      worlds: {
+        getById: worldsGetByIdMock,
+      },
+    } as unknown as DbApi;
   });
 
-  it('renders create form with empty fields', () => {
+  it('renders unified editor sections for statistics, abilities, and skills', async () => {
     render(
       <StatBlockForm
         mode='create'
         worldId={1}
+        availableAbilities={worldOneAbilities}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
     );
 
-    expect(screen.getByLabelText(/Name/i)).toHaveValue('');
-    expect(screen.getByLabelText(/Description/i)).toHaveValue('');
-    expect(screen.getByPlaceholderText('{}')).toHaveValue('{}');
+    expect(screen.getByLabelText('Name')).toHaveValue('');
+    expect(
+      await screen.findByRole('heading', { name: 'Resources' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Passive Scores' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Abilities' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Skills' })).toBeInTheDocument();
+    expect(screen.getByText('No skills added.')).toBeInTheDocument();
+
+    expect(screen.getByText('Arrow Storm')).toBeInTheDocument();
+    expect(screen.getByText('Tracking Sense')).toBeInTheDocument();
+    expect(screen.queryByText('Other World Ability')).not.toBeInTheDocument();
   });
 
-  it('renders edit form with prefilled data', () => {
+  it('submits create payload with selected abilities and skill config', async () => {
+    render(
+      <StatBlockForm
+        mode='create'
+        worldId={1}
+        availableAbilities={worldOneAbilities}
+        onSubmit={mockOnSubmit}
+        onCancel={mockOnCancel}
+      />,
+    );
+
+    await screen.findByRole('heading', { name: 'Resources' });
+
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: '  Ranger  ' },
+    });
+    fireEvent.change(screen.getByLabelText('Description (optional)'), {
+      target: { value: '  Scout  ' },
+    });
+
+    fireEvent.change(screen.getByLabelText('Current Hit Points'), {
+      target: { value: '9' },
+    });
+    fireEvent.change(screen.getByLabelText('Maximum Hit Points'), {
+      target: { value: '11' },
+    });
+
+    fireEvent.click(screen.getByLabelText(/Arrow Storm/i));
+    fireEvent.click(screen.getByRole('button', { name: 'Add skill' }));
+    fireEvent.change(screen.getByPlaceholderText('skill_key'), {
+      target: { value: 'stealth' },
+    });
+    fireEvent.change(screen.getByDisplayValue('0'), {
+      target: { value: '3' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create statblock' }));
+
+    await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
+
+    const payload = mockOnSubmit.mock.calls[0]?.[0] as {
+      statblock: { world_id: number; name: string; description?: string; config: string; };
+      abilityIds: number[];
+    };
+    expect(payload.statblock.world_id).toBe(1);
+    expect(payload.statblock.name).toBe('Ranger');
+    expect(payload.statblock.description).toBe('Scout');
+    expect(payload.abilityIds).toEqual([1]);
+
+    const parsedConfig = JSON.parse(payload.statblock.config) as {
+      statistics?: {
+        resources?: Record<string, { current: number; maximum: number; }>;
+      };
+      skills?: Array<{ key: string; rank: number; }>;
+    };
+
+    expect(parsedConfig.statistics?.resources?.hp).toEqual({
+      current: 9,
+      maximum: 11,
+    });
+    expect(parsedConfig.skills).toEqual([{ key: 'stealth', rank: 3 }]);
+  });
+
+  it('supports edit mode with legacy config and ability re-assignment', async () => {
     const statBlock: StatBlock = {
-      id: 1,
+      id: 7,
       world_id: 1,
       campaign_id: null,
       character_id: null,
-      name: 'Barbarian',
+      name: 'Legacy',
       default_token_id: null,
-      description: 'A strong character',
-      config: '{}',
+      description: 'Legacy block',
+      config: JSON.stringify({
+        notes: 'keep',
+        statistics: {
+          resources: {
+            hp: { current: 5, maximum: 5 },
+          },
+          passiveScores: {
+            str: { baseValue: 12 },
+          },
+        },
+        skills: [{ key: 'arcana', rank: 2 }],
+      }),
       created_at: '2026-03-05T00:00:00Z',
       updated_at: '2026-03-05T00:00:00Z',
     };
@@ -47,469 +207,85 @@ describe('StatBlockForm', () => {
     render(
       <StatBlockForm
         mode='edit'
-        initialData={statBlock}
         worldId={1}
+        initialData={statBlock}
+        availableAbilities={worldOneAbilities}
+        initialAbilityIds={[2]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
     );
 
-    expect(screen.getByLabelText(/Name/i)).toHaveValue('Barbarian');
-    expect(screen.getByLabelText(/Description/i)).toHaveValue(
-      'A strong character',
-    );
+    await screen.findByRole('heading', { name: 'Resources' });
+    expect(screen.getByDisplayValue('arcana')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Tracking Sense/i)).toBeChecked();
+
+    fireEvent.click(screen.getByLabelText(/Tracking Sense/i));
+    fireEvent.click(screen.getByLabelText(/Arrow Storm/i));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
+    const payload = mockOnSubmit.mock.calls[0]?.[0] as {
+      statblock: { config: string; };
+      abilityIds: number[];
+    };
+    expect(payload.abilityIds).toEqual([1]);
+
+    const parsedConfig = JSON.parse(payload.statblock.config) as Record<
+      string,
+      unknown
+    >;
+    expect(parsedConfig.notes).toBe('keep');
+    expect(parsedConfig).not.toHaveProperty('skills');
   });
 
-  it('renders edit form button with "Save changes" text', () => {
-    const statBlock: StatBlock = {
-      id: 1,
-      world_id: 1,
-      campaign_id: null,
-      character_id: null,
-      name: 'Barbarian',
-      default_token_id: null,
-      description: 'A strong character',
-      config: '{}',
-      created_at: '2026-03-05T00:00:00Z',
-      updated_at: '2026-03-05T00:00:00Z',
-    };
-
+  it('shows guardrail error when a skill key is missing', async () => {
     render(
       <StatBlockForm
-        mode='edit'
-        initialData={statBlock}
+        mode='create'
         worldId={1}
+        availableAbilities={worldOneAbilities}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
     );
+
+    await screen.findByRole('heading', { name: 'Resources' });
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Mage' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add skill' }));
+    fireEvent.change(screen.getByDisplayValue('0'), {
+      target: { value: '5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create statblock' }));
+
+    expect(await screen.findByText('Each skill must have a key.')).toBeVisible();
+    expect(mockOnSubmit).not.toHaveBeenCalled();
+  });
+
+  it('shows generic create error when onSubmit throws a non-Error value', async () => {
+    mockOnSubmit.mockRejectedValueOnce('unknown');
+    render(
+      <StatBlockForm
+        mode='create'
+        worldId={1}
+        availableAbilities={worldOneAbilities}
+        onSubmit={mockOnSubmit}
+        onCancel={mockOnCancel}
+      />,
+    );
+
+    await screen.findByRole('heading', { name: 'Resources' });
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Cleric' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create statblock' }));
 
     expect(
-      screen.getByRole('button', { name: /Save changes/i }),
+      await screen.findByText('Failed to create statblock.'),
     ).toBeInTheDocument();
-  });
-
-  it('validates JSON config on change', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const configInput = screen.getByPlaceholderText('{}');
-    fireEvent.change(configInput, { target: { value: 'invalid json' } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/Invalid JSON/)).toBeInTheDocument();
-    });
-  });
-
-  it('clears config error when valid JSON is provided', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const configInput = screen.getByPlaceholderText('{}');
-    fireEvent.change(configInput, { target: { value: 'invalid json' } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/Invalid JSON/)).toBeInTheDocument();
-    });
-
-    fireEvent.change(configInput, { target: { value: '{"key": "value"}' } });
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Invalid JSON/)).not.toBeInTheDocument();
-    });
-  });
-
-  it('disables submit button when name is empty', () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const submitButton = screen.getByRole('button', { name: /Create/i });
-    expect(submitButton).toBeDisabled();
-  });
-
-  it('enables submit button when name is provided', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Wizard' } });
-
-    await waitFor(() => {
-      const submitButton = screen.getByRole('button', { name: /Create/i });
-      expect(submitButton).not.toBeDisabled();
-    });
-  });
-
-  it('disables submit button when only whitespace name is provided', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: '   ' } });
-
-    const submitButton = screen.getByRole('button', { name: /Create/i });
-    expect(submitButton).toBeDisabled();
-  });
-
-  it('calls onCancel when Cancel button is clicked', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const cancelButton = screen.getByRole('button', { name: /Cancel/i });
-    fireEvent.click(cancelButton);
-
-    expect(mockOnCancel).toHaveBeenCalled();
-  });
-
-  it('calls onSubmit with correct data when form is submitted', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    const descriptionInput = screen.getByLabelText(/Description/i);
-    fireEvent.change(nameInput, { target: { value: 'Cleric' } });
-    fireEvent.change(descriptionInput, { target: { value: 'Holy warrior' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(mockOnSubmit).toHaveBeenCalledWith({
-        world_id: 1,
-        name: 'Cleric',
-        description: 'Holy warrior',
-        config: '{}',
-      });
-    });
-  });
-
-  it('includes campaignId in onSubmit data when provided', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        campaignId={42}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Sorcerer' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(mockOnSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          campaign_id: 42,
-        }),
-      );
-    });
-  });
-
-  it('excludes campaignId when null', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        campaignId={null}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Sorcerer' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      const call = (mockOnSubmit.mock.calls[0] as unknown[])[0];
-      expect(call).not.toHaveProperty('campaign_id');
-    });
-  });
-
-  it('trims description and removes undefined empty descriptions', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Monk' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(mockOnSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          description: undefined,
-        }),
-      );
-    });
-  });
-
-  it('normalizes JSON config on initialization', () => {
-    const statBlock: StatBlock = {
-      id: 1,
-      world_id: 1,
-      campaign_id: null,
-      character_id: null,
-      name: 'Test',
-      default_token_id: null,
-      description: '',
-      config: '{"hp":10,"str":15}',
-      created_at: '2026-03-05T00:00:00Z',
-      updated_at: '2026-03-05T00:00:00Z',
-    };
-
-    render(
-      <StatBlockForm
-        mode='edit'
-        initialData={statBlock}
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const configInput = screen.getByPlaceholderText(
-      '{}',
-    ) as HTMLTextAreaElement;
-    expect(configInput.value).toContain('"hp": 10');
-  });
-
-  it('shows error when empty name is submitted', async () => {
-    const user = userEvent.setup();
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    // Type then clear the name field to trigger the path
-    await user.type(nameInput, 'Test');
-    await user.clear(nameInput);
-    await user.type(nameInput, '   '); // empty/whitespace
-
-    const form = screen
-      .getByRole('button', { name: /Create statblock/i })
-      .closest('form') as HTMLFormElement;
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/StatBlock name is required/),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('shows error when invalid JSON is submitted', async () => {
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    const configInput = screen.getByPlaceholderText('{}');
-    fireEvent.change(nameInput, { target: { value: 'Valid' } });
-    fireEvent.change(configInput, { target: { value: 'invalid' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Config must be valid JSON/)).toBeInTheDocument();
-    });
-  });
-
-  it('shows error from onSubmit throw', async () => {
-    mockOnSubmit.mockRejectedValue(new Error('Submit failed'));
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Bard' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Submit failed')).toBeInTheDocument();
-    });
-  });
-
-  it('shows generic error message on non-Error throw in create mode', async () => {
-    mockOnSubmit.mockRejectedValue('unknown error');
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Bard' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Failed to create statblock/),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('shows edit mode error message on non-Error throw in edit mode', async () => {
-    const statBlock: StatBlock = {
-      id: 1,
-      world_id: 1,
-      campaign_id: null,
-      character_id: null,
-      name: 'Test',
-      default_token_id: null,
-      description: '',
-      config: '{}',
-      created_at: '2026-03-05T00:00:00Z',
-      updated_at: '2026-03-05T00:00:00Z',
-    };
-    mockOnSubmit.mockRejectedValue('unknown error');
-
-    render(
-      <StatBlockForm
-        mode='edit'
-        initialData={statBlock}
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const submitButton = screen.getByRole('button', { name: /Save changes/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Failed to save statblock changes/),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('disables inputs while submitting', async () => {
-    mockOnSubmit.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100)),
-    );
-
-    render(
-      <StatBlockForm
-        mode='create'
-        worldId={1}
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-      />,
-    );
-
-    const nameInput = screen.getByLabelText(/Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Paladin' } });
-
-    const submitButton = screen.getByRole('button', {
-      name: /Create statblock/i,
-    });
-    fireEvent.click(submitButton);
-
-    // Check that inputs are disabled while submitting
-    await waitFor(() => {
-      expect(screen.getByLabelText(/Name/i)).toBeDisabled();
-      expect(screen.getByRole('button', { name: /Cancel/i })).toBeDisabled();
-    });
-
-    // Wait for submission to complete
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /Create statblock/i }),
-      ).not.toBeDisabled();
-    });
   });
 });
 

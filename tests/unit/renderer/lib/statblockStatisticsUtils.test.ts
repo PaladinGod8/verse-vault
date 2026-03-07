@@ -3,7 +3,10 @@ import {
   getPassiveScoreValue,
   getResourceValue,
   initializeStatBlockStatistics,
+  parseStatBlockConfigObject,
+  parseStatBlockSkills,
   parseStatBlockStatistics,
+  serializeStatBlockEditorConfig,
   serializeStatBlockStatistics,
   setPassiveScoreValue,
   setResourceValue,
@@ -43,6 +46,18 @@ describe('statblockStatisticsUtils', () => {
 
     it('should handle empty statistics', () => {
       const result = parseStatBlockStatistics('{}');
+
+      expect(result.statistics?.resources).toEqual({});
+      expect(result.statistics?.passiveScores).toEqual({});
+    });
+
+    it('should gracefully handle legacy non-object statistics payload', () => {
+      const result = parseStatBlockStatistics(
+        JSON.stringify({
+          statistics: [],
+          legacy_flag: true,
+        }),
+      );
 
       expect(result.statistics?.resources).toEqual({});
       expect(result.statistics?.passiveScores).toEqual({});
@@ -220,6 +235,103 @@ describe('statblockStatisticsUtils', () => {
       expect(parsed.statistics.resources.hp).toEqual({
         current: 30,
         maximum: 50,
+      });
+    });
+  });
+
+  describe('parseStatBlockConfigObject', () => {
+    it('returns empty object when payload is a non-object JSON value', () => {
+      expect(parseStatBlockConfigObject('[]')).toEqual({});
+      expect(parseStatBlockConfigObject('"legacy"')).toEqual({});
+    });
+  });
+
+  describe('parseStatBlockSkills', () => {
+    it('normalizes, de-duplicates, and sorts skills', () => {
+      const result = parseStatBlockSkills(
+        JSON.stringify({
+          skills: [
+            { key: '  stealth  ', rank: 2 },
+            { key: 'arcana', rank: 1 },
+            { key: 'stealth', rank: 4 },
+            { key: '', rank: 9 },
+            { key: 'athletics', rank: Number.NaN },
+          ],
+        }),
+      );
+
+      expect(result).toEqual([
+        { key: 'arcana', rank: 1 },
+        { key: 'stealth', rank: 4 },
+      ]);
+    });
+
+    it('returns empty array when skills is missing or not an array', () => {
+      expect(parseStatBlockSkills('{}')).toEqual([]);
+      expect(parseStatBlockSkills('{"skills":{}}')).toEqual([]);
+    });
+  });
+
+  describe('serializeStatBlockEditorConfig', () => {
+    it('preserves base config keys while replacing editor-managed sections', () => {
+      const serialized = serializeStatBlockEditorConfig({
+        baseConfig: {
+          lore: 'ancient',
+          statistics: { stale: true },
+          skills: [{ key: 'old', rank: 1 }],
+        },
+        statistics: {
+          statistics: {
+            resources: {
+              hp: { current: 11, maximum: 11 },
+            },
+            passiveScores: {
+              str: { baseValue: 14 },
+            },
+          },
+        },
+        skills: [
+          { key: '  stealth  ', rank: 3 },
+          { key: 'stealth', rank: 4 },
+          { key: 'arcana', rank: 2 },
+        ],
+      });
+
+      expect(JSON.parse(serialized)).toEqual({
+        lore: 'ancient',
+        statistics: {
+          resources: {
+            hp: { current: 11, maximum: 11 },
+          },
+          passiveScores: {
+            str: { baseValue: 14 },
+          },
+        },
+        skills: [
+          { key: 'arcana', rank: 2 },
+          { key: 'stealth', rank: 4 },
+        ],
+      });
+    });
+
+    it('removes empty editor-managed sections from config output', () => {
+      const serialized = serializeStatBlockEditorConfig({
+        baseConfig: {
+          notes: 'legacy',
+          statistics: { stale: true },
+          skills: [{ key: 'old', rank: 1 }],
+        },
+        statistics: {
+          statistics: {
+            resources: {},
+            passiveScores: {},
+          },
+        },
+        skills: [],
+      });
+
+      expect(JSON.parse(serialized)).toEqual({
+        notes: 'legacy',
       });
     });
   });

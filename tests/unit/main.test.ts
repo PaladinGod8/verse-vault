@@ -2514,7 +2514,10 @@ describe('main process', () => {
       ) {
         return { run: unlinkTokenRunMock };
       }
-      if (sql.includes('FROM statblock_token_links AS link') && sql.includes('INNER JOIN tokens AS token')) {
+      if (
+        sql.includes('FROM statblock_token_links AS link')
+        && sql.includes('INNER JOIN tokens AS token')
+      ) {
         return { all: linkedTokensAllMock };
       }
       if (

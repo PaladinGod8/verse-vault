@@ -29,8 +29,9 @@ export default function StatBlocksPage() {
   const [world, setWorld] = useState<World | null>(null);
   const [worldAbilities, setWorldAbilities] = useState<Ability[]>([]);
   const [statblocks, setStatblocks] = useState<StatBlock[]>([]);
-  const [assignedAbilitiesByStatBlockId, setAssignedAbilitiesByStatBlockId] =
-    useState<Record<number, Ability[]>>({});
+  const [assignedAbilitiesByStatBlockId, setAssignedAbilitiesByStatBlockId] = useState<
+    Record<number, Ability[]>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -164,9 +165,7 @@ export default function StatBlocksPage() {
 
   const handleCreate = async (payload: StatBlockFormSubmitData) => {
     const allowedAbilityIds = new Set(worldAbilities.map((ability) => ability.id));
-    const requestedAbilityIds = payload.abilityIds.filter((id) =>
-      allowedAbilityIds.has(id)
-    );
+    const requestedAbilityIds = payload.abilityIds.filter((id) => allowedAbilityIds.has(id));
 
     try {
       const newStatBlock = await window.db.statblocks.add(payload.statblock);
@@ -213,9 +212,7 @@ export default function StatBlocksPage() {
     }
 
     const existingAbilityIds =
-      assignedAbilitiesByStatBlockId[editingStatBlock.id]?.map((ability) =>
-        ability.id
-      ) ?? [];
+      assignedAbilitiesByStatBlockId[editingStatBlock.id]?.map((ability) => ability.id) ?? [];
 
     try {
       const updatedStatBlock = await window.db.statblocks.update(
