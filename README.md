@@ -19,7 +19,7 @@ Primary goals:
 yarn install   # installs deps + rebuilds native modules
 yarn start     # dev mode with hot reload
 yarn lint      # ESLint
-yarn format    # Prettier
+yarn format    # dprint auto-format
 yarn test      # unit (Vitest) + e2e (Playwright)
 yarn test:unit:coverage  # unit tests + v8 coverage report
 yarn guard:docs  # fail if architecture/map docs are missing for relevant code/config changes
@@ -27,15 +27,18 @@ yarn guard:ipc-docs  # fail if IPC files changed without docs/03_IPC_CONTRACT.md
 yarn hooks:install  # one-time: enforce repo hooks (docs guards on commit)
 ```
 
-When a commit contains only Prettier reformatting (no behavior changes), you can use a one-off hook bypass:
+When a commit contains only formatting changes (no behavior changes), you can use a one-off hook bypass:
 
 ```bash
-git commit --no-verify -m "chore: prettier formatting only"
+git commit --no-verify -m "chore: formatting only"
 ```
 
 ## Development loop
 
 ```bash
+yarn verify:rapid
+# fast local preflight (format/typecheck/lint cache/unit quick in parallel)
+
 yarn verify:all
 # checks rebuild/lint/format/unit/package/e2e (no dev launch)
 
@@ -47,9 +50,20 @@ yarn verify:all:fresh
 yarn verify:all:dev:fresh
 ```
 
+Recommended cadence:
+
+1. Run `yarn verify:rapid` while iterating.
+2. Run `yarn verify:all` before push/PR.
+3. Push branch and use GitHub Actions (`.github/workflows/ci.yml`) as the remote paper trail:
+   - logs per job/step
+   - `coverage-report` artifact
+   - `packaged-app` artifact
+   - `playwright-report` artifact
+
 Use VSCodeCounter on major changes.
 
 See [docs/00_INDEX.md](docs/00_INDEX.md) for orientation and architecture.
+See [docs/features/github-actions-setup.md](docs/features/github-actions-setup.md) for CI pipeline details and artifacts.
 See [AGENTS.md](AGENTS.md) for cross-agent working rules (Codex/Copilot/Claude).
 
 ## Prompting playbook (Codex / Copilot / Claude)

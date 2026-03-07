@@ -10,6 +10,32 @@ yarn format:check   # dprint check (no writes)
 yarn format         # auto-format with dprint
 ```
 
+## Workflow Gates
+
+```bash
+yarn verify:rapid      # fast local preflight (parallel checks)
+yarn verify:all        # strict local gate (sequential full checks)
+yarn verify:all:dev    # strict gate + launches dev app at the end
+```
+
+Use `verify:rapid` during iteration, then `verify:all` before push/PR.
+
+## GitHub Actions Paper Trail
+
+On push/PR to `main`, `.github/workflows/ci.yml` runs CI on the self-hosted runner:
+
+- `fast-checks` matrix (`format`, `typecheck`, `lint`, `unit`)
+- `package`
+- `e2e` (after `package`)
+- `ci-summary` final status gate
+
+Primary debugging paper trail:
+
+- GitHub Actions workflow/job/step logs
+- `coverage-report` artifact
+- `packaged-app` artifact
+- `playwright-report` artifact
+
 ## Product Direction
 
 Verse Vault is being built as a centralized, offline-first desktop platform for:
