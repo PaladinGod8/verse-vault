@@ -199,8 +199,12 @@ describe('StatBlocks Schema Migration', () => {
       .map(([sql]) => String(sql))
       .join('\n');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS statblock_token_links');
-    expect(schemaSql).toContain('statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE');
-    expect(schemaSql).toContain('token_id     INTEGER NOT NULL REFERENCES tokens(id) ON DELETE CASCADE');
+    expect(schemaSql).toContain(
+      'statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain(
+      'token_id     INTEGER NOT NULL REFERENCES tokens(id) ON DELETE CASCADE',
+    );
     expect(schemaSql).toContain('UNIQUE (token_id)');
     expect(schemaSql).toContain('UNIQUE (statblock_id, token_id)');
     expect(schemaSql).toContain(
@@ -220,8 +224,12 @@ describe('StatBlocks Schema Migration', () => {
       .map(([sql]) => String(sql))
       .join('\n');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS statblock_ability_assignments');
-    expect(schemaSql).toContain('statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE');
-    expect(schemaSql).toContain('ability_id   INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE');
+    expect(schemaSql).toContain(
+      'statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain(
+      'ability_id   INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE',
+    );
     expect(schemaSql).toContain('UNIQUE (statblock_id, ability_id)');
     expect(schemaSql).toContain(
       'CREATE INDEX IF NOT EXISTS idx_statblock_ability_assignments_statblock_id',

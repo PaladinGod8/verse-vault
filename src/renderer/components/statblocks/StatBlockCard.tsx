@@ -6,8 +6,8 @@ import type {
 } from '../../../shared/statisticsTypes';
 import {
   getPassiveScoreValue,
-  parseStatBlockSkills,
   getResourceValue,
+  parseStatBlockSkills,
   parseStatBlockStatistics,
 } from '../../lib/statblockStatisticsUtils';
 import { formatModifier } from '../../lib/statisticsCalculations';

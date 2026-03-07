@@ -42,6 +42,38 @@ async function goToStatBlocks(page: Page, worldName: string): Promise<void> {
   ).toBeVisible();
 }
 
+function inferWorldIdFromUrl(page: Page): number {
+  const worldMatch = page.url().match(/#\/world\/(\d+)\//);
+  if (!worldMatch) {
+    throw new Error('Unable to infer world id from current URL.');
+  }
+  return Number(worldMatch[1]);
+}
+
+async function seedWorldAbilities(
+  page: Page,
+  worldId: number,
+  abilityNames: string[],
+): Promise<void> {
+  await page.evaluate(
+    async ({ nextWorldId, nextAbilityNames }) => {
+      await Promise.all(
+        nextAbilityNames.map((name) =>
+          window.db.abilities.add({
+            world_id: nextWorldId,
+            name,
+            type: 'active',
+          })
+        ),
+      );
+    },
+    {
+      nextWorldId: worldId,
+      nextAbilityNames: abilityNames,
+    },
+  );
+}
+
 async function openCreateStatBlockDialog(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'New StatBlock' }).click();
   await expect(
@@ -50,6 +82,8 @@ async function openCreateStatBlockDialog(page: Page): Promise<void> {
 }
 
 test.describe('StatBlock Statistics', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeAll(async () => {
     const result = await launchApp();
     app = result.app;
@@ -247,5 +281,190 @@ test.describe('StatBlock Statistics', () => {
     await expect(
       page.getByRole('heading', { name: statblockName, exact: true }),
     ).toBeVisible();
+  });
+
+  test('creates and edits statblock abilities and skills from unified editor', async () => {
+    const unique = Date.now().toString();
+    const worldName = `E2E SB Abilities Skills ${unique}`;
+    const statblockName = `Ranger ${unique}`;
+    const updatedName = `${statblockName} Prime`;
+    const firstAbility = `Arrow Storm ${unique}`;
+    const secondAbility = `Tracking Sense ${unique}`;
+
+    await createAndOpenWorld(page, worldName);
+    const worldId = inferWorldIdFromUrl(page);
+    await seedWorldAbilities(page, worldId, [firstAbility, secondAbility]);
+    await goToStatBlocks(page, worldName);
+    await openCreateStatBlockDialog(page);
+
+    const createDialog = page.getByRole('dialog', { name: 'New StatBlock' });
+    await createDialog.getByLabel('Name').fill(statblockName);
+
+    const firstAbilityCheckbox = createDialog
+      .locator('label', { hasText: firstAbility })
+      .locator('input[type="checkbox"]');
+    await firstAbilityCheckbox.check();
+
+    await createDialog.getByRole('button', { name: 'Add skill' }).click();
+    const firstCreateSkillRow = createDialog.locator('div.grid.grid-cols-12').nth(0);
+    await firstCreateSkillRow
+      .locator('input[placeholder="skill_key"]')
+      .fill('perception');
+    await firstCreateSkillRow.locator('input[type="number"]').fill('2');
+
+    await createDialog.getByRole('button', { name: 'Create statblock' }).click();
+
+    const card = page.locator('div.rounded-xl', {
+      has: page.getByRole('heading', { name: statblockName, exact: true }),
+    });
+
+    await expect(card).toBeVisible();
+    await expect(card.getByText(firstAbility)).toBeVisible();
+    await expect(card.getByText('perception: 2')).toBeVisible();
+
+    await card.getByRole('button', { name: 'Edit' }).click();
+    const firstEditDialog = page.getByRole('dialog', { name: 'Edit StatBlock' });
+
+    await firstEditDialog.getByLabel('Name').fill(updatedName);
+    await expect(
+      firstEditDialog
+        .locator('label', { hasText: firstAbility })
+        .locator('input[type="checkbox"]'),
+    ).toBeChecked();
+    await firstEditDialog
+      .locator('label', { hasText: firstAbility })
+      .locator('input[type="checkbox"]')
+      .uncheck();
+    await firstEditDialog
+      .locator('label', { hasText: secondAbility })
+      .locator('input[type="checkbox"]')
+      .check();
+
+    const firstEditSkillRow = firstEditDialog.locator('div.grid.grid-cols-12').nth(0);
+    await firstEditSkillRow
+      .locator('input[placeholder="skill_key"]')
+      .fill('perception');
+    await firstEditSkillRow.locator('input[type="number"]').fill('4');
+
+    await firstEditDialog.getByRole('button', { name: 'Add skill' }).click();
+    const secondEditSkillRow = firstEditDialog.locator('div.grid.grid-cols-12').nth(1);
+    await secondEditSkillRow
+      .locator('input[placeholder="skill_key"]')
+      .fill('survival');
+    await secondEditSkillRow.locator('input[type="number"]').fill('3');
+
+    await firstEditDialog.getByRole('button', { name: 'Save changes' }).click();
+
+    const updatedCard = page.locator('div.rounded-xl', {
+      has: page.getByRole('heading', { name: updatedName, exact: true }),
+    });
+    await expect(updatedCard).toBeVisible();
+    await expect(updatedCard.getByText(firstAbility)).toHaveCount(0);
+    await expect(updatedCard.getByText(secondAbility)).toBeVisible();
+    await expect(updatedCard.getByText('perception: 4')).toBeVisible();
+    await expect(updatedCard.getByText('survival: 3')).toBeVisible();
+
+    await updatedCard.getByRole('button', { name: 'Edit' }).click();
+    const secondEditDialog = page.getByRole('dialog', { name: 'Edit StatBlock' });
+    const removableSkillRow = secondEditDialog
+      .locator('div.grid.grid-cols-12')
+      .filter({
+        has: secondEditDialog.locator('input[placeholder="skill_key"][value="survival"]'),
+      });
+    await removableSkillRow.getByRole('button', { name: 'Remove' }).click();
+    await secondEditDialog.getByRole('button', { name: 'Save changes' }).click();
+
+    await updatedCard.getByRole('button', { name: 'Edit' }).click();
+    const thirdEditDialog = page.getByRole('dialog', { name: 'Edit StatBlock' });
+    await expect(
+      thirdEditDialog.locator('input[placeholder="skill_key"][value="perception"]'),
+    ).toHaveCount(1);
+    await expect(
+      thirdEditDialog.locator('input[placeholder="skill_key"][value="survival"]'),
+    ).toHaveCount(0);
+  });
+
+  test('shows skills validation guardrails for missing key', async () => {
+    const unique = Date.now().toString();
+    const worldName = `E2E SB Skills Validation ${unique}`;
+    const statblockName = `Bard ${unique}`;
+
+    await createAndOpenWorld(page, worldName);
+    await goToStatBlocks(page, worldName);
+    await openCreateStatBlockDialog(page);
+
+    const dialog = page.getByRole('dialog', { name: 'New StatBlock' });
+    await dialog.getByLabel('Name').fill(statblockName);
+    await dialog.getByRole('button', { name: 'Add skill' }).click();
+    const row = dialog.locator('div.grid.grid-cols-12').nth(0);
+    await row.locator('input[type="number"]').fill('5');
+
+    await dialog.getByRole('button', { name: 'Create statblock' }).click();
+
+    await expect(dialog.getByText('Each skill must have a key.')).toBeVisible();
+  });
+
+  test('keeps legacy statblock config keys while editing modernized config', async () => {
+    const unique = Date.now().toString();
+    const worldName = `E2E SB Legacy Config ${unique}`;
+    const statblockName = `Legacy Mage ${unique}`;
+
+    await createAndOpenWorld(page, worldName);
+    const worldId = inferWorldIdFromUrl(page);
+
+    const seeded = await page.evaluate(
+      async ({ nextWorldId, nextName }) => {
+        return window.db.statblocks.add({
+          world_id: nextWorldId,
+          name: nextName,
+          config: JSON.stringify({
+            legacyVersion: 1,
+            notes: 'preserve me',
+            statistics: [],
+            skills: [{ key: 'insight', rank: 2 }],
+          }),
+        });
+      },
+      { nextWorldId: worldId, nextName: statblockName },
+    );
+
+    await goToStatBlocks(page, worldName);
+    await page.reload();
+    await goToStatBlocks(page, worldName);
+
+    const card = page.locator('div.rounded-xl', {
+      has: page.getByRole('heading', { name: statblockName, exact: true }),
+    });
+    await card.getByRole('button', { name: 'Edit' }).click();
+
+    const editDialog = page.getByRole('dialog', { name: 'Edit StatBlock' });
+    await expect(
+      editDialog.locator('input[placeholder="skill_key"][value="insight"]'),
+    ).toBeVisible();
+    await editDialog.locator('#hp-current').fill('9');
+    await editDialog.locator('#hp-maximum').fill('9');
+    await editDialog.getByRole('button', { name: 'Save changes' }).click();
+
+    const updated = await page.evaluate(async (id) => {
+      return window.db.statblocks.getById(id);
+    }, seeded.id);
+
+    expect(updated).not.toBeNull();
+    const parsedConfig = JSON.parse(updated?.config ?? '{}') as {
+      legacyVersion?: number;
+      notes?: string;
+      statistics?: {
+        resources?: Record<string, { current: number; maximum: number; }>;
+      };
+      skills?: Array<{ key: string; rank: number; }>;
+    };
+
+    expect(parsedConfig.legacyVersion).toBe(1);
+    expect(parsedConfig.notes).toBe('preserve me');
+    expect(parsedConfig.statistics?.resources?.hp).toEqual({
+      current: 9,
+      maximum: 9,
+    });
+    expect(parsedConfig.skills).toEqual([{ key: 'insight', rank: 2 }]);
   });
 });

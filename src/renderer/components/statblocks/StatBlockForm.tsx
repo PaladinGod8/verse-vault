@@ -7,9 +7,9 @@ import type {
 } from '../../../shared/statisticsTypes';
 import {
   getPassiveScoreValue,
-  parseStatBlockConfigObject,
   getResourceValue,
   initializeStatBlockStatistics,
+  parseStatBlockConfigObject,
   parseStatBlockSkills,
   parseStatBlockStatistics,
   serializeStatBlockEditorConfig,
@@ -68,9 +68,10 @@ export default function StatBlockForm({
 
   const isEditMode = mode === 'edit';
   const availableAbilitiesForWorld = useMemo(
-    () => availableAbilities
-      .filter((ability) => ability.world_id === worldId)
-      .sort((a, b) => a.name.localeCompare(b.name)),
+    () =>
+      availableAbilities
+        .filter((ability) => ability.world_id === worldId)
+        .sort((a, b) => a.name.localeCompare(b.name)),
     [availableAbilities, worldId],
   );
 
@@ -197,8 +198,7 @@ export default function StatBlockForm({
 
     if (
       sanitizedSkills.some(
-        (skill) =>
-          typeof skill.rank !== 'number' || !Number.isFinite(skill.rank),
+        (skill) => typeof skill.rank !== 'number' || !Number.isFinite(skill.rank),
       )
     ) {
       setSubmitError('Each skill rank must be a finite number.');
@@ -437,7 +437,9 @@ export default function StatBlockForm({
                 type='button'
                 onClick={() => {
                   setSkills((prev) =>
-                    prev.filter((_, entryIndex) => entryIndex !== index)
+                    prev.filter((_, entryIndex) =>
+                      entryIndex !== index
+                    )
                   );
                 }}
                 className='col-span-2 rounded-lg border border-rose-200 px-2 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60'
