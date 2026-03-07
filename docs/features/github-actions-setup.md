@@ -103,6 +103,29 @@ Service mode:
 
 If Electron e2e cannot open correctly in service mode, run interactively under your user account.
 
+### Multi-runner service commands
+
+```powershell
+# show runner services
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+
+# start all runners
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Where-Object Status -ne "Running" | Start-Service; Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+
+# stop all runners
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Stop-Service -Force
+```
+
+### Watch current pipeline in terminal
+
+```bash
+# list recent runs
+gh run list -R PaladinGod8/verse-vault --limit 10
+
+# watch latest in-progress run live
+gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --limit 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --exit-status
+```
+
 ## Local Development
 
 Two local verification modes are available:

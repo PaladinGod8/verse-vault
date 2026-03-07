@@ -60,6 +60,36 @@ Recommended cadence:
    - `packaged-app` artifact
    - `playwright-report` artifact
 
+## Self-Hosted Runner Ops (Windows)
+
+Use these PowerShell commands to manage all configured runners for this repo.
+
+```powershell
+# show runner services
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+
+# start all runners
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Where-Object Status -ne "Running" | Start-Service; Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+
+# stop all runners
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Stop-Service -Force
+```
+
+## GitHub Actions In Terminal
+
+Use GitHub CLI (`gh`) from any terminal (including VS Code terminal).
+
+```bash
+# list recent runs
+gh run list -R PaladinGod8/verse-vault --limit 10
+
+# watch latest in-progress run live
+gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --limit 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --exit-status
+
+# fast local preflight before push
+yarn verify:rapid
+```
+
 Use VSCodeCounter on major changes.
 
 See [docs/00_INDEX.md](docs/00_INDEX.md) for orientation and architecture.

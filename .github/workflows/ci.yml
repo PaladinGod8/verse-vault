@@ -30,7 +30,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          yarn --version
 
       - name: Restore tool caches
         uses: actions/cache@v4
@@ -77,7 +82,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          yarn --version
 
       - name: Restore tool caches
         uses: actions/cache@v4
@@ -120,7 +130,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          yarn --version
 
       - name: Restore tool caches
         uses: actions/cache@v4
@@ -163,7 +178,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+
+      - name: Enable Yarn via Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          yarn --version
 
       - name: Restore tool caches
         uses: actions/cache@v4
