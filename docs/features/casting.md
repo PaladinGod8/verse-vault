@@ -60,8 +60,8 @@ Validation:
 1. From the battlemap runtime view, select a token on the canvas.
 2. The **Ability Picker Panel** slides in (or becomes visible) on the side.
 3. The panel resolves the selected token's linked statblock and lists active assigned abilities (`type = 'active'`).
-3. The panel resolves the selected token's linked statblock and displays active assigned abilities (`type = 'active'`).
-4. Select an ability from the panel list.
+4. The panel resolves the selected token's linked statblock and displays active assigned abilities (`type = 'active'`).
+5. Select an ability from the panel list.
 
 ### Runtime: Range Ring and AoE Highlights
 
