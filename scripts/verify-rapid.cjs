@@ -9,6 +9,7 @@ const args = new Set(process.argv.slice(2));
 const runRebuild = args.has('--rebuild-native');
 const forceFreshCache = args.has('--fresh-cache');
 
+const TASK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const CACHE_STATE_DIR = path.resolve('.cache', 'verify-rapid');
 const CACHE_STATE_FILE = path.join(CACHE_STATE_DIR, 'state.json');
 
@@ -122,12 +123,27 @@ function runTask(task) {
       stdio: 'inherit',
     });
 
+    const timeout = setTimeout(() => {
+      console.error(
+        `[verify-rapid] Task "${task.name}" timed out after ${TASK_TIMEOUT_MS / 1000}s — killing`,
+      );
+      child.kill('SIGTERM');
+      // Give the process a moment to terminate gracefully, then force kill
+      setTimeout(() => {
+        try {
+          child.kill('SIGKILL');
+        } catch { /* already dead */ }
+      }, 5000);
+    }, TASK_TIMEOUT_MS);
+
     child.on('error', (error) => {
+      clearTimeout(timeout);
       console.error(`[verify-rapid] Failed to start ${task.name}: ${error.message}`);
       resolve({ name: task.name, code: 1 });
     });
 
     child.on('close', (code) => {
+      clearTimeout(timeout);
       resolve({ name: task.name, code: code ?? 1 });
     });
   });
