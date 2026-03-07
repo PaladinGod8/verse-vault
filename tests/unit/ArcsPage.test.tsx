@@ -1,5 +1,5 @@
 import type { DragEndEvent } from '@dnd-kit/core';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -420,10 +420,12 @@ describe('ArcsPage', () => {
       await waitFor(() => expect(capturedOnDragEnd).toBeDefined());
 
       // Move arc1 (id=1) over arc2 (id=2)
-      (capturedOnDragEnd as (event: DragEndEvent) => void)({
-        active: { id: 1 },
-        over: { id: 2 },
-      } as unknown as DragEndEvent);
+      act(() => {
+        (capturedOnDragEnd as (event: DragEndEvent) => void)({
+          active: { id: 1 },
+          over: { id: 2 },
+        } as unknown as DragEndEvent);
+      });
 
       await waitFor(() => expect(window.db.arcs.update).toHaveBeenCalled());
     });
@@ -443,10 +445,12 @@ describe('ArcsPage', () => {
       await screen.findByText('Arc One');
       await waitFor(() => expect(capturedOnDragEnd).toBeDefined());
 
-      (capturedOnDragEnd as (event: DragEndEvent) => void)({
-        active: { id: 1 },
-        over: { id: 2 },
-      } as unknown as DragEndEvent);
+      act(() => {
+        (capturedOnDragEnd as (event: DragEndEvent) => void)({
+          active: { id: 1 },
+          over: { id: 2 },
+        } as unknown as DragEndEvent);
+      });
 
       await waitFor(() => expect(screen.getByText('Save failed')).toBeInTheDocument());
     });
@@ -460,10 +464,12 @@ describe('ArcsPage', () => {
       await screen.findByText('Arc One');
       await waitFor(() => expect(capturedOnDragEnd).toBeDefined());
 
-      (capturedOnDragEnd as (event: DragEndEvent) => void)({
-        active: { id: 1 },
-        over: { id: 1 },
-      } as unknown as DragEndEvent);
+      act(() => {
+        (capturedOnDragEnd as (event: DragEndEvent) => void)({
+          active: { id: 1 },
+          over: { id: 1 },
+        } as unknown as DragEndEvent);
+      });
 
       // update should NOT be called for a no-op drag
       expect(window.db.arcs.update).not.toHaveBeenCalled();

@@ -82,6 +82,12 @@ describe('StatBlocksPage', () => {
         add: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        listAbilities: vi.fn().mockResolvedValue([]),
+        attachAbility: vi.fn().mockResolvedValue(undefined),
+        detachAbility: vi.fn().mockResolvedValue(undefined),
+      },
+      abilities: {
+        getAllByWorld: vi.fn().mockResolvedValue([]),
       },
     } as unknown as DbApi;
   });
