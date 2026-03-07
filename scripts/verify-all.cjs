@@ -100,6 +100,7 @@ function runCommand(cmd, commandArgs, options = {}) {
     shell: process.platform === 'win32',
     env: { ...process.env, ...(options.env || {}) },
     encoding: 'utf8',
+    timeout: options.timeout || 10 * 60 * 1000, // 10 minutes default
   });
 
   const stdout = typeof result.stdout === 'string' ? result.stdout : '';
@@ -151,7 +152,9 @@ function runCommand(cmd, commandArgs, options = {}) {
 
     if (!options.allowFailure) {
       logErrorLine(
-        `[verify-all] Command failed with exit code ${result.status}: ${cmd} ${commandArgs.join(' ')}`,
+        `[verify-all] Command failed with exit code ${result.status}: ${cmd} ${
+          commandArgs.join(' ')
+        }`,
       );
     }
     return false;
