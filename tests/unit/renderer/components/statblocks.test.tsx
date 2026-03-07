@@ -1,7 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import StatBlockCard from '../../../../src/renderer/components/statblocks/StatBlockCard';
-import StatBlockForm from '../../../../src/renderer/components/statblocks/StatBlockForm';
+import StatBlockForm, {
+  type StatBlockFormSubmitData,
+} from '../../../../src/renderer/components/statblocks/StatBlockForm';
 
 const worldsGetByIdMock = vi.fn();
 
@@ -64,7 +66,7 @@ function buildAbility(
 }
 
 describe('StatBlockForm', () => {
-  const mockOnSubmit = vi.fn(async () => {
+  const mockOnSubmit = vi.fn<(data: StatBlockFormSubmitData) => Promise<void>>(async () => {
     /* noop */
   });
   const mockOnCancel = vi.fn();
@@ -156,10 +158,7 @@ describe('StatBlockForm', () => {
 
     await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
 
-    const payload = mockOnSubmit.mock.calls[0]?.[0] as {
-      statblock: { world_id: number; name: string; description?: string; config: string; };
-      abilityIds: number[];
-    };
+    const payload = mockOnSubmit.mock.calls[0]![0];
     expect(payload.statblock.world_id).toBe(1);
     expect(payload.statblock.name).toBe('Ranger');
     expect(payload.statblock.description).toBe('Scout');
@@ -226,10 +225,7 @@ describe('StatBlockForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(mockOnSubmit).toHaveBeenCalledTimes(1));
-    const payload = mockOnSubmit.mock.calls[0]?.[0] as {
-      statblock: { config: string; };
-      abilityIds: number[];
-    };
+    const payload = mockOnSubmit.mock.calls[0]![0];
     expect(payload.abilityIds).toEqual([1]);
 
     const parsedConfig = JSON.parse(payload.statblock.config) as Record<

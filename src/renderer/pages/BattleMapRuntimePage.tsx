@@ -5,6 +5,7 @@ import BattleMapRuntimeCanvas, {
   type RuntimeSceneToken,
 } from '../components/runtime/BattleMapRuntimeCanvas';
 import RuntimeGridControls from '../components/runtime/RuntimeGridControls';
+import StatBlockPopup from '../components/runtime/StatBlockPopup';
 import RuntimeTokenPalette from '../components/runtime/RuntimeTokenPalette';
 import {
   mergeBattleMapConfigWithRuntime,
@@ -168,6 +169,9 @@ export default function BattleMapRuntimePage() {
   const [showInvisibleTokens, setShowInvisibleTokens] = useState(true);
   const [castingAbility, setCastingAbility] = useState<Ability | null>(null);
   const [castingAngleRad, setCastingAngleRad] = useState<number>(0);
+  const [statBlockPopupTokenInstanceId, setStatBlockPopupTokenInstanceId] = useState<
+    string | null
+  >(null);
 
   const battleMapConfigRef = useRef<Record<string, unknown> | null>(null);
   const runtimeConfigRef = useRef<BattleMapRuntimeConfig | null>(null);
@@ -571,6 +575,28 @@ export default function BattleMapRuntimePage() {
   }, [runtimeTokens, selectedRuntimeTokenInstanceId]);
 
   useEffect(() => {
+    if (statBlockPopupTokenInstanceId === null) {
+      return;
+    }
+
+    const hasPopupToken = runtimeTokens.some(
+      (token) => token.instanceId === statBlockPopupTokenInstanceId,
+    );
+    if (!hasPopupToken) {
+      setStatBlockPopupTokenInstanceId(null);
+    }
+  }, [runtimeTokens, statBlockPopupTokenInstanceId]);
+
+  useEffect(() => {
+    if (
+      statBlockPopupTokenInstanceId !== null
+      && statBlockPopupTokenInstanceId !== selectedRuntimeTokenInstanceId
+    ) {
+      setStatBlockPopupTokenInstanceId(null);
+    }
+  }, [selectedRuntimeTokenInstanceId, statBlockPopupTokenInstanceId]);
+
+  useEffect(() => {
     setCastingAbility(null);
   }, [selectedRuntimeTokenInstanceId]);
 
@@ -580,6 +606,13 @@ export default function BattleMapRuntimePage() {
         (t) => t.instanceId === selectedRuntimeTokenInstanceId,
       ) ?? null,
     [runtimeTokens, selectedRuntimeTokenInstanceId],
+  );
+
+  const popupToken = useMemo(
+    () =>
+      runtimeTokens.find((token) => token.instanceId === statBlockPopupTokenInstanceId)
+        ?? null,
+    [runtimeTokens, statBlockPopupTokenInstanceId],
   );
 
   useEffect(() => {
@@ -593,6 +626,7 @@ export default function BattleMapRuntimePage() {
     runtimeTokenInstanceIdCounterRef.current = 0;
     setRuntimeTokens([]);
     setSelectedRuntimeTokenInstanceId(null);
+    setStatBlockPopupTokenInstanceId(null);
 
     if (worldId === null || parsedBattleMapId === null) {
       setBattleMap(null);
@@ -623,6 +657,7 @@ export default function BattleMapRuntimePage() {
             runtimeConfigRef.current = null;
             setRuntimeTokens([]);
             setSelectedRuntimeTokenInstanceId(null);
+            setStatBlockPopupTokenInstanceId(null);
             setError('BattleMap not found.');
           }
           return;
@@ -641,6 +676,7 @@ export default function BattleMapRuntimePage() {
             runtimeConfigRef.current = parsedRuntimeState.runtimeConfig;
             setRuntimeTokens([]);
             setSelectedRuntimeTokenInstanceId(null);
+            setStatBlockPopupTokenInstanceId(null);
             lastPersistedRuntimeConfigKeyRef.current = parsedRuntimeState.runtimeConfigKey;
           }
         } catch {
@@ -652,6 +688,7 @@ export default function BattleMapRuntimePage() {
             runtimeConfigRef.current = null;
             setRuntimeTokens([]);
             setSelectedRuntimeTokenInstanceId(null);
+            setStatBlockPopupTokenInstanceId(null);
             lastPersistedRuntimeConfigKeyRef.current = null;
             setError(
               'Invalid runtime config JSON. Update this BattleMap config before entering runtime.',
@@ -668,6 +705,7 @@ export default function BattleMapRuntimePage() {
           runtimeConfigRef.current = null;
           setRuntimeTokens([]);
           setSelectedRuntimeTokenInstanceId(null);
+          setStatBlockPopupTokenInstanceId(null);
           lastPersistedRuntimeConfigKeyRef.current = null;
           setError('Unable to load BattleMap runtime right now.');
         }
@@ -806,6 +844,14 @@ export default function BattleMapRuntimePage() {
         ? null
         : currentSelectedTokenInstanceId
     );
+    setStatBlockPopupTokenInstanceId((currentPopupTokenInstanceId) =>
+      currentPopupTokenInstanceId === tokenInstanceId ? null : currentPopupTokenInstanceId
+    );
+  };
+
+  const handleRuntimeTokenDoubleClick = (tokenInstanceId: string) => {
+    setSelectedRuntimeTokenInstanceId(tokenInstanceId);
+    setStatBlockPopupTokenInstanceId(tokenInstanceId);
   };
 
   const handleExitRuntime = async () => {
@@ -932,6 +978,7 @@ export default function BattleMapRuntimePage() {
                       tokens={runtimeTokens}
                       selectedTokenInstanceId={selectedRuntimeTokenInstanceId}
                       onTokenSelect={handleSelectRuntimeToken}
+                      onTokenDoubleClick={handleRuntimeTokenDoubleClick}
                       onTokenMove={handleMoveRuntimeToken}
                       castingState={castingAbility !== null && selectedToken !== null
                         ? {
@@ -951,7 +998,8 @@ export default function BattleMapRuntimePage() {
                   ? (
                     <div className='absolute top-3 right-3 w-56'>
                       <AbilityPickerPanel
-                        worldId={worldId}
+                        sourceTokenId={selectedToken?.sourceTokenId ?? null}
+                        tokenName={selectedToken?.name ?? 'Token'}
                         castingAbility={castingAbility}
                         onAbilitySelect={setCastingAbility}
                       />
@@ -962,6 +1010,15 @@ export default function BattleMapRuntimePage() {
             </div>
           )
           : null}
+
+        <StatBlockPopup
+          isOpen={statBlockPopupTokenInstanceId !== null}
+          tokenName={popupToken?.name ?? 'Token'}
+          sourceTokenId={popupToken?.sourceTokenId ?? null}
+          castingAbility={castingAbility}
+          onAbilitySelect={setCastingAbility}
+          onClose={() => setStatBlockPopupTokenInstanceId(null)}
+        />
       </main>
     </div>
   );
