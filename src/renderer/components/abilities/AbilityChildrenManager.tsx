@@ -22,6 +22,15 @@ function toErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function isDuplicateChildLinkError(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes('child ability link already exists')
+    || normalized.includes('already linked as a child')
+    || normalized.includes('unique constraint failed: ability_children.parent_id, ability_children.child_id')
+  );
+}
+
 export default function AbilityChildrenManager({
   parentAbility,
   abilities,
@@ -123,7 +132,7 @@ export default function AbilityChildrenManager({
         'Failed to add child ability.',
       );
       setActionError(
-        errorMessage === 'Child ability link already exists'
+        isDuplicateChildLinkError(errorMessage)
           ? 'That ability is already linked as a child.'
           : errorMessage,
       );
