@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import ConfirmDialog from '../../../src/renderer/components/ui/ConfirmDialog';
 
 describe('ConfirmDialog', () => {
@@ -13,7 +13,7 @@ describe('ConfirmDialog', () => {
       <ConfirmDialog
         isOpen
         title='Delete "Arc One"?'
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={onConfirm}
         onCancel={onCancel}
       />,
@@ -40,13 +40,13 @@ describe('ConfirmDialog', () => {
     render(
       <ConfirmDialog
         isOpen
-        title="Move this scene?"
-        message="The scene will be removed from this list."
+        title='Move this scene?'
+        message='The scene will be removed from this list.'
         onConfirm={onConfirm}
         onCancel={onCancel}
-        confirmLabel="Move"
-        cancelLabel="Back"
-        confirmTone="primary"
+        confirmLabel='Move'
+        cancelLabel='Back'
+        confirmTone='primary'
         isConfirming
       />,
     );

@@ -39,9 +39,7 @@ class BrowserWindowMock {
 
 const prepareMock = vi.fn();
 const transactionMock = vi.fn(
-  (callback: (...args: unknown[]) => unknown) =>
-    (...args: unknown[]) =>
-      callback(...args),
+  (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
 );
 const getDatabaseMock = vi.fn(() => ({
   prepare: prepareMock,
@@ -73,8 +71,9 @@ async function importMainWithMocks() {
   vi.clearAllMocks();
 
   for (const key of Object.keys(registeredEvents)) delete registeredEvents[key];
-  for (const key of Object.keys(registeredIpcHandlers))
+  for (const key of Object.keys(registeredIpcHandlers)) {
     delete registeredIpcHandlers[key];
+  }
 
   vi.doMock('electron-squirrel-startup', () => false);
   vi.doMock('electron', () => ({
@@ -350,7 +349,7 @@ describe('StatBlocks CRUD handlers', () => {
         registeredIpcHandlers[IPC.STATBLOCKS_ADD](
           {},
           { world_id: 1, name: '   ' },
-        ),
+        )
       ).toThrowError('StatBlock name is required');
     });
   });
@@ -380,8 +379,7 @@ describe('StatBlocks CRUD handlers', () => {
       });
 
       const updateSql = prepareMock.mock.calls.find(
-        ([sql]) =>
-          typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
+        ([sql]) => typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
       )?.[0] as string;
 
       expect(updateSql).toContain('name = ?');
@@ -417,8 +415,7 @@ describe('StatBlocks CRUD handlers', () => {
       });
 
       const updateSql = prepareMock.mock.calls.find(
-        ([sql]) =>
-          typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
+        ([sql]) => typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
       )?.[0] as string;
 
       expect(updateSql).toContain('config = ?');
@@ -443,8 +440,7 @@ describe('StatBlocks CRUD handlers', () => {
       registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 10, {});
 
       const updateSql = prepareMock.mock.calls.find(
-        ([sql]) =>
-          typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
+        ([sql]) => typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
       )?.[0] as string;
 
       expect(updateSql).toBe(
@@ -460,9 +456,8 @@ describe('StatBlocks CRUD handlers', () => {
         all: vi.fn(() => []),
       }));
 
-      expect(() =>
-        registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 10, { name: '  ' }),
-      ).toThrowError('StatBlock name cannot be empty');
+      expect(() => registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 10, { name: '  ' }))
+        .toThrowError('StatBlock name cannot be empty');
     });
 
     it('throws when statblock not found after update', () => {
@@ -482,7 +477,7 @@ describe('StatBlocks CRUD handlers', () => {
       expect(() =>
         registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 9999, {
           name: 'Ghost',
-        }),
+        })
       ).toThrowError('StatBlock not found');
     });
   });

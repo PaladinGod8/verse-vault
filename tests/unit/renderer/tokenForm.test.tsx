@@ -1,12 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import TokenForm from '../../../src/renderer/components/tokens/TokenForm';
 import type { TokenFormValues } from '../../../src/renderer/components/tokens/TokenForm';
 
@@ -27,43 +21,43 @@ vi.mock(
       gridType: TokenGridType;
       initialFootprint?: TokenFootprintConfig;
     }) => (
-      <div role="dialog" aria-label="Footprint Painter">
-        {initialFootprint ? (
-          <span data-testid="initial-footprint">
-            {JSON.stringify(initialFootprint)}
-          </span>
-        ) : null}
+      <div role='dialog' aria-label='Footprint Painter'>
+        {initialFootprint
+          ? (
+            <span data-testid='initial-footprint'>
+              {JSON.stringify(initialFootprint)}
+            </span>
+          )
+          : null}
         <button
-          type="button"
+          type='button'
           onClick={() =>
             onConfirm({
-              footprint:
-                gridType === 'hex'
-                  ? {
-                      version: 1,
-                      grid_type: 'hex',
-                      hex_cells: [{ q: 0, r: 0 }],
-                      radius_cells: 0.5,
-                    }
-                  : {
-                      version: 1,
-                      grid_type: 'square',
-                      square_cells: [{ col: 0, row: 0 }],
-                      width_cells: 1,
-                      height_cells: 1,
-                    },
+              footprint: gridType === 'hex'
+                ? {
+                  version: 1,
+                  grid_type: 'hex',
+                  hex_cells: [{ q: 0, r: 0 }],
+                  radius_cells: 0.5,
+                }
+                : {
+                  version: 1,
+                  grid_type: 'square',
+                  square_cells: [{ col: 0, row: 0 }],
+                  width_cells: 1,
+                  height_cells: 1,
+                },
               framing: {
                 center_x_cells: 0,
                 center_y_cells: 0,
                 extent_x_cells: 0.5,
                 extent_y_cells: 0.5,
               },
-            })
-          }
+            })}
         >
           Confirm
         </button>
-        <button type="button" onClick={onClose}>
+        <button type='button' onClick={onClose}>
           Cancel
         </button>
       </div>
@@ -87,43 +81,43 @@ vi.mock(
       gridType: TokenGridType;
       initialFootprint?: TokenFootprintConfig;
     }) => (
-      <div role="dialog" aria-label="Footprint Painter">
-        {initialFootprint ? (
-          <span data-testid="initial-footprint">
-            {JSON.stringify(initialFootprint)}
-          </span>
-        ) : null}
+      <div role='dialog' aria-label='Footprint Painter'>
+        {initialFootprint
+          ? (
+            <span data-testid='initial-footprint'>
+              {JSON.stringify(initialFootprint)}
+            </span>
+          )
+          : null}
         <button
-          type="button"
+          type='button'
           onClick={() =>
             onConfirm({
-              footprint:
-                gridType === 'hex'
-                  ? {
-                      version: 1,
-                      grid_type: 'hex',
-                      hex_cells: [{ q: 0, r: 0 }],
-                      radius_cells: 0.5,
-                    }
-                  : {
-                      version: 1,
-                      grid_type: 'square',
-                      square_cells: [{ col: 0, row: 0 }],
-                      width_cells: 1,
-                      height_cells: 1,
-                    },
+              footprint: gridType === 'hex'
+                ? {
+                  version: 1,
+                  grid_type: 'hex',
+                  hex_cells: [{ q: 0, r: 0 }],
+                  radius_cells: 0.5,
+                }
+                : {
+                  version: 1,
+                  grid_type: 'square',
+                  square_cells: [{ col: 0, row: 0 }],
+                  width_cells: 1,
+                  height_cells: 1,
+                },
               framing: {
                 center_x_cells: 0,
                 center_y_cells: 0,
                 extent_x_cells: 0.5,
                 extent_y_cells: 0.5,
               },
-            })
-          }
+            })}
         >
           Confirm
         </button>
-        <button type="button" onClick={onClose}>
+        <button type='button' onClick={onClose}>
           Cancel
         </button>
       </div>
@@ -483,8 +477,7 @@ describe('TokenForm', () => {
       name: 'Footprint Painter',
     });
 
-    const initialFootprintEl =
-      within(painterDialog).getByTestId('initial-footprint');
+    const initialFootprintEl = within(painterDialog).getByTestId('initial-footprint');
     expect(initialFootprintEl.textContent).toBeTruthy();
     const initialFootprint = JSON.parse(
       initialFootprintEl.textContent as string,
@@ -511,8 +504,7 @@ describe('TokenForm', () => {
       name: 'Footprint Painter',
     });
 
-    const initialFootprintEl =
-      within(painterDialog).getByTestId('initial-footprint');
+    const initialFootprintEl = within(painterDialog).getByTestId('initial-footprint');
     expect(initialFootprintEl.textContent).toBeTruthy();
     const initialFootprint = JSON.parse(
       initialFootprintEl.textContent as string,

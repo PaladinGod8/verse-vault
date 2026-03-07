@@ -31,7 +31,7 @@ describe('tokenFootprintGeometry', () => {
     expect(() =>
       normalizeSquareOccupancy([
         { col: 0.5, row: 1 } as TokenSquareFootprintCell,
-      ]),
+      ])
     ).toThrowError('Square occupancy cell 0.col must be an integer');
   });
 
@@ -54,9 +54,9 @@ describe('tokenFootprintGeometry', () => {
     expect(() => normalizeHexOccupancy([])).toThrowError(
       'Hex occupancy must include at least one occupied cell',
     );
-    expect(() =>
-      normalizeHexOccupancy([{ q: 0, r: 0.25 } as TokenHexFootprintCell]),
-    ).toThrowError('Hex occupancy cell 0.r must be an integer');
+    expect(() => normalizeHexOccupancy([{ q: 0, r: 0.25 } as TokenHexFootprintCell])).toThrowError(
+      'Hex occupancy cell 0.r must be an integer',
+    );
   });
 
   it('builds deterministic square footprint and framing config', () => {
@@ -113,7 +113,7 @@ describe('tokenFootprintGeometry', () => {
   it('serializes footprint and framing under base config', () => {
     const squareSerialized = JSON.parse(
       serializeSquareFootprintConfig({ color: 'red' }, [{ col: 0, row: 0 }]),
-    ) as TokenConfigShape & { color: string };
+    ) as TokenConfigShape & { color: string; };
 
     expect(squareSerialized.color).toBe('red');
     expect(squareSerialized.footprint?.grid_type).toBe('square');
@@ -121,7 +121,7 @@ describe('tokenFootprintGeometry', () => {
 
     const hexSerialized = JSON.parse(
       serializeHexFootprintConfig({ alpha: 0.5 }, [{ q: 0, r: 0 }]),
-    ) as TokenConfigShape & { alpha: number };
+    ) as TokenConfigShape & { alpha: number; };
 
     expect(hexSerialized.alpha).toBe(0.5);
     expect(hexSerialized.footprint?.grid_type).toBe('hex');

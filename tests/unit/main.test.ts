@@ -6,7 +6,7 @@ type IpcHandler = (...args: unknown[]) => unknown;
 
 const registeredEvents: Record<string, EventHandler> = {};
 const registeredIpcHandlers: Record<string, IpcHandler> = {};
-type ProtocolHandler = (request: { url: string }) => Promise<Response>;
+type ProtocolHandler = (request: { url: string; }) => Promise<Response>;
 const registeredProtocolHandlers: Record<string, ProtocolHandler> = {};
 
 const appOnMock = vi.fn((event: string, handler: EventHandler) => {
@@ -48,9 +48,7 @@ class BrowserWindowMock {
 
 const prepareMock = vi.fn();
 const transactionMock = vi.fn(
-  (callback: (...args: unknown[]) => unknown) =>
-    (...args: unknown[]) =>
-      callback(...args),
+  (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
 );
 const getDatabaseMock = vi.fn(() => ({
   prepare: prepareMock,
@@ -75,10 +73,12 @@ async function importMainWithMocks() {
   vi.resetModules();
 
   for (const key of Object.keys(registeredEvents)) delete registeredEvents[key];
-  for (const key of Object.keys(registeredIpcHandlers))
+  for (const key of Object.keys(registeredIpcHandlers)) {
     delete registeredIpcHandlers[key];
-  for (const key of Object.keys(registeredProtocolHandlers))
+  }
+  for (const key of Object.keys(registeredProtocolHandlers)) {
     delete registeredProtocolHandlers[key];
+  }
 
   vi.clearAllMocks();
 
@@ -380,12 +380,11 @@ describe('main process', () => {
         act_id: 20,
         name: `Session ${id}`,
         notes: null,
-        planned_at:
-          id === 40
-            ? '2026-03-15T09:30'
-            : id === 41
-              ? '2026-03-17T10:45'
-              : null,
+        planned_at: id === 40
+          ? '2026-03-15T09:30'
+          : id === 41
+          ? '2026-03-17T10:45'
+          : null,
         sort_order: 0,
         created_at: '2026-01-01 00:00:00',
         updated_at: '2026-01-02 00:00:00',
@@ -739,9 +738,9 @@ describe('main process', () => {
       }
 
       if (
-        sql.includes('FROM scenes') &&
-        sql.includes('INNER JOIN sessions') &&
-        sql.includes('WHERE arcs.campaign_id = ?')
+        sql.includes('FROM scenes')
+        && sql.includes('INNER JOIN sessions')
+        && sql.includes('WHERE arcs.campaign_id = ?')
       ) {
         return { all: scenesSelectAllByCampaignMock };
       }
@@ -898,18 +897,18 @@ describe('main process', () => {
     expect(worldsSelectByIdGetMock).toHaveBeenCalledWith(6);
     expect(worldAddResult).toMatchObject({ id: 6 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.WORLDS_ADD]({}, { name: '   ' }),
-    ).toThrowError('World name is required');
+    expect(() => registeredIpcHandlers[IPC.WORLDS_ADD]({}, { name: '   ' })).toThrowError(
+      'World name is required',
+    );
 
     const worldUpdateResult = registeredIpcHandlers[IPC.WORLDS_UPDATE]({}, 9, {
       thumbnail: 'cover.png',
     });
     const partialUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE worlds SET') &&
-        sql.includes('thumbnail = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE worlds SET')
+        && sql.includes('thumbnail = ?'),
     )?.[0];
     expect(partialUpdateSql).toContain("updated_at = datetime('now')");
     expect(partialUpdateSql).not.toContain('name = ?');
@@ -923,8 +922,7 @@ describe('main process', () => {
       {},
     );
     const timestampOnlySql = prepareMock.mock.calls.find(
-      ([sql]) =>
-        sql === "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?",
+      ([sql]) => sql === "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(timestampOnlySql).toBe(
       "UPDATE worlds SET updated_at = datetime('now') WHERE id = ?",
@@ -1022,14 +1020,14 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.LEVELS_ADD](
         {},
         { world_id: 1, name: '   ', category: 'Quest' },
-      ),
+      )
     ).toThrowError('Level name is required');
 
     expect(() =>
       registeredIpcHandlers[IPC.LEVELS_ADD](
         {},
         { world_id: 1, name: 'Name', category: '   ' },
-      ),
+      )
     ).toThrowError('Level category is required');
 
     const levelUpdateResult = registeredIpcHandlers[IPC.LEVELS_UPDATE]({}, 10, {
@@ -1038,9 +1036,9 @@ describe('main process', () => {
     });
     const levelUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE levels SET') &&
-        sql.includes('name = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE levels SET')
+        && sql.includes('name = ?'),
     )?.[0];
     expect(levelUpdateSql).toContain("updated_at = datetime('now')");
     expect(levelsUpdateRunMock).toHaveBeenCalledWith(
@@ -1116,13 +1114,13 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.ABILITIES_ADD](
         {},
         { world_id: 1, name: '   ', type: 'active' },
-      ),
+      )
     ).toThrowError('Ability name is required');
     expect(() =>
       registeredIpcHandlers[IPC.ABILITIES_ADD](
         {},
         { world_id: 1, name: 'Ability', type: '   ' },
-      ),
+      )
     ).toThrowError('Ability type is required');
 
     const abilityUpdateResult = registeredIpcHandlers[IPC.ABILITIES_UPDATE](
@@ -1136,11 +1134,11 @@ describe('main process', () => {
     );
     const abilityUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE abilities SET') &&
-        sql.includes('name = ?') &&
-        sql.includes('pick_count = ?') &&
-        sql.includes('pick_is_permanent = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE abilities SET')
+        && sql.includes('name = ?')
+        && sql.includes('pick_count = ?')
+        && sql.includes('pick_is_permanent = ?'),
     )?.[0];
     expect(abilityUpdateSql).toContain("updated_at = datetime('now')");
     expect(abilityUpdateSql).not.toContain('type = ?');
@@ -1157,8 +1155,8 @@ describe('main process', () => {
     ]({}, 21, {});
     const abilityTimestampOnlySql = prepareMock.mock.calls.find(
       ([sql]) =>
-        sql ===
-        "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?",
+        sql
+          === "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(abilityTimestampOnlySql).toBe(
       "UPDATE abilities SET updated_at = datetime('now') WHERE id = ?",
@@ -1166,12 +1164,12 @@ describe('main process', () => {
     expect(abilitiesUpdateRunMock).toHaveBeenLastCalledWith(21);
     expect(abilityTimestampOnlyUpdateResult).toMatchObject({ id: 21 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.ABILITIES_UPDATE]({}, 20, { name: '   ' }),
-    ).toThrowError('Ability name cannot be empty');
-    expect(() =>
-      registeredIpcHandlers[IPC.ABILITIES_UPDATE]({}, 20, { type: '   ' }),
-    ).toThrowError('Ability type cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.ABILITIES_UPDATE]({}, 20, { name: '   ' })).toThrowError(
+      'Ability name cannot be empty',
+    );
+    expect(() => registeredIpcHandlers[IPC.ABILITIES_UPDATE]({}, 20, { type: '   ' })).toThrowError(
+      'Ability type cannot be empty',
+    );
 
     const abilityDeleteResult = registeredIpcHandlers[IPC.ABILITIES_DELETE](
       {},
@@ -1193,29 +1191,29 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
         {},
         { parent_id: 9, child_id: 9 },
-      ),
+      )
     ).toThrowError('Parent ability cannot be linked to itself');
     expect(() =>
       registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
         {},
         { parent_id: 999, child_id: 2 },
-      ),
+      )
     ).toThrowError('Parent ability not found');
     expect(() =>
       registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
         {},
         { parent_id: 1, child_id: 999 },
-      ),
+      )
     ).toThrowError('Child ability not found');
     expect(() =>
       registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
         {},
         { parent_id: 1, child_id: 3 },
-      ),
+      )
     ).toThrowError('Parent and child abilities must belong to the same world');
 
     abilityChildrenInsertRunMock.mockImplementationOnce(() => {
-      const duplicateError = new Error('duplicate') as Error & { code: string };
+      const duplicateError = new Error('duplicate') as Error & { code: string; };
       duplicateError.code = 'SQLITE_CONSTRAINT_UNIQUE';
       throw duplicateError;
     });
@@ -1223,7 +1221,7 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.ABILITIES_ADD_CHILD](
         {},
         { parent_id: 1, child_id: 2 },
-      ),
+      )
     ).toThrowError('Child ability link already exists');
 
     const removeChildResult = registeredIpcHandlers[IPC.ABILITIES_REMOVE_CHILD](
@@ -1322,10 +1320,10 @@ describe('main process', () => {
     });
     const abilityUpdateRangeSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE abilities SET') &&
-        sql.includes('range_cells = ?') &&
-        !sql.includes('aoe_shape = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE abilities SET')
+        && sql.includes('range_cells = ?')
+        && !sql.includes('aoe_shape = ?'),
     )?.[0];
     expect(abilityUpdateRangeSql).toContain("updated_at = datetime('now')");
     expect(abilitiesUpdateRunMock).toHaveBeenCalledWith(5, 20);
@@ -1339,9 +1337,9 @@ describe('main process', () => {
     });
     const abilityUpdateClearShapeSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE abilities SET') &&
-        sql.includes('aoe_shape = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE abilities SET')
+        && sql.includes('aoe_shape = ?'),
     )?.[0];
     expect(abilityUpdateClearShapeSql).toBeDefined();
     expect(abilitiesUpdateRunMock).toHaveBeenCalledWith(null, 20);
@@ -1358,12 +1356,12 @@ describe('main process', () => {
     });
     const abilityUpdateAllCastingSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE abilities SET') &&
-        sql.includes('range_cells = ?') &&
-        sql.includes('aoe_shape = ?') &&
-        sql.includes('aoe_size_cells = ?') &&
-        sql.includes('target_type = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE abilities SET')
+        && sql.includes('range_cells = ?')
+        && sql.includes('aoe_shape = ?')
+        && sql.includes('aoe_size_cells = ?')
+        && sql.includes('target_type = ?'),
     )?.[0];
     expect(abilityUpdateAllCastingSql).toBeDefined();
     expect(abilityUpdateAllCastingResult).toMatchObject({ id: 20 });
@@ -1406,7 +1404,7 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.CAMPAIGNS_ADD](
         {},
         { world_id: 1, name: '   ' },
-      ),
+      )
     ).toThrowError('Campaign name is required');
 
     const campaignUpdateResult = registeredIpcHandlers[IPC.CAMPAIGNS_UPDATE](
@@ -1416,26 +1414,26 @@ describe('main process', () => {
     );
     const campaignUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE campaigns SET') &&
-        sql.includes('summary = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE campaigns SET')
+        && sql.includes('summary = ?'),
     )?.[0];
     expect(campaignUpdateSql).toContain("updated_at = datetime('now')");
     expect(campaignUpdateSql).not.toContain('name = ?');
     expect(campaignsUpdateRunMock).toHaveBeenCalledWith('A great campaign', 31);
     expect(campaignUpdateResult).toMatchObject({ id: 31 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.CAMPAIGNS_UPDATE]({}, 31, { name: '   ' }),
-    ).toThrowError('Campaign name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.CAMPAIGNS_UPDATE]({}, 31, { name: '   ' })).toThrowError(
+      'Campaign name cannot be empty',
+    );
 
     const campaignTimestampOnlyUpdateResult = registeredIpcHandlers[
       IPC.CAMPAIGNS_UPDATE
     ]({}, 32, {});
     const campaignTimestampOnlySql = prepareMock.mock.calls.find(
       ([sql]) =>
-        sql ===
-        "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?",
+        sql
+          === "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(campaignTimestampOnlySql).toBe(
       "UPDATE campaigns SET updated_at = datetime('now') WHERE id = ?",
@@ -1510,14 +1508,14 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
         {},
         { world_id: 1, name: '   ' },
-      ),
+      )
     ).toThrowError('BattleMap name is required');
 
     expect(() =>
       registeredIpcHandlers[IPC.BATTLEMAPS_ADD](
         {},
         { world_id: 1, name: 'Valid', config: 'not-json' },
-      ),
+      )
     ).toThrowError('BattleMap config must be valid JSON text');
 
     expect(() =>
@@ -1528,7 +1526,7 @@ describe('main process', () => {
           name: 'Valid',
           config: 123 as unknown as string,
         },
-      ),
+      )
     ).toThrowError('BattleMap config must be a JSON string');
 
     const battlemapUpdateResult = registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE](
@@ -1538,10 +1536,10 @@ describe('main process', () => {
     );
     const battlemapUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE battlemaps SET') &&
-        sql.includes('name = ?') &&
-        sql.includes('config = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE battlemaps SET')
+        && sql.includes('name = ?')
+        && sql.includes('config = ?'),
     )?.[0];
     expect(battlemapUpdateSql).toContain("updated_at = datetime('now')");
     const updatedBattleMapConfig = JSON.parse(
@@ -1574,26 +1572,25 @@ describe('main process', () => {
     });
     expect(battlemapUpdateResult).toMatchObject({ id: 61 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, { name: '   ' }),
-    ).toThrowError('BattleMap name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, { name: '   ' }))
+      .toThrowError('BattleMap name cannot be empty');
 
     expect(() =>
       registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, {
         config: 'not-json',
-      }),
+      })
     ).toThrowError('BattleMap config must be valid JSON text');
 
     expect(() =>
       registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, {
         config: 123 as unknown as string,
-      }),
+      })
     ).toThrowError('BattleMap config must be a JSON string');
 
     expect(() =>
       registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 404, {
         name: 'Missing BattleMap',
-      }),
+      })
     ).toThrowError('BattleMap not found');
 
     expect(() =>
@@ -1604,7 +1601,7 @@ describe('main process', () => {
           name: 'Invalid Runtime Grid Mode',
           config: '{"runtime":{"grid":{"mode":"triangle"}}}',
         },
-      ),
+      )
     ).toThrowError(
       "BattleMap config runtime.grid.mode must be one of: 'square', 'hex', 'none'",
     );
@@ -1617,7 +1614,7 @@ describe('main process', () => {
           name: 'Invalid Runtime Zoom',
           config: '{"runtime":{"camera":{"zoom":0}}}',
         },
-      ),
+      )
     ).toThrowError(
       'BattleMap config runtime.camera.zoom must be greater than 0',
     );
@@ -1625,7 +1622,7 @@ describe('main process', () => {
     expect(() =>
       registeredIpcHandlers[IPC.BATTLEMAPS_UPDATE]({}, 61, {
         config: '{"runtime":{"map":{"backgroundColor":"   "}}}',
-      }),
+      })
     ).toThrowError(
       'BattleMap config runtime.map.backgroundColor cannot be empty',
     );
@@ -1635,8 +1632,8 @@ describe('main process', () => {
     ]({}, 62, {});
     const battlemapTimestampOnlySql = prepareMock.mock.calls.find(
       ([sql]) =>
-        sql ===
-        "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?",
+        sql
+          === "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(battlemapTimestampOnlySql).toBe(
       "UPDATE battlemaps SET updated_at = datetime('now') WHERE id = ?",
@@ -1704,7 +1701,7 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.TOKENS_ADD](
         {},
         { world_id: 1, campaign_id: 31, name: '   ' },
-      ),
+      )
     ).toThrowError('Token name is required');
 
     expect(() =>
@@ -1716,7 +1713,7 @@ describe('main process', () => {
           name: 'Invalid Config',
           config: 'not-json',
         },
-      ),
+      )
     ).toThrowError('Token config must be valid JSON text');
 
     expect(() =>
@@ -1728,7 +1725,7 @@ describe('main process', () => {
           name: 'Invalid Visibility',
           is_visible: 2,
         },
-      ),
+      )
     ).toThrowError('Token visibility must be 0 or 1');
 
     const tokenUpdateResult = registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, {
@@ -1738,11 +1735,11 @@ describe('main process', () => {
     });
     const tokenUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE tokens SET') &&
-        sql.includes('name = ?') &&
-        sql.includes('config = ?') &&
-        sql.includes('is_visible = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE tokens SET')
+        && sql.includes('name = ?')
+        && sql.includes('config = ?')
+        && sql.includes('is_visible = ?'),
     )?.[0];
     expect(tokenUpdateSql).toContain("updated_at = datetime('now')");
     expect(tokensUpdateRunMock).toHaveBeenCalledWith(
@@ -1753,34 +1750,33 @@ describe('main process', () => {
     );
     expect(tokenUpdateResult).toMatchObject({ id: 71 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, { name: '   ' }),
-    ).toThrowError('Token name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, { name: '   ' })).toThrowError(
+      'Token name cannot be empty',
+    );
 
     expect(() =>
       registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, {
         config: 'not-json',
-      }),
+      })
     ).toThrowError('Token config must be valid JSON text');
 
     expect(() =>
       registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 71, {
         is_visible: 7,
-      }),
+      })
     ).toThrowError('Token visibility must be 0 or 1');
 
     expect(() =>
       registeredIpcHandlers[IPC.TOKENS_UPDATE]({}, 404, {
         name: 'Missing token',
-      }),
+      })
     ).toThrowError('Token not found');
 
     const tokenTimestampOnlyUpdateResult = registeredIpcHandlers[
       IPC.TOKENS_UPDATE
     ]({}, 72, {});
     const tokenTimestampOnlySql = prepareMock.mock.calls.find(
-      ([sql]) =>
-        sql === "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?",
+      ([sql]) => sql === "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(tokenTimestampOnlySql).toBe(
       "UPDATE tokens SET updated_at = datetime('now') WHERE id = ?",
@@ -1818,26 +1814,25 @@ describe('main process', () => {
     expect(arcsSelectByIdGetMock).toHaveBeenCalledWith(10);
     expect(arcAddResult).toMatchObject({ id: 10 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.ARCS_ADD]({}, { campaign_id: 1, name: '   ' }),
-    ).toThrowError('Arc name is required');
+    expect(() => registeredIpcHandlers[IPC.ARCS_ADD]({}, { campaign_id: 1, name: '   ' }))
+      .toThrowError('Arc name is required');
 
     const arcUpdateResult = registeredIpcHandlers[IPC.ARCS_UPDATE]({}, 10, {
       name: 'Updated Arc',
     });
     const arcUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE arcs SET') &&
-        sql.includes('name = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE arcs SET')
+        && sql.includes('name = ?'),
     )?.[0];
     expect(arcUpdateSql).toContain("updated_at = datetime('now')");
     expect(arcsUpdateRunMock).toHaveBeenCalledWith('Updated Arc', 10);
     expect(arcUpdateResult).toMatchObject({ id: 10 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.ARCS_UPDATE]({}, 10, { name: '   ' }),
-    ).toThrowError('Arc name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.ARCS_UPDATE]({}, 10, { name: '   ' })).toThrowError(
+      'Arc name cannot be empty',
+    );
 
     const arcDeleteResult = registeredIpcHandlers[IPC.ARCS_DELETE]({}, 10);
     expect(arcsCampaignForDeleteGetMock).toHaveBeenCalledWith(10);
@@ -1879,26 +1874,26 @@ describe('main process', () => {
     expect(actsSelectByIdGetMock).toHaveBeenCalledWith(20);
     expect(actAddResult).toMatchObject({ id: 20 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.ACTS_ADD]({}, { arc_id: 10, name: '   ' }),
-    ).toThrowError('Act name is required');
+    expect(() => registeredIpcHandlers[IPC.ACTS_ADD]({}, { arc_id: 10, name: '   ' })).toThrowError(
+      'Act name is required',
+    );
 
     const actUpdateResult = registeredIpcHandlers[IPC.ACTS_UPDATE]({}, 20, {
       name: 'Updated Act',
     });
     const actUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE acts SET') &&
-        sql.includes('name = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE acts SET')
+        && sql.includes('name = ?'),
     )?.[0];
     expect(actUpdateSql).toContain("updated_at = datetime('now')");
     expect(actsUpdateRunMock).toHaveBeenCalledWith('Updated Act', 20);
     expect(actUpdateResult).toMatchObject({ id: 20 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.ACTS_UPDATE]({}, 20, { name: '   ' }),
-    ).toThrowError('Act name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.ACTS_UPDATE]({}, 20, { name: '   ' })).toThrowError(
+      'Act name cannot be empty',
+    );
 
     const actDeleteResult = registeredIpcHandlers[IPC.ACTS_DELETE]({}, 20);
     expect(actsArcForDeleteGetMock).toHaveBeenCalledWith(20);
@@ -1914,8 +1909,8 @@ describe('main process', () => {
     expect(sessionsSelectAllByActMock).toHaveBeenCalledWith(20);
     const sessionsOrderedSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        sql ===
-        'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
+        sql
+          === 'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
     )?.[0];
     expect(sessionsOrderedSql).toBe(
       'SELECT * FROM sessions WHERE act_id = ? ORDER BY sort_order ASC, id ASC',
@@ -1959,9 +1954,8 @@ describe('main process', () => {
       planned_at: '2026-03-15T09:30',
     });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.SESSIONS_ADD]({}, { act_id: 20, name: '   ' }),
-    ).toThrowError('Session name is required');
+    expect(() => registeredIpcHandlers[IPC.SESSIONS_ADD]({}, { act_id: 20, name: '   ' }))
+      .toThrowError('Session name is required');
 
     const sessionUpdateResult = registeredIpcHandlers[IPC.SESSIONS_UPDATE](
       {},
@@ -1974,11 +1968,11 @@ describe('main process', () => {
     );
     const sessionUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE sessions SET') &&
-        sql.includes('notes = ?') &&
-        sql.includes('planned_at = ?') &&
-        sql.includes('sort_order = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE sessions SET')
+        && sql.includes('notes = ?')
+        && sql.includes('planned_at = ?')
+        && sql.includes('sort_order = ?'),
     )?.[0];
     expect(sessionUpdateSql).toContain("updated_at = datetime('now')");
     expect(sessionsUpdateRunMock).toHaveBeenCalledWith(
@@ -1992,16 +1986,15 @@ describe('main process', () => {
       planned_at: '2026-03-17T10:45',
     });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.SESSIONS_UPDATE]({}, 41, { name: '   ' }),
-    ).toThrowError('Session name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.SESSIONS_UPDATE]({}, 41, { name: '   ' })).toThrowError(
+      'Session name cannot be empty',
+    );
 
     const sessionTimestampOnlyUpdateResult = registeredIpcHandlers[
       IPC.SESSIONS_UPDATE
     ]({}, 42, {});
     const sessionTimestampOnlySql = prepareMock.mock.calls.find(
-      ([sql]) =>
-        sql === "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?",
+      ([sql]) => sql === "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(sessionTimestampOnlySql).toBe(
       "UPDATE sessions SET updated_at = datetime('now') WHERE id = ?",
@@ -2028,10 +2021,10 @@ describe('main process', () => {
     expect(scenesSelectAllByCampaignMock).toHaveBeenCalledWith(1);
     const campaignScenesSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('FROM scenes') &&
-        sql.includes('WHERE arcs.campaign_id = ?') &&
-        sql.includes('ORDER BY'),
+        typeof sql === 'string'
+        && sql.includes('FROM scenes')
+        && sql.includes('WHERE arcs.campaign_id = ?')
+        && sql.includes('ORDER BY'),
     )?.[0];
     expect(campaignScenesSql).toContain('INNER JOIN sessions');
     expect(campaignScenesSql).toContain('INNER JOIN acts');
@@ -2056,8 +2049,8 @@ describe('main process', () => {
     expect(scenesSelectAllBySessionMock).toHaveBeenCalledWith(40);
     const scenesOrderedSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        sql ===
-        'SELECT * FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
+        sql
+          === 'SELECT * FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
     )?.[0];
     expect(scenesOrderedSql).toBe(
       'SELECT * FROM scenes WHERE session_id = ? ORDER BY sort_order ASC, id ASC',
@@ -2095,14 +2088,14 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.SCENES_ADD](
         {},
         { session_id: 40, name: '   ' },
-      ),
+      )
     ).toThrowError('Scene name is required');
 
     expect(() =>
       registeredIpcHandlers[IPC.SCENES_ADD](
         {},
         { session_id: 40, name: 'Valid', payload: 'not-json' },
-      ),
+      )
     ).toThrowError('Scene payload must be valid JSON text');
 
     expect(() =>
@@ -2113,7 +2106,7 @@ describe('main process', () => {
           name: 'Valid',
           payload: 123 as unknown as string,
         },
-      ),
+      )
     ).toThrowError('Scene payload must be a JSON string');
 
     const sceneWithRuntimeBattleMapIdResult = registeredIpcHandlers[
@@ -2143,7 +2136,7 @@ describe('main process', () => {
           name: 'Invalid Runtime Payload',
           payload: '{"runtime":[]}',
         },
-      ),
+      )
     ).toThrowError('Scene payload runtime must be a JSON object');
 
     expect(() =>
@@ -2154,7 +2147,7 @@ describe('main process', () => {
           name: 'Invalid BattleMap Ref',
           payload: '{"runtime":{"battlemap_id":0}}',
         },
-      ),
+      )
     ).toThrowError(
       'Scene payload runtime.battlemap_id must be a positive integer or null',
     );
@@ -2165,27 +2158,26 @@ describe('main process', () => {
     });
     const sceneUpdateSql = prepareMock.mock.calls.find(
       ([sql]) =>
-        typeof sql === 'string' &&
-        sql.includes('UPDATE scenes SET') &&
-        sql.includes('payload = ?') &&
-        sql.includes('sort_order = ?'),
+        typeof sql === 'string'
+        && sql.includes('UPDATE scenes SET')
+        && sql.includes('payload = ?')
+        && sql.includes('sort_order = ?'),
     )?.[0];
     expect(sceneUpdateSql).toContain("updated_at = datetime('now')");
     expect(scenesUpdateRunMock).toHaveBeenCalledWith('{"key":"value"}', 1, 51);
     expect(sceneUpdateResult).toMatchObject({ id: 51 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { name: '   ' }),
-    ).toThrowError('Scene name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { name: '   ' })).toThrowError(
+      'Scene name cannot be empty',
+    );
 
-    expect(() =>
-      registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { payload: 'not-json' }),
-    ).toThrowError('Scene payload must be valid JSON text');
+    expect(() => registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, { payload: 'not-json' }))
+      .toThrowError('Scene payload must be valid JSON text');
 
     expect(() =>
       registeredIpcHandlers[IPC.SCENES_UPDATE]({}, 51, {
         payload: '{"runtime":{"battlemap_id":-1}}',
-      }),
+      })
     ).toThrowError(
       'Scene payload runtime.battlemap_id must be a positive integer or null',
     );
@@ -2194,8 +2186,7 @@ describe('main process', () => {
       IPC.SCENES_UPDATE
     ]({}, 52, {});
     const sceneTimestampOnlySql = prepareMock.mock.calls.find(
-      ([sql]) =>
-        sql === "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?",
+      ([sql]) => sql === "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(sceneTimestampOnlySql).toBe(
       "UPDATE scenes SET updated_at = datetime('now') WHERE id = ?",
@@ -2211,13 +2202,13 @@ describe('main process', () => {
     expect(scenesSortOrderUpdateRunMock).toHaveBeenCalledWith(1, 52);
     expect(sceneDeleteResult).toEqual({ id: 53 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION]({}, 404, 41),
-    ).toThrowError('Scene not found');
+    expect(() => registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION]({}, 404, 41)).toThrowError(
+      'Scene not found',
+    );
 
-    expect(() =>
-      registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION]({}, 51, 404),
-    ).toThrowError('Target session not found');
+    expect(() => registeredIpcHandlers[IPC.SCENES_MOVE_TO_SESSION]({}, 51, 404)).toThrowError(
+      'Target session not found',
+    );
 
     scenesMoveNextSortOrderGetMock.mockClear();
     scenesUpdateRunMock.mockClear();
@@ -2330,7 +2321,7 @@ describe('main process', () => {
       registeredIpcHandlers[IPC.STATBLOCKS_ADD](
         {},
         { world_id: 1, name: '   ' },
-      ),
+      )
     ).toThrowError('StatBlock name is required');
 
     const statblockUpdateResult = registeredIpcHandlers[IPC.STATBLOCKS_UPDATE](
@@ -2339,25 +2330,23 @@ describe('main process', () => {
       { description: 'A fierce goblin' },
     );
     const statblockUpdateSql = prepareMock.mock.calls.find(
-      ([sql]) =>
-        typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
+      ([sql]) => typeof sql === 'string' && sql.includes('UPDATE statblocks SET'),
     )?.[0];
     expect(statblockUpdateSql).toContain('description = ?');
     expect(statblockUpdateSql).not.toContain('name = ?');
     expect(statblocksUpdateRunMock).toHaveBeenCalledWith('A fierce goblin', 91);
     expect(statblockUpdateResult).toMatchObject({ id: 91 });
 
-    expect(() =>
-      registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 91, { name: '   ' }),
-    ).toThrowError('StatBlock name cannot be empty');
+    expect(() => registeredIpcHandlers[IPC.STATBLOCKS_UPDATE]({}, 91, { name: '   ' }))
+      .toThrowError('StatBlock name cannot be empty');
 
     const statblockTimestampOnlyUpdateResult = registeredIpcHandlers[
       IPC.STATBLOCKS_UPDATE
     ]({}, 91, {});
     const statblockTimestampOnlySql = prepareMock.mock.calls.find(
       ([sql]) =>
-        sql ===
-        "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?",
+        sql
+          === "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?",
     )?.[0];
     expect(statblockTimestampOnlySql).toBe(
       "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?",

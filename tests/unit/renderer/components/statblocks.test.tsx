@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import StatBlockForm from '../../../../src/renderer/components/statblocks/StatBlockForm';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import StatBlockCard from '../../../../src/renderer/components/statblocks/StatBlockCard';
+import StatBlockForm from '../../../../src/renderer/components/statblocks/StatBlockForm';
 
 describe('StatBlockForm', () => {
   const mockOnSubmit = vi.fn(async () => {
@@ -18,7 +18,7 @@ describe('StatBlockForm', () => {
   it('renders create form with empty fields', () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -46,7 +46,7 @@ describe('StatBlockForm', () => {
 
     render(
       <StatBlockForm
-        mode="edit"
+        mode='edit'
         initialData={statBlock}
         worldId={1}
         onSubmit={mockOnSubmit}
@@ -76,7 +76,7 @@ describe('StatBlockForm', () => {
 
     render(
       <StatBlockForm
-        mode="edit"
+        mode='edit'
         initialData={statBlock}
         worldId={1}
         onSubmit={mockOnSubmit}
@@ -92,7 +92,7 @@ describe('StatBlockForm', () => {
   it('validates JSON config on change', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -110,7 +110,7 @@ describe('StatBlockForm', () => {
   it('clears config error when valid JSON is provided', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -134,7 +134,7 @@ describe('StatBlockForm', () => {
   it('disables submit button when name is empty', () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -148,7 +148,7 @@ describe('StatBlockForm', () => {
   it('enables submit button when name is provided', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -167,7 +167,7 @@ describe('StatBlockForm', () => {
   it('disables submit button when only whitespace name is provided', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -184,7 +184,7 @@ describe('StatBlockForm', () => {
   it('calls onCancel when Cancel button is clicked', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -200,7 +200,7 @@ describe('StatBlockForm', () => {
   it('calls onSubmit with correct data when form is submitted', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -230,7 +230,7 @@ describe('StatBlockForm', () => {
   it('includes campaignId in onSubmit data when provided', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         campaignId={42}
         onSubmit={mockOnSubmit}
@@ -258,7 +258,7 @@ describe('StatBlockForm', () => {
   it('excludes campaignId when null', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         campaignId={null}
         onSubmit={mockOnSubmit}
@@ -283,7 +283,7 @@ describe('StatBlockForm', () => {
   it('trims description and removes undefined empty descriptions', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -323,7 +323,7 @@ describe('StatBlockForm', () => {
 
     render(
       <StatBlockForm
-        mode="edit"
+        mode='edit'
         initialData={statBlock}
         worldId={1}
         onSubmit={mockOnSubmit}
@@ -341,7 +341,7 @@ describe('StatBlockForm', () => {
     const user = userEvent.setup();
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -369,7 +369,7 @@ describe('StatBlockForm', () => {
   it('shows error when invalid JSON is submitted', async () => {
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -395,7 +395,7 @@ describe('StatBlockForm', () => {
     mockOnSubmit.mockRejectedValue(new Error('Submit failed'));
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -419,7 +419,7 @@ describe('StatBlockForm', () => {
     mockOnSubmit.mockRejectedValue('unknown error');
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -458,7 +458,7 @@ describe('StatBlockForm', () => {
 
     render(
       <StatBlockForm
-        mode="edit"
+        mode='edit'
         initialData={statBlock}
         worldId={1}
         onSubmit={mockOnSubmit}
@@ -483,7 +483,7 @@ describe('StatBlockForm', () => {
 
     render(
       <StatBlockForm
-        mode="create"
+        mode='create'
         worldId={1}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}

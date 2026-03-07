@@ -29,7 +29,9 @@ function runCommand(cmd, commandArgs, options = {}) {
 
     if (!options.allowFailure) {
       console.error(
-        `[verify-all] Command failed with exit code ${result.status}: ${cmd} ${commandArgs.join(' ')}`,
+        `[verify-all] Command failed with exit code ${result.status}: ${cmd} ${
+          commandArgs.join(' ')
+        }`,
       );
     }
     return false;

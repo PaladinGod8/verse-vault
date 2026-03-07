@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  parseStatBlockStatistics,
-  getResourceValue,
   getPassiveScoreValue,
-  setResourceValue,
-  setPassiveScoreValue,
+  getResourceValue,
   initializeStatBlockStatistics,
+  parseStatBlockStatistics,
   serializeStatBlockStatistics,
+  setPassiveScoreValue,
+  setResourceValue,
 } from '../../../../src/renderer/lib/statblockStatisticsUtils';
 
 describe('statblockStatisticsUtils', () => {

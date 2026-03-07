@@ -13,16 +13,14 @@ contextBridge.exposeInMainWorld('db', {
     }): Promise<Verse> => ipcRenderer.invoke(IPC.VERSES_ADD, data),
     update: (
       id: number,
-      data: { text?: string; reference?: string; tags?: string },
+      data: { text?: string; reference?: string; tags?: string; },
     ): Promise<Verse> => ipcRenderer.invoke(IPC.VERSES_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.VERSES_DELETE, id),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.VERSES_DELETE, id),
   },
   levels: {
     getAllByWorld: (worldId: number): Promise<Level[]> =>
       ipcRenderer.invoke(IPC.LEVELS_GET_ALL_BY_WORLD, worldId),
-    getById: (id: number): Promise<Level | null> =>
-      ipcRenderer.invoke(IPC.LEVELS_GET_BY_ID, id),
+    getById: (id: number): Promise<Level | null> => ipcRenderer.invoke(IPC.LEVELS_GET_BY_ID, id),
     add: (data: {
       world_id: number;
       name: string;
@@ -31,7 +29,7 @@ contextBridge.exposeInMainWorld('db', {
     }) => ipcRenderer.invoke(IPC.LEVELS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; category?: string; description?: string | null },
+      data: { name?: string; category?: string; description?: string | null; },
     ) => ipcRenderer.invoke(IPC.LEVELS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.LEVELS_DELETE, id),
   },
@@ -80,8 +78,7 @@ contextBridge.exposeInMainWorld('db', {
         target_type?: 'tile' | 'token' | null;
       },
     ): Promise<Ability> => ipcRenderer.invoke(IPC.ABILITIES_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.ABILITIES_DELETE, id),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.ABILITIES_DELETE, id),
     addChild: (data: AbilityChild): Promise<AbilityChild> =>
       ipcRenderer.invoke(IPC.ABILITIES_ADD_CHILD, data),
     removeChild: (data: AbilityChild): Promise<AbilityChild> =>
@@ -90,8 +87,7 @@ contextBridge.exposeInMainWorld('db', {
       ipcRenderer.invoke(IPC.ABILITIES_GET_CHILDREN, abilityId),
   },
   campaigns: {
-    getAllByWorld: (worldId: number) =>
-      ipcRenderer.invoke(IPC.CAMPAIGNS_GET_ALL_BY_WORLD, worldId),
+    getAllByWorld: (worldId: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_GET_ALL_BY_WORLD, worldId),
     getById: (id: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_GET_BY_ID, id),
     add: (data: {
       world_id: number;
@@ -101,7 +97,7 @@ contextBridge.exposeInMainWorld('db', {
     }) => ipcRenderer.invoke(IPC.CAMPAIGNS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; summary?: string | null; config?: string },
+      data: { name?: string; summary?: string | null; config?: string; },
     ) => ipcRenderer.invoke(IPC.CAMPAIGNS_UPDATE, id, data),
     delete: (id: number) => ipcRenderer.invoke(IPC.CAMPAIGNS_DELETE, id),
   },
@@ -117,11 +113,9 @@ contextBridge.exposeInMainWorld('db', {
     }): Promise<BattleMap> => ipcRenderer.invoke(IPC.BATTLEMAPS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; config?: string },
-    ): Promise<BattleMap> =>
-      ipcRenderer.invoke(IPC.BATTLEMAPS_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.BATTLEMAPS_DELETE, id),
+      data: { name?: string; config?: string; },
+    ): Promise<BattleMap> => ipcRenderer.invoke(IPC.BATTLEMAPS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.BATTLEMAPS_DELETE, id),
   },
   tokens: {
     getAllByWorld: (worldId: number): Promise<Token[]> =>
@@ -139,8 +133,7 @@ contextBridge.exposeInMainWorld('db', {
         tokenId,
         targetCampaignId,
       ),
-    getById: (id: number): Promise<Token | null> =>
-      ipcRenderer.invoke(IPC.TOKENS_GET_BY_ID, id),
+    getById: (id: number): Promise<Token | null> => ipcRenderer.invoke(IPC.TOKENS_GET_BY_ID, id),
     importImage: (
       payload: TokenImageImportPayload,
     ): Promise<TokenImageImportResult> => {
@@ -172,14 +165,12 @@ contextBridge.exposeInMainWorld('db', {
         is_visible?: number;
       },
     ): Promise<Token> => ipcRenderer.invoke(IPC.TOKENS_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.TOKENS_DELETE, id),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.TOKENS_DELETE, id),
   },
   arcs: {
     getAllByCampaign: (campaignId: number): Promise<Arc[]> =>
       ipcRenderer.invoke(IPC.ARCS_GET_ALL_BY_CAMPAIGN, campaignId),
-    getById: (id: number): Promise<Arc | null> =>
-      ipcRenderer.invoke(IPC.ARCS_GET_BY_ID, id),
+    getById: (id: number): Promise<Arc | null> => ipcRenderer.invoke(IPC.ARCS_GET_BY_ID, id),
     add: (data: {
       campaign_id: number;
       name: string;
@@ -187,18 +178,16 @@ contextBridge.exposeInMainWorld('db', {
     }): Promise<Arc> => ipcRenderer.invoke(IPC.ARCS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; sort_order?: number },
+      data: { name?: string; sort_order?: number; },
     ): Promise<Arc> => ipcRenderer.invoke(IPC.ARCS_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.ARCS_DELETE, id),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.ARCS_DELETE, id),
   },
   acts: {
     getAllByArc: (arcId: number): Promise<Act[]> =>
       ipcRenderer.invoke(IPC.ACTS_GET_ALL_BY_ARC, arcId),
     getAllByCampaign: (campaignId: number): Promise<Act[]> =>
       ipcRenderer.invoke(IPC.ACTS_GET_ALL_BY_CAMPAIGN, campaignId),
-    getById: (id: number): Promise<Act | null> =>
-      ipcRenderer.invoke(IPC.ACTS_GET_BY_ID, id),
+    getById: (id: number): Promise<Act | null> => ipcRenderer.invoke(IPC.ACTS_GET_BY_ID, id),
     add: (data: {
       arc_id: number;
       name: string;
@@ -206,10 +195,9 @@ contextBridge.exposeInMainWorld('db', {
     }): Promise<Act> => ipcRenderer.invoke(IPC.ACTS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; sort_order?: number },
+      data: { name?: string; sort_order?: number; },
     ): Promise<Act> => ipcRenderer.invoke(IPC.ACTS_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.ACTS_DELETE, id),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.ACTS_DELETE, id),
     moveTo: (actId: number, newArcId: number): Promise<Act> =>
       ipcRenderer.invoke(IPC.ACTS_MOVE_TO_ARC, actId, newArcId),
   },
@@ -279,20 +267,18 @@ contextBridge.exposeInMainWorld('db', {
     }): Promise<StatBlock> => ipcRenderer.invoke(IPC.STATBLOCKS_ADD, data),
     update: (
       id: number,
-      data: { name?: string; description?: string; config?: string },
-    ): Promise<StatBlock> =>
-      ipcRenderer.invoke(IPC.STATBLOCKS_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.STATBLOCKS_DELETE, id),
+      data: { name?: string; description?: string; config?: string; },
+    ): Promise<StatBlock> => ipcRenderer.invoke(IPC.STATBLOCKS_UPDATE, id, data),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.STATBLOCKS_DELETE, id),
   },
   worlds: {
     getAll: (): Promise<World[]> => ipcRenderer.invoke(IPC.WORLDS_GET_ALL),
-    getById: (id: number): Promise<World | null> =>
-      ipcRenderer.invoke(IPC.WORLDS_GET_BY_ID, id),
+    getById: (id: number): Promise<World | null> => ipcRenderer.invoke(IPC.WORLDS_GET_BY_ID, id),
     add: (data: {
       name: string;
       thumbnail?: string | null;
       short_description?: string | null;
+      config?: string;
     }): Promise<World> => ipcRenderer.invoke(IPC.WORLDS_ADD, data),
     update: (
       id: number,
@@ -302,10 +288,8 @@ contextBridge.exposeInMainWorld('db', {
         short_description?: string | null;
       },
     ): Promise<World> => ipcRenderer.invoke(IPC.WORLDS_UPDATE, id, data),
-    delete: (id: number): Promise<{ id: number }> =>
-      ipcRenderer.invoke(IPC.WORLDS_DELETE, id),
-    markViewed: (id: number): Promise<World> =>
-      ipcRenderer.invoke(IPC.WORLDS_MARK_VIEWED, id),
+    delete: (id: number): Promise<{ id: number; }> => ipcRenderer.invoke(IPC.WORLDS_DELETE, id),
+    markViewed: (id: number): Promise<World> => ipcRenderer.invoke(IPC.WORLDS_MARK_VIEWED, id),
     importImage: (
       payload: TokenImageImportPayload,
     ): Promise<TokenImageImportResult> => {

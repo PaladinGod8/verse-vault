@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LevelsPage from '../../../src/renderer/pages/LevelsPage';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
@@ -58,8 +58,8 @@ function renderLevelsPage(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id/levels" element={<LevelsPage />} />
-        <Route path="/world/:id?" element={<LevelsPage />} />
+        <Route path='/world/:id/levels' element={<LevelsPage />} />
+        <Route path='/world/:id?' element={<LevelsPage />} />
       </Routes>
     </MemoryRouter>,
   );

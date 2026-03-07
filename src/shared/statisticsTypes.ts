@@ -57,10 +57,10 @@ export function isResourceDefinition(
   }
   const record = obj as Record<string, unknown>;
   return (
-    typeof record.id === 'string' &&
-    typeof record.name === 'string' &&
-    typeof record.abbreviation === 'string' &&
-    typeof record.isDefault === 'boolean'
+    typeof record.id === 'string'
+    && typeof record.name === 'string'
+    && typeof record.abbreviation === 'string'
+    && typeof record.isDefault === 'boolean'
   );
 }
 
@@ -72,12 +72,12 @@ export function isPassiveScoreDefinition(
   }
   const record = obj as Record<string, unknown>;
   return (
-    typeof record.id === 'string' &&
-    typeof record.name === 'string' &&
-    typeof record.abbreviation === 'string' &&
-    typeof record.type === 'string' &&
-    ['ability_score', 'proficiency_bonus', 'custom'].includes(record.type) &&
-    typeof record.isDefault === 'boolean'
+    typeof record.id === 'string'
+    && typeof record.name === 'string'
+    && typeof record.abbreviation === 'string'
+    && typeof record.type === 'string'
+    && ['ability_score', 'proficiency_bonus', 'custom'].includes(record.type)
+    && typeof record.isDefault === 'boolean'
   );
 }
 
@@ -87,10 +87,10 @@ export function isResourceValue(obj: unknown): obj is StatBlockResourceValue {
   }
   const record = obj as Record<string, unknown>;
   return (
-    typeof record.current === 'number' &&
-    typeof record.maximum === 'number' &&
-    Number.isFinite(record.current) &&
-    Number.isFinite(record.maximum)
+    typeof record.current === 'number'
+    && typeof record.maximum === 'number'
+    && Number.isFinite(record.current)
+    && Number.isFinite(record.maximum)
   );
 }
 

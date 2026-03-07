@@ -1,13 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AbilitiesPage from '../../../src/renderer/pages/AbilitiesPage';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
@@ -78,8 +72,8 @@ function renderAbilitiesPage(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id/abilities" element={<AbilitiesPage />} />
-        <Route path="/world/:id?/abilities" element={<AbilitiesPage />} />
+        <Route path='/world/:id/abilities' element={<AbilitiesPage />} />
+        <Route path='/world/:id?/abilities' element={<AbilitiesPage />} />
       </Routes>
     </MemoryRouter>,
   );

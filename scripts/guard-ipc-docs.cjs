@@ -64,9 +64,7 @@ function main() {
   }
 
   const changedSet = new Set(changedFiles);
-  const changedIpcFiles = changedFiles.filter((file) =>
-    IPC_RELATED_FILES.has(file),
-  );
+  const changedIpcFiles = changedFiles.filter((file) => IPC_RELATED_FILES.has(file));
 
   if (changedIpcFiles.length === 0) {
     console.log('[guard:ipc-docs] No IPC-related file changes detected.');

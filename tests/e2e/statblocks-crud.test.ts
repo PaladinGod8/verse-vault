@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { expect, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 test('statblocks full CRUD flow works end to end', async () => {
   const { app, userDataDir } = await launchApp();

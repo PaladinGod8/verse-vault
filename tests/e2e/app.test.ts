@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { expect, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 // Requires `yarn package` to have been run first so that
 // .vite/build/main.js and .vite/renderer/main_window/ exist.
@@ -31,9 +31,8 @@ test('app launches and shows worlds landing shell', async () => {
     const hasEmptyState = Array.from(document.querySelectorAll('h2')).some(
       (heading) => heading.textContent?.trim() === 'No worlds yet',
     );
-    const hasWorldCard =
-      document.querySelector('article[role="button"][aria-label^="Open "]') !==
-      null;
+    const hasWorldCard = document.querySelector('article[role="button"][aria-label^="Open "]')
+      !== null;
 
     return hasEmptyState || hasWorldCard;
   });

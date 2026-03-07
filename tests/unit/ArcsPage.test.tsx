@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DragEndEvent } from '@dnd-kit/core';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import type { DragEndEvent } from '@dnd-kit/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ArcsPage from '../../src/renderer/pages/ArcsPage';
 
@@ -27,8 +27,7 @@ vi.mock('../../src/renderer/components/ui/ToastProvider', () => ({
 let capturedOnDragEnd: ((event: DragEndEvent) => void) | undefined;
 
 vi.mock('@dnd-kit/core', async () => {
-  const actual =
-    await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
+  const actual = await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
   return {
     ...actual,
     DndContext: ({
@@ -45,15 +44,12 @@ vi.mock('@dnd-kit/core', async () => {
 });
 
 vi.mock('@dnd-kit/sortable', async () => {
-  const actual =
-    await vi.importActual<typeof import('@dnd-kit/sortable')>(
-      '@dnd-kit/sortable',
-    );
+  const actual = await vi.importActual<typeof import('@dnd-kit/sortable')>(
+    '@dnd-kit/sortable',
+  );
   return {
     ...actual,
-    SortableContext: ({ children }: { children: React.ReactNode }) => (
-      <>{children}</>
-    ),
+    SortableContext: ({ children }: { children: React.ReactNode; }) => <>{children}</>,
     useSortable: vi.fn().mockReturnValue({
       attributes: {},
       listeners: {},
@@ -100,7 +96,7 @@ function renderPage() {
     <MemoryRouter initialEntries={['/world/1/campaign/1/arcs']}>
       <Routes>
         <Route
-          path="/world/:id/campaign/:campaignId/arcs"
+          path='/world/:id/campaign/:campaignId/arcs'
           element={<ArcsPage />}
         />
       </Routes>
@@ -354,9 +350,7 @@ describe('ArcsPage', () => {
         within(confirmDialog).getByRole('button', { name: 'Delete' }),
       );
 
-      await waitFor(() =>
-        expect(screen.queryByText('Arc One')).not.toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.queryByText('Arc One')).not.toBeInTheDocument());
       expect(window.db.arcs.delete).toHaveBeenCalledWith(1);
       expect(toastSuccessMock).toHaveBeenCalledWith(
         'Arc deleted.',
@@ -405,9 +399,7 @@ describe('ArcsPage', () => {
         within(confirmDialog).getByRole('button', { name: 'Delete' }),
       );
 
-      await waitFor(() =>
-        expect(window.db.arcs.delete).toHaveBeenCalledWith(1),
-      );
+      await waitFor(() => expect(window.db.arcs.delete).toHaveBeenCalledWith(1));
       expect(screen.getByText('Arc One')).toBeInTheDocument();
       expect(toastErrorMock).toHaveBeenCalledWith(
         'Failed to delete arc.',
@@ -456,9 +448,7 @@ describe('ArcsPage', () => {
         over: { id: 2 },
       } as unknown as DragEndEvent);
 
-      await waitFor(() =>
-        expect(screen.getByText('Save failed')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByText('Save failed')).toBeInTheDocument());
     });
 
     it('no-ops when active and over are the same item', async () => {

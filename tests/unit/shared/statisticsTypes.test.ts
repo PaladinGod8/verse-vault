@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  isResourceDefinition,
   isPassiveScoreDefinition,
-  isResourceValue,
   isPassiveScoreValue,
-  type ResourceStatisticDefinition,
+  isResourceDefinition,
+  isResourceValue,
   type PassiveScoreDefinition,
-  type StatBlockResourceValue,
+  type ResourceStatisticDefinition,
   type StatBlockPassiveScoreValue,
+  type StatBlockResourceValue,
 } from '../../../src/shared/statisticsTypes';
 
 describe('statisticsTypes type guards', () => {

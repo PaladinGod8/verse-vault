@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
-import path from 'path';
 import { app } from 'electron';
+import path from 'path';
 
 let databaseConnection: Database.Database | null = null;
 
@@ -317,7 +317,7 @@ function runArcActMigration(db: Database.Database): void {
 }
 
 function runTokenWorldIdMigration(db: Database.Database): void {
-  const cols = db.pragma('table_info(tokens)') as { name: string }[];
+  const cols = db.pragma('table_info(tokens)') as { name: string; }[];
   if (cols.some((c) => c.name === 'world_id')) return;
 
   db.exec(
@@ -402,7 +402,7 @@ function runTokenCampaignNullableMigration(db: Database.Database): void {
 }
 
 function runTokenGridTypeMigration(db: Database.Database): void {
-  const cols = db.pragma('table_info(tokens)') as { name: string }[];
+  const cols = db.pragma('table_info(tokens)') as { name: string; }[];
   if (!cols.some((c) => c.name === 'grid_type')) {
     db.exec(
       "ALTER TABLE tokens ADD COLUMN grid_type TEXT NOT NULL DEFAULT 'square' CHECK (grid_type IN ('square', 'hex'))",
@@ -424,7 +424,7 @@ function ensureTokenCampaignIdIndex(db: Database.Database): void {
 }
 
 function ensureTokenWorldIdIndex(db: Database.Database): void {
-  const cols = db.pragma('table_info(tokens)') as { name: string }[];
+  const cols = db.pragma('table_info(tokens)') as { name: string; }[];
   if (!cols.some((c) => c.name === 'world_id')) {
     return;
   }
@@ -662,9 +662,9 @@ function normalizeTokenFramingConfig(input: unknown): TokenFramingConfig {
   }
 
   if (
-    Object.prototype.hasOwnProperty.call(normalized, 'extent_x_cells') &&
-    normalized.extent_x_cells !== undefined &&
-    normalized.extent_x_cells <= 0
+    Object.prototype.hasOwnProperty.call(normalized, 'extent_x_cells')
+    && normalized.extent_x_cells !== undefined
+    && normalized.extent_x_cells <= 0
   ) {
     throw new Error(
       'Token config framing.extent_x_cells must be greater than 0',
@@ -672,9 +672,9 @@ function normalizeTokenFramingConfig(input: unknown): TokenFramingConfig {
   }
 
   if (
-    Object.prototype.hasOwnProperty.call(normalized, 'extent_y_cells') &&
-    normalized.extent_y_cells !== undefined &&
-    normalized.extent_y_cells <= 0
+    Object.prototype.hasOwnProperty.call(normalized, 'extent_y_cells')
+    && normalized.extent_y_cells !== undefined
+    && normalized.extent_y_cells <= 0
   ) {
     throw new Error(
       'Token config framing.extent_y_cells must be greater than 0',
@@ -682,9 +682,9 @@ function normalizeTokenFramingConfig(input: unknown): TokenFramingConfig {
   }
 
   if (
-    Object.prototype.hasOwnProperty.call(normalized, 'max_extent_cells') &&
-    normalized.max_extent_cells !== undefined &&
-    normalized.max_extent_cells <= 0
+    Object.prototype.hasOwnProperty.call(normalized, 'max_extent_cells')
+    && normalized.max_extent_cells !== undefined
+    && normalized.max_extent_cells <= 0
   ) {
     throw new Error(
       'Token config framing.max_extent_cells must be greater than 0',
@@ -764,14 +764,14 @@ export const db = {
         (id: number, campaignId: number): Token => {
           const existingToken = database
             .prepare('SELECT id, world_id FROM tokens WHERE id = ?')
-            .get(id) as { id: number; world_id: number } | undefined;
+            .get(id) as { id: number; world_id: number; } | undefined;
           if (!existingToken) {
             throw new Error('Token not found');
           }
 
           const targetCampaign = database
             .prepare('SELECT id, world_id FROM campaigns WHERE id = ?')
-            .get(campaignId) as { id: number; world_id: number } | undefined;
+            .get(campaignId) as { id: number; world_id: number; } | undefined;
           if (!targetCampaign) {
             throw new Error('Campaign not found');
           }

@@ -1,0 +1,28 @@
+<!doctype html>
+<html data-theme="versevault">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline'; worker-src blob:"
+    />
+    <script>
+      // Suppress the "Download React DevTools" console warning.
+      // If the React DevTools extension is installed, its content script runs
+      // at document_start (before this tag) and sets this hook properly — this
+      // block is skipped. If the extension failed to load, the stub prevents
+      // React from printing the warning.
+      if (typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'undefined') {
+        window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
+      }
+    </script>
+
+    <title>Verse Vault</title>
+    <script type="module" crossorigin src="/assets/index-Bl5Ag5Ub.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-r_zy0Yvv.css">
+  </head>
+  <body>
+    <div id="root"></div>
+
+  </body>
+</html>

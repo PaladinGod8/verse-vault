@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { expect, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 test('statblocks page navigates from sidebar and shows empty state', async () => {
   const { app, userDataDir } = await launchApp();

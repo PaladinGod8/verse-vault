@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { expect, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 async function getMainWindow(
   app: import('playwright').ElectronApplication,
@@ -58,11 +58,10 @@ test('battlemaps CRUD flow works end to end', async () => {
   try {
     const window = await getMainWindow(app);
     await app.evaluate(({ BrowserWindow }) => {
-      const win =
-        BrowserWindow.getAllWindows().find((candidate) => {
-          const url = candidate.webContents.getURL();
-          return !url.startsWith('devtools://');
-        }) ?? BrowserWindow.getAllWindows()[0];
+      const win = BrowserWindow.getAllWindows().find((candidate) => {
+        const url = candidate.webContents.getURL();
+        return !url.startsWith('devtools://');
+      }) ?? BrowserWindow.getAllWindows()[0];
       if (!win) {
         return;
       }

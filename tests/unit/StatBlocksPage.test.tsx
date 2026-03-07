@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import StatBlocksPage from '../../src/renderer/pages/StatBlocksPage';
 
@@ -57,7 +57,7 @@ function renderPage(worldId: number | string | null = 1) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/statblocks/:id" element={<StatBlocksPage />} />
+        <Route path='/statblocks/:id' element={<StatBlocksPage />} />
       </Routes>
     </MemoryRouter>,
   );

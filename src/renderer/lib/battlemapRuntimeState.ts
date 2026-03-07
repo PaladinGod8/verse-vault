@@ -48,8 +48,8 @@ function asPositiveFiniteNumber(value: unknown, fallback: number): number {
 
 function normalizeGridMode(value: unknown): BattleMapGridMode {
   if (
-    typeof value === 'string' &&
-    BATTLEMAP_GRID_MODES.has(value as BattleMapGridMode)
+    typeof value === 'string'
+    && BATTLEMAP_GRID_MODES.has(value as BattleMapGridMode)
   ) {
     return value as BattleMapGridMode;
   }
@@ -88,11 +88,10 @@ export function normalizeBattleMapRuntimeConfig(
   const camera = asJsonRecord(runtime.camera) ?? {};
 
   const backgroundColorCandidate = map.backgroundColor;
-  const normalizedBackgroundColor =
-    typeof backgroundColorCandidate === 'string' &&
-    backgroundColorCandidate.trim().length > 0
-      ? backgroundColorCandidate.trim()
-      : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.map.backgroundColor;
+  const normalizedBackgroundColor = typeof backgroundColorCandidate === 'string'
+      && backgroundColorCandidate.trim().length > 0
+    ? backgroundColorCandidate.trim()
+    : DEFAULT_BATTLEMAP_RUNTIME_CONFIG.map.backgroundColor;
 
   const imageSrcCandidate = map.imageSrc;
   const normalizedImageSrc =

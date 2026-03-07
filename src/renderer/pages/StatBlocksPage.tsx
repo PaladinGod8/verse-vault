@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import type { WorldStatisticsConfig } from '../../shared/statisticsTypes';
 import StatBlockCard from '../components/statblocks/StatBlockCard';
 import StatBlockForm from '../components/statblocks/StatBlockForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
-import type { WorldStatisticsConfig } from '../../shared/statisticsTypes';
 
 type StatBlockAddData = Parameters<DbApi['statblocks']['add']>[0];
 
@@ -147,9 +147,7 @@ export default function StatBlocksPage() {
         },
       );
       setStatblocks((prev) =>
-        prev.map((sb) =>
-          sb.id === updatedStatBlock.id ? updatedStatBlock : sb,
-        ),
+        prev.map((sb) => sb.id === updatedStatBlock.id ? updatedStatBlock : sb)
       );
       setEditingStatBlock(null);
       toast.success(
@@ -193,127 +191,141 @@ export default function StatBlocksPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
-      <main className="flex-1 space-y-6 p-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
+      <main className='flex-1 space-y-6 p-6'>
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
             <Link
               to={`/world/${worldId}`}
-              className="inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
             >
               Back to world
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {world?.name ?? 'StatBlocks'}
             </h1>
           </div>
 
-          {worldId !== null ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              New StatBlock
-            </button>
-          ) : null}
+          {worldId !== null
+            ? (
+              <button
+                type='button'
+                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                onClick={() => setIsCreateOpen(true)}
+              >
+                New StatBlock
+              </button>
+            )
+            : null}
         </header>
 
-        {isLoading ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-            Loading statblocks...
-          </section>
-        ) : null}
+        {isLoading
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
+              Loading statblocks...
+            </section>
+          )
+          : null}
 
-        {!isLoading && error ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
-            {error}
-          </section>
-        ) : null}
+        {!isLoading && error
+          ? (
+            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
+              {error}
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && statblocks.length === 0 ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No statblocks yet.</p>
-          </section>
-        ) : null}
+        {!isLoading && !error && statblocks.length === 0
+          ? (
+            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
+              <p className='text-sm text-slate-600'>No statblocks yet.</p>
+            </section>
+          )
+          : null}
 
-        {!isLoading && !error && statblocks.length > 0 ? (
-          <section className="grid grid-cols-1 gap-4">
-            {statblocks.map((sb) => (
-              <StatBlockCard
-                key={sb.id}
-                statBlock={sb}
-                resourceDefinitions={worldStatistics.resources}
-                passiveScoreDefinitions={worldStatistics.passiveScores}
-                onEdit={(target) => {
-                  setIsCreateOpen(false);
-                  setEditingStatBlock(target);
-                }}
-                onDelete={(targetId) => {
-                  const found = statblocks.find((s) => s.id === targetId);
-                  if (found) setPendingDelete(found);
-                }}
-              />
-            ))}
-          </section>
-        ) : null}
+        {!isLoading && !error && statblocks.length > 0
+          ? (
+            <section className='grid grid-cols-1 gap-4'>
+              {statblocks.map((sb) => (
+                <StatBlockCard
+                  key={sb.id}
+                  statBlock={sb}
+                  resourceDefinitions={worldStatistics.resources}
+                  passiveScoreDefinitions={worldStatistics.passiveScores}
+                  onEdit={(target) => {
+                    setIsCreateOpen(false);
+                    setEditingStatBlock(target);
+                  }}
+                  onDelete={(targetId) => {
+                    const found = statblocks.find((s) => s.id === targetId);
+                    if (found) setPendingDelete(found);
+                  }}
+                />
+              ))}
+            </section>
+          )
+          : null}
       </main>
 
-      {isCreateOpen && worldId !== null ? (
-        <ModalShell
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          labelledBy="create-statblock-title"
-          boxClassName="max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
-        >
-          <h2
-            id="create-statblock-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {isCreateOpen && worldId !== null
+        ? (
+          <ModalShell
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            labelledBy='create-statblock-title'
+            boxClassName='max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto'
           >
-            New StatBlock
-          </h2>
-          <StatBlockForm
-            mode="create"
-            worldId={worldId}
-            onSubmit={handleCreate}
-            onCancel={() => setIsCreateOpen(false)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='create-statblock-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              New StatBlock
+            </h2>
+            <StatBlockForm
+              mode='create'
+              worldId={worldId}
+              onSubmit={handleCreate}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </ModalShell>
+        )
+        : null}
 
-      {editingStatBlock !== null ? (
-        <ModalShell
-          isOpen={editingStatBlock !== null}
-          onClose={() => setEditingStatBlock(null)}
-          labelledBy="edit-statblock-title"
-          boxClassName="max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
-        >
-          <h2
-            id="edit-statblock-title"
-            className="mb-4 text-lg font-semibold text-slate-900"
+      {editingStatBlock !== null
+        ? (
+          <ModalShell
+            isOpen={editingStatBlock !== null}
+            onClose={() => setEditingStatBlock(null)}
+            labelledBy='edit-statblock-title'
+            boxClassName='max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto'
           >
-            Edit StatBlock
-          </h2>
-          <StatBlockForm
-            mode="edit"
-            worldId={editingStatBlock.world_id}
-            initialData={editingStatBlock}
-            onSubmit={handleUpdate}
-            onCancel={() => setEditingStatBlock(null)}
-          />
-        </ModalShell>
-      ) : null}
+            <h2
+              id='edit-statblock-title'
+              className='mb-4 text-lg font-semibold text-slate-900'
+            >
+              Edit StatBlock
+            </h2>
+            <StatBlockForm
+              mode='edit'
+              worldId={editingStatBlock.world_id}
+              initialData={editingStatBlock}
+              onSubmit={handleUpdate}
+              onCancel={() => setEditingStatBlock(null)}
+            />
+          </ModalShell>
+        )
+        : null}
 
       <ConfirmDialog
         isOpen={pendingDelete !== null}
         title={`Delete "${pendingDelete?.name ?? ''}"?`}
-        message="This cannot be undone."
+        message='This cannot be undone.'
         onConfirm={() => {
           void handleDelete();
         }}
         onCancel={() => setPendingDelete(null)}
-        confirmLabel="Delete"
+        confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />
     </div>

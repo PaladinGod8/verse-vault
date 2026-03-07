@@ -90,10 +90,10 @@ export function getMinZoomForScene(
   scene: RuntimeSceneBounds,
 ): number {
   if (
-    viewportWidth <= 0 ||
-    viewportHeight <= 0 ||
-    scene.width <= 0 ||
-    scene.height <= 0
+    viewportWidth <= 0
+    || viewportHeight <= 0
+    || scene.width <= 0
+    || scene.height <= 0
   ) {
     return MIN_CAMERA_ZOOM;
   }
@@ -115,14 +115,12 @@ export function clampCameraZoom(
   maxZoom = MAX_CAMERA_ZOOM,
 ): number {
   const safeZoom = getSafeCameraZoom(zoom);
-  const safeMin =
-    Number.isFinite(minZoom) && minZoom > 0
-      ? Math.max(MIN_CAMERA_ZOOM, minZoom)
-      : MIN_CAMERA_ZOOM;
-  const safeMax =
-    Number.isFinite(maxZoom) && maxZoom > 0
-      ? Math.max(safeMin, maxZoom)
-      : Math.max(safeMin, MAX_CAMERA_ZOOM);
+  const safeMin = Number.isFinite(minZoom) && minZoom > 0
+    ? Math.max(MIN_CAMERA_ZOOM, minZoom)
+    : MIN_CAMERA_ZOOM;
+  const safeMax = Number.isFinite(maxZoom) && maxZoom > 0
+    ? Math.max(safeMin, maxZoom)
+    : Math.max(safeMin, MAX_CAMERA_ZOOM);
   return Math.min(safeMax, Math.max(safeMin, safeZoom));
 }
 
@@ -173,15 +171,13 @@ export function stepCameraCenterTowardTarget(
   targetY: number,
   smoothing = DEFAULT_CAMERA_FOCUS_SMOOTHING,
   snapDistance = DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE,
-): { x: number; y: number; isComplete: boolean } {
-  const safeSmoothing =
-    Number.isFinite(smoothing) && smoothing > 0
-      ? Math.min(1, smoothing)
-      : DEFAULT_CAMERA_FOCUS_SMOOTHING;
-  const safeSnapDistance =
-    Number.isFinite(snapDistance) && snapDistance >= 0
-      ? snapDistance
-      : DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE;
+): { x: number; y: number; isComplete: boolean; } {
+  const safeSmoothing = Number.isFinite(smoothing) && smoothing > 0
+    ? Math.min(1, smoothing)
+    : DEFAULT_CAMERA_FOCUS_SMOOTHING;
+  const safeSnapDistance = Number.isFinite(snapDistance) && snapDistance >= 0
+    ? snapDistance
+    : DEFAULT_CAMERA_FOCUS_SNAP_DISTANCE;
   const deltaX = targetX - currentX;
   const deltaY = targetY - currentY;
 

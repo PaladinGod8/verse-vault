@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  getDefaultWorldConfig,
-  DEFAULT_RESOURCE_DEFINITIONS,
   DEFAULT_PASSIVE_SCORE_DEFINITIONS,
+  DEFAULT_RESOURCE_DEFINITIONS,
+  getDefaultWorldConfig,
 } from '../../../src/shared/statisticsTypes';
 import type {
-  ResourceStatisticDefinition,
   PassiveScoreDefinition,
+  ResourceStatisticDefinition,
 } from '../../../src/shared/statisticsTypes';
 
 describe('getDefaultWorldConfig', () => {
@@ -32,8 +32,7 @@ describe('getDefaultWorldConfig', () => {
 
   it('should include all default passive score definitions', () => {
     const config = getDefaultWorldConfig();
-    const passiveScoreIds =
-      config.statistics?.passiveScores?.map((ps) => ps.id) ?? [];
+    const passiveScoreIds = config.statistics?.passiveScores?.map((ps) => ps.id) ?? [];
 
     expect(passiveScoreIds).toContain('str');
     expect(passiveScoreIds).toContain('dex');

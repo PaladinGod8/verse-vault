@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { PACKAGE_INCLUDE, isIgnoredFromPackage } from '../../forge.ignore';
+import { describe, expect, it } from 'vitest';
+import { isIgnoredFromPackage, PACKAGE_INCLUDE } from '../../forge.ignore';
 
 describe('PACKAGE_INCLUDE', () => {
   it('is a readonly array', () => {

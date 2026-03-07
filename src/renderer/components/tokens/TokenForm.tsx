@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import TokenImageDropzone from './TokenImageDropzone';
-import FootprintPainterModal, {
-  type FootprintPainterResult,
-} from './FootprintPainterModal';
-import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 import {
-  buildSquareFootprintConfig,
   buildHexFootprintConfig,
+  buildSquareFootprintConfig,
 } from '../../lib/tokenFootprintGeometry';
+import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
+import FootprintPainterModal, { type FootprintPainterResult } from './FootprintPainterModal';
+import TokenImageDropzone from './TokenImageDropzone';
 
 const TOKEN_IMAGE_ALLOWED_MIME_TYPES = new Set([
   'image/png',
@@ -82,18 +80,15 @@ export default function TokenForm({
   const [clearImage, setClearImage] = useState(false);
   const [painterModalOpen, setPainterModalOpen] = useState(false);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
-  const [footprintResult, setFootprintResult] =
-    useState<FootprintPainterResult | null>(null);
+  const [footprintResult, setFootprintResult] = useState<FootprintPainterResult | null>(null);
 
   const selectedImagePreviewUrl = useMemo(
-    () =>
-      selectedImageFile ? URL.createObjectURL(selectedImageFile) : undefined,
+    () => selectedImageFile ? URL.createObjectURL(selectedImageFile) : undefined,
     [selectedImageFile],
   );
 
   const pendingImagePreviewUrl = useMemo(
-    () =>
-      pendingImageFile ? URL.createObjectURL(pendingImageFile) : undefined,
+    () => pendingImageFile ? URL.createObjectURL(pendingImageFile) : undefined,
     [pendingImageFile],
   );
 
@@ -183,83 +178,85 @@ export default function TokenForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className='space-y-4'>
       <div>
         <label
-          htmlFor="token-name"
-          className="mb-1 block text-sm font-medium text-slate-700"
+          htmlFor='token-name'
+          className='mb-1 block text-sm font-medium text-slate-700'
         >
-          Name <span className="text-rose-500">*</span>
+          Name <span className='text-rose-500'>*</span>
         </label>
         <input
-          id="token-name"
-          type="text"
+          id='token-name'
+          type='text'
           value={name}
           onChange={(e) => {
             setName(e.target.value);
             if (nameError) setNameError(null);
           }}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
-          placeholder="Token name"
+          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
+          placeholder='Token name'
           disabled={isSaving}
         />
-        {nameError ? (
-          <p className="mt-1 text-xs text-rose-600">{nameError}</p>
-        ) : null}
+        {nameError ? <p className='mt-1 text-xs text-rose-600'>{nameError}</p> : null}
       </div>
 
       <div>
         <label
-          htmlFor="token-grid-type"
-          className="mb-1 block text-sm font-medium text-slate-700"
+          htmlFor='token-grid-type'
+          className='mb-1 block text-sm font-medium text-slate-700'
         >
-          Grid Type <span className="text-rose-500">*</span>
+          Grid Type <span className='text-rose-500'>*</span>
         </label>
         <select
-          id="token-grid-type"
+          id='token-grid-type'
           value={gridType}
           onChange={(e) => setGridType(e.target.value as TokenGridType)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
           disabled={isSaving}
         >
-          <option value="square">Square</option>
-          <option value="hex">Hex</option>
+          <option value='square'>Square</option>
+          <option value='hex'>Hex</option>
         </select>
       </div>
 
-      {!isCreateMode && initialImageSrc ? (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">
-            Current Image
-          </label>
-          {clearImage ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              Image will be cleared when you save.
-            </div>
-          ) : (
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <img
-                src={selectedImagePreviewUrl ?? initialImageSrc}
-                alt="Current token"
-                className="h-20 w-20 rounded object-cover"
-              />
-            </div>
-          )}
-          <button
-            type="button"
-            className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => {
-              setClearImage(true);
-              setSelectedImageFile(null);
-              setFootprintResult(null);
-              setImageUploadError(null);
-            }}
-            disabled={isSaving}
-          >
-            Clear image on save
-          </button>
-        </div>
-      ) : null}
+      {!isCreateMode && initialImageSrc
+        ? (
+          <div className='space-y-2'>
+            <label className='block text-sm font-medium text-slate-700'>
+              Current Image
+            </label>
+            {clearImage
+              ? (
+                <div className='rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800'>
+                  Image will be cleared when you save.
+                </div>
+              )
+              : (
+                <div className='rounded-md border border-slate-200 bg-slate-50 p-3'>
+                  <img
+                    src={selectedImagePreviewUrl ?? initialImageSrc}
+                    alt='Current token'
+                    className='h-20 w-20 rounded object-cover'
+                  />
+                </div>
+              )}
+            <button
+              type='button'
+              className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+              onClick={() => {
+                setClearImage(true);
+                setSelectedImageFile(null);
+                setFootprintResult(null);
+                setImageUploadError(null);
+              }}
+              disabled={isSaving}
+            >
+              Clear image on save
+            </button>
+          </div>
+        )
+        : null}
 
       <TokenImageDropzone
         selectedFile={selectedImageFile}
@@ -284,54 +281,52 @@ export default function TokenForm({
         disabled={isSaving}
       />
 
-      <div className="flex items-center gap-2">
+      <div className='flex items-center gap-2'>
         <input
-          id="token-is-visible"
-          type="checkbox"
+          id='token-is-visible'
+          type='checkbox'
           checked={isVisible === 1}
           onChange={(e) => setIsVisible(e.target.checked ? 1 : 0)}
-          className="h-4 w-4 rounded border-slate-300"
+          className='h-4 w-4 rounded border-slate-300'
           disabled={isSaving}
         />
         <label
-          htmlFor="token-is-visible"
-          className="text-sm font-medium text-slate-700"
+          htmlFor='token-is-visible'
+          className='text-sm font-medium text-slate-700'
         >
           Visible
         </label>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className='flex justify-end gap-2 pt-2'>
         <button
-          type="button"
-          className="btn btn-ghost"
+          type='button'
+          className='btn btn-ghost'
           onClick={onClose}
           disabled={isSaving}
         >
           Cancel
         </button>
-        <button type="submit" className="btn btn-primary" disabled={isSaving}>
-          {isSaving ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : null}
+        <button type='submit' className='btn btn-primary' disabled={isSaving}>
+          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
           <span>{initialValues ? 'Save' : 'Create'}</span>
         </button>
       </div>
 
-      {painterModalOpen && pendingImageFile && pendingImagePreviewUrl ? (
-        <FootprintPainterModal
-          isOpen={painterModalOpen}
-          onClose={handleFootprintPainterCancel}
-          onConfirm={handleFootprintPainterConfirm}
-          imageSrc={pendingImagePreviewUrl}
-          gridType={gridType}
-          initialFootprint={
-            isCreateMode
+      {painterModalOpen && pendingImageFile && pendingImagePreviewUrl
+        ? (
+          <FootprintPainterModal
+            isOpen={painterModalOpen}
+            onClose={handleFootprintPainterCancel}
+            onConfirm={handleFootprintPainterConfirm}
+            imageSrc={pendingImagePreviewUrl}
+            gridType={gridType}
+            initialFootprint={isCreateMode
               ? defaultFootprintResult(gridType).footprint
-              : undefined
-          }
-        />
-      ) : null}
+              : undefined}
+          />
+        )
+        : null}
     </form>
   );
 }

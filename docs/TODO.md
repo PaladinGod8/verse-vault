@@ -135,11 +135,13 @@ Core workflows must function fully offline with local-first persistence.
 ### Build Tooling - SWC + esbuild Coexistence
 
 **Current State:**
+
 - Vite 6 with esbuild (default) for TypeScript transpilation
 - No React plugin configured
 - Missing React Fast Refresh in development
 
 **Opportunity:**
+
 - [ ] Add `@vitejs/plugin-react-swc` for React-specific optimizations
   - Both tools coexist: esbuild handles TS transpilation, SWC handles React transformations
   - SWC provides: JSX transformation, React Fast Refresh, React-specific optimizations
@@ -148,6 +150,7 @@ Core workflows must function fully offline with local-first persistence.
   - Package to install: `@vitejs/plugin-react-swc`
 
 **Division of Labor:**
+
 - esbuild: TypeScript → JavaScript, dependency bundling, non-React transforms
 - SWC: JSX → JavaScript, React Fast Refresh, React-specific optimizations
 
@@ -199,13 +202,15 @@ Core workflows must function fully offline with local-first persistence.
 High-value use cases for Docker in this project:
 
 **Phase 1: Local Development & Quality Gate**
+
 - [ ] Create Dockerfile for verify-all.cjs pipeline execution
 - [ ] Base image with Node 20, Electron build deps, Playwright, better-sqlite3 system requirements
-- [ ] Multi-stage build with dependency layer caching (node_modules) 
+- [ ] Multi-stage build with dependency layer caching (node_modules)
 - [ ] Volume mount strategy for test artifacts isolation (coverage/, test-results/, playwright-report/)
 - [ ] Document Docker-based local verification workflow
 
 **Phase 2: CI/CD Pipeline**
+
 - [ ] Set up GitHub Actions workflow (currently no CI exists)
 - [ ] Use Docker container from Phase 1 for consistent build environment
 - [ ] Implement caching strategies: yarn cache, Playwright browsers, node_modules layers
@@ -214,12 +219,14 @@ High-value use cases for Docker in this project:
 - [ ] Ensure node-abi version alignment with Electron 35 ABI in container
 
 **Phase 3: Cross-Platform Packaging**
+
 - [ ] Separate Dockerfiles for Linux package builds (.deb, .rpm makers)
 - [ ] Enable building Linux packages from Windows/macOS without dual-boot
 - [ ] Consistent asar unpacking for better-sqlite3 across platforms
 - [ ] Build matrix for multi-platform Electron Forge packaging
 
 **Phase 4: E2E Test Isolation (Optional Enhancement)**
+
 - [ ] Container-based Playwright test runners with Xvfb for headless Electron
 - [ ] Complete process isolation per test (separate SQLite DBs per container)
 - [ ] Parallel worker scaling beyond current 2-worker limit
@@ -229,6 +236,7 @@ High-value use cases for Docker in this project:
 Priority caching opportunities based on verify-all.cjs analysis:
 
 **High-Impact Caches (30-60s savings)**
+
 - [ ] Yarn dependencies: Cache node_modules/ + yarn cache directory
   - Key: yarn-{{ platform }}-{{ hash(yarn.lock, package.json) }}
   - Restore keys: yarn-{{ platform }}- (fallback to recent cache)
@@ -236,25 +244,27 @@ Priority caching opportunities based on verify-all.cjs analysis:
   - Invalidation: on yarn.lock or package.json change
 
 **Medium-Impact Caches (10-30s savings)**
+
 - [ ] TypeScript build cache: .tsbuildinfo files + dist/ outputs
-  - Key: ts-{{ hash(**/*.ts, **/*.tsx, tsconfig*.json) }}
+  - Key: ts-{{ hash(**/_.ts, **/_.tsx, tsconfig*.json) }}
   - No fallback (stale cache could cause type errors)
   - Invalidation: on any source or config change
-  
+
 - [ ] Electron package build: .vite/build/ outputs
   - Key: build-{{ hash(src/**, vite*.config.ts, forge.config.ts) }}
   - No fallback (stale builds are dangerous)
   - Invalidation: on source or config change
-  
+
 - [ ] Better-SQLite3 native modules: node_modules/better-sqlite3/build/
   - Key: native-{{ os }}-{{ arch }}-electron-35-{{ hash(yarn.lock) }}
   - Must match exact platform/Electron version
   - Invalidation: on Electron version or platform change
 
 **Low-Medium Impact Caches (5-15s savings)**
+
 - [ ] ESLint cache: .eslintcache file
   - Enable with: eslint --cache --ext .ts,.tsx .
-  - Key: eslint-{{ hash(**/*.ts, **/*.tsx, .eslintrc*) }}
+  - Key: eslint-{{ hash(**/_.ts, **/_.tsx, .eslintrc*) }}
   - Restore keys: eslint- (partial matches still save time)
   - Invalidation: on linted files or config change
 
@@ -265,12 +275,14 @@ Priority caching opportunities based on verify-all.cjs analysis:
   - Invalidation: on formatted files or config change
 
 **One-time Setup Caches (60+ seconds first run)**
+
 - [ ] Playwright browsers: ~/.cache/ms-playwright/ (Linux/Mac) or %USERPROFILE%\AppData\Local\ms-playwright\ (Windows)
   - Key: playwright-{{ playwright-version }}
   - Invalidation: on Playwright version update
   - Size: ~500MB (Chromium, Firefox, WebKit)
 
 **Cache Management to Prevent Corruption/Staleness**
+
 - [ ] Add cache validation functions in verify-all.cjs
 - [ ] Implement lock files to prevent concurrent cache writes
 - [ ] Set max cache age (e.g., 7 days) with timestamp in cache keys
@@ -280,17 +292,20 @@ Priority caching opportunities based on verify-all.cjs analysis:
 - [ ] Add cache hit/miss logging for debugging
 
 **Expected Performance Improvements**
+
 - First run (cold cache): ~5-8 minutes (current baseline)
 - Subsequent runs (warm cache, no changes): ~1-2 minutes (75% faster)
 - Partial changes (warm cache): ~2-4 minutes (40-60% faster)
 
 **Implementation Scripts**
+
 - [ ] Update package.json to enable ESLint and Prettier caching flags
 - [ ] Add cache:clean script: rm -rf node_modules/.cache .eslintcache .prettiercache .tsbuildinfo coverage test-results
 - [ ] Create cache validation utilities for verify-all.cjs
 - [ ] Document cache key patterns in .github/workflows/ when CI is added
 
 **Notes:**
+
 - Docker not recommended for `yarn dev` (Electron needs native display/GPU access, hot reload suffers)
 - Current E2E isolation with `--user-data-dir` is adequate; Docker E2E is optional
 - Dockerfile location: `Dockerfile` (root) or `.docker/` directory for multi-stage configs
@@ -298,18 +313,21 @@ Priority caching opportunities based on verify-all.cjs analysis:
 ### Build & Pipeline Optimization
 
 **Formatter Performance**
+
 - [ ] Evaluate replacing Prettier with prettierd (Rust-based) for faster CI formatting checks
 - [ ] Benchmark current Prettier performance in verify-all.cjs pipeline
 - [ ] Test prettierd compatibility with prettier-plugin-tailwindcss
 - [ ] Update CI scripts to use prettierd if performance gain is significant
 
 **Compiler & Bundler Optimization**
+
 - [ ] Investigate if SWC (Speedy Web Compiler) can replace/augment current build pipeline
 - [ ] Document current use of esbuild in Vite/Electron Forge stack
 - [ ] Evaluate TypeScript compilation speed with SWC vs current tsc type-check
 - [ ] Consider esbuild-based type checking alternatives
 
 **Test Suite Parallelism** (already optimized per docs/features/optimization.md)
+
 - [x] Unit tests: thread pool with minThreads:2, maxThreads:(cpus-1)
 - [x] E2E tests: 2 Playwright workers with --user-data-dir isolation
 - [ ] Audit if additional test grouping/segmentation would improve parallel execution

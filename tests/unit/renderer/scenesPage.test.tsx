@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ScenesPage from '../../../src/renderer/pages/ScenesPage';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
@@ -29,28 +29,27 @@ vi.mock('@dnd-kit/core', () => ({
   }: {
     children: ReactNode;
     onDragEnd?: (event: {
-      active: { id: number };
-      over: { id: number } | null;
+      active: { id: number; };
+      over: { id: number; } | null;
     }) => void;
   }) => (
     <div>
       <button
-        type="button"
-        data-testid="mock-dnd-drag-end"
+        type='button'
+        data-testid='mock-dnd-drag-end'
         onClick={() =>
           onDragEnd?.(
-            ((globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown })
+            ((globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown; })
               .__TEST_DND_DRAG_END_EVENT__ as
-              | {
-                  active: { id: number };
-                  over: { id: number } | null;
+                | {
+                  active: { id: number; };
+                  over: { id: number; } | null;
                 }
-              | undefined) ?? {
+                | undefined) ?? {
               active: { id: 1 },
               over: { id: 2 },
             },
-          )
-        }
+          )}
       >
         Trigger drag end
       </button>
@@ -69,7 +68,7 @@ vi.mock('@dnd-kit/core', () => ({
 }));
 
 vi.mock('@dnd-kit/sortable', () => ({
-  SortableContext: ({ children }: { children: ReactNode }) => children,
+  SortableContext: ({ children }: { children: ReactNode; }) => children,
   arrayMove: <T,>(items: T[], oldIndex: number, newIndex: number): T[] => {
     const nextItems = [...items];
     const [movedItem] = nextItems.splice(oldIndex, 1);
@@ -132,7 +131,7 @@ function renderScenesPage(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
-          path="/world/:id/campaign/:campaignId/session/:sessionId/scenes"
+          path='/world/:id/campaign/:campaignId/session/:sessionId/scenes'
           element={<ScenesPage />}
         />
       </Routes>
@@ -142,7 +141,7 @@ function renderScenesPage(path: string) {
 
 function setDragEndEvent(activeId: number, overId: number | null): void {
   (
-    globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown }
+    globalThis as { __TEST_DND_DRAG_END_EVENT__?: unknown; }
   ).__TEST_DND_DRAG_END_EVENT__ = {
     active: { id: activeId },
     over: overId === null ? null : { id: overId },

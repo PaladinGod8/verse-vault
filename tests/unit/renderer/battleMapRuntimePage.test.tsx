@@ -1,19 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BattleMapRuntimePage from '../../../src/renderer/pages/BattleMapRuntimePage';
 
 const routerMockState = vi.hoisted(() => ({
   beforeUnloadHandler: null as
-    | ((event: { preventDefault: () => void; returnValue?: string }) => void)
+    | ((event: { preventDefault: () => void; returnValue?: string; }) => void)
     | null,
 }));
 
 vi.mock('react-router-dom', async () => {
-  const actual =
-    await vi.importActual<typeof import('react-router-dom')>(
-      'react-router-dom',
-    );
+  const actual = await vi.importActual<typeof import('react-router-dom')>(
+    'react-router-dom',
+  );
 
   return {
     ...actual,
@@ -39,12 +38,12 @@ vi.mock(
       castingState,
       onCastingAngleChange,
     }: {
-      tokens: Array<{ instanceId: string; x: number; y: number }>;
+      tokens: Array<{ instanceId: string; x: number; y: number; }>;
       selectedTokenInstanceId: string | null;
       onTokenSelect: (tokenInstanceId: string | null) => void;
       onTokenMove: (
         tokenInstanceId: string,
-        position: { x: number; y: number },
+        position: { x: number; y: number; },
       ) => void;
       castingState: {
         casterX: number;
@@ -54,18 +53,17 @@ vi.mock(
       } | null;
       onCastingAngleChange: (angleRad: number) => void;
     }) => (
-      <div data-testid="runtime-canvas">
+      <div data-testid='runtime-canvas'>
         Runtime Canvas Mock
         <p>Canvas Tokens: {tokens.length}</p>
         <p>Canvas Selected Token: {selectedTokenInstanceId ?? 'none'}</p>
         <p>
-          Casting:{' '}
-          {castingState
+          Casting: {castingState
             ? `${castingState.ability.name}|${castingState.angleRad.toFixed(2)}`
             : 'none'}
         </p>
         <button
-          type="button"
+          type='button'
           onClick={() => {
             if (tokens[0]) {
               onTokenSelect(tokens[0].instanceId);
@@ -75,7 +73,7 @@ vi.mock(
           Select First Runtime Token
         </button>
         <button
-          type="button"
+          type='button'
           onClick={() => {
             if (tokens[1]) {
               onTokenSelect(tokens[1].instanceId);
@@ -85,7 +83,7 @@ vi.mock(
           Select Second Runtime Token
         </button>
         <button
-          type="button"
+          type='button'
           onClick={() => {
             if (tokens[0]) {
               onTokenMove(tokens[0].instanceId, { x: 111, y: 222 });
@@ -94,10 +92,10 @@ vi.mock(
         >
           Move First Runtime Token
         </button>
-        <button type="button" onClick={() => onTokenSelect(null)}>
+        <button type='button' onClick={() => onTokenSelect(null)}>
           Deselect Runtime Token
         </button>
-        <button type="button" onClick={() => onCastingAngleChange(Math.PI / 3)}>
+        <button type='button' onClick={() => onCastingAngleChange(Math.PI / 3)}>
           Rotate Casting Angle
         </button>
       </div>
@@ -117,31 +115,29 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeGridControls', () => ({
   }) => (
     <div>
       <button
-        type="button"
+        type='button'
         onClick={() =>
           onChange({
             mode: 'triangle' as unknown as BattleMapGridMode,
             cellSize: 9999,
             originX: 24.5,
             originY: -10,
-          })
-        }
+          })}
       >
         Trigger Grid Change
       </button>
-      <button type="button" onClick={() => onChange(gridConfig)}>
+      <button type='button' onClick={() => onChange(gridConfig)}>
         Trigger Same Grid Change
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() =>
           onChange({
             mode: 'hex',
             cellSize: 55,
             originX: 13,
             originY: -17,
-          })
-        }
+          })}
       >
         Trigger Hex Grid Change
       </button>
@@ -206,16 +202,16 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
       {campaignLoadError ? <p>{campaignLoadError}</p> : null}
       {tokenLoadError ? <p>{tokenLoadError}</p> : null}
       <button
-        type="button"
+        type='button'
         onClick={() => onShowInvisibleTokensChange(!showInvisibleTokens)}
       >
         Toggle Invisible Tokens
       </button>
-      <button type="button" onClick={() => onSelectCampaign(null)}>
+      <button type='button' onClick={() => onSelectCampaign(null)}>
         Clear Campaign
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() => {
           if (campaigns[1]) {
             onSelectCampaign(campaigns[1].id);
@@ -225,7 +221,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
         Select Second Campaign
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() => {
           if (tokens[0]) {
             onAddToken(tokens[0]);
@@ -235,7 +231,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
         Add First Token
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() => {
           if (tokens[1]) {
             onAddToken(tokens[1]);
@@ -245,7 +241,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
         Add Second Token
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() => {
           if (tokens[2]) {
             onAddToken(tokens[2]);
@@ -255,7 +251,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
         Add Third Token
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() => {
           if (placedTokens[0]) {
             onSelectPlacedToken(placedTokens[0].instanceId);
@@ -265,7 +261,7 @@ vi.mock('../../../src/renderer/components/runtime/RuntimeTokenPalette', () => ({
         Select First Placed Token
       </button>
       <button
-        type="button"
+        type='button'
         onClick={() => {
           if (placedTokens[0]) {
             onRemovePlacedToken(placedTokens[0].instanceId);
@@ -312,19 +308,15 @@ vi.mock('../../../src/renderer/components/runtime/AbilityPickerPanel', () => ({
     };
 
     return (
-      <div data-testid="ability-picker-panel">
+      <div data-testid='ability-picker-panel'>
         <p>Ability Picker (World: {worldId})</p>
-        <button type="button" onClick={() => onAbilitySelect(castableAbility)}>
+        <button type='button' onClick={() => onAbilitySelect(castableAbility)}>
           Pick Castable Ability
         </button>
-        <button type="button" onClick={() => onAbilitySelect(null)}>
+        <button type='button' onClick={() => onAbilitySelect(null)}>
           Close Ability Picker
         </button>
-        {castingAbility ? (
-          <p>Selected: {castingAbility.name}</p>
-        ) : (
-          <p>No ability selected</p>
-        )}
+        {castingAbility ? <p>Selected: {castingAbility.name}</p> : <p>No ability selected</p>}
       </div>
     );
   },
@@ -381,14 +373,14 @@ function renderRuntimePage(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
-          path="/world/:id/battlemaps/:battleMapId/runtime"
+          path='/world/:id/battlemaps/:battleMapId/runtime'
           element={<BattleMapRuntimePage />}
         />
         <Route
-          path="/world/:id/battlemaps"
+          path='/world/:id/battlemaps'
           element={<div>BattleMaps List</div>}
         />
-        <Route path="/" element={<div>Home</div>} />
+        <Route path='/' element={<div>Home</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -542,7 +534,7 @@ describe('BattleMapRuntimePage', () => {
     const baseBattleMap = buildBattleMap();
     battlemapsGetByIdMock.mockResolvedValue(baseBattleMap);
     battlemapsUpdateMock.mockImplementation(
-      async (_id: number, data: { config?: string }) => ({
+      async (_id: number, data: { config?: string; }) => ({
         ...baseBattleMap,
         config: data.config ?? baseBattleMap.config,
         updated_at: '2026-03-04 10:00:00',
@@ -565,7 +557,7 @@ describe('BattleMapRuntimePage', () => {
 
     const updateCall = battlemapsUpdateMock.mock.calls[0] as [
       number,
-      { config: string },
+      { config: string; },
     ];
     expect(updateCall[0]).toBe(61);
 
@@ -842,7 +834,7 @@ describe('BattleMapRuntimePage', () => {
     const baseBattleMap = buildBattleMap();
     battlemapsGetByIdMock.mockResolvedValue(baseBattleMap);
     battlemapsUpdateMock.mockImplementation(
-      async (_id: number, data: { config?: string }) => ({
+      async (_id: number, data: { config?: string; }) => ({
         ...baseBattleMap,
         config: data.config ?? baseBattleMap.config,
         updated_at: '2026-03-04 10:00:00',

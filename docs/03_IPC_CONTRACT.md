@@ -390,7 +390,7 @@ interface DbApi {
         pick_is_permanent?: number;
       },
     ): Promise<Ability>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
     addChild(data: AbilityChild): Promise<AbilityChild>;
     removeChild(data: AbilityChild): Promise<AbilityChild>;
     getChildren(abilityId: number): Promise<Ability[]>;
@@ -406,9 +406,9 @@ interface DbApi {
     }): Promise<Campaign>;
     update(
       id: number,
-      data: { name?: string; summary?: string | null; config?: string },
+      data: { name?: string; summary?: string | null; config?: string; },
     ): Promise<Campaign>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
   };
   battlemaps: {
     getAllByWorld(worldId: number): Promise<BattleMap[]>;
@@ -420,9 +420,9 @@ interface DbApi {
     }): Promise<BattleMap>;
     update(
       id: number,
-      data: { name?: string; config?: string },
+      data: { name?: string; config?: string; },
     ): Promise<BattleMap>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
   };
   tokens: {
     getAllByWorld(worldId: number): Promise<Token[]>;
@@ -450,7 +450,7 @@ interface DbApi {
     ): Promise<Token>;
     moveToWorld(tokenId: number): Promise<Token>;
     moveToCampaign(tokenId: number, targetCampaignId: number): Promise<Token>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
   };
   arcs: {
     getAllByCampaign(campaignId: number): Promise<Arc[]>;
@@ -462,9 +462,9 @@ interface DbApi {
     }): Promise<Arc>;
     update(
       id: number,
-      data: { name?: string; sort_order?: number },
+      data: { name?: string; sort_order?: number; },
     ): Promise<Arc>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
   };
   acts: {
     getAllByArc(arcId: number): Promise<Act[]>;
@@ -477,9 +477,9 @@ interface DbApi {
     }): Promise<Act>;
     update(
       id: number,
-      data: { name?: string; sort_order?: number },
+      data: { name?: string; sort_order?: number; },
     ): Promise<Act>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
     moveTo(actId: number, newArcId: number): Promise<Act>;
   };
   sessions: {
@@ -501,7 +501,7 @@ interface DbApi {
         sort_order?: number;
       },
     ): Promise<Session>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
     moveTo(sessionId: number, newActId: number): Promise<Session>;
   };
   scenes: {
@@ -524,7 +524,7 @@ interface DbApi {
         sort_order?: number;
       },
     ): Promise<Scene>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
     moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
   };
   statblocks: {
@@ -540,9 +540,9 @@ interface DbApi {
     }): Promise<StatBlock>;
     update(
       id: number,
-      data: { name?: string; description?: string; config?: string },
+      data: { name?: string; description?: string; config?: string; },
     ): Promise<StatBlock>;
-    delete(id: number): Promise<{ id: number }>;
+    delete(id: number): Promise<{ id: number; }>;
   };
 }
 

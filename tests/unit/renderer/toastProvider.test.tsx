@@ -1,10 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import {
-  ToastProvider,
-  useToast,
-} from '../../../src/renderer/components/ui/ToastProvider';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider, useToast } from '../../../src/renderer/components/ui/ToastProvider';
 
 function ToastHarness({
   action,
@@ -16,7 +13,7 @@ function ToastHarness({
   const toast = useToast();
   return (
     <div>
-      <button type="button" onClick={() => action(toast)}>
+      <button type='button' onClick={() => action(toast)}>
         Trigger
       </button>
       {children}

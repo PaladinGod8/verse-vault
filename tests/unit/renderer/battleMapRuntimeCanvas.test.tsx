@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BattleMapRuntimeCanvas, {
   type RuntimeSceneToken,
 } from '../../../src/renderer/components/runtime/BattleMapRuntimeCanvas';
@@ -18,12 +18,12 @@ const resizeObserverState = {
 type MockDisplayNode = {
   children: MockDisplayNode[];
   emit: (event: string, payload: unknown) => void;
-  scale: { x: number; y: number };
-  position: { x: number; y: number };
+  scale: { x: number; y: number; };
+  position: { x: number; y: number; };
 };
 
 type MockPixiApp = {
-  stage: MockDisplayNode & { hitArea: unknown };
+  stage: MockDisplayNode & { hitArea: unknown; };
   ticker: {
     add: (...args: unknown[]) => void;
   };
@@ -98,7 +98,7 @@ vi.mock('pixi.js', () => {
       this.children = [];
     }
 
-    toLocal(global: { x: number; y: number }): { x: number; y: number } {
+    toLocal(global: { x: number; y: number; }): { x: number; y: number; } {
       return { x: global.x, y: global.y };
     }
   }
@@ -133,7 +133,7 @@ vi.mock('pixi.js', () => {
       return this;
     }
 
-    poly(points: number[] | { points: number[] }, closePath: boolean): this {
+    poly(points: number[] | { points: number[]; }, closePath: boolean): this {
       void points;
       void closePath;
       return this;
@@ -291,7 +291,7 @@ function createFederatedPointerEvent(
     pointerId: number;
     clientX: number;
     clientY: number;
-    global: { x: number; y: number };
+    global: { x: number; y: number; };
   }> = {},
 ) {
   const pointerId = overrides.pointerId ?? 1;
@@ -583,7 +583,7 @@ describe('BattleMapRuntimeCanvas', () => {
 
     const hexCall = onTokenMove.mock.calls[
       onTokenMove.mock.calls.length - 1
-    ] as [string, { x: number; y: number }];
+    ] as [string, { x: number; y: number; }];
     expect(hexCall[0]).toBe('runtime-token-1');
     expect(hexCall[1].x).toBeCloseTo(21.6506, 3);
     expect(hexCall[1].y).toBeCloseTo(37.5, 3);
@@ -877,7 +877,7 @@ describe('BattleMapRuntimeCanvas', () => {
     );
 
     await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
-    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement; })
       .canvas;
     const worldContainer = getWorldContainer(getApp());
     expect(worldContainer.scale.x).toBeCloseTo(1, 5);
@@ -906,7 +906,7 @@ describe('BattleMapRuntimeCanvas', () => {
     );
 
     await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
-    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement; })
       .canvas;
     const worldContainer = getWorldContainer(getApp());
 
@@ -933,7 +933,7 @@ describe('BattleMapRuntimeCanvas', () => {
     );
 
     await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
-    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement; })
       .canvas;
     const worldContainer = getWorldContainer(getApp());
 
@@ -967,7 +967,7 @@ describe('BattleMapRuntimeCanvas', () => {
       expect(getTokenLayer(getApp()).children).toHaveLength(1);
     });
 
-    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement; })
       .canvas;
     const worldContainer = getWorldContainer(getApp());
     const scaleBeforeDrag = worldContainer.scale.x;
@@ -1102,7 +1102,7 @@ describe('BattleMapRuntimeCanvas', () => {
     );
 
     await waitFor(() => expect(pixiState.appInstances).toHaveLength(1));
-    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement; })
       .canvas;
     const worldContainer = getWorldContainer(getApp());
 
@@ -1171,7 +1171,7 @@ describe('BattleMapRuntimeCanvas', () => {
       expect(pixiState.appInstances).toHaveLength(1);
     });
 
-    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement })
+    const canvas = (pixiState.appInstances[0] as { canvas: HTMLCanvasElement; })
       .canvas;
     canvas.dispatchEvent(
       createPointerEvent('pointermove', {

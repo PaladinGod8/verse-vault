@@ -39,9 +39,7 @@ class BrowserWindowMock {
 
 const prepareMock = vi.fn();
 const transactionMock = vi.fn(
-  (callback: (...args: unknown[]) => unknown) =>
-    (...args: unknown[]) =>
-      callback(...args),
+  (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
 );
 const getDatabaseMock = vi.fn(() => ({
   prepare: prepareMock,
@@ -73,8 +71,9 @@ async function importMainWithMocks() {
   vi.clearAllMocks();
 
   for (const key of Object.keys(registeredEvents)) delete registeredEvents[key];
-  for (const key of Object.keys(registeredIpcHandlers))
+  for (const key of Object.keys(registeredIpcHandlers)) {
     delete registeredIpcHandlers[key];
+  }
 
   vi.doMock('electron-squirrel-startup', () => false);
   vi.doMock('electron', () => ({
@@ -170,7 +169,7 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
   const tokensGetAllByWorldMock = vi.fn((worldId: number) =>
     [...tokenRows.values()]
       .filter((token) => token.world_id === worldId)
-      .sort((left, right) => left.name.localeCompare(right.name)),
+      .sort((left, right) => left.name.localeCompare(right.name))
   );
   const tokensGetByIdMock = vi.fn((id: number) => tokenRows.get(id));
   const tokensInsertRunMock = vi.fn(
@@ -248,8 +247,8 @@ function setupTokenSqlMocks(initialTokens: Token[]) {
       return { all: tokensGetAllByWorldMock };
     }
     if (
-      sql ===
-      'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, grid_type, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      sql
+        === 'INSERT INTO tokens (world_id, campaign_id, name, image_src, config, grid_type, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ) {
       return { run: tokensInsertRunMock };
     }
@@ -394,9 +393,9 @@ describe('token IPC handlers', () => {
     expect(() => handler({}, { world_id: 0, name: 'Bad world' })).toThrowError(
       'Invalid world_id',
     );
-    expect(() =>
-      handler({}, { world_id: 1, campaign_id: 0, name: 'Bad campaign' }),
-    ).toThrowError('Invalid campaign_id');
+    expect(() => handler({}, { world_id: 1, campaign_id: 0, name: 'Bad campaign' })).toThrowError(
+      'Invalid campaign_id',
+    );
     expect(() => handler({}, { world_id: 1, name: '   ' })).toThrowError(
       'Token name is required',
     );

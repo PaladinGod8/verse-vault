@@ -8,10 +8,10 @@ type AbilityChildrenManagerProps = {
 function isAbilityChildManagerSupported(ability: Ability): boolean {
   const subtype = ability.passive_subtype;
   return (
-    ability.type === 'passive' &&
-    (subtype === 'linchpin' ||
-      subtype === 'keystone' ||
-      subtype === 'rostering')
+    ability.type === 'passive'
+    && (subtype === 'linchpin'
+      || subtype === 'keystone'
+      || subtype === 'rostering')
   );
 }
 
@@ -76,9 +76,9 @@ export default function AbilityChildrenManager({
     () =>
       abilities.filter(
         (ability) =>
-          ability.world_id === parentAbility.world_id &&
-          ability.id !== parentAbility.id &&
-          !childIdSet.has(ability.id),
+          ability.world_id === parentAbility.world_id
+          && ability.id !== parentAbility.id
+          && !childIdSet.has(ability.id),
       ),
     [abilities, childIdSet, parentAbility.id, parentAbility.world_id],
   );
@@ -154,145 +154,153 @@ export default function AbilityChildrenManager({
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600">
+    <div className='space-y-4'>
+      <p className='text-sm text-slate-600'>
         Search abilities in this world, then add or remove child links.
       </p>
 
-      <div className="space-y-1">
+      <div className='space-y-1'>
         <label
           htmlFor={`ability-children-search-${parentAbility.id}`}
-          className="block text-sm font-medium text-slate-800"
+          className='block text-sm font-medium text-slate-800'
         >
           Search
         </label>
         <input
           id={`ability-children-search-${parentAbility.id}`}
-          type="text"
+          type='text'
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by name, type, or subtype"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          placeholder='Search by name, type, or subtype'
+          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
         />
       </div>
 
-      {loadingError ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {loadingError}
-        </p>
-      ) : null}
+      {loadingError
+        ? (
+          <p className='rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800'>
+            {loadingError}
+          </p>
+        )
+        : null}
 
-      {actionError ? (
-        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {actionError}
-        </p>
-      ) : null}
+      {actionError
+        ? (
+          <p className='rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
+            {actionError}
+          </p>
+        )
+        : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <section className="space-y-3 rounded-lg border border-slate-200 p-4">
-          <h3 className="text-sm font-semibold text-slate-900">
+      <div className='grid gap-4 md:grid-cols-2'>
+        <section className='space-y-3 rounded-lg border border-slate-200 p-4'>
+          <h3 className='text-sm font-semibold text-slate-900'>
             Linked children
           </h3>
 
-          {isLoadingChildren ? (
-            <p className="text-sm text-slate-600">Loading linked children...</p>
-          ) : null}
+          {isLoadingChildren
+            ? <p className='text-sm text-slate-600'>Loading linked children...</p>
+            : null}
 
-          {!isLoadingChildren && filteredChildren.length === 0 ? (
-            <p className="text-sm text-slate-600">
-              {children.length === 0
-                ? 'No child abilities linked yet.'
-                : 'No linked children match your search.'}
-            </p>
-          ) : null}
+          {!isLoadingChildren && filteredChildren.length === 0
+            ? (
+              <p className='text-sm text-slate-600'>
+                {children.length === 0
+                  ? 'No child abilities linked yet.'
+                  : 'No linked children match your search.'}
+              </p>
+            )
+            : null}
 
-          {!isLoadingChildren && filteredChildren.length > 0 ? (
-            <ul className="space-y-2">
-              {filteredChildren.map((child) => (
-                <li
-                  key={child.id}
-                  className="flex items-start justify-between gap-3 rounded-md border border-slate-100 px-3 py-2"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">
-                      {child.name}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {child.type}
-                      {child.passive_subtype
-                        ? ` / ${child.passive_subtype}`
-                        : ''}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleRemoveChild(child.id);
-                    }}
-                    className="shrink-0 text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={
-                      removingChildId === child.id || addingChildId !== null
-                    }
+          {!isLoadingChildren && filteredChildren.length > 0
+            ? (
+              <ul className='space-y-2'>
+                {filteredChildren.map((child) => (
+                  <li
+                    key={child.id}
+                    className='flex items-start justify-between gap-3 rounded-md border border-slate-100 px-3 py-2'
                   >
-                    {removingChildId === child.id ? 'Removing...' : 'Remove'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                    <div>
+                      <p className='text-sm font-medium text-slate-900'>
+                        {child.name}
+                      </p>
+                      <p className='text-xs text-slate-500'>
+                        {child.type}
+                        {child.passive_subtype
+                          ? ` / ${child.passive_subtype}`
+                          : ''}
+                      </p>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => {
+                        void handleRemoveChild(child.id);
+                      }}
+                      className='shrink-0 text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
+                      disabled={removingChildId === child.id || addingChildId !== null}
+                    >
+                      {removingChildId === child.id ? 'Removing...' : 'Remove'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
+            : null}
         </section>
 
-        <section className="space-y-3 rounded-lg border border-slate-200 p-4">
-          <h3 className="text-sm font-semibold text-slate-900">
+        <section className='space-y-3 rounded-lg border border-slate-200 p-4'>
+          <h3 className='text-sm font-semibold text-slate-900'>
             Available abilities
           </h3>
 
-          {isLoadingChildren ? (
-            <p className="text-sm text-slate-600">Loading candidates...</p>
-          ) : null}
+          {isLoadingChildren
+            ? <p className='text-sm text-slate-600'>Loading candidates...</p>
+            : null}
 
-          {!isLoadingChildren && filteredCandidates.length === 0 ? (
-            <p className="text-sm text-slate-600">
-              {candidates.length === 0
-                ? 'No more abilities available to link.'
-                : 'No candidates match your search.'}
-            </p>
-          ) : null}
+          {!isLoadingChildren && filteredCandidates.length === 0
+            ? (
+              <p className='text-sm text-slate-600'>
+                {candidates.length === 0
+                  ? 'No more abilities available to link.'
+                  : 'No candidates match your search.'}
+              </p>
+            )
+            : null}
 
-          {!isLoadingChildren && filteredCandidates.length > 0 ? (
-            <ul className="space-y-2">
-              {filteredCandidates.map((candidate) => (
-                <li
-                  key={candidate.id}
-                  className="flex items-start justify-between gap-3 rounded-md border border-slate-100 px-3 py-2"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">
-                      {candidate.name}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {candidate.type}
-                      {candidate.passive_subtype
-                        ? ` / ${candidate.passive_subtype}`
-                        : ''}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleAddChild(candidate.id);
-                    }}
-                    className="shrink-0 text-sm font-medium text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={
-                      addingChildId === candidate.id || removingChildId !== null
-                    }
+          {!isLoadingChildren && filteredCandidates.length > 0
+            ? (
+              <ul className='space-y-2'>
+                {filteredCandidates.map((candidate) => (
+                  <li
+                    key={candidate.id}
+                    className='flex items-start justify-between gap-3 rounded-md border border-slate-100 px-3 py-2'
                   >
-                    {addingChildId === candidate.id ? 'Adding...' : 'Add'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                    <div>
+                      <p className='text-sm font-medium text-slate-900'>
+                        {candidate.name}
+                      </p>
+                      <p className='text-xs text-slate-500'>
+                        {candidate.type}
+                        {candidate.passive_subtype
+                          ? ` / ${candidate.passive_subtype}`
+                          : ''}
+                      </p>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => {
+                        void handleAddChild(candidate.id);
+                      }}
+                      className='shrink-0 text-sm font-medium text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+                      disabled={addingChildId === candidate.id || removingChildId !== null}
+                    >
+                      {addingChildId === candidate.id ? 'Adding...' : 'Add'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
+            : null}
         </section>
       </div>
     </div>

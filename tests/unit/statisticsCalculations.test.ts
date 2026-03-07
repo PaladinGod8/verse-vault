@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   calculateAbilityModifier,
   calculateSaveModifier,
-  formatModifier,
-  isResourceValueValid,
   clampResourceValue,
+  formatModifier,
   isPassiveScoreValid,
-  validateResourceStatistic,
+  isResourceValueValid,
   validatePassiveScoreDefinition,
+  validateResourceStatistic,
 } from '../../src/renderer/lib/statisticsCalculations';
 
 describe('statisticsCalculations', () => {

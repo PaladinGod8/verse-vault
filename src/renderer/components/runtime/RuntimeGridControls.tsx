@@ -1,8 +1,4 @@
-import {
-  clampGridCellSize,
-  MAX_GRID_CELL_SIZE,
-  MIN_GRID_CELL_SIZE,
-} from '../../lib/runtimeMath';
+import { clampGridCellSize, MAX_GRID_CELL_SIZE, MIN_GRID_CELL_SIZE } from '../../lib/runtimeMath';
 
 type RuntimeGridControlsProps = {
   gridConfig: BattleMapRuntimeGridConfig;
@@ -11,7 +7,7 @@ type RuntimeGridControlsProps = {
   onChange: (nextGridConfig: BattleMapRuntimeGridConfig) => void;
 };
 
-const GRID_MODE_OPTIONS: Array<{ value: BattleMapGridMode; label: string }> = [
+const GRID_MODE_OPTIONS: Array<{ value: BattleMapGridMode; label: string; }> = [
   { value: 'square', label: 'Square' },
   { value: 'hex', label: 'Hex' },
   { value: 'none', label: 'None' },
@@ -70,9 +66,9 @@ export default function RuntimeGridControls({
   const halfCell = gridConfig.cellSize * 0.5;
 
   return (
-    <section className="space-y-4 border-b border-slate-800 px-6 py-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-300 uppercase">
+    <section className='space-y-4 border-b border-slate-800 px-6 py-4'>
+      <div className='flex items-center justify-between gap-3'>
+        <h2 className='text-sm font-semibold tracking-wide text-slate-300 uppercase'>
           Runtime Grid Controls
         </h2>
         <span
@@ -80,23 +76,23 @@ export default function RuntimeGridControls({
             saveError
               ? 'text-rose-300'
               : isSaving
-                ? 'text-slate-300'
-                : 'text-emerald-300'
+              ? 'text-slate-300'
+              : 'text-emerald-300'
           }`}
         >
           {saveError ? 'Save failed' : isSaving ? 'Saving...' : 'Saved'}
         </span>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <label className="space-y-2">
-          <span className="text-xs font-medium tracking-wide text-slate-300 uppercase">
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <label className='space-y-2'>
+          <span className='text-xs font-medium tracking-wide text-slate-300 uppercase'>
             Grid Mode
           </span>
           <select
             value={gridConfig.mode}
             onChange={(event) => handleModeChange(event.target.value)}
-            className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none"
+            className='w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none'
           >
             {GRID_MODE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -106,125 +102,122 @@ export default function RuntimeGridControls({
           </select>
         </label>
 
-        <div className="space-y-2">
+        <div className='space-y-2'>
           <label
-            htmlFor="runtime-grid-cell-size"
-            className="text-xs font-medium tracking-wide text-slate-300 uppercase"
+            htmlFor='runtime-grid-cell-size'
+            className='text-xs font-medium tracking-wide text-slate-300 uppercase'
           >
             Cell Size
           </label>
           <input
-            id="runtime-grid-cell-size"
-            type="range"
+            id='runtime-grid-cell-size'
+            type='range'
             min={MIN_GRID_CELL_SIZE}
             max={MAX_GRID_CELL_SIZE}
             step={1}
             value={gridConfig.cellSize}
             onChange={(event) => handleCellSizeChange(event.target.value)}
-            className="w-full accent-slate-200"
+            className='w-full accent-slate-200'
           />
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <input
-              type="number"
+              type='number'
               min={MIN_GRID_CELL_SIZE}
               max={MAX_GRID_CELL_SIZE}
               step={1}
               value={gridConfig.cellSize}
               onChange={(event) => handleCellSizeChange(event.target.value)}
-              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none"
+              className='w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none'
             />
-            <span className="text-xs text-slate-300">px</span>
+            <span className='text-xs text-slate-300'>px</span>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className='space-y-2'>
           <label
-            htmlFor="runtime-grid-origin-x"
-            className="text-xs font-medium tracking-wide text-slate-300 uppercase"
+            htmlFor='runtime-grid-origin-x'
+            className='text-xs font-medium tracking-wide text-slate-300 uppercase'
           >
             Origin X
           </label>
           <input
-            id="runtime-grid-origin-x"
-            type="number"
+            id='runtime-grid-origin-x'
+            type='number'
             step={1}
             value={gridConfig.originX}
             onChange={(event) => handleOriginXChange(event.target.value)}
-            className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none"
+            className='w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none'
           />
           <button
-            type="button"
+            type='button'
             onClick={() =>
               updateGridConfig({
                 originX: isHalfCellOrigin(
-                  gridConfig.originX,
-                  gridConfig.cellSize,
-                )
+                    gridConfig.originX,
+                    gridConfig.cellSize,
+                  )
                   ? 0
                   : halfCell,
-              })
-            }
-            className="w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              })}
+            className='w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white'
           >
             Toggle Half Cell
           </button>
         </div>
 
-        <div className="space-y-2">
+        <div className='space-y-2'>
           <label
-            htmlFor="runtime-grid-origin-y"
-            className="text-xs font-medium tracking-wide text-slate-300 uppercase"
+            htmlFor='runtime-grid-origin-y'
+            className='text-xs font-medium tracking-wide text-slate-300 uppercase'
           >
             Origin Y
           </label>
           <input
-            id="runtime-grid-origin-y"
-            type="number"
+            id='runtime-grid-origin-y'
+            type='number'
             step={1}
             value={gridConfig.originY}
             onChange={(event) => handleOriginYChange(event.target.value)}
-            className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none"
+            className='w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-sky-400 focus:outline-none'
           />
           <button
-            type="button"
+            type='button'
             onClick={() =>
               updateGridConfig({
                 originY: isHalfCellOrigin(
-                  gridConfig.originY,
-                  gridConfig.cellSize,
-                )
+                    gridConfig.originY,
+                    gridConfig.cellSize,
+                  )
                   ? 0
                   : halfCell,
-              })
-            }
-            className="w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              })}
+            className='w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white'
           >
             Toggle Half Cell
           </button>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className='flex items-center justify-between gap-3'>
         <button
-          type="button"
+          type='button'
           onClick={() =>
             updateGridConfig({
               originX: 0,
               originY: 0,
-            })
-          }
-          className="rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+            })}
+          className='rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white'
         >
           Reset Origin
         </button>
 
-        {saveError ? (
-          <p className="text-xs text-rose-300">{saveError}</p>
-        ) : (
-          <p className="text-xs text-slate-400">
-            Runtime grid settings save automatically.
-          </p>
-        )}
+        {saveError
+          ? <p className='text-xs text-rose-300'>{saveError}</p>
+          : (
+            <p className='text-xs text-slate-400'>
+              Runtime grid settings save automatically.
+            </p>
+          )}
       </div>
     </section>
   );

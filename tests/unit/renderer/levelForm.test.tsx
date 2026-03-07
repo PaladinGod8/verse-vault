@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import LevelForm from '../../../src/renderer/components/levels/LevelForm';
 
 describe('LevelForm', () => {
@@ -67,7 +67,7 @@ describe('LevelForm', () => {
 
     render(
       <LevelForm
-        mode="edit"
+        mode='edit'
         worldId={1}
         initialValues={{
           name: 'Level One',
@@ -118,7 +118,7 @@ describe('LevelForm', () => {
   it('populates initial values in edit mode', () => {
     render(
       <LevelForm
-        mode="edit"
+        mode='edit'
         worldId={1}
         initialValues={{
           name: 'Existing Level',

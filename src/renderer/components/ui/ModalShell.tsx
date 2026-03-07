@@ -12,8 +12,7 @@ type ModalShellProps = {
   closeOnBackdrop?: boolean;
 };
 
-const joinClasses = (...classes: Array<string | undefined>) =>
-  classes.filter(Boolean).join(' ');
+const joinClasses = (...classes: Array<string | undefined>) => classes.filter(Boolean).join(' ');
 
 export default function ModalShell({
   isOpen,
@@ -75,8 +74,8 @@ export default function ModalShell({
       <div
         ref={panelRef}
         tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
+        role='dialog'
+        aria-modal='true'
         aria-labelledby={labelledBy}
         aria-label={labelledBy ? undefined : (ariaLabel ?? 'Dialog')}
         className={joinClasses(

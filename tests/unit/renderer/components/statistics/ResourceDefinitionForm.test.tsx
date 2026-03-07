@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import ResourceDefinitionForm from '../../../../../src/renderer/components/statistics/ResourceDefinitionForm';
 
 describe('ResourceDefinitionForm', () => {
@@ -9,7 +9,7 @@ describe('ResourceDefinitionForm', () => {
 
     render(
       <ResourceDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={[]}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -32,7 +32,7 @@ describe('ResourceDefinitionForm', () => {
 
     render(
       <ResourceDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={['hp']}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -56,7 +56,7 @@ describe('ResourceDefinitionForm', () => {
 
     render(
       <ResourceDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={[]}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -89,7 +89,7 @@ describe('ResourceDefinitionForm', () => {
 
     render(
       <ResourceDefinitionForm
-        mode="edit"
+        mode='edit'
         initialValues={{
           id: 'hp',
           name: 'Hit Points',
@@ -126,7 +126,7 @@ describe('ResourceDefinitionForm', () => {
 
     render(
       <ResourceDefinitionForm
-        mode="create"
+        mode='create'
         existingIds={[]}
         onSubmit={onSubmit}
         onCancel={vi.fn()}

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import WorldPagePlaceholder from '../../../src/renderer/pages/WorldPagePlaceholder';
 
 const worldsGetByIdMock = vi.fn();
@@ -24,7 +24,7 @@ function renderWorldPage(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/world/:id?" element={<WorldPagePlaceholder />} />
+        <Route path='/world/:id?' element={<WorldPagePlaceholder />} />
       </Routes>
     </MemoryRouter>,
   );

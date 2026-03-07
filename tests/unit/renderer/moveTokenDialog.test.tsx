@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MoveTokenDialog from '../../../src/renderer/components/tokens/MoveTokenDialog';
 
 function buildToken(overrides: Partial<Token> = {}): Token {
@@ -42,7 +42,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken({ name: 'Dragon' })}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -58,7 +58,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken({ name: 'Dragon' })}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -78,7 +78,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[buildCampaign()]}
           isOpen={true}
           isPending={false}
@@ -100,7 +100,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={token}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -119,7 +119,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -138,7 +138,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign()]}
           isOpen={true}
           isPending={false}
@@ -154,7 +154,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign()]}
           isOpen={true}
           isPending={false}
@@ -170,7 +170,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[
             buildCampaign({ id: 1, name: 'Campaign A' }),
             buildCampaign({ id: 2, name: 'Campaign B' }),
@@ -192,7 +192,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[
             buildCampaign({ id: 1, name: 'Campaign Alpha' }),
             buildCampaign({ id: 2, name: 'Campaign Beta' }),
@@ -216,7 +216,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken({ name: 'Ogre' })}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign({ id: 1, name: 'Dragonslayers' })]}
           isOpen={true}
           isPending={false}
@@ -235,7 +235,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken({ name: 'Knight' })}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[
             buildCampaign({ id: 1, name: 'Campaign A' }),
             buildCampaign({ id: 2, name: 'Campaign B' }),
@@ -263,7 +263,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={token}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign({ id: 5 }), buildCampaign({ id: 6 })]}
           isOpen={true}
           isPending={false}
@@ -284,7 +284,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -302,7 +302,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -319,7 +319,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign()]}
           isOpen={true}
           isPending={true}
@@ -336,7 +336,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign()]}
           isOpen={true}
           isPending={true}
@@ -353,7 +353,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign()]}
           isOpen={true}
           isPending={true}
@@ -376,7 +376,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -399,7 +399,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -422,7 +422,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -445,7 +445,7 @@ describe('MoveTokenDialog', () => {
       const { rerender } = render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -461,7 +461,7 @@ describe('MoveTokenDialog', () => {
       rerender(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={false}
           isPending={false}
@@ -473,7 +473,7 @@ describe('MoveTokenDialog', () => {
       rerender(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -494,7 +494,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={false}
@@ -511,7 +511,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={true}
           isPending={true}
@@ -528,7 +528,7 @@ describe('MoveTokenDialog', () => {
       render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[]}
           isOpen={false}
           isPending={false}
@@ -546,7 +546,7 @@ describe('MoveTokenDialog', () => {
       const { rerender } = render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign({ id: 1, name: 'Initial' })]}
           isOpen={true}
           isPending={false}
@@ -563,7 +563,7 @@ describe('MoveTokenDialog', () => {
       rerender(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[
             buildCampaign({ id: 2, name: 'Updated' }),
             buildCampaign({ id: 3, name: 'New' }),
@@ -585,7 +585,7 @@ describe('MoveTokenDialog', () => {
       const { rerender } = render(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toCampaign"
+          mode='toCampaign'
           campaigns={[buildCampaign({ id: 1 })]}
           isOpen={true}
           isPending={false}
@@ -597,7 +597,7 @@ describe('MoveTokenDialog', () => {
       rerender(
         <MoveTokenDialog
           token={buildToken()}
-          mode="toWorld"
+          mode='toWorld'
           campaigns={[buildCampaign({ id: 1 })]}
           isOpen={true}
           isPending={false}

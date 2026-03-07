@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { launchApp, closeApp } from './helpers/launchApp';
+import { expect, test } from '@playwright/test';
+import { closeApp, launchApp } from './helpers/launchApp';
 
 function abilityRow(
   window: import('@playwright/test').Page,

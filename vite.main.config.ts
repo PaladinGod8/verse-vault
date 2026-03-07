@@ -1,12 +1,7 @@
+import commonjs from '@rollup/plugin-commonjs';
 import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
-import {
-  getBuildConfig,
-  getBuildDefine,
-  external,
-  pluginHotRestart,
-} from './vite.base.config';
-import commonjs from '@rollup/plugin-commonjs';
+import { external, getBuildConfig, getBuildDefine, pluginHotRestart } from './vite.base.config';
 
 // https://vitejs.dev/config
 export default defineConfig((env) => {

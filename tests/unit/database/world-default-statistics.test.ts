@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import path from 'path';
 import { _electron as electron } from 'playwright';
 import type { ElectronApplication, Page } from 'playwright';
-import path from 'path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type {
-  ResourceStatisticDefinition,
   PassiveScoreDefinition,
+  ResourceStatisticDefinition,
 } from '../../../src/shared/statisticsTypes';
 
 describe('World Default Statistics', () => {

@@ -108,8 +108,7 @@ function main() {
   if (codebaseMapHits.length > 0 && !changedSet.has(DOCS.CODEBASE_MAP)) {
     failures.push({
       doc: DOCS.CODEBASE_MAP,
-      reason:
-        'Source/config/directory changes detected without codebase map update.',
+      reason: 'Source/config/directory changes detected without codebase map update.',
       files: codebaseMapHits,
     });
   }
@@ -117,8 +116,7 @@ function main() {
   if (architectureHits.length > 0 && !changedSet.has(DOCS.ARCHITECTURE)) {
     failures.push({
       doc: DOCS.ARCHITECTURE,
-      reason:
-        'Architecture-relevant files changed without architecture doc update.',
+      reason: 'Architecture-relevant files changed without architecture doc update.',
       files: architectureHits,
     });
   }
