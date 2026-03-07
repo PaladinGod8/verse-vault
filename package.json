@@ -12,6 +12,7 @@
     "publish": "electron-forge publish",
     "type-check": "tsc --noEmit",
     "lint": "eslint --ext .ts,.tsx . --max-warnings=0",
+    "lint:cache": "eslint --cache --cache-location node_modules/.cache/eslint/.eslintcache --ext .ts,.tsx . --max-warnings=0",
     "format": "dprint fmt",
     "format:check": "dprint check",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
@@ -19,6 +20,7 @@
     "test": "yarn test:unit:coverage && yarn package && yarn test:e2e",
     "test:unit": "vitest",
     "test:unit:watch": "vitest --watch",
+    "test:unit:quick": "vitest run",
     "test:unit:run": "vitest run --coverage",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
@@ -32,7 +34,10 @@
     "verify:all": "node scripts/verify-all.cjs --no-dev",
     "verify:all:dev": "node scripts/verify-all.cjs",
     "verify:all:fresh": "node scripts/verify-all.cjs --install --no-dev",
-    "verify:all:dev:fresh": "node scripts/verify-all.cjs --install"
+    "verify:all:dev:fresh": "node scripts/verify-all.cjs --install",
+    "verify:rapid": "node scripts/verify-rapid.cjs",
+    "verify:rapid:fresh": "node scripts/verify-rapid.cjs --fresh-cache",
+    "verify:rapid:rebuild": "node scripts/verify-rapid.cjs --rebuild-native"
   },
   "devDependencies": {
     "@dnd-kit/core": "^6.3.1",
