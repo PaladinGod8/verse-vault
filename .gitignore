@@ -100,7 +100,6 @@ docs/sample-character-sheets/
 
 # Coding Agents
 .claude/
-.github/
 
 # Playwright
 playwright-report/
