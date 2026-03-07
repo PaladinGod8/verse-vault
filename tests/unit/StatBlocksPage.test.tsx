@@ -64,8 +64,11 @@ function renderPage(worldId: number | string | null = 1) {
 }
 
 describe('StatBlocksPage', () => {
+  let user: ReturnType<typeof userEvent.setup>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    user = userEvent.setup();
 
     window.db = {
       worlds: {
@@ -184,7 +187,7 @@ describe('StatBlocksPage', () => {
       const button = await screen.findByRole('button', {
         name: /New StatBlock/i,
       });
-      await userEvent.click(button);
+      await user.click(button);
       // StatBlockForm should be rendered in the modal
       expect(
         await screen.findByLabelText(/Name/i, { selector: 'input' }),
@@ -196,14 +199,14 @@ describe('StatBlocksPage', () => {
       const button = await screen.findByRole('button', {
         name: /New StatBlock/i,
       });
-      await userEvent.click(button);
+      await user.click(button);
       const formElement = (
         await screen.findByLabelText(/Name/i, { selector: 'input' })
       ).closest('form');
       expect(formElement).toBeInTheDocument();
 
       const cancelButton = screen.getByRole('button', { name: /Cancel/i });
-      await userEvent.click(cancelButton);
+      await user.click(cancelButton);
 
       // Form should disappear - check that input is gone
       await waitFor(() => {
@@ -220,7 +223,7 @@ describe('StatBlocksPage', () => {
       const newButton = await screen.findByRole('button', {
         name: /New StatBlock/i,
       });
-      await userEvent.click(newButton);
+      await user.click(newButton);
 
       const createButton = screen.getByRole('button', {
         name: /Create statblock/i,
@@ -228,10 +231,10 @@ describe('StatBlocksPage', () => {
       expect(createButton).toBeDisabled();
 
       const nameInput = screen.getByLabelText(/Name/i, { selector: 'input' });
-      await userEvent.type(nameInput, 'New Cleric');
+      await user.type(nameInput, 'New Cleric');
       expect(createButton).not.toBeDisabled();
 
-      await userEvent.click(createButton);
+      await user.click(createButton);
 
       await waitFor(() => {
         expect(window.db.statblocks.add).toHaveBeenCalledWith(
@@ -255,15 +258,15 @@ describe('StatBlocksPage', () => {
       const newButton = await screen.findByRole('button', {
         name: /New StatBlock/i,
       });
-      await userEvent.click(newButton);
+      await user.click(newButton);
 
       const nameInput = screen.getByLabelText(/Name/i, { selector: 'input' });
-      await userEvent.type(nameInput, 'New Cleric');
+      await user.type(nameInput, 'New Cleric');
 
       const createButton = screen.getByRole('button', {
         name: /Create statblock/i,
       });
-      await userEvent.click(createButton);
+      await user.click(createButton);
 
       await waitFor(() => {
         expect(toastErrorMock).toHaveBeenCalledWith(
@@ -282,7 +285,7 @@ describe('StatBlocksPage', () => {
         .mockResolvedValue([statBlock]);
       renderPage(1);
       const editButton = await screen.findByRole('button', { name: /Edit/i });
-      await userEvent.click(editButton);
+      await user.click(editButton);
       // Check that the save button appears (indicating edit mode)
       expect(
         await screen.findByRole('button', { name: /Save changes/i }),
@@ -298,7 +301,7 @@ describe('StatBlocksPage', () => {
       const newButton = await screen.findByRole('button', {
         name: /New StatBlock/i,
       });
-      await userEvent.click(newButton);
+      await user.click(newButton);
       // Form should be open
       expect(
         await screen.findByLabelText(/Name/i, { selector: 'input' }),
@@ -306,7 +309,7 @@ describe('StatBlocksPage', () => {
 
       // Click edit to open edit modal
       const editButton = await screen.findByRole('button', { name: /Edit/i });
-      await userEvent.click(editButton);
+      await user.click(editButton);
 
       // Create form should close
       await waitFor(() => {
@@ -331,14 +334,14 @@ describe('StatBlocksPage', () => {
 
       renderPage(1);
       const editButton = await screen.findByRole('button', { name: /Edit/i });
-      await userEvent.click(editButton);
+      await user.click(editButton);
 
       const nameInput = screen.getByLabelText(/Name/i, { selector: 'input' });
-      await userEvent.clear(nameInput);
-      await userEvent.type(nameInput, 'Ranger Updated');
+      await user.clear(nameInput);
+      await user.type(nameInput, 'Ranger Updated');
 
       const saveButton = screen.getByRole('button', { name: /Save changes/i });
-      await userEvent.click(saveButton);
+      await user.click(saveButton);
 
       await waitFor(() => {
         expect(window.db.statblocks.update).toHaveBeenCalledWith(5, {
@@ -363,16 +366,16 @@ describe('StatBlocksPage', () => {
 
       renderPage(1);
       const editButton = await screen.findByRole('button', { name: /Edit/i });
-      await userEvent.click(editButton);
+      await user.click(editButton);
 
       const nameInput = screen.getByLabelText(/Name/i, {
         selector: 'textarea,input',
       });
-      await userEvent.clear(nameInput);
-      await userEvent.type(nameInput, 'Ranger Updated');
+      await user.clear(nameInput);
+      await user.type(nameInput, 'Ranger Updated');
 
       const saveButton = screen.getByRole('button', { name: /Save changes/i });
-      await userEvent.click(saveButton);
+      await user.click(saveButton);
 
       await waitFor(() => {
         expect(toastSuccessMock).toHaveBeenCalledWith(
@@ -393,14 +396,14 @@ describe('StatBlocksPage', () => {
 
       renderPage(1);
       const editButton = await screen.findByRole('button', { name: /Edit/i });
-      await userEvent.click(editButton);
+      await user.click(editButton);
 
       const nameInput = screen.getByLabelText(/Name/i, { selector: 'input' });
-      await userEvent.clear(nameInput);
-      await userEvent.type(nameInput, 'Ranger Updated');
+      await user.clear(nameInput);
+      await user.type(nameInput, 'Ranger Updated');
 
       const saveButton = screen.getByRole('button', { name: /Save changes/i });
-      await userEvent.click(saveButton);
+      await user.click(saveButton);
 
       await waitFor(() => {
         expect(toastErrorMock).toHaveBeenCalledWith(
@@ -422,7 +425,7 @@ describe('StatBlocksPage', () => {
       const deleteButton = await screen.findByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(deleteButton);
+      await user.click(deleteButton);
 
       expect(screen.getByText(/Delete "Paladin"\?/)).toBeInTheDocument();
       expect(screen.getByText('This cannot be undone.')).toBeInTheDocument();
@@ -439,10 +442,10 @@ describe('StatBlocksPage', () => {
         name: /Delete/i,
       });
       // First delete button is on the card, not the confirm dialog
-      await userEvent.click(deleteButtons[0]);
+      await user.click(deleteButtons[0]);
 
       const cancelButton = screen.getByRole('button', { name: /Cancel/i });
-      await userEvent.click(cancelButton);
+      await user.click(cancelButton);
 
       await waitFor(() => {
         expect(
@@ -463,14 +466,14 @@ describe('StatBlocksPage', () => {
       const deleteButton = await screen.findByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(deleteButton);
+      await user.click(deleteButton);
 
       // In the confirm dialog, find the "Delete" button (not the one on the card)
       const confirmDeleteButtons = screen.getAllByRole('button', {
         name: /Delete/i,
       });
       // The last one should be in the dialog
-      await userEvent.click(
+      await user.click(
         confirmDeleteButtons[confirmDeleteButtons.length - 1],
       );
 
@@ -496,12 +499,12 @@ describe('StatBlocksPage', () => {
       expect(screen.getByText('Cleric')).toBeInTheDocument();
 
       const deleteButtons = screen.getAllByRole('button', { name: /Delete/i });
-      await userEvent.click(deleteButtons[0]);
+      await user.click(deleteButtons[0]);
 
       const confirmDeleteButtons = screen.getAllByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(
+      await user.click(
         confirmDeleteButtons[confirmDeleteButtons.length - 1],
       );
 
@@ -525,12 +528,12 @@ describe('StatBlocksPage', () => {
       const deleteButton = await screen.findByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(deleteButton);
+      await user.click(deleteButton);
 
       const confirmDeleteButtons = screen.getAllByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(
+      await user.click(
         confirmDeleteButtons[confirmDeleteButtons.length - 1],
       );
 
@@ -556,12 +559,12 @@ describe('StatBlocksPage', () => {
       expect(await screen.findByText('Paladin')).toBeInTheDocument();
 
       const deleteButtons = screen.getAllByRole('button', { name: /Delete/i });
-      await userEvent.click(deleteButtons[0]);
+      await user.click(deleteButtons[0]);
 
       const confirmDeleteButtons = screen.getAllByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(
+      await user.click(
         confirmDeleteButtons[confirmDeleteButtons.length - 1],
       );
 
@@ -583,12 +586,12 @@ describe('StatBlocksPage', () => {
       const deleteButton = await screen.findByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(deleteButton);
+      await user.click(deleteButton);
 
       const confirmDeleteButtons = screen.getAllByRole('button', {
         name: /Delete/i,
       });
-      await userEvent.click(
+      await user.click(
         confirmDeleteButtons[confirmDeleteButtons.length - 1],
       );
 
