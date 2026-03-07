@@ -1,5 +1,10 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type ElectronApplication, expect, type Page, test } from '@playwright/test';
+import { ensureWorldsLanding } from './helpers';
 import { closeApp, launchApp } from './helpers/launchApp';
+
+let app: ElectronApplication;
+let page: Page;
+let userDataDir: string;
 
 async function prepareWindow(page: Page): Promise<void> {
   await page.bringToFront();
@@ -39,219 +44,194 @@ async function openStatisticsConfiguration(page: Page): Promise<void> {
 }
 
 test.describe('World Statistics Configuration', () => {
+  test.beforeAll(async () => {
+    const result = await launchApp();
+    app = result.app;
+    userDataDir = result.userDataDir;
+    page = await app.firstWindow();
+    await prepareWindow(page);
+  });
+
+  test.afterEach(async () => {
+    // Close any open modals before navigating away
+    const escapeKey = 'Escape';
+    await page.keyboard.press(escapeKey);
+    await page.waitForTimeout(100);
+    await ensureWorldsLanding(page);
+  });
+
+  test.afterAll(async () => {
+    await closeApp(app, userDataDir);
+  });
+
   test('shows default resource and passive score definitions for a new world', async () => {
-    const { app, userDataDir } = await launchApp();
+    const unique = Date.now().toString();
+    const worldName = `E2E Stats Defaults ${unique}`;
 
-    try {
-      const page = await app.firstWindow();
-      await prepareWindow(page);
+    await createAndOpenWorld(page, worldName);
+    await openStatisticsConfiguration(page);
 
-      const unique = Date.now().toString();
-      const worldName = `E2E Stats Defaults ${unique}`;
+    await expect(
+      page.getByRole('cell', { name: 'Hit Points' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'HP', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Mana Points' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'MP', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Armour Class' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'AC', exact: true }),
+    ).toBeVisible();
 
-      await createAndOpenWorld(page, worldName);
-      await openStatisticsConfiguration(page);
-
-      await expect(
-        page.getByRole('cell', { name: 'Hit Points' }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'HP', exact: true }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'Mana Points' }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'MP', exact: true }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'Armour Class' }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'AC', exact: true }),
-      ).toBeVisible();
-
-      await expect(page.getByRole('cell', { name: 'Strength' })).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'STR', exact: true }),
-      ).toBeVisible();
-      await expect(page.getByRole('cell', { name: 'Dexterity' })).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'Proficiency Bonus' }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'pb', exact: true }),
-      ).toBeVisible();
-    } finally {
-      await closeApp(app, userDataDir);
-    }
+    await expect(page.getByRole('cell', { name: 'Strength' })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'STR', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Dexterity' })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Proficiency Bonus' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'pb', exact: true }),
+    ).toBeVisible();
   });
 
   test('adds a custom resource definition', async () => {
-    const { app, userDataDir } = await launchApp();
+    const unique = Date.now().toString();
+    const worldName = `E2E Add Resource ${unique}`;
 
-    try {
-      const page = await app.firstWindow();
-      await prepareWindow(page);
+    await createAndOpenWorld(page, worldName);
+    await openStatisticsConfiguration(page);
 
-      const unique = Date.now().toString();
-      const worldName = `E2E Add Resource ${unique}`;
+    await page.getByRole('button', { name: 'Add Resource' }).click();
+    const createResourceDialog = page.getByRole('dialog', {
+      name: 'Create Resource',
+    });
+    await expect(createResourceDialog).toBeVisible();
 
-      await createAndOpenWorld(page, worldName);
-      await openStatisticsConfiguration(page);
+    await createResourceDialog.getByLabel('ID').fill('ki_points');
+    await createResourceDialog.getByLabel('Name').fill('Ki Points');
+    await createResourceDialog.getByLabel('Abbreviation').fill('KI');
+    await createResourceDialog
+      .getByLabel('Description')
+      .fill('Monk energy resource');
+    await createResourceDialog
+      .getByRole('button', { name: 'Create' })
+      .click();
 
-      await page.getByRole('button', { name: 'Add Resource' }).click();
-      const createResourceDialog = page.getByRole('dialog', {
-        name: 'Create Resource',
-      });
-      await expect(createResourceDialog).toBeVisible();
-
-      await createResourceDialog.getByLabel('ID').fill('ki_points');
-      await createResourceDialog.getByLabel('Name').fill('Ki Points');
-      await createResourceDialog.getByLabel('Abbreviation').fill('KI');
-      await createResourceDialog
-        .getByLabel('Description')
-        .fill('Monk energy resource');
-      await createResourceDialog
-        .getByRole('button', { name: 'Create' })
-        .click();
-
-      await expect(
-        page.getByRole('cell', { name: 'ki_points', exact: true }),
-      ).toBeVisible();
-      await expect(page.getByRole('cell', { name: 'Ki Points' })).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'KI', exact: true }),
-      ).toBeVisible();
-    } finally {
-      await closeApp(app, userDataDir);
-    }
+    await expect(
+      page.getByRole('cell', { name: 'ki_points', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Ki Points' })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'KI', exact: true }),
+    ).toBeVisible();
   });
 
   test('edits an existing resource definition', async () => {
-    const { app, userDataDir } = await launchApp();
+    const unique = Date.now().toString();
+    const worldName = `E2E Edit Resource ${unique}`;
 
-    try {
-      const page = await app.firstWindow();
-      await prepareWindow(page);
+    await createAndOpenWorld(page, worldName);
+    await openStatisticsConfiguration(page);
 
-      const unique = Date.now().toString();
-      const worldName = `E2E Edit Resource ${unique}`;
+    const hpRow = page.locator('tr', {
+      has: page.getByRole('cell', { name: 'Hit Points' }),
+    });
+    await hpRow.getByRole('button', { name: 'Edit' }).click();
 
-      await createAndOpenWorld(page, worldName);
-      await openStatisticsConfiguration(page);
+    const editDialog = page.getByRole('dialog', { name: 'Edit Resource' });
+    await expect(editDialog).toBeVisible();
 
-      const hpRow = page.locator('tr', {
-        has: page.getByRole('cell', { name: 'Hit Points' }),
-      });
-      await hpRow.getByRole('button', { name: 'Edit' }).click();
+    await editDialog.getByLabel('Name').fill('Health Points');
+    await editDialog
+      .getByLabel('Description')
+      .fill('Total health of the character');
+    await editDialog.getByRole('button', { name: 'Save' }).click();
 
-      const editDialog = page.getByRole('dialog', { name: 'Edit Resource' });
-      await expect(editDialog).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Health Points' }),
+    ).toBeVisible();
 
-      await editDialog.getByLabel('Name').fill('Health Points');
-      await editDialog
-        .getByLabel('Description')
-        .fill('Total health of the character');
-      await editDialog.getByRole('button', { name: 'Save' }).click();
+    const updatedRow = page.locator('tr', {
+      has: page.getByRole('cell', { name: 'Health Points' }),
+    });
+    await updatedRow.getByRole('button', { name: 'Edit' }).click();
 
-      await expect(
-        page.getByRole('cell', { name: 'Health Points' }),
-      ).toBeVisible();
-
-      const updatedRow = page.locator('tr', {
-        has: page.getByRole('cell', { name: 'Health Points' }),
-      });
-      await updatedRow.getByRole('button', { name: 'Edit' }).click();
-
-      const reopenedDialog = page.getByRole('dialog', {
-        name: 'Edit Resource',
-      });
-      await expect(reopenedDialog.getByLabel('Description')).toHaveValue(
-        'Total health of the character',
-      );
-    } finally {
-      await closeApp(app, userDataDir);
-    }
+    const reopenedDialog = page.getByRole('dialog', {
+      name: 'Edit Resource',
+    });
+    await expect(reopenedDialog.getByLabel('Description')).toHaveValue(
+      'Total health of the character',
+    );
   });
 
   test('deletes a resource definition', async () => {
-    const { app, userDataDir } = await launchApp();
+    const unique = Date.now().toString();
+    const worldName = `E2E Delete Resource ${unique}`;
 
-    try {
-      const page = await app.firstWindow();
-      await prepareWindow(page);
+    await createAndOpenWorld(page, worldName);
+    await openStatisticsConfiguration(page);
 
-      const unique = Date.now().toString();
-      const worldName = `E2E Delete Resource ${unique}`;
+    const mpRow = page.locator('tr', {
+      has: page.getByRole('cell', { name: 'Mana Points' }),
+    });
+    await mpRow.getByRole('button', { name: 'Delete' }).click();
 
-      await createAndOpenWorld(page, worldName);
-      await openStatisticsConfiguration(page);
+    const confirmDialog = page.getByRole('dialog', {
+      name: 'Delete "Mana Points"?',
+    });
+    await expect(confirmDialog).toBeVisible();
+    await confirmDialog.getByRole('button', { name: 'Delete' }).click();
 
-      const mpRow = page.locator('tr', {
-        has: page.getByRole('cell', { name: 'Mana Points' }),
-      });
-      await mpRow.getByRole('button', { name: 'Delete' }).click();
-
-      const confirmDialog = page.getByRole('dialog', {
-        name: 'Delete "Mana Points"?',
-      });
-      await expect(confirmDialog).toBeVisible();
-      await confirmDialog.getByRole('button', { name: 'Delete' }).click();
-
-      await expect(page.getByRole('cell', { name: 'Mana Points' })).toHaveCount(
-        0,
-      );
-      await expect(page.getByRole('cell', { name: 'MP' })).toHaveCount(0);
-      await expect(
-        page.getByRole('cell', { name: 'Hit Points' }),
-      ).toBeVisible();
-    } finally {
-      await closeApp(app, userDataDir);
-    }
+    await expect(page.getByRole('cell', { name: 'Mana Points' })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('cell', { name: 'MP' })).toHaveCount(0);
+    await expect(
+      page.getByRole('cell', { name: 'Hit Points' }),
+    ).toBeVisible();
   });
 
   test('adds a custom passive score definition', async () => {
-    const { app, userDataDir } = await launchApp();
+    const unique = Date.now().toString();
+    const worldName = `E2E Add Passive ${unique}`;
 
-    try {
-      const page = await app.firstWindow();
-      await prepareWindow(page);
+    await createAndOpenWorld(page, worldName);
+    await openStatisticsConfiguration(page);
 
-      const unique = Date.now().toString();
-      const worldName = `E2E Add Passive ${unique}`;
+    await page.getByRole('button', { name: 'Add Passive Score' }).click();
+    const createPassiveDialog = page.getByRole('dialog', {
+      name: 'Create Passive Score',
+    });
+    await expect(createPassiveDialog).toBeVisible();
 
-      await createAndOpenWorld(page, worldName);
-      await openStatisticsConfiguration(page);
+    await createPassiveDialog.getByLabel('ID').fill('luck');
+    await createPassiveDialog.getByLabel('Name').fill('Luck');
+    await createPassiveDialog.getByLabel('Abbreviation').fill('LCK');
+    await createPassiveDialog
+      .getByLabel('Type')
+      .selectOption('ability_score');
+    await createPassiveDialog
+      .getByLabel('Description')
+      .fill('Fortune favors the lucky');
+    await createPassiveDialog.getByRole('button', { name: 'Create' }).click();
 
-      await page.getByRole('button', { name: 'Add Passive Score' }).click();
-      const createPassiveDialog = page.getByRole('dialog', {
-        name: 'Create Passive Score',
-      });
-      await expect(createPassiveDialog).toBeVisible();
-
-      await createPassiveDialog.getByLabel('ID').fill('luck');
-      await createPassiveDialog.getByLabel('Name').fill('Luck');
-      await createPassiveDialog.getByLabel('Abbreviation').fill('LCK');
-      await createPassiveDialog
-        .getByLabel('Type')
-        .selectOption('ability_score');
-      await createPassiveDialog
-        .getByLabel('Description')
-        .fill('Fortune favors the lucky');
-      await createPassiveDialog.getByRole('button', { name: 'Create' }).click();
-
-      await expect(
-        page.getByRole('cell', { name: 'Luck', exact: true }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'LCK', exact: true }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole('cell', { name: 'luck', exact: true }),
-      ).toBeVisible();
-    } finally {
-      await closeApp(app, userDataDir);
-    }
+    await expect(
+      page.getByRole('cell', { name: 'Luck', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'LCK', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'luck', exact: true }),
+    ).toBeVisible();
   });
 });

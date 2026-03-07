@@ -38,18 +38,14 @@ The test suite has two independent runners:
 `vitest.config.ts` uses `pool: 'threads'` with:
 
 ```ts
-poolOptions: {
-  threads: {
-    minThreads: 2,
-    maxThreads: Math.max(2, os.cpus().length - 1),
-  },
-},
+pool: 'threads',
+maxWorkers: Math.max(2, os.cpus().length - 1),
 ```
 
 **Why threads instead of the default forks?**
 `forks` (child processes) boot a full Node.js process per worker — expensive. `threads`
 (worker_threads) share the same V8 instance and just isolate module registries, which starts
-much faster. With 47 test files, this saving compounds.
+much faster with many test files.
 
 **Why is threads safe here?**
 Every unit test file mocks all native modules (`better-sqlite3`, `electron`) using `vi.mock()` /
@@ -57,8 +53,8 @@ Every unit test file mocks all native modules (`better-sqlite3`, `electron`) usi
 its own module registry even in thread mode, so cross-file state leakage cannot happen.
 
 **Worker count formula**
-`maxThreads = max(2, cpus - 1)` leaves one core for the OS and main process. `minThreads: 2`
-ensures at least two files run concurrently even on dual-core machines.
+`maxWorkers = max(2, cpus - 1)` leaves one core for the OS and main process, ensuring at least
+two test files run concurrently even on dual-core machines.
 
 ### Which tests are parallel-safe?
 
@@ -87,11 +83,26 @@ module registry.
 
 ## E2E Tests (Playwright)
 
-### Workers
+### Worker Group Strategy
 
-`playwright.config.ts` uses `workers: 2`. Each worker is an independent OS process that runs one
-test file at a time. Two workers means two test files can run simultaneously, each with its own
-Electron instance and its own SQLite database.
+`playwright.config.ts` groups E2E tests by weight/complexity into three projects, each with its
+own parallelization strategy:
+
+| Project   | fullyParallel | Files                                                                                                                               | Strategy                             |
+| --------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `smoke`   | `true`        | `app.test.ts`, `statblocks-crud.test.ts`, `statblocks.test.ts`                                                                     | Lightweight fast tests — max workers |
+| `medium`  | `true`        | `abilities.test.ts`, `battlemaps.test.ts`, `world-statistics-config.test.ts`, `statblock-statistics.test.ts`, `casting-range-overlay.test.ts`, `tokenMove.test.ts` | Medium-weight tests — max workers    |
+| `runtime` | `false`       | `arc-act.test.ts`, `battlemap-runtime-play.test.ts`, `tokens.test.ts`                                                              | Heavy flows — conservative workers   |
+
+Each worker is an independent OS process that runs one test file at a time, with its own Electron
+instance and SQLite database. `fullyParallel: true` enables Playwright to distribute tests across
+all available workers; `fullyParallel: false` limits parallelization within the project.
+
+**Why group by weight?**
+Playwright's default worker allocation distributes tests evenly, but this can cause resource
+contention when heavy tests run concurrently. Grouping by weight and using targeted
+parallelization (smoke/medium fully parallel, runtime conservative) provides more predictable
+performance and reduces flakiness from resource exhaustion.
 
 ### Database isolation via `--user-data-dir`
 
@@ -127,14 +138,17 @@ export async function closeApp(app, userDataDir): Promise<void> {
 
 ### Which E2E files run in parallel?
 
-| File                             | Parallel-safe?         | Notes                                                                                                                                    |
-| -------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `app.test.ts`                    | Yes                    | Single test, fresh app per run                                                                                                           |
-| `battlemaps.test.ts`             | Yes                    | Fresh app + unique world name per run                                                                                                    |
-| `abilities.test.ts`              | Yes                    | Fresh app + unique world name per run                                                                                                    |
-| `battlemap-runtime-play.test.ts` | Yes                    | Fresh app per run                                                                                                                        |
-| `tokens.test.ts`                 | Yes                    | Fresh app + fresh world in `beforeEach`; `afterEach` cleans up                                                                           |
-| `arc-act.test.ts`                | **Serial within file** | Uses `test.describe.configure({ mode: 'serial' })` — tests depend on each other's state. Runs in its own Playwright worker sequentially. |
+All E2E test files are parallel-safe at the file level through database isolation (see next
+section). Files are grouped by weight into projects:
+
+- **Smoke/Medium projects** (`fullyParallel: true`) — Playwright distributes these across all
+  available workers. Each test file runs independently with its own Electron app and database.
+- **Runtime project** (`fullyParallel: false`) — Conservative parallelization for heavier flows.
+
+**One exception:** `arc-act.test.ts` uses `test.describe.configure({ mode: 'serial' })` to run
+tests sequentially within the file, since the tests depend on each other's state (world →
+campaign → arc → act → session). The file still runs independently from other test files with
+its own isolated database.
 
 ### Adding new E2E tests
 
@@ -143,7 +157,11 @@ export async function closeApp(app, userDataDir): Promise<void> {
 2. Use unique names (e.g., `Date.now()` suffix) for any database records created, so parallel
    runs never see each other's leftovers.
 3. Clean up created records in `afterEach` / `finally`.
-4. If your tests depend on each other's state, add `test.describe.configure({ mode: 'serial' })`
+4. Add the new test file to the appropriate project in `playwright.config.ts`:
+   - **smoke**: Lightweight, fast tests (< 5 assertions, single feature)
+   - **medium**: Standard tests with typical setup/teardown
+   - **runtime**: Complex multi-step flows or heavy interaction tests
+5. If your tests depend on each other's state, add `test.describe.configure({ mode: 'serial' })`
    at the top of the describe block.
 
 ---
@@ -157,25 +175,36 @@ export async function closeApp(app, userDataDir): Promise<void> {
 2. If a specific file has ordering issues, add `// @vitest-environment jsdom` and use
    `sequence.shuffle: false` in `vitest.config.ts` to force deterministic ordering.
 
-### I want more Playwright workers
+### I want more Playwright parallelization
 
-Each worker launches a full Electron process (~200–400 MB RAM). On a 16 GB machine, `workers: 3`
-is reasonable. Change `workers` in `playwright.config.ts` and run `yarn test:e2e` to verify
-stability.
+Each worker launches a full Electron process (~200–400 MB RAM). Playwright defaults to CPU-based
+worker allocation. To override:
+
+```typescript
+// In playwright.config.ts
+export default defineConfig({
+  workers: process.env.CI ? 1 : undefined, // explicit override
+  // ...
+});
+```
+
+For local development, leave `workers` undefined (Playwright auto-scales). On a 16 GB machine,
+tests should run stably with default settings. Monitor resource usage with Task Manager if you
+see flakiness.
 
 ### I want to measure the improvement
 
 ```bash
 # Unit test timing
-time yarn test:unit:run
+yarn test:unit:run
 
 # E2E timing (requires packaged build)
 yarn package
-time yarn test:e2e
+yarn test:e2e
 ```
 
-Baseline (before thread pool): run once with `pool: 'forks'` (the default if you remove the
-`pool` line) and record the time.
+Baseline to compare: run once with `pool: 'forks'` in `vitest.config.ts` (remove the `pool`
+line) and record the time.
 
 ---
 
@@ -198,9 +227,10 @@ feature unrelated to test suite speed. Create a separate task when profiling spe
 ### Making `arc-act.test.ts` Parallel
 
 The `arc-act.test.ts` tests flow state from one test to the next (world → campaign → arc → act →
-session). Parallelising within this file would require full refactoring of the test data setup
-into isolated fixtures. Track this as a test-quality improvement if the file becomes a
-bottleneck.
+session). Parallelizing tests within this file would require full refactoring of the test data
+setup into isolated fixtures. The file is currently in the `runtime` project with
+`fullyParallel: false`, and uses `test.describe.configure({ mode: 'serial' })` to ensure tests
+run sequentially. Track this as a test-quality improvement if the file becomes a bottleneck.
 
 ---
 
