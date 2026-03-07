@@ -1,54 +1,31 @@
-# StatBlock Feature
+# StatBlocks Feature
 
-## 1. Problem Statement
+## Purpose
 
-Currently, Verse Vault can create tokens (visual placeholders) and abilities, but lacks a cohesive in-game character representation that bridges these systems. When a user interacts with the TTRPG—rolling ability checks, tracking hit points, casting spells, using items—they need a unified data container and UI that surfaces character mechanics contextually.
+StatBlocks are the gameplay container for character/NPC state in a world. A statblock combines:
 
-**StatBlock** is that container: a CRUD entity that holds the complete rule state and mechanical data for a player character or NPC in a campaign. It is the primary interface through which a player interacts with the world's mechanics. Every token during runtime must link to a StatBlock, and every StatBlock must have a default associated token for visual representation.
+- identity data (name, description)
+- statistics values (resources and passive scores)
+- attached abilities
+- lightweight skills data
+- optional links to runtime tokens
 
-## 2. Acceptance Criteria (Phase 1: Scaffold)
+This feature now powers statblock-centric runtime behavior in battlemaps.
 
-The Phase 1 scaffold establishes the data model, IPC contracts, and preparatory UI structure. **No rolling, no stat mechanics, no resource tracking**—just storage and future-proof extensibility.
+## Scope (Current Implementation)
 
-### 2.1 Database Schema
+- World-scoped statblock CRUD.
+- Optional campaign scoping (`campaign_id`).
+- Token linkage contract (`linkToken`, `unlinkToken`, `getLinkedTokens`, `getLinkedStatblock`).
+- Ability assignment contract (`attachAbility`, `detachAbility`, `listAbilities`).
+- Unified statblock editor (statistics + abilities + skills).
+- Runtime integration:
+  - ability selection resolves from selected token's linked statblock
+  - double-click token opens statblock popup in the same renderer window
 
-- [x] Create `statblocks` table in SQLite with:
-  - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-  - `world_id` (INTEGER NOT NULL FK -> worlds, ON DELETE CASCADE): every statblock belongs to a world
-  - `campaign_id` (INTEGER, nullable, FK -> campaigns, ON DELETE CASCADE): optional campaign scope
-  - `character_id` (INTEGER, nullable, FK -> characters, ON DELETE CASCADE): link to future character entity (null for now; character feature is out of scope)
-  - `name` (TEXT NOT NULL): statblock display name or character name
-  - `default_token_id` (INTEGER, nullable, FK -> tokens, ON DELETE SET NULL): link to default visual representation; nullable to allow future token association
-  - `description` (TEXT, nullable): lore snippet or character notes
-  - `config` (TEXT NOT NULL DEFAULT '{}'): JSON object for extensible mechanics (stats, resources, conditions, abilities, etc.)
-  - `created_at` (TEXT NOT NULL DEFAULT datetime('now'))
-  - `updated_at` (TEXT NOT NULL DEFAULT datetime('now'))
-  - Indexes: `idx_statblocks_world_id`, `idx_statblocks_campaign_id`, `idx_statblocks_character_id`, `idx_statblocks_default_token_id`
+## Data Model
 
-### 2.2 IPC Channels & Handlers
-
-Define channel constants in `src/shared/ipcChannels.ts`:
-
-- `STATBLOCKS_GET_ALL_BY_WORLD`
-- `STATBLOCKS_GET_ALL_BY_CAMPAIGN`
-- `STATBLOCKS_GET_BY_ID`
-- `STATBLOCKS_ADD`
-- `STATBLOCKS_UPDATE`
-- `STATBLOCKS_DELETE`
-- `STATBLOCKS_LINK_TOKEN` (link a token as default; future step)
-- `STATBLOCKS_UNLINK_TOKEN` (remove default token link; future step)
-
-Implement handlers in `src/main.ts`:
-
-- All 6 core CRUD channels with appropriate world/campaign scoping and validation
-- Reads ordered by `updated_at DESC`
-- Add/Update validate required trimmed `name` field
-- Add requires target `world_id` and optional `campaign_id` (validation: if `campaign_id` set, must be in same world)
-- Update uses explicit `hasOwnProperty` checks for partial field updates
-- Delete returns `{ id }` (idempotent)
-- Config JSON is persisted as-is (no validation of mechanics structure in Phase 1)
-
-### 2.3 Shared Types in `forge.env.d.ts`
+### StatBlock row
 
 ```ts
 interface StatBlock {
@@ -56,259 +33,180 @@ interface StatBlock {
   world_id: number;
   campaign_id: number | null;
   character_id: number | null;
-  name: string;
   default_token_id: number | null;
+  name: string;
   description: string | null;
-  config: string; // JSON object; extensible for stats, resources, abilities, conditions, etc.
+  config: string; // JSON object text
   created_at: string;
   updated_at: string;
 }
-
-// Extend DbApi
-interface DbApi {
-  statblocks: {
-    getAllByWorld(worldId: number): Promise<StatBlock[]>;
-    getAllByCampaign(campaignId: number): Promise<StatBlock[]>;
-    getById(id: number): Promise<StatBlock | null>;
-    add(data: {
-      world_id: number;
-      campaign_id?: number;
-      name: string;
-      description?: string;
-      config?: string;
-    }): Promise<StatBlock>;
-    update(
-      id: number,
-      data: {
-        name?: string;
-        description?: string;
-        config?: string;
-      },
-    ): Promise<StatBlock>;
-    delete(id: number): Promise<{ id: number; }>;
-  };
-}
 ```
 
-### 2.4 Preload Bridge
+### Linkage tables
 
-Wire bridge methods in `src/preload.ts`:
+`statblock_token_links`
 
-- `window.db.statblocks.getAllByWorld(worldId)`
-- `window.db.statblocks.getAllByCampaign(campaignId)`
-- `window.db.statblocks.getById(id)`
-- `window.db.statblocks.add(data)`
-- `window.db.statblocks.update(id, data)`
-- `window.db.statblocks.delete(id)`
+- `UNIQUE(token_id)` enforces one token -> one statblock link
+- `UNIQUE(statblock_id, token_id)` prevents duplicate pair rows
 
-### 2.5 Routing & UI Skeleton
+`statblock_ability_assignments`
 
-Add route in `src/renderer/App.tsx`:
+- `UNIQUE(statblock_id, ability_id)` prevents duplicate assignments
 
-- `/world/:id/statblocks` (list page)
-- `/world/:id/statblocks/:statBlockId` (detail view, future phase)
+## IPC + Preload Contract
 
-Create shell page components (no full implementation; basic scaffold only):
+Channels are defined in `src/shared/ipcChannels.ts` and bridged through `window.db.statblocks`.
 
-- `src/renderer/pages/StatBlocksPage.tsx`: world-scoped list, create/edit/delete placeholders
-- `src/renderer/components/statblocks/StatBlockForm.tsx`: name + description + config JSON editor scaffold
-- `src/renderer/components/statblocks/StatBlockCard.tsx`: card display with name and linked token info
+CRUD:
 
-Add sidebar nav link in `src/renderer/components/worlds/WorldSidebar.tsx`:
+- `STATBLOCKS_GET_ALL_BY_WORLD`
+- `STATBLOCKS_GET_ALL_BY_CAMPAIGN`
+- `STATBLOCKS_GET_BY_ID`
+- `STATBLOCKS_ADD`
+- `STATBLOCKS_UPDATE`
+- `STATBLOCKS_DELETE`
 
-- "StatBlocks" -> `/world/:id/statblocks`
+Linkage + assignment:
 
-### 2.6 Database Migration
+- `STATBLOCKS_LINK_TOKEN`
+- `STATBLOCKS_UNLINK_TOKEN`
+- `STATBLOCKS_GET_LINKED_TOKENS`
+- `STATBLOCKS_GET_LINKED_STATBLOCK`
+- `STATBLOCKS_ATTACH_ABILITY`
+- `STATBLOCKS_DETACH_ABILITY`
+- `STATBLOCKS_LIST_ABILITIES`
 
-Add additive migration function `runStatBlocksSchemaMigration()` in `src/database/db.ts`:
+## Validation and Guardrails
 
-- Safely create `statblocks` table on startup if missing (no data loss on existing databases)
-- Called from `initializeSchema()`
+Main-process rules:
 
-### 2.7 Documentation
+- `name` is required and trimmed for create/update.
+- `config` must be JSON object text.
+- token link and ability assignment are world-bound:
+  - token world must match statblock world
+  - ability world must match statblock world
 
-Create/update:
+Error semantics:
 
-- `docs/features/statblocks.md` (this file, expanded with runtime/UI details after Phase 1)
-- `docs/02_CODEBASE_MAP.md`: add StatBlocks entry to Feature Map
-- `docs/03_IPC_CONTRACT.md`: add StatBlocks channels section
+- `Token and StatBlock must belong to the same world`
+- `Ability and StatBlock must belong to the same world`
+- `Token is already linked to a statblock`
+- `Ability is already attached to statblock`
 
-## 3. Non-Goals (Phase 1)
+## Renderer Behavior
 
-- **Character Management**: Statblocks can have a `character_id` field, but character CRUD and linking workflows are separate and out of scope.
-- **Mechanics Implementation**: No stat rolling, ability checks, resource tracking, or condition resolution. Config is stored as-is; future phases will define and validate structure.
-- **Token Association Workflows**: `default_token_id` is stored but Token↔StatBlock linking UI is deferred to a later phase.
-- **Runtime UI (Modal/Popup)**: The token double-click → statblock-modal flow is a runtime feature, not Phase 1. Phase 1 is data + navigation only.
-- **Ability Integration**: Linking statblock to specific character abilities is future work; Phase 1 is isolated.
-- **StatBlock Inheritance/Templating**: No copy workflows, versioning, or duplication helpers yet.
-- **Ownership/Permissions**: All local app; no multi-user checks.
+### StatBlocks page
 
-## 4. Affected Files
+Route: `/world/:id/statblocks`
 
-### Core IPC & Database Layer
+- Loads world, statblocks, world abilities, and assigned abilities.
+- Create/edit uses one `StatBlockForm` payload:
+  - `statblock` (core row + serialized config)
+  - `abilityIds` (assignment reconciliation)
+- Create path rolls back newly created statblock if assignment fails.
+- Edit path diffs assignment sets and applies attach/detach calls.
 
-- `src/shared/ipcChannels.ts` (add 6+ constants)
-- `src/main.ts` (register 6+ handlers)
-- `src/database/db.ts` (schema + migration)
-- `forge.env.d.ts` (SharedTypes)
+### Unified editor
 
-### Preload & Renderer Bridge
+`StatBlockForm` manages:
 
-- `src/preload.ts` (6+ bridge methods)
+- resources and passive scores from world statistics definitions
+- ability checklist constrained to abilities in the same world
+- skills list (`[{ key, rank }]`) with key/rank validation
 
-### Routing & Pages
+Config behavior:
 
-- `src/renderer/App.tsx` (add /statblocks routes)
-- `src/renderer/pages/StatBlocksPage.tsx` (new page, scaffold)
-- `src/renderer/pages/StatBlockDetailPage.tsx` (future phase; not in Phase 1)
+- editor-managed sections (`statistics`, `skills`) are deterministic
+- unknown legacy config keys are preserved on save
+- removed world statistic definitions are filtered on save to avoid re-saving orphaned entries
 
-### Components
+### Card summary
 
-- `src/renderer/components/statblocks/StatBlockForm.tsx` (new, scaffold)
-- `src/renderer/components/statblocks/StatBlockCard.tsx` (new, scaffold)
-- `src/renderer/components/worlds/WorldSidebar.tsx` (add nav link)
+`StatBlockCard` renders:
 
-### Documentation
+- name/description/token id
+- resource/passive score summary
+- assigned ability chips
+- skill chips
 
-- `docs/features/statblocks.md` (living docs, Phase 1 version)
-- `docs/02_CODEBASE_MAP.md` (feature map entry)
-- `docs/03_IPC_CONTRACT.md` (channel documentation)
+## Runtime Integration
 
-## 5. Recommended Decomposition into Sequential Tasks
+Runtime feature files:
 
-**YES—this feature should be split into smaller sequential work items**, following the established patterns from tokens and abilities. Suggested breakdown:
+- `AbilityPickerPanel` (`src/renderer/components/runtime/AbilityPickerPanel.tsx`)
+- `StatBlockPopup` (`src/renderer/components/runtime/StatBlockPopup.tsx`)
+- `BattleMapRuntimePage` (`src/renderer/pages/BattleMapRuntimePage.tsx`)
 
-### Phase 1a: Shared Contract & Channels (prep phase, no implementation yet)
+Behavior:
 
-- Define `StatBlock` interface in `forge.env.d.ts`
-- Define `DbApi.statblocks` signatures
-- Add IPC channel constants in `src/shared/ipcChannels.ts`
-
-### Phase 1b: Database Schema & Migration
-
-- Add migration function `runStatBlocksSchemaMigration()`
-- Create `statblocks` table schema
-- Wire migration call in `initializeSchema()`
-
-### Phase 1c: Main Process Handlers
-
-- Register 6 CRUD handlers in `src/main.ts`
-- Add validation (required `name`, world FK, campaign FK if set)
-- Use `hasOwnProperty` partial update pattern
-- Order reads by `updated_at DESC`
-
-### Phase 1d: Preload Bridges
-
-- Wire 6 bridge methods in `src/preload.ts`
-- Use typed `ipcRenderer.invoke` pattern (consistent with existing features)
-
-### Phase 1e: Router & Pages (UI Scaffold)
-
-- Add routes in `src/renderer/App.tsx`
-- Create `StatBlocksPage.tsx` with loading/empty/list states (table scaffold)
-- Create `StatBlockForm.tsx` with name + description + config JSON editor scaffold
-- Create `StatBlockCard.tsx` for future use
-- Add sidebar nav link
-
-### Phase 1f: Tests
-
-- Unit tests for statblock schema, migrations, validation
-- E2E tests for CRUD workflows (create, read, list, update, delete)
-
-### Phase 1g: Documentation & Cleanup
-
-- Update `docs/features/statblocks.md` with full Phase 1 behavior
-- Update `docs/02_CODEBASE_MAP.md` with statblocks entry
-- Update `docs/03_IPC_CONTRACT.md` with channel docs
-- Run formatting and verification
-
-### Future Phases (Out of Phase 1 Scope)
-
-**Phase 2: Token Association**
-
-- UI: Modal dialog to link/unlink default token
-- Handlers: `STATBLOCKS_LINK_TOKEN`, `STATBLOCKS_UNLINK_TOKEN`
-- Validation: Token must be in same world
-
-**Phase 3: Character Integration**
-
-- Character CRUD (separate entity)
-- Character ↔ StatBlock linking
-- Character form with statblock selector
-
-**Phase 4: Ability Integration & Config Schema**
-
-- Define `StatBlockConfig` schema (stats, resources, ability slot allocation)
-- Validation at IPC layer for mechanics structure
-- Ability slot manager UI
-
-**Phase 5: Runtime Modal & Token Integration**
-
-- Double-click token → open statblock modal (not separate window, but in-app modal)
-- Link runtime token selection to statblock display
-- Context-aware ability picker from statblock
-
-**Phase 6: Mechanics Implementations** (future, as user requests)
-
-- Dice rolling from ability scores
-- Resource tracking (HP, mana, action points)
-- Condition/status effect tracking
-- Skill checks and saves
-
-## 6. Notes on Design Robustness
-
-StatBlock is deliberately designed to accommodate future complexity without breaking existing data:
-
-1. **Extensible Config**: The `config` JSON field can grow to include arbitrary mechanics (stats objects, resource pools, condition sets, ability slot blueprints, etc.) without schema changes. Phases 4+ define and validate structure incrementally.
-
-2. **Flexible Relationships**:
-   - `character_id` is nullable; can link to future character entity without requiring it now.
-   - `default_token_id` is nullable; tokens can exist without statblock association in Phase 1; Phase 2 makes linking explicit.
-   - `campaign_id` is optional like tokens; supports world-first scoping but allows campaign-level variants.
-
-3. **Multiple Forms**: From the outset, statblock does **not** assume 1:1 relationship with character. A character may have multiple statblocks (alternate forms, power-ups, degraded states). Character entity (future) manages this multiplicity; statblock remains simple and focused.
-
-4. **Sorted Reads**: Statblocks are read sorted by `updated_at DESC`, consistent with abilities and campaigns, enabling recent-first UX and supporting future filtering by date or tag.
-
-5. **Idempotent Deletes**: Delete returns `{ id }` consistently, allowing UI to safely remove from local state without extra verification round-trip.
-
----
-
-## Appendix: Sample Runtime Behavior (Phase 5+)
-
-In future battlemap runtime phase, a double-click on a token will:
-
-1. Look up the token's associated statblock (via `default_token_id` link)
-2. Fetch full statblock via `window.db.statblocks.getById()`
-3. Open an in-app modal (not electron BrowserWindow) displaying:
-   - StatBlock name, description
-   - Linked token thumbnail
-   - Summary of mechanics from config (stats, resources, abilities, etc.)
-   - Context-aware action buttons (cast ability, use item, etc.)
-4. Modal closes on Escape or "X" button; selection state remains on token
-
-This workflow requires Phase 2 (token linking), Phase 4 (config schema + ability integration), and Phase 5 (modal UI + runtime hooks).
-
----
-
-## 7. Implementation Status
-
-### Phase 1: Scaffold (Steps 01-09) — ✅ Complete (2026-03-06)
-
-- **Step 01**: Shared Contract & Types — `StatBlock` interface, `DbApi.statblocks` signatures, IPC channel constants in `src/shared/ipcChannels.ts`
-- **Step 02**: Database Schema — `statblocks` table with world/campaign/character/token foreign keys, `config` JSON column, `runStatBlocksSchemaMigration()` migration
-- **Step 03-04**: Main Process Handlers — 6 CRUD handlers in `src/main.ts` with validation and ordering
-- **Step 05**: Preload Bridge — 6 bridge methods in `src/preload.ts` wiring IPC to renderer
-- **Step 06**: Router & Page Scaffold — `/world/:id/statblocks` route, `StatBlocksPage.tsx` list page, sidebar nav link
-- **Step 07**: Form & Card Components — `StatBlockForm.tsx` with name/description/config editor, `StatBlockCard.tsx` display component
-- **Step 08**: Unit Tests — `tests/unit/renderer/components/statblocks.test.tsx` covering form validation and card rendering
-- **Step 09**: E2E Tests — `tests/e2e/statblocks.test.ts` covering full CRUD workflow
-
-### Phase 2: Resource Statistics Integration (Steps 10+) — 🚧 In Progress
-
-- **Step 10** ✅ (2026-03-06): Resource UI — `ResourceStatisticInput.tsx` component with current/maximum validation, `StatBlockForm.tsx` extended to load world resource definitions and display resource inputs, automatic initialization/serialization of resource statistics in statblock config
-- **Future**: Passive score integration, statistics display on card, validation improvements
-
-### Phase 3+: Token Linking, Ability Integration, Runtime Modal — 📋 Planned
-
-TBD based on user requirements and feature priority.
+- selected runtime token -> `getLinkedStatblock(sourceTokenId)`
+- if linked, runtime abilities come from `listAbilities(statblock.id)`
+- ability picker only shows `type === 'active'`
+- double left-click on runtime token opens popup modal with:
+  - statblock identity fields
+  - assigned abilities
+  - parsed resources, passive scores, and skills
+
+Runtime edge cases:
+
+- no source token id -> `Selected token has no source link.`
+- source token without linked statblock -> `No linked statblock for this token.`
+- non-castable ability (`range_cells === null`) is cleared from casting selection
+
+## Usage Examples
+
+### Programmatic linking flow
+
+```ts
+const sb = await window.db.statblocks.add({ world_id, name: 'Goblin' });
+
+await window.db.statblocks.attachAbility({
+  statblock_id: sb.id,
+  ability_id,
+});
+
+await window.db.statblocks.linkToken({
+  statblock_id: sb.id,
+  token_id,
+});
+
+const linked = await window.db.statblocks.getLinkedStatblock(token_id);
+const abilities = linked ? await window.db.statblocks.listAbilities(linked.id) : [];
+```
+
+### Runtime user flow
+
+1. Create token and statblock in the same world.
+2. Attach one or more abilities to the statblock.
+3. Link token to statblock.
+4. Enter battlemap runtime and place/select token.
+5. Use ability picker for active abilities.
+6. Double-click token to inspect full statblock popup.
+
+## Related Files
+
+- `src/database/db.ts`
+- `src/main.ts`
+- `src/preload.ts`
+- `src/shared/ipcChannels.ts`
+- `src/renderer/pages/StatBlocksPage.tsx`
+- `src/renderer/components/statblocks/StatBlockForm.tsx`
+- `src/renderer/components/statblocks/StatBlockCard.tsx`
+- `src/renderer/components/runtime/AbilityPickerPanel.tsx`
+- `src/renderer/components/runtime/StatBlockPopup.tsx`
+- `src/renderer/pages/BattleMapRuntimePage.tsx`
+
+## Test Coverage
+
+- `tests/unit/main.test.ts`
+- `tests/unit/renderer/components/statblocks.test.tsx`
+- `tests/unit/renderer/abilityPickerPanel.test.tsx`
+- `tests/unit/renderer/battleMapRuntimePage.test.tsx`
+- `tests/e2e/statblock-statistics.test.ts`
+- `tests/e2e/battlemap-runtime-statblock-popup.test.ts`
+
+## Known Limits
+
+- No dedicated renderer UI yet for link/unlink token operations (API is available and tested through integration flows).
+- Runtime popup is read-first; it does not edit statblocks in place.
+- No combat state machine or rule resolution built into statblocks.

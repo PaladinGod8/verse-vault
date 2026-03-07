@@ -20,7 +20,7 @@ The Casting Range Overlay feature enables TTRPG game masters and players to visu
   - Applying ≥50% coverage rule for tile highlighting
 - Battlemap runtime overlay layer:
   - New `rangeOverlayContainer` inserted between `gridContainer` and `tokenContainer` in the PixiJS stage
-  - Ability picker panel (loads world-scoped abilities, filters by active type)
+  - Ability picker panel (loads abilities from selected token's linked statblock, filters by active type)
   - Range ring visualization (all tiles within `range_cells`)
   - AoE highlights (tiles affected by the AoE shape at ≥50% coverage)
   - Directional shape tracking (pointer-tracking for cone/line angles on square grids)
@@ -31,7 +31,7 @@ The Casting Range Overlay feature enables TTRPG game masters and players to visu
 
 - Combat/encounter resolution; abilities do not have mechanical effects.
 - Line-of-sight, fog of war, or obstacle/wall blocking.
-- Token-to-ability linking (future feature); abilities are always world-scoped.
+- Token-to-ability linking UI in token management pages.
 - Multiplayer sync or persistence of cast mode state.
 - Click-to-cast, ability activation, or tile marking from the overlay.
 - Animation on range overlay or transition effects.
@@ -59,7 +59,8 @@ Validation:
 
 1. From the battlemap runtime view, select a token on the canvas.
 2. The **Ability Picker Panel** slides in (or becomes visible) on the side.
-3. The panel displays all active abilities from the current world, filtered by `type = 'active'`.
+3. The panel resolves the selected token's linked statblock and lists active assigned abilities (`type = 'active'`).
+3. The panel resolves the selected token's linked statblock and displays active assigned abilities (`type = 'active'`).
 4. Select an ability from the panel list.
 
 ### Runtime: Range Ring and AoE Highlights
@@ -143,18 +144,20 @@ Pure math functions (no PixiJS, no side effects):
   - Updates overlay visuals on state change and continuous pointer movement.
 
 - **Ability Picker Panel**
-  - `AbilityPickerPanel` in `src/renderer/components/battlemaps/`.
-  - Loads abilities via `window.db.abilities.getAllByWorld(worldId)`.
+  - `AbilityPickerPanel` in `src/renderer/components/runtime/`.
+  - Resolves linked statblock via `window.db.statblocks.getLinkedStatblock(sourceTokenId)`.
+  - Loads abilities via `window.db.statblocks.listAbilities(statblockId)`.
   - Filters to `type = 'active'` only.
   - Displays ability name and summary (type/description optional).
   - Emits selection change and close events.
-  - World-scoped; no token-specific filtering.
+  - Token-statblock scoped, with safe fallback messages for unlinked tokens.
 
 ### IPC and Preload Contract
 
-No new IPC channels; existing contracts are reused:
+No new casting-specific IPC channels; existing contracts are reused:
 
-- `window.db.abilities.getAllByWorld(worldId)` — loads world abilities (already implemented).
+- `window.db.statblocks.getLinkedStatblock(tokenId)` — resolves selected token link.
+- `window.db.statblocks.listAbilities(statblockId)` — loads linked statblock abilities.
 - `window.db.battlemaps.update(id, partialData)` — persists grid config if needed (already implemented).
 
 The overlay does not persist cast-mode state or reads/writes any ability-specific runtime data; it is a stateless visual layer.
@@ -240,7 +243,7 @@ When updating an ability with new range/AoE fields:
 
 - **No combat resolution** — The overlay is visual only; it does not apply effects, roll dice, or track ability usage.
 - **No line-of-sight or obstacle blocking** — All tiles within range are highlighted regardless of walls, terrain, or visibility.
-- **No token-to-ability linking** — Abilities are always world-scoped; filtering by token or character level is future work.
+- **No dedicated token-link management UI here** — token/statblock linking exists, but this feature does not provide link-management screens.
 - **No multiplayer sync** — Cast mode state is local to the current runtime session.
 - **No animation or transitions** — Overlays appear/disappear instantly.
 - **No click-to-cast or tile marking** — Clicking a tile does not trigger ability casting; the overlay is preview-only.
