@@ -36,6 +36,26 @@ Primary debugging paper trail:
 - `packaged-app` artifact
 - `playwright-report` artifact
 
+### Runner Operations (Windows PowerShell)
+
+```powershell
+# show runner services
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+
+# start all runners
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Where-Object Status -ne "Running" | Start-Service; Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+
+# stop all runners
+Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Stop-Service -Force
+```
+
+### Watch Current CI Run (Terminal)
+
+```bash
+gh run list -R PaladinGod8/verse-vault --limit 10
+gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --limit 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --exit-status
+```
+
 ## Product Direction
 
 Verse Vault is being built as a centralized, offline-first desktop platform for:
