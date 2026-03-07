@@ -1,31 +1,30 @@
-import path from 'path';
-import { _electron as electron } from 'playwright';
-import type { ElectronApplication, Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { type ElectronApplication, expect, type Page, test } from '@playwright/test';
 import type {
   PassiveScoreDefinition,
   ResourceStatisticDefinition,
-} from '../../../src/shared/statisticsTypes';
+} from '../../src/shared/statisticsTypes';
+import { closeApp, launchApp } from './helpers/launchApp';
 
-describe('World Default Statistics', () => {
-  let electronApp: ElectronApplication;
-  let window: Page;
+let app: ElectronApplication;
+let page: Page;
+let userDataDir: string;
 
-  beforeAll(async () => {
-    electronApp = await electron.launch({
-      args: [path.join(__dirname, '../../../.vite/build/main.js')],
-    });
-    window = await electronApp.firstWindow();
-    await window.waitForLoadState('domcontentloaded');
+test.describe('World Default Statistics (IPC contract)', () => {
+  test.beforeAll(async () => {
+    const result = await launchApp();
+    app = result.app;
+    userDataDir = result.userDataDir;
+    page = await app.firstWindow();
+    await page.waitForLoadState('domcontentloaded');
   });
 
-  afterAll(async () => {
-    await electronApp.close();
+  test.afterAll(async () => {
+    await closeApp(app, userDataDir);
   });
 
-  it('should create world with default statistics when config not provided', async () => {
-    const world = await window.evaluate(async () => {
-      return self.db.worlds.add({ name: 'Test World Default Stats' });
+  test('applies default statistics config when none is provided', async () => {
+    const world = await page.evaluate(async () => {
+      return window.db.worlds.add({ name: 'IPC Default Stats' });
     });
 
     expect(world.config).toBeDefined();
@@ -45,7 +44,6 @@ describe('World Default Statistics', () => {
     expect(resourceIds).toContain('spd');
     expect(resourceIds).toContain('ap');
 
-    // Verify default passive scores exist
     const passiveScoreIds = config.statistics.passiveScores.map(
       (ps: PassiveScoreDefinition) => ps.id,
     );
@@ -58,26 +56,18 @@ describe('World Default Statistics', () => {
     expect(passiveScoreIds).toContain('pb');
   });
 
-  it('should respect provided config and not override with defaults', async () => {
+  test('respects provided config and does not apply defaults', async () => {
     const customConfig = JSON.stringify({
       statistics: {
         resources: [
-          {
-            id: 'custom',
-            name: 'Custom Resource',
-            abbreviation: 'CR',
-            isDefault: true,
-          },
+          { id: 'custom', name: 'Custom Resource', abbreviation: 'CR', isDefault: true },
         ],
         passiveScores: [],
       },
     });
 
-    const world = await window.evaluate(async (cfg) => {
-      return self.db.worlds.add({
-        name: 'Test World Custom Config',
-        config: cfg,
-      });
+    const world = await page.evaluate(async (cfg) => {
+      return window.db.worlds.add({ name: 'IPC Custom Config', config: cfg });
     }, customConfig);
 
     expect(world.config).toBe(customConfig);
@@ -88,20 +78,18 @@ describe('World Default Statistics', () => {
     expect(config.statistics.passiveScores).toHaveLength(0);
   });
 
-  it('should have isDefault=true for all default statistics', async () => {
-    const world = await window.evaluate(async () => {
-      return self.db.worlds.add({ name: 'Test World Default Flags' });
+  test('all default statistics have isDefault=true', async () => {
+    const world = await page.evaluate(async () => {
+      return window.db.worlds.add({ name: 'IPC Default Flags' });
     });
 
     const config = JSON.parse(world.config);
 
-    // All default resources should have isDefault: true
     const allResourcesDefault = config.statistics.resources.every(
       (r: ResourceStatisticDefinition) => r.isDefault === true,
     );
     expect(allResourcesDefault).toBe(true);
 
-    // All default passive scores should have isDefault: true
     const allPassiveScoresDefault = config.statistics.passiveScores.every(
       (ps: PassiveScoreDefinition) => ps.isDefault === true,
     );
