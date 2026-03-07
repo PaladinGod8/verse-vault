@@ -27,7 +27,9 @@ function isDuplicateChildLinkError(message: string): boolean {
   return (
     normalized.includes('child ability link already exists')
     || normalized.includes('already linked as a child')
-    || normalized.includes('unique constraint failed: ability_children.parent_id, ability_children.child_id')
+    || normalized.includes(
+      'unique constraint failed: ability_children.parent_id, ability_children.child_id',
+    )
   );
 }
 
