@@ -6,7 +6,7 @@ Built with Electron Forge, React, Vite, TypeScript, and SQLite.
 
 ## Product Direction
 
-Primary goals:
+Primary Objectives:
 
 - Centralize campaign management, session prep, lore, and manuscript work.
 - Keep core workflows offline-first with local data ownership.
