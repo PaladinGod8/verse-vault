@@ -34,6 +34,7 @@ describe('playwright project worker grouping', () => {
       'app.test.ts',
       'arc-act.test.ts',
       'battlemap-runtime-play.test.ts',
+      'battlemap-runtime-statblock-popup.test.ts',
       'battlemaps.test.ts',
       'casting-range-overlay.test.ts',
       'statblock-statistics.test.ts',
