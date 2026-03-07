@@ -5,7 +5,7 @@
 
 ## Scope Note
 
-Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, scene CRUD handlers, and statblock CRUD channel constants in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, scene CRUD handlers, statblock CRUD handlers, and statblock linkage/assignment handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
@@ -18,6 +18,8 @@ StatBlock Step 03 (2026-03-06) wires 3 read handlers in main (`STATBLOCKS_GET_AL
 StatBlock Step 04 (2026-03-06) wires 3 mutation handlers in main (`STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, `STATBLOCKS_DELETE`); Step 05 wires preload bridges.
 
 StatBlock Step 05 (2026-03-06) wires all 6 preload bridges via `window.db.statblocks.*`, exposing the full statblock API to the renderer.
+
+StatBlock Linkage Backbone Step 01 (2026-03-07) adds 7 channel constants and full main/preload wiring for statblock-token linking (`STATBLOCKS_LINK_TOKEN`, `STATBLOCKS_UNLINK_TOKEN`, `STATBLOCKS_GET_LINKED_TOKENS`, `STATBLOCKS_GET_LINKED_STATBLOCK`) and statblock-ability assignment (`STATBLOCKS_ATTACH_ABILITY`, `STATBLOCKS_DETACH_ABILITY`, `STATBLOCKS_LIST_ABILITIES`), with same-world validation in `main`.
 
 Casting Range Overlay Step 01 (2026-03-05) extends `ABILITIES_ADD` and `ABILITIES_UPDATE` payloads with four new optional fields (`range_cells`, `aoe_shape`, `aoe_size_cells`, `target_type`) and updates the `Ability` response type accordingly; no new channels added.
 
@@ -140,6 +142,13 @@ Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.c
 | `IPC.STATBLOCKS_ADD`                 | `db:statblocks:add`              | renderer -> main | `{ world_id: number; campaign_id?: number; name: string; description?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock`                                                                                                      | `src/main.ts:registerIpcHandlers` |
 | `IPC.STATBLOCKS_UPDATE`              | `db:statblocks:update`           | renderer -> main | `id: number, data: { name?: string; description?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                         | `StatBlock`                                                                                                      | `src/main.ts:registerIpcHandlers` |
 | `IPC.STATBLOCKS_DELETE`              | `db:statblocks:delete`           | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_LINK_TOKEN`          | `db:statblocks:linkToken`        | renderer -> main | `{ statblock_id: number; token_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ statblock_id: number; token_id: number }`                                                                    | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_UNLINK_TOKEN`        | `db:statblocks:unlinkToken`      | renderer -> main | `{ statblock_id: number; token_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ statblock_id: number; token_id: number }`                                                                    | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_GET_LINKED_TOKENS`   | `db:statblocks:getLinkedTokens`  | renderer -> main | `statblockId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Token[]`                                                                                                        | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_GET_LINKED_STATBLOCK`| `db:statblocks:getLinkedStatblock`| renderer -> main | `tokenId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock \| null`                                                                                              | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_ATTACH_ABILITY`      | `db:statblocks:attachAbility`    | renderer -> main | `{ statblock_id: number; ability_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `{ statblock_id: number; ability_id: number }`                                                                  | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_DETACH_ABILITY`      | `db:statblocks:detachAbility`    | renderer -> main | `{ statblock_id: number; ability_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `{ statblock_id: number; ability_id: number }`                                                                  | `src/main.ts:registerIpcHandlers` |
+| `IPC.STATBLOCKS_LIST_ABILITIES`      | `db:statblocks:listAbilities`    | renderer -> main | `statblockId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Ability[]`                                                                                                      | `src/main.ts:registerIpcHandlers` |
 
 ## Types Reference
 
@@ -354,6 +363,21 @@ interface CampaignSceneListItem extends Scene {
   arc_name: string;
 }
 
+interface StatBlockTokenLink {
+  statblock_id: number;
+  token_id: number;
+}
+
+interface StatBlockAbilityAssignment {
+  statblock_id: number;
+  ability_id: number;
+}
+
+interface StatBlockSkillValue {
+  key: string;
+  rank: number;
+}
+
 interface DbApi {
   abilities: {
     getAllByWorld(worldId: number): Promise<Ability[]>;
@@ -543,6 +567,17 @@ interface DbApi {
       data: { name?: string; description?: string; config?: string; },
     ): Promise<StatBlock>;
     delete(id: number): Promise<{ id: number; }>;
+    linkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
+    unlinkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
+    getLinkedTokens(statblockId: number): Promise<Token[]>;
+    getLinkedStatblock(tokenId: number): Promise<StatBlock | null>;
+    attachAbility(
+      data: StatBlockAbilityAssignment,
+    ): Promise<StatBlockAbilityAssignment>;
+    detachAbility(
+      data: StatBlockAbilityAssignment,
+    ): Promise<StatBlockAbilityAssignment>;
+    listAbilities(statblockId: number): Promise<Ability[]>;
   };
 }
 
@@ -635,4 +670,7 @@ interface StatBlock {
 - Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`, and extended in Campaign Scenes Index Step 01 with `window.db.scenes.getAllByCampaign`.
 - StatBlock read handlers are wired in `main` for `STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, and `STATBLOCKS_GET_BY_ID` (Step 03); mutation handlers for `STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, and `STATBLOCKS_DELETE` are wired in Step 04.
 - StatBlock preload bridges are wired end-to-end in Step 05 via `window.db.statblocks.getAllByWorld/getAllByCampaign/getById/add/update/delete`.
+- StatBlock linkage backbone handlers are wired in `main` for token linking (`STATBLOCKS_LINK_TOKEN`, `STATBLOCKS_UNLINK_TOKEN`, `STATBLOCKS_GET_LINKED_TOKENS`, `STATBLOCKS_GET_LINKED_STATBLOCK`) and ability assignment (`STATBLOCKS_ATTACH_ABILITY`, `STATBLOCKS_DETACH_ABILITY`, `STATBLOCKS_LIST_ABILITIES`); preload bridges expose matching `window.db.statblocks` methods.
+- `STATBLOCKS_LINK_TOKEN` and `STATBLOCKS_ATTACH_ABILITY` enforce same-world constraints (`token.world_id === statblock.world_id`, `ability.world_id === statblock.world_id`) and return clear duplicate-link/duplicate-assignment errors.
+- `STATBLOCKS_ADD` and `STATBLOCKS_UPDATE` now validate statblock `config` as JSON object text and normalize optional MVP `skills` shape (`[{ key: string; rank: number }]`) when present.
 - Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.

@@ -173,6 +173,7 @@ function initializeSchema(db: Database.Database): void {
   ensureTokenWorldIdIndex(db);
   runAbilitiesRangeShapeTargetMigration(db);
   runStatBlocksSchemaMigration(db);
+  runStatBlockLinkageSchemaMigration(db);
   runWorldConfigMigration(db);
 }
 
@@ -199,6 +200,42 @@ function runStatBlocksSchemaMigration(db: Database.Database): void {
     `);
   } catch (err) {
     console.error('[db] Error running statblocks schema migration:', err);
+    throw err;
+  }
+}
+
+function runStatBlockLinkageSchemaMigration(db: Database.Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS statblock_token_links (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE,
+        token_id     INTEGER NOT NULL REFERENCES tokens(id) ON DELETE CASCADE,
+        created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (token_id),
+        UNIQUE (statblock_id, token_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_statblock_token_links_statblock_id
+        ON statblock_token_links(statblock_id);
+      CREATE INDEX IF NOT EXISTS idx_statblock_token_links_token_id
+        ON statblock_token_links(token_id);
+
+      CREATE TABLE IF NOT EXISTS statblock_ability_assignments (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        statblock_id INTEGER NOT NULL REFERENCES statblocks(id) ON DELETE CASCADE,
+        ability_id   INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE,
+        created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (statblock_id, ability_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_statblock_ability_assignments_statblock_id
+        ON statblock_ability_assignments(statblock_id);
+      CREATE INDEX IF NOT EXISTS idx_statblock_ability_assignments_ability_id
+        ON statblock_ability_assignments(ability_id);
+    `);
+  } catch (err) {
+    console.error('[db] Error running statblock linkage schema migration:', err);
     throw err;
   }
 }

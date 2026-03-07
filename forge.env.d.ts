@@ -233,6 +233,26 @@ declare global {
     arc_name: string;
   }
 
+  interface StatBlockTokenLink {
+    statblock_id: number;
+    token_id: number;
+  }
+
+  interface StatBlockAbilityAssignment {
+    statblock_id: number;
+    ability_id: number;
+  }
+
+  interface StatBlockSkillValue {
+    key: string;
+    rank: number;
+  }
+
+  interface StatBlockConfig {
+    skills?: StatBlockSkillValue[];
+    [key: string]: unknown;
+  }
+
   interface DbApi {
     verses: {
       getAll(): Promise<Verse[]>;
@@ -487,6 +507,17 @@ declare global {
         },
       ): Promise<StatBlock>;
       delete(id: number): Promise<{ id: number; }>;
+      linkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
+      unlinkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
+      getLinkedTokens(statblockId: number): Promise<Token[]>;
+      getLinkedStatblock(tokenId: number): Promise<StatBlock | null>;
+      attachAbility(
+        data: StatBlockAbilityAssignment,
+      ): Promise<StatBlockAbilityAssignment>;
+      detachAbility(
+        data: StatBlockAbilityAssignment,
+      ): Promise<StatBlockAbilityAssignment>;
+      listAbilities(statblockId: number): Promise<Ability[]>;
     };
   }
 
@@ -498,7 +529,7 @@ declare global {
     name: string;
     default_token_id: number | null;
     description: string | null;
-    config: string;
+    config: string; // JSON string; optional `skills: StatBlockSkillValue[]` (MVP)
     created_at: string;
     updated_at: string;
   }

@@ -75,4 +75,11 @@ export const IPC = {
   STATBLOCKS_ADD: 'db:statblocks:add',
   STATBLOCKS_UPDATE: 'db:statblocks:update',
   STATBLOCKS_DELETE: 'db:statblocks:delete',
+  STATBLOCKS_LINK_TOKEN: 'db:statblocks:linkToken',
+  STATBLOCKS_UNLINK_TOKEN: 'db:statblocks:unlinkToken',
+  STATBLOCKS_GET_LINKED_TOKENS: 'db:statblocks:getLinkedTokens',
+  STATBLOCKS_GET_LINKED_STATBLOCK: 'db:statblocks:getLinkedStatblock',
+  STATBLOCKS_ATTACH_ABILITY: 'db:statblocks:attachAbility',
+  STATBLOCKS_DETACH_ABILITY: 'db:statblocks:detachAbility',
+  STATBLOCKS_LIST_ABILITIES: 'db:statblocks:listAbilities',
 } as const;
