@@ -7,19 +7,40 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  # Prevent VS Code / CI terminals from forcing Electron to run as plain Node.js.
   ELECTRON_RUN_AS_NODE: ''
   PLAYWRIGHT_HTML_OPEN: never
+  NODE_VERSION: '20'
+  YARN_ENABLE_GLOBAL_CACHE: 'true'
 
 jobs:
-  verify:
+  bootstrap:
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Restore tool caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vite
+            node_modules/.cache/eslint
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-${{ hashFiles('yarn.lock', 'package.json', 'vite.*.config.ts', 'vitest.config.ts', 'playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -27,20 +48,58 @@ jobs:
       - name: Rebuild native modules
         run: yarn postinstall
 
-      - name: Check formatting
-        run: yarn format:check
+  fast-checks:
+    needs: bootstrap
+    runs-on: self-hosted
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: format
+            label: Format check
+            command: yarn format:check
+          - id: typecheck
+            label: Type check
+            command: yarn type-check
+          - id: lint
+            label: Lint
+            command: yarn lint
+          - id: unit
+            label: Unit tests with coverage
+            command: yarn test:unit:coverage
 
-      - name: Type check
-        run: yarn type-check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Lint
-        run: yarn lint
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
 
-      - name: Unit tests with coverage
-        run: yarn test:unit:coverage
+      - name: Restore tool caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vite
+            node_modules/.cache/eslint
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-${{ hashFiles('yarn.lock', 'package.json', 'vite.*.config.ts', 'vitest.config.ts', 'playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Rebuild native modules
+        run: yarn postinstall
+
+      - name: Run ${{ matrix.label }}
+        run: ${{ matrix.command }}
 
       - name: Upload coverage report
-        if: always()
+        if: always() && matrix.id == 'unit'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -48,8 +107,85 @@ jobs:
           retention-days: 10
           if-no-files-found: ignore
 
-      - name: Package app for e2e
+  package:
+    needs: bootstrap
+    runs-on: self-hosted
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Restore tool caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vite
+            node_modules/.cache/eslint
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-${{ hashFiles('yarn.lock', 'package.json', 'vite.*.config.ts', 'vitest.config.ts', 'playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Rebuild native modules
+        run: yarn postinstall
+
+      - name: Package app
         run: yarn package
+
+      - name: Upload packaged app
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-app
+          path: out/
+          retention-days: 5
+          if-no-files-found: ignore
+
+  e2e:
+    needs: package
+    runs-on: self-hosted
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Restore tool caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vite
+            node_modules/.cache/eslint
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-${{ hashFiles('yarn.lock', 'package.json', 'vite.*.config.ts', 'vitest.config.ts', 'playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Rebuild native modules
+        run: yarn postinstall
+
+      - name: Download packaged app
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-app
+          path: out/
 
       - name: Run e2e tests
         run: yarn test:e2e
@@ -62,3 +198,21 @@ jobs:
           path: playwright-report/
           retention-days: 10
           if-no-files-found: ignore
+
+  ci-summary:
+    if: always()
+    needs: [fast-checks, package, e2e]
+    runs-on: self-hosted
+    steps:
+      - name: Fail if any CI job failed
+        shell: pwsh
+        run: |
+          $failed = @()
+          if ("${{ needs.fast-checks.result }}" -ne "success") { $failed += "fast-checks" }
+          if ("${{ needs.package.result }}" -ne "success") { $failed += "package" }
+          if ("${{ needs.e2e.result }}" -ne "success") { $failed += "e2e" }
+          if ($failed.Count -gt 0) {
+            Write-Error ("CI failed in: " + ($failed -join ", "))
+            exit 1
+          }
+          Write-Host "CI passed: all jobs succeeded."

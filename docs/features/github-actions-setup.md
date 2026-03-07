@@ -2,7 +2,8 @@
 
 ## Summary
 
-The repository uses a single GitHub Actions workflow (`.github/workflows/ci.yml`) that runs on a Windows self-hosted runner. This replaces the Jenkins pipeline.
+The repository uses a parallel GitHub Actions workflow (`.github/workflows/ci.yml`) on a Windows self-hosted runner.
+Independent quality gates run concurrently, while required sequencing (`package` -> `e2e`) remains enforced.
 
 ## Workflow Triggers
 
@@ -10,26 +11,61 @@ The repository uses a single GitHub Actions workflow (`.github/workflows/ci.yml`
 - `pull_request` targeting `main`
 - `workflow_dispatch` (manual run from GitHub Actions UI)
 
-## Pipeline Stages
+## Pipeline Graph
 
-Mirrors the Jenkinsfile exactly:
+| Job                    | Purpose                                                              | Parallel/Sequence                               |
+| ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
+| `bootstrap`            | Shared setup baseline (Node, cache restore, install, native rebuild) | First                                           |
+| `fast-checks` (matrix) | `format`, `typecheck`, `lint`, `unit`                                | Parallel (`fail-fast: false`)                   |
+| `package`              | `yarn package`                                                       | Parallel with `fast-checks` (after `bootstrap`) |
+| `e2e`                  | Downloads packaged artifact and runs `yarn test:e2e`                 | Sequential after `package`                      |
+| `ci-summary`           | Final workflow status gate                                           | Runs last (`if: always()`)                      |
 
-| Stage | Command |
-|---|---|
-| Install | `yarn install --frozen-lockfile` |
-| Rebuild native modules | `yarn postinstall` |
-| Format check | `yarn format:check` |
-| Type check | `yarn type-check` |
-| Lint | `yarn lint` |
-| Unit tests + coverage | `yarn test:unit:coverage` |
-| Package for e2e | `yarn package` |
-| E2E tests | `yarn test:e2e` |
+### Why this catches more errors per run
 
-Coverage and Playwright reports are uploaded as artifacts (10-day retention) even on failure.
+- `fast-checks` uses a matrix and `fail-fast: false`, so each gate reports independently.
+- `package` runs in parallel with fast checks, so packaging failures are visible even if lint/unit fail.
+- `e2e` still runs only after packaging succeeds.
+- `ci-summary` evaluates upstream job results at the end so the paper trail is preserved.
+
+### Artifacts and paper trail
+
+- Workflow/job/step logs in GitHub Actions are the primary debugging paper trail.
+- Coverage report: `coverage-report`
+- Packaged build artifact: `packaged-app`
+- Playwright report: `playwright-report`
 
 ## Critical Environment Variables
 
-`ELECTRON_RUN_AS_NODE: ''` is set at the workflow level. Without this, VS Code and some CI environments set `ELECTRON_RUN_AS_NODE=1`, which causes Electron to behave as plain Node.js — no `process.type`, no Electron APIs, app crashes immediately. See also: `MEMORY.md` and `docs/features/pipeline-terminal-log-capture.md`.
+- `ELECTRON_RUN_AS_NODE: ''` prevents Electron from being forced into plain Node.js mode.
+- `PLAYWRIGHT_HTML_OPEN: never` avoids opening report UI in CI.
+- `YARN_ENABLE_GLOBAL_CACHE: 'true'` improves cache reuse consistency.
+
+## Caching Strategy
+
+### Dependency cache
+
+- Uses `actions/setup-node@v4` with `cache: yarn`.
+- Cache key is tied to `yarn.lock` and runner/node environment.
+
+### Tool cache
+
+Uses `actions/cache@v4` for:
+
+- `.vite`
+- `node_modules/.cache/eslint`
+
+Key includes:
+
+- OS
+- Node version
+- `yarn.lock`
+- `package.json`
+- `vite.*.config.ts`
+- `vitest.config.ts`
+- `playwright.config.ts`
+
+This limits stale/mismatched cache reuse when dependencies or build/test configs change.
 
 ## Self-Hosted Runner Setup (Windows)
 
@@ -37,64 +73,64 @@ Coverage and Playwright reports are uploaded as artifacts (10-day retention) eve
 
 Install these on the runner machine before registering the runner:
 
-1. **Node.js** — LTS (18+). Download from nodejs.org.
-2. **Yarn** — `npm install -g yarn`
-3. **Git** — git-scm.com
-4. **Visual Studio Build Tools** — required for node-gyp (compiles `better-sqlite3`).
-   - Download "Build Tools for Visual Studio" from visualstudio.microsoft.com
-   - Select workload: **Desktop development with C++**
-   - This installs MSVC compiler, Windows SDK, and CMake
-5. **Python 3** — required by node-gyp. python.org (check "Add to PATH" during install)
+1. **Node.js** - LTS (20+ preferred for this workflow)
+2. **Yarn** - `npm install -g yarn`
+3. **Git** - git-scm.com
+4. **Visual Studio Build Tools** - required for node-gyp (`better-sqlite3`), with workload **Desktop development with C++**
+5. **Python 3** - required by node-gyp
 
 ### Register the Runner
 
-1. Go to your GitHub repo → **Settings** → **Actions** → **Runners** → **New self-hosted runner**
+1. Go to your GitHub repo -> **Settings** -> **Actions** -> **Runners** -> **New self-hosted runner**
 2. Select **Windows** / **x64**
-3. Follow the displayed PowerShell commands to download and extract the runner
-4. Run the config command shown (includes your repo URL and a one-time token):
-   ```powershell
-   ./config.cmd --url https://github.com/OWNER/REPO --token YOUR_TOKEN
-   ```
-5. Accept defaults for runner name and work folder, or customize as needed
+3. Follow the shown PowerShell commands to download and extract the runner
+4. Run the config command shown by GitHub
 
 ### Run the Runner
 
-**Interactive (foreground)** — useful for first-time testing:
+Interactive (foreground):
+
 ```powershell
 ./run.cmd
 ```
 
-**As a Windows service** — runs automatically on boot, even when no user is logged in:
+Service mode:
+
 ```powershell
 ./svc.cmd install
 ./svc.cmd start
 ```
 
-> **Note for Electron/Playwright**: E2E tests open a real Electron window. If running as a service under the `SYSTEM` account, the window may not appear and tests can fail. If you hit this, run the runner interactively under your normal user account instead, or configure the service to run as your user account via `services.msc`.
-
-### Verify the Runner
-
-After starting, the runner should appear as **Idle** in **Settings → Actions → Runners**. Trigger a push or use the manual `workflow_dispatch` trigger to confirm the workflow runs end-to-end.
-
-## Migration from Jenkins
-
-| Jenkins | GitHub Actions equivalent |
-|---|---|
-| `Jenkinsfile` pipeline | `.github/workflows/ci.yml` |
-| `publishHTML` for coverage | `actions/upload-artifact` → coverage-report |
-| `publishHTML` for Playwright | `actions/upload-artifact` → playwright-report |
-| `FRESH_INSTALL` parameter | `workflow_dispatch` (always installs on CI) |
-| `buildDiscarder(numToKeepStr: '10')` | `retention-days: 10` on artifacts |
-| `timestamps()` | Built-in to GitHub Actions log viewer |
-
-The `Jenkinsfile` can be removed once the self-hosted runner is confirmed working.
+If Electron e2e cannot open correctly in service mode, run interactively under your user account.
 
 ## Local Development
 
-`scripts/verify-all.cjs` remains the local pre-push tool (`yarn verify:all`). It is not replaced by GitHub Actions — it handles local log capture, auto-format, and the optional dev-app step.
+Two local verification modes are available:
+
+- Full strict gate: `yarn verify:all`
+- Rapid fast gate: `yarn verify:rapid`
+
+### Rapid mode details
+
+`yarn verify:rapid` runs these in parallel:
+
+- `yarn format:check`
+- `yarn type-check`
+- `yarn lint:cache`
+- `yarn test:unit:quick`
+
+Cache hygiene in rapid mode:
+
+- It fingerprints `node`, `platform`, `arch`, `yarn.lock`, and `package.json`.
+- On mismatch, it clears local tool caches before running checks.
+
+Additional commands:
+
+- `yarn verify:rapid:fresh` (force cache reset)
+- `yarn verify:rapid:rebuild` (run native rebuild first)
 
 ## Related Files
 
-- `.github/workflows/ci.yml` — workflow definition
-- `scripts/verify-all.cjs` — local pipeline runner
-- `docs/features/pipeline-terminal-log-capture.md` — log capture behavior
+- `.github/workflows/ci.yml` - workflow definition
+- `scripts/verify-all.cjs` - strict local sequential gate
+- `scripts/verify-rapid.cjs` - local parallel fast gate with cache fingerprinting
