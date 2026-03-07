@@ -460,6 +460,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -487,7 +488,8 @@ describe('BattleMapRuntimeCanvas', () => {
         tokens={[buildRuntimeToken({ imageSrc: 'broken-token.png' })]}
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
-        onTokenMove={onTokenMove}
+        onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -514,6 +516,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -561,6 +564,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -597,6 +601,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -633,6 +638,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -671,9 +677,61 @@ describe('BattleMapRuntimeCanvas', () => {
     expect(onTokenMove).not.toHaveBeenCalled();
   });
 
-  it('cleans up active drag and destroys app on unmount', async () => {
+  it('invokes onTokenDoubleClick after two quick left-clicks on the same token', async () => {
     const onTokenSelect = vi.fn();
     const onTokenMove = vi.fn();
+    const onTokenDoubleClick = vi.fn();
+
+    render(
+      <BattleMapRuntimeCanvas
+        runtimeConfig={buildRuntimeConfig()}
+        tokens={[buildRuntimeToken({ instanceId: 'runtime-token-1' })]}
+        selectedTokenInstanceId={null}
+        onTokenSelect={onTokenSelect}
+        onTokenDoubleClick={onTokenDoubleClick}
+        onTokenMove={onTokenMove}
+        castingState={null}
+        onCastingAngleChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(pixiState.appInstances).toHaveLength(1);
+      expect(getTokenLayer(getApp()).children).toHaveLength(1);
+    });
+
+    const tokenDisplay = getTokenLayer(getApp()).children[0];
+
+    tokenDisplay.emit(
+      'pointerdown',
+      createFederatedPointerEvent({ pointerId: 211, global: { x: 0, y: 0 } }),
+    );
+    window.dispatchEvent(
+      createPointerEvent('pointerup', {
+        pointerId: 211,
+        clientX: 500,
+        clientY: 300,
+      }),
+    );
+
+    tokenDisplay.emit(
+      'pointerdown',
+      createFederatedPointerEvent({ pointerId: 212, global: { x: 0, y: 0 } }),
+    );
+    window.dispatchEvent(
+      createPointerEvent('pointerup', {
+        pointerId: 212,
+        clientX: 500,
+        clientY: 300,
+      }),
+    );
+
+    expect(onTokenDoubleClick).toHaveBeenCalledWith('runtime-token-1');
+    expect(onTokenDoubleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('cleans up active drag and destroys app on unmount', async () => {
+    const onTokenSelect = vi.fn();
     const { unmount, rerender } = render(
       <BattleMapRuntimeCanvas
         runtimeConfig={buildRuntimeConfig({
@@ -682,7 +740,8 @@ describe('BattleMapRuntimeCanvas', () => {
         tokens={[buildRuntimeToken({ imageSrc: 'token-to-cleanup.png' })]}
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={onTokenSelect}
-        onTokenMove={onTokenMove}
+        onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -710,7 +769,8 @@ describe('BattleMapRuntimeCanvas', () => {
         tokens={[]}
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
-        onTokenMove={onTokenMove}
+        onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -733,6 +793,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -787,6 +848,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
         onTokenMove={onTokenMove}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -847,6 +909,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -871,6 +934,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -900,6 +964,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -927,6 +992,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -949,14 +1015,14 @@ describe('BattleMapRuntimeCanvas', () => {
 
   it('wheel zoom is ignored while a token drag is active', async () => {
     const onTokenSelect = vi.fn();
-    const onTokenMove = vi.fn();
     render(
       <BattleMapRuntimeCanvas
         runtimeConfig={buildRuntimeConfig()}
         tokens={[buildRuntimeToken({ x: 0, y: 0 })]}
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
-        onTokenMove={onTokenMove}
+        onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -995,7 +1061,6 @@ describe('BattleMapRuntimeCanvas', () => {
 
   it('selectedTokenInstanceId change while drag is active does not start camera animation', async () => {
     const onTokenSelect = vi.fn();
-    const onTokenMove = vi.fn();
     const token = buildRuntimeToken({
       instanceId: 'runtime-token-1',
       x: 0,
@@ -1008,7 +1073,8 @@ describe('BattleMapRuntimeCanvas', () => {
         tokens={[token]}
         selectedTokenInstanceId={null}
         onTokenSelect={onTokenSelect}
-        onTokenMove={onTokenMove}
+        onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1036,7 +1102,8 @@ describe('BattleMapRuntimeCanvas', () => {
         tokens={[token]}
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={onTokenSelect}
-        onTokenMove={onTokenMove}
+        onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1063,6 +1130,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1080,6 +1148,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1096,6 +1165,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1131,6 +1201,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-missing'}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1162,6 +1233,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={castingState}
         onCastingAngleChange={onCastingAngleChange}
       />,
@@ -1190,6 +1262,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={null}
         onCastingAngleChange={onCastingAngleChange}
       />,
@@ -1217,6 +1290,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={null}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={{
           casterX: 25,
           casterY: 25,
@@ -1262,6 +1336,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={castingState}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1284,6 +1359,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-1'}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={castingState}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1302,6 +1378,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-2'}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={{ ...castingState, angleRad: Math.PI / 4 }}
         onCastingAngleChange={vi.fn()}
       />,
@@ -1323,6 +1400,7 @@ describe('BattleMapRuntimeCanvas', () => {
         selectedTokenInstanceId={'runtime-token-h1'}
         onTokenSelect={vi.fn()}
         onTokenMove={vi.fn()}
+        onTokenDoubleClick={vi.fn()}
         castingState={{
           casterX: 0,
           casterY: 0,

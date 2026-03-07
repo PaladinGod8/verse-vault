@@ -50,6 +50,7 @@ export default defineConfig({
       testMatch: [
         'arc-act.test.ts',
         'battlemap-runtime-play.test.ts',
+        'battlemap-runtime-statblock-popup.test.ts',
         'tokens.test.ts',
       ],
       use: { ...devices['Desktop Chrome'] },

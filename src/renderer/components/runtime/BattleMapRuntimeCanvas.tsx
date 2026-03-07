@@ -280,10 +280,12 @@ export default function BattleMapRuntimeCanvas({
       hexTiles: HighlightedHexTile[] | null;
     } | null
   >(null);
-  const lastTokenPointerUpRef = useRef<{
-    tokenInstanceId: string;
-    timestampMs: number;
-  } | null>(null);
+  const lastTokenPointerUpRef = useRef<
+    {
+      tokenInstanceId: string;
+      timestampMs: number;
+    } | null
+  >(null);
 
   const removeMapSprite = () => {
     const sprite = mapSpriteRef.current;

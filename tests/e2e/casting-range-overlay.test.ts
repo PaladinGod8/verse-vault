@@ -6,6 +6,13 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
   const { page } = context;
 
   try {
+    const createWorldButton = page.getByRole('button', { name: 'Create world' });
+    if (!(await createWorldButton.isVisible().catch(() => false))) {
+      const baseUrl = page.url().split('#')[0];
+      await page.goto(`${baseUrl}#/`);
+    }
+    await expect(createWorldButton).toBeVisible({ timeout: 15000 });
+
     const unique = Date.now().toString();
     const worldName = `E2E Cast Overlay World ${unique}`;
     const abilityName = `E2E Fireball ${unique}`;
@@ -36,26 +43,6 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     await expect(
       page.getByRole('heading', { name: 'World Overview', level: 1 }),
     ).toBeVisible();
-
-    // Create active ability with range + AoE
-    await page.getByRole('link', { name: 'Abilities' }).click();
-    await page.getByRole('button', { name: 'New Ability' }).click();
-    const abilityDialog = page.getByRole('dialog', { name: 'New Ability' });
-    await expect(abilityDialog).toBeVisible();
-    await abilityDialog.getByLabel('Name').fill(abilityName);
-    await abilityDialog.getByLabel('Type').selectOption('active');
-    await abilityDialog.getByLabel('Range (cells)').fill('5');
-    await abilityDialog.getByLabel('AoE Shape').selectOption('circle');
-    await abilityDialog.getByLabel('AoE size (cells)').fill('2');
-    await abilityDialog.getByLabel('Target type').selectOption('tile');
-    await abilityDialog.getByRole('button', { name: 'Create ability' }).click();
-
-    // Verify ability appears in list
-    const abilityRow = page
-      .locator('tbody tr')
-      .filter({ hasText: abilityName })
-      .first();
-    await expect(abilityRow).toBeVisible();
 
     // Create battlemap (square grid)
     await page.getByRole('link', { name: 'BattleMaps' }).click();
@@ -89,6 +76,53 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
       .filter({ hasText: tokenName })
       .first();
     await expect(tokenRow).toBeVisible();
+
+    // Runtime now resolves abilities from token-linked statblocks.
+    await page.evaluate(
+      async ({ nextWorldName, nextTokenName, nextAbilityName }) => {
+        const worlds = await window.db.worlds.getAll();
+        const world = worlds.find((candidate) => candidate.name === nextWorldName);
+        if (!world) {
+          throw new Error('Missing world for runtime casting setup.');
+        }
+
+        const worldTokens = await window.db.tokens.getAllByWorld(world.id);
+        const token = worldTokens.find((candidate) => candidate.name === nextTokenName);
+        if (!token) {
+          throw new Error('Missing token for runtime casting setup.');
+        }
+
+        const ability = await window.db.abilities.add({
+          world_id: world.id,
+          name: nextAbilityName,
+          type: 'active',
+          range_cells: 5,
+          aoe_shape: 'circle',
+          aoe_size_cells: 2,
+          target_type: 'tile',
+        });
+
+        const statblock = await window.db.statblocks.add({
+          world_id: world.id,
+          name: `Runtime Caster ${Date.now()}`,
+          description: 'e2e runtime statblock',
+        });
+
+        await window.db.statblocks.attachAbility({
+          statblock_id: statblock.id,
+          ability_id: ability.id,
+        });
+        await window.db.statblocks.linkToken({
+          statblock_id: statblock.id,
+          token_id: token.id,
+        });
+      },
+      {
+        nextWorldName: worldName,
+        nextTokenName: tokenName,
+        nextAbilityName: abilityName,
+      },
+    );
 
     // Open battlemap in runtime mode
     await page.getByRole('link', { name: 'BattleMaps' }).click();

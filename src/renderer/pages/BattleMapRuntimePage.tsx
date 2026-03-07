@@ -5,8 +5,8 @@ import BattleMapRuntimeCanvas, {
   type RuntimeSceneToken,
 } from '../components/runtime/BattleMapRuntimeCanvas';
 import RuntimeGridControls from '../components/runtime/RuntimeGridControls';
-import StatBlockPopup from '../components/runtime/StatBlockPopup';
 import RuntimeTokenPalette from '../components/runtime/RuntimeTokenPalette';
+import StatBlockPopup from '../components/runtime/StatBlockPopup';
 import {
   mergeBattleMapConfigWithRuntime,
   normalizeRuntimeGridConfig,

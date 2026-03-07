@@ -3,78 +3,66 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AbilityPickerPanel from '../../../src/renderer/components/runtime/AbilityPickerPanel';
 
-describe('AbilityPickerPanel', () => {
-  const mockOnAbilitySelect = vi.fn();
+function buildAbility(overrides: Partial<Ability> = {}): Ability {
+  return {
+    id: 1,
+    world_id: 1,
+    name: 'Arc Bolt',
+    description: null,
+    type: 'active',
+    passive_subtype: null,
+    level_id: null,
+    effects: '[]',
+    conditions: '[]',
+    cast_cost: '{}',
+    trigger: null,
+    pick_count: null,
+    pick_timing: null,
+    pick_is_permanent: 0,
+    range_cells: 6,
+    aoe_shape: 'line',
+    aoe_size_cells: 1,
+    target_type: 'tile',
+    created_at: '2026-03-05 00:00:00',
+    updated_at: '2026-03-05 00:00:00',
+    ...overrides,
+  };
+}
 
-  function buildAbility(overrides: Partial<Ability> = {}): Ability {
-    return {
-      id: 1,
-      world_id: 1,
-      name: 'Test Ability',
-      description: null,
-      type: 'active',
-      passive_subtype: null,
-      level_id: null,
-      effects: '[]',
-      conditions: '[]',
-      cast_cost: '{}',
-      trigger: null,
-      pick_count: null,
-      pick_timing: null,
-      pick_is_permanent: 0,
-      range_cells: 6,
-      aoe_shape: 'circle',
-      aoe_size_cells: 2,
-      target_type: 'tile',
-      created_at: '2026-01-01 00:00:00',
-      updated_at: '2026-01-02 00:00:00',
-      ...overrides,
-    };
-  }
+function buildStatBlock(overrides: Partial<StatBlock> = {}): StatBlock {
+  return {
+    id: 11,
+    world_id: 1,
+    campaign_id: null,
+    character_id: null,
+    default_token_id: null,
+    name: 'Linked Caster',
+    description: 'runtime link',
+    config: '{}',
+    created_at: '2026-03-05 00:00:00',
+    updated_at: '2026-03-05 00:00:00',
+    ...overrides,
+  };
+}
+
+describe('AbilityPickerPanel', () => {
+  const onAbilitySelect = vi.fn();
+  const getLinkedStatblockMock = vi.fn();
+  const listAbilitiesMock = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     window.db = {
-      verses: {
-        getAll: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      worlds: {
-        getAll: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      levels: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      abilities: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        addChild: vi.fn(),
-        removeChild: vi.fn(),
-        getChildren: vi.fn(),
+      statblocks: {
+        getLinkedStatblock: getLinkedStatblockMock,
+        listAbilities: listAbilitiesMock,
       },
     } as unknown as DbApi;
   });
 
-  it('shows loading state while abilities are fetching', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockImplementation(
+  it('shows loading while linked statblock lookup is pending', async () => {
+    getLinkedStatblockMock.mockImplementation(
       () =>
         new Promise(() => {
           /* never resolves */
@@ -83,291 +71,155 @@ describe('AbilityPickerPanel', () => {
 
     render(
       <AbilityPickerPanel
-        worldId={1}
+        sourceTokenId={99}
+        tokenName='Scout'
         castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
+        onAbilitySelect={onAbilitySelect}
       />,
     );
 
     expect(screen.getByText('Loading abilities...')).toBeInTheDocument();
   });
 
-  it('shows only active abilities after successful load', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockResolvedValue([
-      buildAbility({ id: 1, name: 'Arc Flash', type: 'active' }),
-      buildAbility({ id: 2, name: 'Passive Boost', type: 'passive' }),
-      buildAbility({ id: 3, name: 'Chain Lightning', type: 'active' }),
+  it('loads active abilities from token-linked statblock', async () => {
+    getLinkedStatblockMock.mockResolvedValue(buildStatBlock({ id: 44 }));
+    listAbilitiesMock.mockResolvedValue([
+      buildAbility({ id: 101, name: 'Firebolt', type: 'active' }),
+      buildAbility({ id: 102, name: 'Aura', type: 'passive' }),
+      buildAbility({ id: 103, name: 'Ice Lance', type: 'active' }),
     ]);
 
     render(
       <AbilityPickerPanel
-        worldId={1}
+        sourceTokenId={12}
+        tokenName='Mage'
         castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
+        onAbilitySelect={onAbilitySelect}
       />,
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Arc Flash')).toBeInTheDocument();
+      expect(getLinkedStatblockMock).toHaveBeenCalledWith(12);
+      expect(listAbilitiesMock).toHaveBeenCalledWith(44);
     });
-    expect(screen.getByText('Chain Lightning')).toBeInTheDocument();
-    expect(screen.queryByText('Passive Boost')).not.toBeInTheDocument();
+
+    expect(screen.getByText('Firebolt')).toBeInTheDocument();
+    expect(screen.getByText('Ice Lance')).toBeInTheDocument();
+    expect(screen.queryByText('Aura')).not.toBeInTheDocument();
   });
 
-  it('shows "No active abilities" message when no active abilities exist', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockResolvedValue([
-      buildAbility({ id: 1, name: 'Passive Only', type: 'passive' }),
-    ]);
+  it('shows fallback when token has no linked statblock', async () => {
+    getLinkedStatblockMock.mockResolvedValue(null);
 
     render(
       <AbilityPickerPanel
-        worldId={1}
+        sourceTokenId={66}
+        tokenName='Rogue'
         castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
+        onAbilitySelect={onAbilitySelect}
       />,
     );
 
-    await waitFor(() => {
-      expect(
-        screen.getByText('No active abilities in this world.'),
-      ).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText('No linked statblock for this token.'),
+    ).toBeInTheDocument();
+    expect(onAbilitySelect).toHaveBeenCalledWith(null);
+    expect(listAbilitiesMock).not.toHaveBeenCalled();
   });
 
-  it('shows error message on fetch failure', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockRejectedValue(new Error('db error'));
+  it('shows safe fallback when source token is missing', async () => {
+    render(
+      <AbilityPickerPanel
+        sourceTokenId={null}
+        tokenName='Ghost'
+        castingAbility={buildAbility({ id: 333 })}
+        onAbilitySelect={onAbilitySelect}
+      />,
+    );
+
+    expect(
+      await screen.findByText('Selected token has no source link.'),
+    ).toBeInTheDocument();
+    expect(onAbilitySelect).toHaveBeenCalledWith(null);
+    expect(getLinkedStatblockMock).not.toHaveBeenCalled();
+  });
+
+  it('shows load error when linked statblock fetch fails', async () => {
+    getLinkedStatblockMock.mockRejectedValue(new Error('db down'));
 
     render(
       <AbilityPickerPanel
-        worldId={1}
+        sourceTokenId={7}
+        tokenName='Mage'
         castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
+        onAbilitySelect={onAbilitySelect}
       />,
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Unable to load abilities.')).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText('Unable to load linked statblock abilities.'),
+    ).toBeInTheDocument();
+    expect(onAbilitySelect).toHaveBeenCalledWith(null);
   });
 
-  it('calls onAbilitySelect with ability when clicking ability with range_cells', async () => {
+  it('toggles a castable ability and clears selection via close button', async () => {
     const user = userEvent.setup();
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    const ability = buildAbility({
-      id: 5,
-      name: 'Arc Flash',
-      type: 'active',
-      range_cells: 6,
-    });
-    getAllByWorldMock.mockResolvedValue([ability]);
+    const ability = buildAbility({ id: 501, name: 'Spear Rain', range_cells: 5 });
+    getLinkedStatblockMock.mockResolvedValue(buildStatBlock({ id: 21 }));
+    listAbilitiesMock.mockResolvedValue([ability]);
 
     render(
       <AbilityPickerPanel
-        worldId={1}
+        sourceTokenId={8}
+        tokenName='Archer'
         castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
+        onAbilitySelect={onAbilitySelect}
       />,
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Arc Flash')).toBeInTheDocument();
-    });
+    await screen.findByText('Spear Rain');
+    await user.click(screen.getByRole('button', { name: /Spear Rain/i }));
+    expect(onAbilitySelect).toHaveBeenCalledWith(ability);
 
-    await user.click(screen.getByText('Arc Flash'));
-
-    expect(mockOnAbilitySelect).toHaveBeenCalledWith(ability);
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onAbilitySelect).toHaveBeenCalledWith(null);
   });
 
-  it('does not call onAbilitySelect when clicking ability with range_cells = null', async () => {
+  it('clears casting when selected ability is no longer linked to token statblock', async () => {
+    const selected = buildAbility({ id: 777, name: 'Old Cast' });
+    getLinkedStatblockMock.mockResolvedValue(buildStatBlock({ id: 77 }));
+    listAbilitiesMock.mockResolvedValue([buildAbility({ id: 701, name: 'New Cast' })]);
+
+    render(
+      <AbilityPickerPanel
+        sourceTokenId={17}
+        tokenName='Wizard'
+        castingAbility={selected}
+        onAbilitySelect={onAbilitySelect}
+      />,
+    );
+
+    await screen.findByText('New Cast');
+    expect(onAbilitySelect).toHaveBeenCalledWith(null);
+  });
+
+  it('does not keep null-range ability selected', async () => {
     const user = userEvent.setup();
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    const ability = buildAbility({
-      id: 6,
-      name: 'Basic Attack',
-      type: 'active',
-      range_cells: null,
-    });
-    getAllByWorldMock.mockResolvedValue([ability]);
+    const melee = buildAbility({ id: 901, name: 'Punch', range_cells: null });
+    getLinkedStatblockMock.mockResolvedValue(buildStatBlock({ id: 91 }));
+    listAbilitiesMock.mockResolvedValue([melee]);
 
     render(
       <AbilityPickerPanel
-        worldId={1}
+        sourceTokenId={2}
+        tokenName='Brawler'
         castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
+        onAbilitySelect={onAbilitySelect}
       />,
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Basic Attack')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByText('Basic Attack'));
-
-    // Should call with null since ability has no range_cells
-    expect(mockOnAbilitySelect).toHaveBeenCalledWith(null);
-  });
-
-  it('calls onAbilitySelect(null) when clicking already-selected ability', async () => {
-    const user = userEvent.setup();
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    const ability = buildAbility({
-      id: 7,
-      name: 'Arc Flash',
-      type: 'active',
-      range_cells: 8,
-    });
-    getAllByWorldMock.mockResolvedValue([ability]);
-
-    render(
-      <AbilityPickerPanel
-        worldId={1}
-        castingAbility={ability}
-        onAbilitySelect={mockOnAbilitySelect}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Arc Flash')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByText('Arc Flash'));
-
-    expect(mockOnAbilitySelect).toHaveBeenCalledWith(null);
-  });
-
-  it('calls onAbilitySelect(null) when close button is clicked', async () => {
-    const user = userEvent.setup();
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockResolvedValue([
-      buildAbility({ id: 8, name: 'Arc Flash', type: 'active' }),
-    ]);
-
-    render(
-      <AbilityPickerPanel
-        worldId={1}
-        castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Arc Flash')).toBeInTheDocument();
-    });
-
-    const closeButton = screen.getByRole('button', {
-      name: /close|dismiss|×/i,
-    });
-    await user.click(closeButton);
-
-    expect(mockOnAbilitySelect).toHaveBeenCalledWith(null);
-  });
-
-  it('visually indicates selected ability', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    const ability = buildAbility({
-      id: 9,
-      name: 'Arc Flash',
-      type: 'active',
-      range_cells: 6,
-    });
-    getAllByWorldMock.mockResolvedValue([
-      ability,
-      buildAbility({ id: 10, name: 'Chain', type: 'active' }),
-    ]);
-
-    const { rerender } = render(
-      <AbilityPickerPanel
-        worldId={1}
-        castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Arc Flash')).toBeInTheDocument();
-    });
-
-    // Rerender with castingAbility set
-    rerender(
-      <AbilityPickerPanel
-        worldId={1}
-        castingAbility={ability}
-        onAbilitySelect={mockOnAbilitySelect}
-      />,
-    );
-
-    const selectedButton = screen.getByText('Arc Flash').closest('button');
-    // Verify the selected ability button is in the DOM
-    expect(selectedButton).toBeInTheDocument();
-  });
-
-  it('passes worldId to getAllByWorld', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockResolvedValue([]);
-
-    render(
-      <AbilityPickerPanel
-        worldId={42}
-        castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(getAllByWorldMock).toHaveBeenCalledWith(42);
-    });
-  });
-
-  it('displays range and AoE info for castable abilities', async () => {
-    const getAllByWorldMock = window.db.abilities.getAllByWorld as ReturnType<
-      typeof vi.fn
-    >;
-    getAllByWorldMock.mockResolvedValue([
-      buildAbility({
-        id: 11,
-        name: 'Fireball',
-        type: 'active',
-        range_cells: 12,
-        aoe_shape: 'circle',
-      }),
-    ]);
-
-    render(
-      <AbilityPickerPanel
-        worldId={1}
-        castingAbility={null}
-        onAbilitySelect={mockOnAbilitySelect}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Fireball')).toBeInTheDocument();
-    });
-
-    // Check for range/aoe display (exact text format depends on implementation)
-    const panel = screen.getByText('Fireball').closest('div');
-    const text = panel?.textContent || '';
-    expect(text).toMatch(/12|circle|range/i);
+    await screen.findByText('Punch');
+    await user.click(screen.getByRole('button', { name: /Punch/i }));
+    expect(onAbilitySelect).toHaveBeenCalledWith(null);
   });
 });
