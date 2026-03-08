@@ -332,7 +332,7 @@ function runTool(toolName, files, fix) {
 
     const result = spawnSync(executable, args, {
       stdio: 'inherit',
-      shell: false,
+      shell: process.platform === 'win32',
     });
 
     if (result.error) {
