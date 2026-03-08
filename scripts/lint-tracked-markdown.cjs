@@ -62,7 +62,7 @@ const TOOL_DEFINITIONS = {
   },
   vale: {
     label: 'Vale',
-    binName: process.platform === 'win32' ? 'vale.cmd' : 'vale',
+    binName: 'vale',
     extraArgs: ['--config', '.vale.ini'],
     supportsFix: false,
   },
