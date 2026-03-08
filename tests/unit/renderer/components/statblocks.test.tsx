@@ -5,35 +5,30 @@ import StatBlockForm, {
   type StatBlockFormSubmitData,
 } from '../../../../src/renderer/components/statblocks/StatBlockForm';
 
-const worldsGetByIdMock = vi.fn();
-
-const worldStatisticsConfig = JSON.stringify({
-  statistics: {
-    resources: [
-      {
-        id: 'hp',
-        name: 'Hit Points',
-        abbreviation: 'HP',
-        isDefault: true,
-      },
-      {
-        id: 'mp',
-        name: 'Mana Points',
-        abbreviation: 'MP',
-        isDefault: false,
-      },
-    ],
-    passiveScores: [
-      {
-        id: 'str',
-        name: 'Strength',
-        abbreviation: 'STR',
-        type: 'ability_score',
-        isDefault: true,
-      },
-    ],
+const worldResourceDefinitions = [
+  {
+    id: 'hp',
+    name: 'Hit Points',
+    abbreviation: 'HP',
+    isDefault: true,
   },
-});
+  {
+    id: 'mp',
+    name: 'Mana Points',
+    abbreviation: 'MP',
+    isDefault: false,
+  },
+] as const;
+
+const worldPassiveScoreDefinitions = [
+  {
+    id: 'str',
+    name: 'Strength',
+    abbreviation: 'STR',
+    type: 'ability_score',
+    isDefault: true,
+  },
+] as const;
 
 function buildAbility(
   id: number,
@@ -78,17 +73,6 @@ describe('StatBlockForm', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    worldsGetByIdMock.mockResolvedValue({
-      id: 1,
-      name: 'Aeloria',
-      config: worldStatisticsConfig,
-    });
-
-    window.db = {
-      worlds: {
-        getById: worldsGetByIdMock,
-      },
-    } as unknown as DbApi;
   });
 
   it('renders unified editor sections for statistics, abilities, and skills', async () => {
@@ -97,6 +81,8 @@ describe('StatBlockForm', () => {
         mode='create'
         worldId={1}
         availableAbilities={worldOneAbilities}
+        resourceDefinitions={[...worldResourceDefinitions]}
+        passiveScoreDefinitions={[...worldPassiveScoreDefinitions]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -124,6 +110,8 @@ describe('StatBlockForm', () => {
         mode='create'
         worldId={1}
         availableAbilities={worldOneAbilities}
+        resourceDefinitions={[...worldResourceDefinitions]}
+        passiveScoreDefinitions={[...worldPassiveScoreDefinitions]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -150,7 +138,7 @@ describe('StatBlockForm', () => {
     fireEvent.change(screen.getByPlaceholderText('skill_key'), {
       target: { value: 'stealth' },
     });
-    fireEvent.change(screen.getByDisplayValue('0'), {
+    fireEvent.change(screen.getByLabelText('Skill rank 1'), {
       target: { value: '3' },
     });
 
@@ -214,6 +202,8 @@ describe('StatBlockForm', () => {
         worldId={1}
         initialData={statBlock}
         availableAbilities={worldOneAbilities}
+        resourceDefinitions={[...worldResourceDefinitions]}
+        passiveScoreDefinitions={[...worldPassiveScoreDefinitions]}
         initialAbilityIds={[2]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
@@ -252,6 +242,8 @@ describe('StatBlockForm', () => {
         mode='create'
         worldId={1}
         availableAbilities={worldOneAbilities}
+        resourceDefinitions={[...worldResourceDefinitions]}
+        passiveScoreDefinitions={[...worldPassiveScoreDefinitions]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -262,7 +254,7 @@ describe('StatBlockForm', () => {
       target: { value: 'Mage' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add skill' }));
-    fireEvent.change(screen.getByDisplayValue('0'), {
+    fireEvent.change(screen.getByLabelText('Skill rank 1'), {
       target: { value: '5' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Create statblock' }));
@@ -278,6 +270,8 @@ describe('StatBlockForm', () => {
         mode='create'
         worldId={1}
         availableAbilities={worldOneAbilities}
+        resourceDefinitions={[...worldResourceDefinitions]}
+        passiveScoreDefinitions={[...worldPassiveScoreDefinitions]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,

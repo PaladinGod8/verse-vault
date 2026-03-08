@@ -8,10 +8,11 @@ describe('vitest config optimization defaults', () => {
     return fs.readFileSync(configPath, 'utf8');
   }
 
-  it('pins worker threads pool for all runs', () => {
+  it('pins worker forks pool for all runs', () => {
     const configText = readConfigText();
-    expect(configText).toContain("pool: 'threads'");
+    expect(configText).toContain("pool: 'forks'");
     expect(configText).toContain('maxWorkers: Math.max(2, os.cpus().length - 1)');
+    expect(configText).toContain('testTimeout: 20_000');
   });
 
   it('keeps coverage thresholds and reporters aligned with quality gate', () => {
