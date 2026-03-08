@@ -14,6 +14,7 @@ Core workflows must function fully offline with local-first persistence.
 
 - [ ] Create CRUD foundations for campaign, worldbuilding, and manuscript domains
 - [ ] Replace the temporary `verses` scaffold with domain-driven entities
+- [ ] Implement Semantic Versioning workflow (Conventional Commits + commitlint + release-please + Dependabot/Renovate)
 - [ ] Define base schema and IPC contracts for:
   - campaigns
   - parties
