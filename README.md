@@ -63,6 +63,34 @@ Recommended cadence:
    - `packaged-app` artifact
    - `playwright-report` artifact
 
+### Nuclear option (deep debugging/testing)
+
+Use this when caches may be stale/corrupted/inconsistent and you want a full clean baseline.
+
+```powershell
+# repository-defined fresh pipeline (reinstall + full strict gate)
+yarn verify:all:fresh
+```
+
+For the strictest local "raw/no-cache" run, clear all local caches/build outputs and run uncached checks:
+
+```powershell
+Remove-Item -Recurse -Force .vite,node_modules,.cache,coverage,playwright-report,test-results,out -ErrorAction SilentlyContinue
+yarn cache clean
+yarn install --frozen-lockfile --force
+yarn lint:full
+yarn format:check
+yarn test:unit:coverage
+yarn package
+yarn test:e2e:ci
+```
+
+Notes:
+
+- `yarn lint:full` is the uncached lint variant (`yarn lint` uses ESLint cache).
+- `yarn test:e2e:ci` reuses the package step above so packaging is not repeated.
+- This path is intentionally slow and should be used only for deep-dive validation.
+
 ## Developer Workflow Commands
 
 ### Agent mode and effort controls
