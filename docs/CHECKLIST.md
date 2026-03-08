@@ -8,6 +8,7 @@ Command reference: use `README.md` -> **Developer Workflow Commands** for the ca
 
 - [ ] Implement feature (UI component, Zustand store, IPC handler, DB schema changes)
 - [ ] If new IPC channel: add constant to `src/shared/ipcChannels.ts` first
+- [ ] If adding a new IPC entity/domain, create `src/main/ipc/register<Domain>Handlers.ts` and wire it from `src/main.ts` (keep `src/main.ts` bootstrap-only; no inline `ipcMain.handle` blocks)
 - [ ] Run `yarn verify:rapid` during implementation for fast local feedback
 - [ ] Run `yarn lint` and `yarn format:check` before committing code changes
 - [ ] If you touch a file that has an ESLint override in `.eslintrc.cjs` (annotated with `// TODO: remove override after <feature>`), check whether your changes now bring it within budget — if so, remove the override entry and verify `yarn lint` still passes
