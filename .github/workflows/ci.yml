@@ -23,6 +23,7 @@ env:
   NODE_VERSION: '20'
   YARN_ENABLE_GLOBAL_CACHE: 'false'
   YARN_CACHE_FOLDER: ${{ github.workspace }}\.yarn-cache
+  NM_CACHE_KEY: ${{ runner.os }}-node-20-modules-${{ hashFiles('yarn.lock') }}
 
 defaults:
   run:
@@ -85,11 +86,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
 
+      # Restore node_modules — if this hits, skip install entirely
+      - name: Restore node_modules cache
+        id: nm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ env.NM_CACHE_KEY }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
       - name: Rebuild native modules
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn postinstall
+
+      # Save node_modules so downstream jobs never need to hit the network
+      - name: Save node_modules cache
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: ${{ env.NM_CACHE_KEY }}
 
   fast-checks:
     needs: bootstrap
@@ -135,19 +154,6 @@ jobs:
       - name: Ensure Git usr bin is on PATH for cache actions
         run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
-      - name: Get Yarn cache directory
-        id: yarn-cache-dir
-        run: |
-          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
-
-      - name: Restore Yarn cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-v2-
-
       - name: Enable Yarn via Corepack
         run: |
           corepack enable
@@ -164,10 +170,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
 
+      # Primary: restore fully-built node_modules from bootstrap — no network needed
+      - name: Restore node_modules cache
+        id: nm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ env.NM_CACHE_KEY }}
+
+      # Fallback: only runs if node_modules cache missed (e.g. very first run)
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: |
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
+
+      - name: Restore Yarn cache
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-v2-
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
       - name: Rebuild native modules
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn postinstall
 
       - name: Run lint (changed files only on PR)
@@ -215,19 +247,6 @@ jobs:
       - name: Ensure Git usr bin is on PATH for cache actions
         run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
-      - name: Get Yarn cache directory
-        id: yarn-cache-dir
-        run: |
-          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
-
-      - name: Restore Yarn cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-v2-
-
       - name: Enable Yarn via Corepack
         run: |
           corepack enable
@@ -244,10 +263,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
 
+      # Primary: restore fully-built node_modules from bootstrap — no network needed
+      - name: Restore node_modules cache
+        id: nm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ env.NM_CACHE_KEY }}
+
+      # Fallback: only runs if node_modules cache missed (e.g. very first run)
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: |
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
+
+      - name: Restore Yarn cache
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-v2-
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
       - name: Rebuild native modules
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn postinstall
 
       - name: Package app
@@ -290,19 +335,6 @@ jobs:
       - name: Ensure Git usr bin is on PATH for cache actions
         run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
-      - name: Get Yarn cache directory
-        id: yarn-cache-dir
-        run: |
-          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
-
-      - name: Restore Yarn cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-v2-
-
       - name: Enable Yarn via Corepack
         run: |
           corepack enable
@@ -319,10 +351,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-
 
+      # Primary: restore fully-built node_modules from bootstrap — no network needed
+      - name: Restore node_modules cache
+        id: nm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ env.NM_CACHE_KEY }}
+
+      # Fallback: only runs if node_modules cache missed (e.g. very first run)
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: |
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
+
+      - name: Restore Yarn cache
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-v2-
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
       - name: Rebuild native modules
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn postinstall
 
       - name: Download packaged app
