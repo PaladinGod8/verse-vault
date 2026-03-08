@@ -23,7 +23,6 @@ env:
   NODE_VERSION: '20'
   YARN_ENABLE_GLOBAL_CACHE: 'false'
   YARN_CACHE_FOLDER: ${{ github.workspace }}\.yarn-cache
-  NM_CACHE_KEY: ${{ runner.os }}-node-20-modules-${{ hashFiles('yarn.lock') }}
 
 defaults:
   run:
@@ -92,7 +91,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: ${{ env.NM_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-modules-${{ hashFiles('yarn.lock') }}
 
       - name: Install dependencies
         if: steps.nm-cache.outputs.cache-hit != 'true'
@@ -108,7 +107,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: node_modules
-          key: ${{ env.NM_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-modules-${{ hashFiles('yarn.lock') }}
 
   fast-checks:
     needs: bootstrap
@@ -176,7 +175,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: ${{ env.NM_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-modules-${{ hashFiles('yarn.lock') }}
 
       # Fallback: only runs if node_modules cache missed (e.g. very first run)
       - name: Get Yarn cache directory
@@ -269,7 +268,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: ${{ env.NM_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-modules-${{ hashFiles('yarn.lock') }}
 
       # Fallback: only runs if node_modules cache missed (e.g. very first run)
       - name: Get Yarn cache directory
@@ -357,7 +356,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: ${{ env.NM_CACHE_KEY }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-modules-${{ hashFiles('yarn.lock') }}
 
       # Fallback: only runs if node_modules cache missed (e.g. very first run)
       - name: Get Yarn cache directory
