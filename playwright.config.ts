@@ -1,5 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const parsedWorkers = Number.parseInt(
+  process.env.PLAYWRIGHT_WORKERS ?? '',
+  10,
+);
+const workerCount = Number.isFinite(parsedWorkers) && parsedWorkers > 0
+  ? parsedWorkers
+  : 2;
+
 // Prerequisite: run `yarn package` before `yarn test:e2e` to build
 // .vite/build/main.js and .vite/renderer/main_window/index.html.
 //
@@ -14,7 +22,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60000,
   retries: 0,
-  workers: 2, // cap Electron instances to avoid resource contention
+  workers: workerCount, // default cap for CI; local override via PLAYWRIGHT_WORKERS
   reporter: [['html', { open: 'never' }]],
   outputDir: 'test-results/',
   use: {

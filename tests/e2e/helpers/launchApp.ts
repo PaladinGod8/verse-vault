@@ -33,6 +33,28 @@ export async function launchApp(): Promise<LaunchResult> {
     env,
   });
 
+  // Ensure test code that calls app.firstWindow() attaches to the app window,
+  // not a stray DevTools window.
+  await app.evaluate(async ({ BrowserWindow }) => {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const windows = BrowserWindow.getAllWindows();
+      const mainWindow = windows.find((candidate) => {
+        const url = candidate.webContents.getURL();
+        return !url.startsWith('devtools://');
+      });
+      if (mainWindow) {
+        windows
+          .filter((candidate) => candidate.webContents.getURL().startsWith('devtools://'))
+          .forEach((candidate) => candidate.close());
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 100);
+      });
+    }
+  });
+
   return { app, userDataDir };
 }
 

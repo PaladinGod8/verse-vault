@@ -2552,7 +2552,7 @@ app.on('ready', async () => {
   registerIpcHandlers();
   registerTokenImageProtocol();
 
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL && !process.env.VITEST) {
     try {
       const { installExtension, REACT_DEVELOPER_TOOLS } = await import(
         'electron-devtools-installer'
