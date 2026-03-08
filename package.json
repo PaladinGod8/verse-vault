@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/.eslintcache --ext .ts,.tsx . --max-warnings=0",
     "lint:cache": "eslint --cache --cache-location node_modules/.cache/eslint/.eslintcache --ext .ts,.tsx . --max-warnings=0",
+    "lint:changed": "node scripts/lint-changed.cjs",
     "lint:full": "eslint --ext .ts,.tsx . --max-warnings=0",
     "format": "dprint fmt",
     "format:check": "dprint check",

@@ -128,7 +128,17 @@ jobs:
         run: yarn postinstall
 
       - name: Run ${{ matrix.label }}
-        run: ${{ matrix.command }}
+        run: |
+          if [ "${{ matrix.id }}" = "lint" ]; then
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              yarn lint:changed
+            else
+              yarn lint
+            fi
+          else
+            ${{ matrix.command }}
+          fi
+        shell: bash
 
       - name: Upload coverage report
         if: always() && matrix.id == 'unit'
