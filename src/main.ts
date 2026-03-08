@@ -23,8 +23,6 @@ const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
 const SHOULD_INSTALL_REACT_DEVTOOLS = IS_DEV && !process.env.VITEST
   && process.env.VV_ENABLE_REACT_DEVTOOLS === '1';
 
-// TEST ME #3
-
 function registerTokenImageProtocol(): void {
   protocol.handle(TOKEN_IMAGE_PROTOCOL, async (request) => {
     let requestUrl: URL;
