@@ -18,7 +18,7 @@ Independent quality gates run concurrently, while required sequencing (`package`
 | `bootstrap`            | Shared setup baseline (Node, cache restore, install, native rebuild) | First                                           |
 | `fast-checks` (matrix) | `format`, `typecheck`, `lint`, `unit`                                | Parallel (`fail-fast: false`)                   |
 | `package`              | `yarn package`                                                       | Parallel with `fast-checks` (after `bootstrap`) |
-| `e2e`                  | Downloads packaged artifact and runs `yarn test:e2e`                 | Sequential after `package`                      |
+| `e2e`                  | Downloads packaged artifact and runs `yarn test:e2e:ci`              | Sequential after `package`                      |
 | `ci-summary`           | Final workflow status gate                                           | Runs last (`if: always()`)                      |
 
 ### Why this catches more errors per run
@@ -132,11 +132,12 @@ Two local verification modes are available:
 
 - Full strict gate: `yarn verify:all`
 - Rapid fast gate: `yarn verify:rapid`
+- Primary local e2e command: `yarn test:e2e` (packages first, then runs Playwright)
 - E2E local worker override examples:
-  - `yarn test:e2e:local` (default worker cap from `playwright.config.ts`)
+  - `yarn test:e2e:local` (alias of `yarn test:e2e`)
   - `yarn test:e2e:local:8` (sets `PLAYWRIGHT_WORKERS=8` locally)
 
-CI still runs `yarn test:e2e` with the config default worker cap for stability on self-hosted runners.
+CI runs `yarn test:e2e:ci` so it reuses the packaged artifact from the `package` job and avoids packaging twice.
 
 ### Rapid mode details
 

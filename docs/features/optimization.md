@@ -194,7 +194,7 @@ export default defineConfig({
 Windows command examples:
 
 ```bash
-yarn test:e2e:local
+yarn test:e2e
 yarn test:e2e:local:8
 set PLAYWRIGHT_WORKERS=8&& yarn test:e2e:local
 ```

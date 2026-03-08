@@ -20,8 +20,9 @@ yarn install   # installs deps + rebuilds native modules
 yarn start     # dev mode with hot reload
 yarn lint      # ESLint
 yarn format    # dprint auto-format
-yarn test      # unit (Vitest) + e2e (Playwright)
-yarn test:e2e:local  # e2e using default worker cap from playwright.config.ts
+yarn test      # unit (Vitest) + e2e (Playwright, includes packaging)
+yarn test:e2e  # local e2e (packages first, then runs Playwright)
+yarn test:e2e:local  # local alias of test:e2e (packages first, default worker cap)
 yarn test:e2e:local:8  # local-only e2e override with 8 workers
 yarn test:unit:coverage  # unit tests + v8 coverage report
 yarn guard:docs  # fail if architecture/map docs are missing for relevant code/config changes
@@ -90,6 +91,9 @@ gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --li
 
 # fast local preflight before push
 yarn verify:rapid
+
+# local e2e (packages first, then Playwright)
+yarn test:e2e
 
 # local e2e override for high-core machines
 yarn test:e2e:local:8
