@@ -2,6 +2,8 @@
 
 ## Every Time You Add or Change a Feature
 
+Command reference: use `README.md` -> **Developer Workflow Commands** for the canonical command list.
+
 ### 1. Code
 
 - [ ] Implement feature (UI component, Zustand store, IPC handler, DB schema changes)

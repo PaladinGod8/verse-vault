@@ -33,7 +33,7 @@ yarn hooks:install  # one-time: enforce repo hooks (docs guards on commit)
 When a commit contains only formatting changes (no behavior changes), you can use a one-off hook bypass:
 
 ```bash
-git commit --no-verify -m "chore: formatting only"
+git commit --no-verify -m "<message>"
 ```
 
 ## Development loop
@@ -62,6 +62,47 @@ Recommended cadence:
    - `coverage-report` artifact
    - `packaged-app` artifact
    - `playwright-report` artifact
+
+## Developer Workflow Commands
+
+### Agent mode and effort controls
+
+```text
+ASK
+AGENT
+Mode: Medium
+Mode: High
+```
+
+### Githook guardrails
+
+```bash
+yarn guard:docs --staged
+```
+
+If githook checks fail, this prompt is the standard recovery template:
+
+```text
+I encountered a failure when trying to commit because of the githooks guardrails (inclusive of linting, tsc, and guard-docs)
+
+check the scripts/logs/ and find the latest githook failure to see the full breakdown.
+
+please update all relevant livingdocs and fix all relevant linting, and tsc issues.
+```
+
+### Targeted test commands
+
+```bash
+npx vitest <test-file-path> --no-file-parallelism --reporter=verbose
+npx vitest <test-file-path> -t="<specific test name>" --no-file-parallelism --reporter=verbose
+yarn test:unit:run --no-file-parallelism
+```
+
+### VS Code markdown preview
+
+1. Click the markdown file.
+2. Click inside the markdown content so the text cursor appears.
+3. Press `CTRL + SHIFT + V`.
 
 ## Self-Hosted Runner Ops (Windows)
 
@@ -96,8 +137,8 @@ Use GitHub CLI (`gh`) from any terminal (including VS Code terminal).
 # list recent runs
 gh run list -R PaladinGod8/verse-vault --limit 10
 
-# watch the latest run live (compact output)
-gh run watch -R PaladinGod8/verse-vault --compact --exit-status
+# watch the current in-progress run live (compact output)
+gh run watch "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --compact --exit-status
 
 # fast local preflight before push
 yarn verify:rapid
