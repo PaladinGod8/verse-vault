@@ -1,0 +1,6 @@
+extends: existence
+message: "Consider active voice instead of passive phrase: '%s'."
+level: warning
+ignorecase: true
+tokens:
+  - "\\b(is|are|was|were|be|been|being)\\s+\\w+ed\\b"

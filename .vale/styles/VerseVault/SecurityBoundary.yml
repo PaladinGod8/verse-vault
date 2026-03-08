@@ -1,0 +1,8 @@
+extends: existence
+message: "Security boundary violation wording detected: '%s'."
+level: error
+ignorecase: true
+tokens:
+  - "contextIsolation\\s*:\\s*false"
+  - "nodeIntegration\\s*:\\s*true"
+  - "enableRemoteModule\\s*:\\s*true"

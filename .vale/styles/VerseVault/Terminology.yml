@@ -1,0 +1,9 @@
+extends: existence
+message: "Use the project's canonical term instead of '%s'."
+level: error
+ignorecase: false
+tokens:
+  - "\\bwindowDb\\b"
+  - "\\bwindow\\.DB\\b"
+  - "\\bipcchannels\\.ts\\b"
+  - "\\bipcChannels\\.tsx\\b"
