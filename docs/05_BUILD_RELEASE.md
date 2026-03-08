@@ -1,4 +1,4 @@
-﻿# Build & Release
+# Build & Release
 
 ## Release Principles
 
@@ -92,6 +92,7 @@ CI runs on push/PR to `main`. Commits that only touch `docs/**`, `*.md`, or `.gi
 - **`fetch-depth: 1`** on all checkout steps - fetches only the tip commit. Safe because no CI job requires git history.
 - **Yarn download cache** - `actions/cache@v4` per job caches the Yarn tarball store (`yarn cache dir`), keyed by `runner.os + yarn.lock hash`. `yarn install` and `yarn postinstall` (electron-rebuild) still run every job; only the network download is skipped on a cache hit. `node_modules` is intentionally not cached because it contains the compiled `better-sqlite3.node` binary, which must be rebuilt fresh for the current Electron ABI.
 - **Existing tool cache** - `.vite` and `node_modules/.cache/eslint` are cached under a separate `toolcache` key keyed by lockfile + config hashes.
+
 ## CI E2E Sharding
 
 E2E tests run as a 5-shard matrix in CI to distribute Playwright tests across all 5
@@ -134,4 +135,3 @@ available `ci`-labeled runners.
 - **Fuses are compile-time.** Security fuses (`FusesPlugin` in `forge.config.ts`) are baked at `yarn make`, not `yarn start`.
 - **asar native unpacking matters.** `.node` and `.dylib` files are unpacked via `asar.unpack`/`asar.unpackDir`; removing this breaks native modules in production.
 - **Offline-first validation is required.** Before release, verify startup and core CRUD while disconnected from network.
-
