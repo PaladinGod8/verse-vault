@@ -52,8 +52,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Prefer Windows tar for cache actions
-        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
+      - name: Remove Git usr bin from PATH for cache actions
+        run: |
+          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
+          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
+          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
+
+      - name: Debug tar and gzip resolution
+        run: |
+          where tar
+          where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -131,8 +139,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Prefer Windows tar for cache actions
-        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
+      - name: Remove Git usr bin from PATH for cache actions
+        run: |
+          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
+          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
+          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
+
+      - name: Debug tar and gzip resolution
+        run: |
+          where tar
+          where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -211,8 +227,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Prefer Windows tar for cache actions
-        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
+      - name: Remove Git usr bin from PATH for cache actions
+        run: |
+          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
+          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
+          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
+
+      - name: Debug tar and gzip resolution
+        run: |
+          where tar
+          where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -286,8 +310,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Prefer Windows tar for cache actions
-        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
+      - name: Remove Git usr bin from PATH for cache actions
+        run: |
+          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
+          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
+          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
+
+      - name: Debug tar and gzip resolution
+        run: |
+          where tar
+          where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
