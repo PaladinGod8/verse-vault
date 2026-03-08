@@ -126,8 +126,8 @@ function getChangedFiles(diffContext) {
   return parseLines(diffResult.stdout);
 }
 
-function isTrackedExistingTypeScriptFile(filePath) {
-  if (!/\.(ts|tsx)$/i.test(filePath)) {
+function isLintableFile(filePath) {
+  if (!/\.(ts|tsx|yml|yaml)$/i.test(filePath)) {
     return false;
   }
   if (!fs.existsSync(filePath)) {
@@ -190,9 +190,9 @@ function main() {
     return;
   }
 
-  const filesToLint = changedFiles.filter(isTrackedExistingTypeScriptFile);
+  const filesToLint = changedFiles.filter(isLintableFile);
   if (filesToLint.length === 0) {
-    console.log('[lint:changed] mode=changed-files no TS/TSX file changes');
+    console.log('[lint:changed] mode=changed-files no lintable file changes');
     process.exit(0);
   }
 
