@@ -54,8 +54,9 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: bash
-        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+        shell: pwsh
+        run: |
+          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
@@ -130,8 +131,9 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: bash
-        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+        shell: pwsh
+        run: |
+          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
@@ -165,16 +167,13 @@ jobs:
 
       - name: Run ${{ matrix.label }}
         run: |
-          if [ "${{ matrix.id }}" = "lint" ]; then
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              yarn lint:changed
-            else
-              yarn lint
-            fi
+          if ("${{ matrix.id }}" -eq "lint" -and "${{ github.event_name }}" -eq "pull_request") {
+            yarn lint:changed
           else
-            ${{ matrix.command }}
-          fi
-        shell: bash
+            $cmd = "${{ matrix.command }}"
+            Invoke-Expression $cmd
+          }
+        shell: pwsh
 
       - name: Upload coverage report
         if: always() && matrix.id == 'unit'
@@ -212,8 +211,9 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: bash
-        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+        shell: pwsh
+        run: |
+          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
@@ -284,8 +284,9 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: bash
-        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+        shell: pwsh
+        run: |
+          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
