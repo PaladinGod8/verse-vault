@@ -54,9 +54,8 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: powershell
         run: |
-          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
@@ -131,9 +130,8 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: powershell
         run: |
-          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
@@ -165,15 +163,13 @@ jobs:
       - name: Rebuild native modules
         run: yarn postinstall
 
+      - name: Run lint (changed files only on PR)
+        if: matrix.id == 'lint' && github.event_name == 'pull_request'
+        run: yarn lint:changed
+
       - name: Run ${{ matrix.label }}
-        run: |
-          if ("${{ matrix.id }}" -eq "lint" -and "${{ github.event_name }}" -eq "pull_request") {
-            yarn lint:changed
-          else
-            $cmd = "${{ matrix.command }}"
-            Invoke-Expression $cmd
-          }
-        shell: powershell
+        if: matrix.id != 'lint' || github.event_name != 'pull_request'
+        run: ${{ matrix.command }}
 
       - name: Upload coverage report
         if: always() && matrix.id == 'unit'
@@ -211,9 +207,8 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: powershell
         run: |
-          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
@@ -284,9 +279,8 @@ jobs:
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
-        shell: powershell
         run: |
-          "dir=$(yarn cache dir)" >> $env:GITHUB_OUTPUT
+          for /f "delims=" %%i in ('yarn cache dir') do @echo dir=%%i>>"%GITHUB_OUTPUT%"
 
       - name: Restore Yarn cache
         uses: actions/cache@v4
