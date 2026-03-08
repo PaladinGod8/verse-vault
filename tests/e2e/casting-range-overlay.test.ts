@@ -185,8 +185,10 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     // Assert overlay is visible (screenshots differ)
     expect(Buffer.compare(baselineScreenshot, castModeScreenshot)).not.toBe(0);
 
-    // Move pointer over canvas to trigger directional shape tracking
-    await canvas.hover({ position: { x: 500, y: 400 } });
+    // Move pointer over canvas to trigger directional shape tracking.
+    // force:true skips Playwright's hit-test so the position doesn't need to
+    // resolve back to the canvas element (canvas height varies by CI environment).
+    await canvas.hover({ position: { x: 400, y: 190 }, force: true });
     await page.waitForTimeout(100);
 
     // For circle AoE, pointer movement may not produce visible changes,

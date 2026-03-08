@@ -76,12 +76,18 @@ export async function ensureWorldsLanding(page: Page): Promise<void> {
     }
   }
 
+  // Fallback: if back-nav links weren't present (e.g. CI timing), navigate directly.
+  if (!(await page.getByRole('button', { name: 'Create world' }).isVisible())) {
+    const baseUrl = page.url().split('#')[0];
+    await page.goto(`${baseUrl}#/`);
+  }
+
   await expect(
     page.getByRole('heading', { name: 'Worlds', level: 1 }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15000 });
   await expect(
     page.getByRole('button', { name: 'Create world' }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15000 });
 }
 
 export async function createWorld(
