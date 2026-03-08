@@ -77,6 +77,33 @@ Workflow file: `.github/workflows/ci.yml`
 
 CI runs on push/PR to `main`. Commits that only touch `docs/**`, `*.md`, or `.github/CODEOWNERS` are skipped via `paths-ignore`. Manual runs via `workflow_dispatch` always execute regardless of changed files.
 
+### Canceling a Stuck Run
+
+Use GitHub CLI to stop a queued or in-progress workflow run:
+
+```bash
+# cancel a specific run (queued or in_progress; replace <run-id>)
+gh run cancel <run-id> -R PaladinGod8/verse-vault
+
+# cancel the latest queued run
+gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s queued -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
+
+# cancel the latest in-progress run
+gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
+
+# map UI run number (e.g. #37) to run ID, then cancel
+$runId = gh run list -R PaladinGod8/verse-vault --json databaseId,number --limit 200 --jq ".[] | select(.number==37) | .databaseId"
+gh run cancel $runId -R PaladinGod8/verse-vault
+
+# force-cancel fallback for queued runs that do not transition
+gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/$runId/force-cancel
+
+# verify final state
+gh run view $runId -R PaladinGod8/verse-vault --json status,conclusion,number
+```
+
+For queue-only incidents, do not stop self-hosted runners first. Cancel queued runs first, then stop/restart runners only if they are unhealthy or under maintenance.
+
 ### Job Structure
 
 | Job                       | Depends on  | Purpose                                                |

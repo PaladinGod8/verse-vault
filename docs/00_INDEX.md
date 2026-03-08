@@ -92,7 +92,28 @@ Notes:
 ```bash
 gh run list -R PaladinGod8/verse-vault --limit 10
 gh run watch -R PaladinGod8/verse-vault --compact --exit-status
+
+# cancel a specific run (queued or in_progress; replace <run-id>)
+gh run cancel <run-id> -R PaladinGod8/verse-vault
+
+# cancel the latest queued run
+gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s queued -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
+
+# cancel the latest in-progress run
+gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
+
+# map UI run number (e.g. #37) to run ID, then cancel
+$runId = gh run list -R PaladinGod8/verse-vault --json databaseId,number --limit 200 --jq ".[] | select(.number==37) | .databaseId"
+gh run cancel $runId -R PaladinGod8/verse-vault
+
+# force-cancel fallback when queued run does not transition to cancelled
+gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/$runId/force-cancel
+
+# verify final state
+gh run view $runId -R PaladinGod8/verse-vault --json status,conclusion,number
 ```
+
+Queue note: you do not need to stop self-hosted runners before canceling a queued run. Cancel first; stop runners only if you are intentionally draining/maintaining runner services.
 
 ## Product Direction
 

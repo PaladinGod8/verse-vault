@@ -139,6 +139,18 @@ One-off hook bypass commands (use sparingly):
 - `git commit --no-verify -m "<message>"`
 - `git push --no-verify origin`
 
+GitHub Actions run control (terminal):
+
+- `gh run list -R PaladinGod8/verse-vault --limit 10`
+- `gh run watch -R PaladinGod8/verse-vault --compact --exit-status`
+- `gh run cancel <run-id> -R PaladinGod8/verse-vault`
+- `gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s queued -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault`
+- `gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault`
+- `# UI #<number> is not run ID; map number -> databaseId first: $runId = gh run list -R PaladinGod8/verse-vault --json databaseId,number --limit 200 --jq ".[] | select(.number==37) | .databaseId"`
+- `gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/$runId/force-cancel`
+- `gh run view $runId -R PaladinGod8/verse-vault --json status,conclusion,number`
+- Queue incidents: cancel queued runs first; do not stop runners first unless doing maintenance.
+
 Unless the user asks otherwise, do not run long/full pipelines repeatedly when targeted checks are enough.
 
 ## Output Contract for Agents
