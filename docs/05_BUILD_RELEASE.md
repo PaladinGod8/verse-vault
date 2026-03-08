@@ -69,6 +69,40 @@ This keeps PR feedback loops fast while retaining a strong full-lint safety net 
 
 Caching ESLint metadata reduces repeat lint cost across CI jobs and reruns without weakening strictness (`--max-warnings=0` remains enforced).
 
+## CI E2E Sharding
+
+E2E tests run as a 5-shard matrix in CI to distribute Playwright tests across all 5
+available `ci`-labeled runners.
+
+### How sharding works
+
+- Each shard receives a subset of test files via `--shard=N/5`.
+- Playwright distributes test files evenly across shards automatically.
+- All shards run with `PLAYWRIGHT_WORKERS: 2` (conservative; raise after confirming stability).
+- A per-shard report artifact (`playwright-report-shard-N`) is uploaded for triage.
+
+### Runner labels
+
+| Label     | Purpose                                                                |
+| --------- | ---------------------------------------------------------------------- |
+| `ci`      | Required on all CI runners — minimum 5 for full parallelism            |
+| `package` | Required on the runner dedicated to `yarn package` (also carries `ci`) |
+
+> After `bootstrap`, 5 jobs run simultaneously: 4 fast-checks matrix items + 1 package job.
+> Five `ci`-labeled runners (one also carrying `package`) are required to avoid queueing.
+
+### Tuning guidance
+
+- `fail-fast: false` keeps all shards running even if one fails.
+- The `e2e` job gates on both `fast-checks` and `package` — E2E only runs when the build
+  is clean and the package artifact exists.
+- To change shard count: update `matrix.shard` array and the `/total` in the run command
+  atomically.
+- If shards are flaky, reduce `PLAYWRIGHT_WORKERS` first; only reduce shard count if the
+  distribution itself is the problem.
+- Test isolation is enforced by `launchApp()` per test with a unique temp `userDataDir`.
+  Never share paths or database files across tests or shards.
+
 ## Common Gotchas
 
 - **`better-sqlite3` must be rebuilt** after `yarn install` or Electron version bumps. `postinstall` handles this automatically, but Electron must not be running (Windows EPERM).

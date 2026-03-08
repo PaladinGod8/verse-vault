@@ -31,20 +31,23 @@ Use `verify:rapid` during iteration, then `verify:all` before push/PR.
 
 On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on the self-hosted runner:
 
-- `fast-checks` matrix (`format`, `typecheck`, `lint`, `unit`)
+- `fast-checks` matrix (`format`, `typecheck`, `lint`, `unit`) — up to 4 parallel runners, label `ci`
   - Lint mode selection:
     - `pull_request`: runs `yarn lint:changed` (PR diff-aware lint for faster feedback)
     - `push`/`workflow_dispatch`: runs `yarn lint` (full strict lint gate)
-- `package`
-- `e2e` (after `package`)
-- `ci-summary` final status gate
+- `package` — dedicated runner, label `ci` + `package`
+- `e2e` — 5-shard matrix, starts after both `fast-checks` and `package` pass, label `ci`
+- `ci-summary` — final status gate; fails if any job or shard fails
+
+> After `bootstrap`, 5 jobs become eligible simultaneously (4 fast-checks + 1 package).
+> Register at least 5 `ci`-labeled runners so all 5 start immediately.
 
 Primary debugging paper trail:
 
 - GitHub Actions workflow/job/step logs
 - `coverage-report` artifact
 - `packaged-app` artifact
-- `playwright-report` artifact
+- `playwright-report-shard-<n>` artifacts (one per e2e shard, 5 total, retained 10 days)
 
 ### Runner Operations (Windows PowerShell)
 
