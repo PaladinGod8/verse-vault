@@ -313,7 +313,6 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      max-parallel: 5
       matrix:
         shard: [1, 2, 3, 4, 5]
 
@@ -394,10 +393,12 @@ jobs:
           name: packaged-app
           path: out/
 
-      - name: Run e2e tests (reuse packaged artifact, shard ${{ matrix.shard }}/5)
+      - name: Run e2e shard ${{ matrix.shard }}/5
+        env:
+          PLAYWRIGHT_WORKERS: 2
         run: yarn test:e2e:ci --shard=${{ matrix.shard }}/5
 
-      - name: Upload Playwright report
+      - name: Upload Playwright report (shard ${{ matrix.shard }}/5)
         if: always()
         uses: actions/upload-artifact@v4
         with:
