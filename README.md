@@ -91,6 +91,23 @@ Notes:
 - `yarn test:e2e:ci` reuses the package step above so packaging is not repeated.
 - This path is intentionally slow and should be used only for deep-dive validation.
 
+### CI cache incident recovery (when corruption/staleness is suspected)
+
+In this repository's GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), use this recovery flow:
+
+1. Force a cold cache namespace by bumping a cache key prefix (example: `v2-...`) for both Yarn cache and tool cache keys.
+2. Temporarily remove `restore-keys` so CI cannot fall back to older caches during recovery.
+3. Re-run CI to rebuild caches from a clean baseline.
+4. Optionally delete old GitHub Actions caches in the repository Actions cache UI.
+5. After green runs, keep a dedicated cache version prefix pattern so future cache flushes are one-line changes.
+
+Example key pattern:
+
+```yaml
+key: v2-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+key: v2-${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-${{ hashFiles('yarn.lock', 'package.json', 'vite.*.config.ts', 'vitest.config.ts', 'playwright.config.ts') }}
+```
+
 ## Developer Workflow Commands
 
 ### Agent mode and effort controls
