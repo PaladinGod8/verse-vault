@@ -44,6 +44,8 @@ Command reference: use `README.md` -> **Developer Workflow Commands** for the ca
 - [ ] Push branch and open PR to `main`
 - [ ] Confirm GitHub Actions CI is green (`fast-checks`, `package`, `e2e`, `ci-summary`)
 - [ ] If CI fails, use workflow/job/step logs and artifacts (`coverage-report`, `packaged-app`, `playwright-report`) as debugging paper trail
+- [ ] If a run is queued/stuck, cancel by run ID (not UI `#number`) and rerun; if still queued, force-cancel with `gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/<run-id>/force-cancel`
+- [ ] Stop/restart self-hosted runners only when runner health is the problem (not as the first cancellation step)
 
 ### 5. ADR (only if an architectural decision was made)
 

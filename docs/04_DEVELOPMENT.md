@@ -121,7 +121,28 @@ git push --no-verify origin
 ```bash
 gh run list -R PaladinGod8/verse-vault --limit 10
 gh run watch "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --compact --exit-status
+
+# cancel a specific run (queued or in_progress; replace <run-id>)
+gh run cancel <run-id> -R PaladinGod8/verse-vault
+
+# cancel the latest queued run
+gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s queued -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
+
+# cancel the latest in-progress run
+gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
+
+# map UI run number (e.g. #37) to run ID, then cancel
+$runId = gh run list -R PaladinGod8/verse-vault --json databaseId,number --limit 200 --jq ".[] | select(.number==37) | .databaseId"
+gh run cancel $runId -R PaladinGod8/verse-vault
+
+# force-cancel fallback when queued run remains queued after cancel request
+gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/$runId/force-cancel
+
+# verify final state
+gh run view $runId -R PaladinGod8/verse-vault --json status,conclusion,number
 ```
+
+Cancel order for queue issues: cancel queued run(s) first, then restart/stop self-hosted runners only if runner maintenance is needed.
 
 ## Troubleshooting
 
