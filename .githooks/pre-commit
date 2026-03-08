@@ -1,19 +1,82 @@
 #!/bin/sh
 
+LOG_DIR="scripts/logs/githooks"
+MAX_FAILURE_LOGS=3
+HOOK_NAME="pre-commit"
+LAST_STAGE_OUTPUT=""
+LAST_STAGE_COMMAND=""
+
+run_stage() {
+  LAST_STAGE_COMMAND="$*"
+  tmp_output="$(mktemp 2>/dev/null || printf '.git/.%s-stage-%s.log' "$HOOK_NAME" "$$")"
+  "$@" >"$tmp_output" 2>&1
+  status=$?
+  LAST_STAGE_OUTPUT="$(cat "$tmp_output")"
+  cat "$tmp_output"
+  rm -f "$tmp_output"
+  return "$status"
+}
+
+prune_failure_logs() {
+  old_logs="$(ls -1t "$LOG_DIR"/"$HOOK_NAME"-failure-*.log 2>/dev/null | sed -e "1,${MAX_FAILURE_LOGS}d")"
+  if [ -z "$old_logs" ]; then
+    return
+  fi
+
+  printf '%s\n' "$old_logs" | while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    rm -f -- "$file"
+  done
+}
+
+persist_failure_log() {
+  stage_name="$1"
+  status_code="$2"
+  block_reason="$3"
+
+  mkdir -p "$LOG_DIR"
+  timestamp="$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%Y%m%dT%H%M%S)"
+  log_file="$LOG_DIR/$HOOK_NAME-failure-$timestamp-$$.log"
+
+  {
+    echo "hook=$HOOK_NAME"
+    echo "timestamp_utc=$timestamp"
+    echo "stage=$stage_name"
+    echo "exit_code=$status_code"
+    echo "reason=$block_reason"
+    echo "command=$LAST_STAGE_COMMAND"
+    echo ""
+    echo "output:"
+    printf '%s\n' "$LAST_STAGE_OUTPUT"
+  } >"$log_file"
+
+  prune_failure_logs
+  echo "[pre-commit] Failure log written to $log_file"
+}
+
+block_commit() {
+  stage_name="$1"
+  status_code="$2"
+  block_reason="$3"
+
+  echo "$block_reason"
+  persist_failure_log "$stage_name" "$status_code" "$block_reason"
+  exit "$status_code"
+}
+
 echo "[pre-commit] Running commit quality checks..."
 
 if command -v yarn >/dev/null 2>&1; then
   echo "[pre-commit] 1/4 format:check"
-  yarn format:check
+  run_stage yarn format:check
   status=$?
   if [ "$status" -ne 0 ]; then
     echo "[pre-commit] format:check failed. Applying yarn format and restaging staged files..."
     staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
-    yarn format
+    run_stage yarn format
     status=$?
     if [ "$status" -ne 0 ]; then
-      echo "[pre-commit] Commit blocked by formatter errors."
-      exit "$status"
+      block_commit "format" "$status" "[pre-commit] Commit blocked by formatter errors."
     fi
 
     printf '%s\n' "$staged_files" | while IFS= read -r path; do
@@ -23,35 +86,32 @@ if command -v yarn >/dev/null 2>&1; then
   fi
 
   echo "[pre-commit] 2/4 type-check"
-  yarn type-check
+  run_stage yarn type-check
   status=$?
   if [ "$status" -ne 0 ]; then
-    echo "[pre-commit] Commit blocked by type-check."
-    exit "$status"
+    block_commit "type-check" "$status" "[pre-commit] Commit blocked by type-check."
   fi
 
   echo "[pre-commit] 3/4 lint"
-  yarn lint
+  run_stage yarn lint
   status=$?
   if [ "$status" -ne 0 ]; then
-    echo "[pre-commit] Commit blocked by lint."
-    exit "$status"
+    block_commit "lint" "$status" "[pre-commit] Commit blocked by lint."
   fi
 
   echo "[pre-commit] 4/4 guard:docs:staged"
-  yarn guard:docs:staged
+  run_stage yarn guard:docs:staged
 else
   echo "[pre-commit] 1/4 format:check"
-  node_modules/.bin/dprint check
+  run_stage node_modules/.bin/dprint check
   status=$?
   if [ "$status" -ne 0 ]; then
     echo "[pre-commit] format:check failed. Applying format and restaging staged files..."
     staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
-    node_modules/.bin/dprint fmt
+    run_stage node_modules/.bin/dprint fmt
     status=$?
     if [ "$status" -ne 0 ]; then
-      echo "[pre-commit] Commit blocked by formatter errors."
-      exit "$status"
+      block_commit "format" "$status" "[pre-commit] Commit blocked by formatter errors."
     fi
 
     printf '%s\n' "$staged_files" | while IFS= read -r path; do
@@ -61,29 +121,26 @@ else
   fi
 
   echo "[pre-commit] 2/4 type-check"
-  node_modules/.bin/tsc --noEmit
+  run_stage node_modules/.bin/tsc --noEmit
   status=$?
   if [ "$status" -ne 0 ]; then
-    echo "[pre-commit] Commit blocked by type-check."
-    exit "$status"
+    block_commit "type-check" "$status" "[pre-commit] Commit blocked by type-check."
   fi
 
   echo "[pre-commit] 3/4 lint"
-  node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
+  run_stage node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
   status=$?
   if [ "$status" -ne 0 ]; then
-    echo "[pre-commit] Commit blocked by lint."
-    exit "$status"
+    block_commit "lint" "$status" "[pre-commit] Commit blocked by lint."
   fi
 
   echo "[pre-commit] 4/4 guard:docs:staged"
-  node scripts/guard-docs.cjs --staged
+  run_stage node scripts/guard-docs.cjs --staged
 fi
 
 status=$?
 if [ "$status" -ne 0 ]; then
-  echo "[pre-commit] Commit blocked by docs guard."
-  exit "$status"
+  block_commit "guard-docs" "$status" "[pre-commit] Commit blocked by docs guard."
 fi
 
 exit 0
