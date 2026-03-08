@@ -5,15 +5,16 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
+    teardownTimeout: 20_000,
     setupFiles: ['./src/test-setup.ts'],
     include: ['tests/unit/**/*.test.{ts,tsx}'],
     css: false,
 
-    // Use worker_threads for all runs (including coverage).
-    // Threads start faster and share the V8 heap, which is safe here because
-    // every test file mocks all native modules (electron, better-sqlite3).
-    // Vitest still isolates each file's module registry (isolate: true default).
-    pool: 'threads',
+    // Use process isolation to make hard timeouts more reliable when a worker
+    // event loop is blocked by long synchronous work.
+    pool: 'forks',
     maxWorkers: Math.max(2, os.cpus().length - 1),
 
     coverage: {
