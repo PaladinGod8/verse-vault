@@ -52,6 +52,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Prefer Windows tar for cache actions
+        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
+
       - name: Get Yarn cache directory
         id: yarn-cache-dir
         run: |
@@ -127,6 +130,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: Prefer Windows tar for cache actions
+        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -205,6 +211,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Prefer Windows tar for cache actions
+        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
+
       - name: Get Yarn cache directory
         id: yarn-cache-dir
         run: |
@@ -276,6 +285,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: Prefer Windows tar for cache actions
+        run: echo C:\Windows\System32>>"%GITHUB_PATH%"
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
