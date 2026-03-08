@@ -7,9 +7,12 @@ Test Me!
 ```bash
 yarn install        # installs deps + rebuilds native modules (postinstall)
 yarn start          # dev mode with hot reload
-yarn lint           # ESLint check (cached default, strict --max-warnings=0)
-yarn lint:full      # ESLint full uncached run (debug cache-related lint issues)
-yarn lint:changed   # ESLint changed-file mode (primarily CI pull_request path)
+yarn lint           # Full lint gate (ESLint + markdownlint-cli2 + Vale)
+yarn lint:code      # ESLint check only (cached default, strict --max-warnings=0)
+yarn lint:full      # Full uncached lint gate (eslint full + docs lint)
+yarn lint:changed   # PR-diff changed-file mode (ESLint + tracked markdown lint)
+yarn lint:docs      # markdownlint-cli2 + Vale on tracked Markdown
+yarn lint:docs:list-partitions # list partition keys for targeted lint runs
 yarn format:check   # dprint check (no writes)
 yarn format         # auto-format with dprint
 ```
@@ -41,7 +44,7 @@ On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on t
 - `fast-checks` matrix (`format`, `typecheck`, `lint`, `unit`) — up to 4 parallel runners, label `ci`
   - Lint mode selection:
     - `pull_request`: runs `yarn lint:changed` (PR diff-aware lint for faster feedback)
-    - `push`/`workflow_dispatch`: runs `yarn lint` (full strict lint gate)
+    - `push`/`workflow_dispatch`: runs `yarn lint` (full strict lint gate, includes markdown linting)
 - `package` — dedicated runner, label `ci` + `package`
 - `e2e` — 5-shard matrix, starts after both `fast-checks` and `package` pass, label `ci`
 - `ci-summary` — final status gate; fails if any job or shard fails
@@ -52,7 +55,7 @@ On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on t
 CI optimizations (applied to all jobs):
 
 - `fetch-depth: 1` on all checkout steps (tip commit only; no full history fetch)
-- `paths-ignore` on push/pull_request: commits touching only `docs/**`, `*.md`, or `.github/CODEOWNERS` skip CI
+- no markdown/docs path-ignore: docs-only changes still run lint/test gates for standardized documentation quality
 - Yarn download cache: `actions/cache@v4` keyed by `runner.os + yarn.lock hash`; `node_modules` is NOT cached (native module safety)
 
 Primary debugging paper trail:

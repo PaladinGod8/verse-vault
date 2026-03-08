@@ -10,8 +10,9 @@ Command reference: use `README.md` -> **Developer Workflow Commands** for the ca
 - [ ] If new IPC channel: add constant to `src/shared/ipcChannels.ts` first
 - [ ] If adding a new IPC entity/domain, create `src/main/ipc/register<Domain>Handlers.ts` and wire it from `src/main.ts` (keep `src/main.ts` bootstrap-only; no inline `ipcMain.handle` blocks)
 - [ ] Run `yarn verify:rapid` during implementation for fast local feedback
-- [ ] Run `yarn lint` (cached default) and `yarn format:check` before committing code changes
-- [ ] Use `yarn lint:full` when debugging suspected cache-related lint anomalies (uncached full run)
+- [ ] Run `yarn lint` (full lint gate: code + tracked markdown) and `yarn format:check` before committing code changes
+- [ ] Use `yarn lint:code:full` when debugging suspected ESLint cache anomalies (uncached code-lint run)
+- [ ] Use `yarn lint:docs` and partition scripts (`yarn lint:docs:list-partitions`) for targeted Markdown lint troubleshooting
 - [ ] If you touch a file that has an ESLint override in `.eslintrc.cjs` (annotated with `// TODO: remove override after <feature>`), check whether your changes now bring it within budget — if so, remove the override entry and verify `yarn lint` still passes
 
 ### 2. Docs (mandatory)
