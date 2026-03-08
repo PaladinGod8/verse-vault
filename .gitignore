@@ -88,6 +88,9 @@ typings/
 # Vite
 .vite/
 
+# Build output (generated artifacts — not tracked)
+dist/
+
 # Electron-Forge
 out/
 
