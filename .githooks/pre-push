@@ -67,21 +67,7 @@ block_push() {
 echo "[pre-push] Running push quality checks..."
 
 if command -v yarn >/dev/null 2>&1; then
-  echo "[pre-push] 1/4 lint"
-  run_stage yarn lint
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_push "lint" "$status" "[pre-push] Push blocked by lint."
-  fi
-
-  echo "[pre-push] 2/4 type-check"
-  run_stage yarn type-check
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_push "type-check" "$status" "[pre-push] Push blocked by type-check."
-  fi
-
-  echo "[pre-push] 3/4 format"
+  echo "[pre-push] 1/4 format"
   run_stage yarn format
   status=$?
   if [ "$status" -ne 0 ]; then
@@ -92,6 +78,20 @@ if command -v yarn >/dev/null 2>&1; then
     block_push "format-dirty" 1 "[pre-push] Formatter updated files. Commit the formatting changes, then push again."
   fi
 
+  echo "[pre-push] 2/4 type-check"
+  run_stage yarn type-check
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    block_push "type-check" "$status" "[pre-push] Push blocked by type-check."
+  fi
+
+  echo "[pre-push] 3/4 lint"
+  run_stage yarn lint
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    block_push "lint" "$status" "[pre-push] Push blocked by lint."
+  fi
+
   echo "[pre-push] 4/4 format:check"
   run_stage yarn format:check
   status=$?
@@ -99,11 +99,15 @@ if command -v yarn >/dev/null 2>&1; then
     block_push "format:check" "$status" "[pre-push] Push blocked by format:check."
   fi
 else
-  echo "[pre-push] 1/4 lint"
-  run_stage node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
+  echo "[pre-push] 1/4 format"
+  run_stage node_modules/.bin/prettier --write .
   status=$?
   if [ "$status" -ne 0 ]; then
-    block_push "lint" "$status" "[pre-push] Push blocked by lint."
+    block_push "format" "$status" "[pre-push] Push blocked by formatter errors."
+  fi
+
+  if ! git diff --quiet -- .; then
+    block_push "format-dirty" 1 "[pre-push] Formatter updated files. Commit the formatting changes, then push again."
   fi
 
   echo "[pre-push] 2/4 type-check"
@@ -113,15 +117,11 @@ else
     block_push "type-check" "$status" "[pre-push] Push blocked by type-check."
   fi
 
-  echo "[pre-push] 3/4 format"
-  run_stage node_modules/.bin/prettier --write .
+  echo "[pre-push] 3/4 lint"
+  run_stage node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
   status=$?
   if [ "$status" -ne 0 ]; then
-    block_push "format" "$status" "[pre-push] Push blocked by formatter errors."
-  fi
-
-  if ! git diff --quiet -- .; then
-    block_push "format-dirty" 1 "[pre-push] Formatter updated files. Commit the formatting changes, then push again."
+    block_push "lint" "$status" "[pre-push] Push blocked by lint."
   fi
 
   echo "[pre-push] 4/4 format:check"
