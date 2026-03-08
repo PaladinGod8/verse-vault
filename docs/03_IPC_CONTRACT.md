@@ -7,6 +7,8 @@
 
 Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, scene CRUD handlers, statblock CRUD handlers, and statblock linkage/assignment handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
 
+IPC Domain Split reconciliation (2026-03-08): `src/main.ts` remains bootstrap/orchestration only, channel registration is delegated to domain registrar modules under `src/main/ipc/register*Handlers.ts`, and the Channels table below is reconciled against `src/shared/ipcChannels.ts` (82/82 channel constants documented with registrar-file handler references).
+
 Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
 
 World Config Step 02 (2026-03-06) extends world add/update handlers to accept and persist optional `config` field (JSON string for world-specific configuration like statistics definitions); validates config is valid JSON before persisting. Default Statistics Step 08 (2026-03-06) extends `WORLDS_ADD` handler to auto-populate `config` with D&D 5e-style default statistics (`DEFAULT_RESOURCE_DEFINITIONS` and `DEFAULT_PASSIVE_SCORE_DEFINITIONS` from `src/shared/statisticsTypes.ts` wrapped in a `WorldStatisticsConfig`) when not explicitly provided, while respecting explicitly-provided config values.
