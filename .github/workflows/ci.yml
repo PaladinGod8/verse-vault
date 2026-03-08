@@ -52,17 +52,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Remove Git usr bin from PATH for cache actions
-        run: |
-          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
-          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
-          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
-
-      - name: Debug tar and gzip resolution
-        run: |
-          where tar
-          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
-          exit /b 0
+      - name: Ensure Git usr bin is on PATH for cache actions
+        run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -140,17 +131,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Remove Git usr bin from PATH for cache actions
-        run: |
-          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
-          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
-          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
-
-      - name: Debug tar and gzip resolution
-        run: |
-          where tar
-          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
-          exit /b 0
+      - name: Ensure Git usr bin is on PATH for cache actions
+        run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -229,17 +211,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Remove Git usr bin from PATH for cache actions
-        run: |
-          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
-          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
-          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
-
-      - name: Debug tar and gzip resolution
-        run: |
-          where tar
-          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
-          exit /b 0
+      - name: Ensure Git usr bin is on PATH for cache actions
+        run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -313,17 +286,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Remove Git usr bin from PATH for cache actions
-        run: |
-          set "SANITIZED_PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
-          set "SANITIZED_PATH=%SANITIZED_PATH:C:\Program Files\Git\usr\bin=%"
-          echo PATH=%SANITIZED_PATH%>>"%GITHUB_ENV%"
-
-      - name: Debug tar and gzip resolution
-        run: |
-          where tar
-          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
-          exit /b 0
+      - name: Ensure Git usr bin is on PATH for cache actions
+        run: echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
