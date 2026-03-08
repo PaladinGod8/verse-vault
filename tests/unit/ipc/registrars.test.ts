@@ -1,8 +1,7 @@
 import type Database from 'better-sqlite3';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IPC } from '../../../src/shared/ipcChannels';
-import { registerActHandlers } from '../../../src/main/ipc/registerActHandlers';
 import { registerAbilityHandlers } from '../../../src/main/ipc/registerAbilityHandlers';
+import { registerActHandlers } from '../../../src/main/ipc/registerActHandlers';
 import { registerArcHandlers } from '../../../src/main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from '../../../src/main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from '../../../src/main/ipc/registerCampaignHandlers';
@@ -13,6 +12,7 @@ import { registerStatBlockHandlers } from '../../../src/main/ipc/registerStatBlo
 import { registerTokenHandlers } from '../../../src/main/ipc/registerTokenHandlers';
 import { registerVerseHandlers } from '../../../src/main/ipc/registerVerseHandlers';
 import { registerWorldHandlers } from '../../../src/main/ipc/registerWorldHandlers';
+import { IPC } from '../../../src/shared/ipcChannels';
 
 const { ipcHandleMock } = vi.hoisted(() => ({
   ipcHandleMock: vi.fn(),
