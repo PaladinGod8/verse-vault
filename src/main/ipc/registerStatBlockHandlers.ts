@@ -160,7 +160,9 @@ function registerStatBlockUpdateHandler(db: Database.Database): void {
       }
 
       const updateSql = setClauses.length > 0
-        ? `UPDATE statblocks SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+        ? `UPDATE statblocks SET ${
+          setClauses.join(', ')
+        }, updated_at = datetime('now') WHERE id = ?`
         : "UPDATE statblocks SET updated_at = datetime('now') WHERE id = ?";
       db.prepare(updateSql).run(...values, id);
 

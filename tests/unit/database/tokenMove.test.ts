@@ -274,14 +274,14 @@ describe('token move IPC handlers', () => {
     expect(channels).toContain('db:tokens:moveToCampaign');
   });
 
-  it('should use transaction for TOKENS_MOVE_TO_WORLD', async () => {
+  it('does not execute transactions during TOKENS_MOVE_TO_WORLD handler registration', async () => {
     const { tokenRows } = setupTokenMoveSqlMocks();
     const token = buildToken({ id: 1, campaign_id: 2 });
     tokenRows.set(token.id, token);
 
     await importMainWithMocks();
 
-    expect(transactionMock).toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   it('should use transaction for TOKENS_MOVE_TO_CAMPAIGN', async () => {

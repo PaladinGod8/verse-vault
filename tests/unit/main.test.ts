@@ -823,7 +823,7 @@ describe('main process', () => {
     await registeredEvents.ready();
 
     expect(getDatabaseMock).toHaveBeenCalledTimes(1);
-    expect(transactionMock).toHaveBeenCalledTimes(8);
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(browserWindowCtorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         width: 800,
@@ -838,7 +838,9 @@ describe('main process', () => {
     expect(loadFileMock).not.toHaveBeenCalled();
     expect(openDevToolsMock).toHaveBeenCalledTimes(1);
 
-    expect(Object.keys(registeredIpcHandlers).length).toBeGreaterThan(70);
+    expect(Object.keys(registeredIpcHandlers).sort()).toEqual(
+      Object.values(IPC).sort(),
+    );
 
     const getAllResult = registeredIpcHandlers[IPC.VERSES_GET_ALL]({});
     expect(versesSelectAllMock).toHaveBeenCalledTimes(1);

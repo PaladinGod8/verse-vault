@@ -1,12 +1,9 @@
 import { app, BrowserWindow, net, protocol } from 'electron';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
-import {
-  closeDatabase,
-  getDatabase,
-} from './database/db';
-import { registerActHandlers } from './main/ipc/registerActHandlers';
+import { closeDatabase, getDatabase } from './database/db';
 import { registerAbilityHandlers } from './main/ipc/registerAbilityHandlers';
+import { registerActHandlers } from './main/ipc/registerActHandlers';
 import { registerArcHandlers } from './main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from './main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from './main/ipc/registerCampaignHandlers';
@@ -158,4 +155,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-

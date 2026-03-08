@@ -89,8 +89,7 @@ function registerWorldMutationHandlers(db: Database.Database): void {
   });
 }
 
-function registerWorldImageImportHandler(
-): void {
+function registerWorldImageImportHandler(): void {
   ipcMain.handle(
     IPC.WORLDS_IMPORT_IMAGE,
     async (
