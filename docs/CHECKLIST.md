@@ -50,6 +50,7 @@ Otherwise, skip the ADR.
 - Do not hardcode IPC channel strings; always use `src/shared/ipcChannels.ts`
 - Do not import `ipcRenderer` directly in renderer code; use `window.db`
 - Do not ship cloud-only flows for core features; preserve offline-first behavior
+- Do not commit generated artifacts — `dist/`, `out/`, `.vite/`, and `coverage/` are enforced by `.gitignore` and must never be staged or committed
 
 ---
 
