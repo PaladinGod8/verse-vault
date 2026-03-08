@@ -9,6 +9,14 @@ Standardize Markdown quality checks for all tracked `.md` files while keeping li
 - Formatting: `dprint` (`yarn format`, `yarn format:check`)
 - Markdown structure lint: `markdownlint-cli2` (configured by `.markdownlint-cli2.jsonc`)
 - Prose/policy lint: `Vale` (configured by `.vale.ini` and `.vale/styles/VerseVault/`)
+  - Blocking threshold: `MinAlertLevel = error`
+  - Blocking rules:
+    - `VerseVault.Placeholders` (placeholder markers)
+    - `VerseVault.Terminology` (project canonical terms)
+    - `VerseVault.SecurityBoundary` (forbidden Electron boundary wording)
+  - Advisory rules:
+    - `VerseVault.Weasel`
+    - `VerseVault.Passive`
 
 ## Tracked-File Policy
 
@@ -57,3 +65,4 @@ Recommended sequence:
 
 - Vale must be available on PATH for Vale scripts to run.
 - `markdownlint-cli2` is installed as a repository dev dependency.
+- Advisory Vale rules are disabled for `docs/logs/**`, `docs/prompts/**`, and `docs/vsnotes/**`.

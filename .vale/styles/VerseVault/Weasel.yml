@@ -1,0 +1,10 @@
+extends: existence
+message: "Consider tightening vague wording: '%s'."
+level: warning
+ignorecase: true
+tokens:
+  - "\\bclearly\\b"
+  - "\\bsimply\\b"
+  - "\\bjust\\b"
+  - "\\bobviously\\b"
+  - "\\beasy\\b"

@@ -1,8 +1,9 @@
 extends: existence
 message: "Replace placeholder marker '%s' before finalizing docs."
-level: warning
+level: error
 ignorecase: false
 tokens:
   - "\\bTBD\\b"
+  - "\\bTODO\\b"
   - "\\bFIXME\\b"
   - "\\bXXX\\b"
