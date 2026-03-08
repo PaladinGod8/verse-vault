@@ -196,6 +196,12 @@ jobs:
         if: steps.nm-cache.outputs.cache-hit != 'true'
         run: yarn postinstall
 
+      - name: Confirm Vale is available
+        if: matrix.id == 'lint'
+        run: |
+          where vale
+          vale --version
+
       - name: Run lint (changed files only on PR)
         if: matrix.id == 'lint' && github.event_name == 'pull_request'
         run: yarn lint:changed
