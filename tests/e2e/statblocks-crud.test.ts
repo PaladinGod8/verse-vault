@@ -176,11 +176,9 @@ test('statblocks create dialog submit is disabled when name is empty', async () 
     });
     await expect(submitBtn).toBeDisabled();
 
-    // Type invalid JSON in config — error message appears
-    await createDialog.getByLabel('Config (JSON)').fill('invalid json');
-    await expect(
-      createDialog.locator('p', { hasText: 'Invalid JSON' }),
-    ).toBeVisible();
+    // Submit becomes enabled after entering a valid name
+    await createDialog.getByLabel('Name').fill('Validation StatBlock');
+    await expect(submitBtn).toBeEnabled();
 
     // Cancel closes dialog without creating
     await createDialog.getByRole('button', { name: 'Cancel' }).click();

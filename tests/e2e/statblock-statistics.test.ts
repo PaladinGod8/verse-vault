@@ -43,7 +43,7 @@ async function goToStatBlocks(page: Page, worldName: string): Promise<void> {
 }
 
 function inferWorldIdFromUrl(page: Page): number {
-  const worldMatch = page.url().match(/#\/world\/(\d+)\//);
+  const worldMatch = page.url().match(/#\/world\/(\d+)(?:\/|$)/);
   if (!worldMatch) {
     throw new Error('Unable to infer world id from current URL.');
   }
@@ -366,22 +366,18 @@ test.describe('StatBlock Statistics', () => {
 
     await updatedCard.getByRole('button', { name: 'Edit' }).click();
     const secondEditDialog = page.getByRole('dialog', { name: 'Edit StatBlock' });
-    const removableSkillRow = secondEditDialog
-      .locator('div.grid.grid-cols-12')
-      .filter({
-        has: secondEditDialog.locator('input[placeholder="skill_key"][value="survival"]'),
-      });
+    const removableSkillRow = secondEditDialog.locator('div.grid.grid-cols-12').nth(1);
+    await expect(
+      removableSkillRow.locator('input[placeholder="skill_key"]'),
+    ).toHaveValue('survival');
     await removableSkillRow.getByRole('button', { name: 'Remove' }).click();
     await secondEditDialog.getByRole('button', { name: 'Save changes' }).click();
 
     await updatedCard.getByRole('button', { name: 'Edit' }).click();
     const thirdEditDialog = page.getByRole('dialog', { name: 'Edit StatBlock' });
-    await expect(
-      thirdEditDialog.locator('input[placeholder="skill_key"][value="perception"]'),
-    ).toHaveCount(1);
-    await expect(
-      thirdEditDialog.locator('input[placeholder="skill_key"][value="survival"]'),
-    ).toHaveCount(0);
+    const skillInputs = thirdEditDialog.locator('input[placeholder="skill_key"]');
+    await expect(skillInputs).toHaveCount(1);
+    await expect(skillInputs.first()).toHaveValue('perception');
   });
 
   test('shows skills validation guardrails for missing key', async () => {
