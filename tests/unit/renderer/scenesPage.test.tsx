@@ -180,14 +180,10 @@ describe('ScenesPage', () => {
 
     const mockDb = setupWindowDb();
     resetWindowDb();
-    mockDb.arcs.getAllByCampaign =
-      arcsGetAllByCampaignMock as typeof mockDb.arcs.getAllByCampaign;
-    mockDb.acts.getAllByCampaign =
-      actsGetAllByCampaignMock as typeof mockDb.acts.getAllByCampaign;
-    mockDb.sessions.getAllByAct =
-      sessionsGetAllByActMock as typeof mockDb.sessions.getAllByAct;
-    mockDb.sessions.getById =
-      sessionsGetByIdMock as typeof mockDb.sessions.getById;
+    mockDb.arcs.getAllByCampaign = arcsGetAllByCampaignMock as typeof mockDb.arcs.getAllByCampaign;
+    mockDb.acts.getAllByCampaign = actsGetAllByCampaignMock as typeof mockDb.acts.getAllByCampaign;
+    mockDb.sessions.getAllByAct = sessionsGetAllByActMock as typeof mockDb.sessions.getAllByAct;
+    mockDb.sessions.getById = sessionsGetByIdMock as typeof mockDb.sessions.getById;
     mockDb.scenes.getAllBySession =
       scenesGetAllBySessionMock as typeof mockDb.scenes.getAllBySession;
     mockDb.scenes.add = scenesAddMock as typeof mockDb.scenes.add;

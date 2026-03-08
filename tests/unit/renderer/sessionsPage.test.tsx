@@ -195,8 +195,7 @@ describe('SessionsPage', () => {
     const mockDb = setupWindowDb();
     resetWindowDb();
     mockDb.acts.getById = actsGetByIdMock as typeof mockDb.acts.getById;
-    mockDb.sessions.getAllByAct =
-      sessionsGetAllByActMock as typeof mockDb.sessions.getAllByAct;
+    mockDb.sessions.getAllByAct = sessionsGetAllByActMock as typeof mockDb.sessions.getAllByAct;
     mockDb.sessions.add = sessionsAddMock as typeof mockDb.sessions.add;
     mockDb.sessions.update = sessionsUpdateMock as typeof mockDb.sessions.update;
     mockDb.sessions.delete = sessionsDeleteMock as typeof mockDb.sessions.delete;

@@ -455,12 +455,9 @@ describe('BattleMapRuntimePage', () => {
     resetWindowDb();
     mockDb.campaigns.getAllByWorld =
       campaignsGetAllByWorldMock as typeof mockDb.campaigns.getAllByWorld;
-    mockDb.battlemaps.getById =
-      battlemapsGetByIdMock as typeof mockDb.battlemaps.getById;
-    mockDb.battlemaps.update =
-      battlemapsUpdateMock as typeof mockDb.battlemaps.update;
-    mockDb.tokens.getAllByWorld =
-      tokensGetAllByWorldMock as typeof mockDb.tokens.getAllByWorld;
+    mockDb.battlemaps.getById = battlemapsGetByIdMock as typeof mockDb.battlemaps.getById;
+    mockDb.battlemaps.update = battlemapsUpdateMock as typeof mockDb.battlemaps.update;
+    mockDb.tokens.getAllByWorld = tokensGetAllByWorldMock as typeof mockDb.tokens.getAllByWorld;
     mockDb.tokens.getAllByCampaign =
       tokensGetAllByCampaignMock as typeof mockDb.tokens.getAllByCampaign;
 

@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPC } from '../../src/shared/ipcChannels';
-import {
-  buildAbility,
-  buildStatBlock,
-  buildToken,
-  resetFactoryIds,
-} from '../helpers/factories';
+import { buildAbility, buildStatBlock, buildToken, resetFactoryIds } from '../helpers/factories';
 
 type EventHandler = (...args: unknown[]) => unknown;
 type IpcHandler = (...args: unknown[]) => unknown;

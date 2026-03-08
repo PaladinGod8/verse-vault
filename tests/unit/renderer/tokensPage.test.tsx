@@ -210,10 +210,8 @@ describe('TokensPage', () => {
     mockDb.worlds.getById = worldsGetByIdMock as typeof mockDb.worlds.getById;
     mockDb.campaigns.getAllByWorld =
       campaignsGetAllByWorldMock as typeof mockDb.campaigns.getAllByWorld;
-    mockDb.tokens.getAllByWorld =
-      tokensGetAllByWorldMock as typeof mockDb.tokens.getAllByWorld;
-    mockDb.tokens.importImage =
-      tokensImportImageMock as typeof mockDb.tokens.importImage;
+    mockDb.tokens.getAllByWorld = tokensGetAllByWorldMock as typeof mockDb.tokens.getAllByWorld;
+    mockDb.tokens.importImage = tokensImportImageMock as typeof mockDb.tokens.importImage;
     mockDb.tokens.add = tokensAddMock as typeof mockDb.tokens.add;
     mockDb.tokens.update = tokensUpdateMock as typeof mockDb.tokens.update;
     mockDb.tokens.delete = tokensDeleteMock as typeof mockDb.tokens.delete;

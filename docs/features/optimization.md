@@ -60,13 +60,13 @@ two test files run concurrently even on dual-core machines.
 
 All 47 unit test files are parallel-safe at the file level. The breakdown:
 
-| Category            | Files                                          | Reason                                                                     |
-| ------------------- | ---------------------------------------------- | -------------------------------------------------------------------------- |
-| Pure functions      | `runtimeMath.test.ts`, `ipcChannels.test.ts`   | No mocks, no state — fully isolated                                        |
+| Category            | Files                                          | Reason                                                                                                                                         |
+| ------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure functions      | `runtimeMath.test.ts`, `ipcChannels.test.ts`   | No mocks, no state — fully isolated                                                                                                            |
 | Renderer components | All `renderer/*.test.tsx` files                | Prefer `setupWindowDb()` / `resetWindowDb()` for substantial `window.db` mocks; concise one-off inline mocks are acceptable; jsdom is per-file |
-| Store               | `exampleStore.test.ts`                         | `beforeEach` resets Zustand state                                          |
-| Preload             | `preload.test.ts`                              | `beforeEach` calls `vi.resetModules()` + `vi.clearAllMocks()`              |
-| DB layer            | `db.test.ts`, `tokens.test.ts`, `main.test.ts` | Use `vi.resetModules()` / `importMainWithMocks()` per test within the file |
+| Store               | `exampleStore.test.ts`                         | `beforeEach` resets Zustand state                                                                                                              |
+| Preload             | `preload.test.ts`                              | `beforeEach` calls `vi.resetModules()` + `vi.clearAllMocks()`                                                                                  |
+| DB layer            | `db.test.ts`, `tokens.test.ts`, `main.test.ts` | Use `vi.resetModules()` / `importMainWithMocks()` per test within the file                                                                     |
 
 Within each file, tests run sequentially (Vitest always does this). Tests that call
 `vi.resetModules()` between cases are safe because the reset only touches the current worker's
