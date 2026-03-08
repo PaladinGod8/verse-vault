@@ -21,7 +21,8 @@ env:
   ELECTRON_RUN_AS_NODE: ''
   PLAYWRIGHT_HTML_OPEN: never
   NODE_VERSION: '20'
-  YARN_ENABLE_GLOBAL_CACHE: 'true'
+  YARN_ENABLE_GLOBAL_CACHE: 'false'
+  YARN_CACHE_FOLDER: ${{ github.workspace }}\.yarn-cache
 
 defaults:
   run:
@@ -64,9 +65,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-v2-
 
       - name: Enable Yarn via Corepack
         run: |
@@ -143,9 +144,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-v2-
 
       - name: Enable Yarn via Corepack
         run: |
@@ -223,9 +224,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-v2-
 
       - name: Enable Yarn via Corepack
         run: |
@@ -298,9 +299,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-v2-
 
       - name: Enable Yarn via Corepack
         run: |
