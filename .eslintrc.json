@@ -18,6 +18,51 @@
     "import/no-unresolved": [
       "error",
       { "ignore": ["@tailwindcss/vite", "vitest/config"] }
+    ],
+    "import/no-restricted-paths": [
+      "error",
+      {
+        "zones": [
+          {
+            "target": "src/renderer",
+            "from": "src/main.ts",
+            "message": "Renderer must not import from main process."
+          },
+          {
+            "target": "src/renderer",
+            "from": "src/main",
+            "message": "Renderer must not import from main process modules."
+          },
+          {
+            "target": "src/renderer",
+            "from": "src/database",
+            "message": "Renderer must not import from database modules. Use window.db instead."
+          },
+          {
+            "target": "src/preload.ts",
+            "from": "src/renderer",
+            "message": "Preload must not import from renderer."
+          }
+        ]
+      }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/renderer/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "message": "Do not import electron in renderer. Use window.db for IPC."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }
