@@ -126,6 +126,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps
 ```
 
 Notes:
+
 - `start` / `stop` / `restart` auto-request elevation (UAC) when needed.
 - If your PowerShell profile blocks `yarn.ps1`, prefer `cmd /c yarn ...` as shown above.
 
