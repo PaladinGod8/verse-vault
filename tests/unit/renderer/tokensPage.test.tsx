@@ -3,6 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TokensPage from '../../../src/renderer/pages/TokensPage';
+import {
+  buildCampaign as buildCampaignFactory,
+  buildToken as buildTokenFactory,
+  buildWorld as buildWorldFactory,
+  resetFactoryIds,
+} from '../../helpers/factories';
+import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
 
 if (!('createObjectURL' in URL)) {
   Object.defineProperty(URL, 'createObjectURL', {
@@ -147,34 +154,28 @@ const tokensDeleteMock = vi.fn();
 const campaignsGetAllByWorldMock = vi.fn();
 
 function buildWorld(overrides: Partial<World> = {}): World {
-  return {
+  return buildWorldFactory({
     id: 1,
     name: 'Arcadia',
-    thumbnail: null,
-    short_description: null,
-    last_viewed_at: null,
-    config: '{}',
     created_at: '2026-03-01 00:00:00',
     updated_at: '2026-03-01 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
-  return {
+  return buildCampaignFactory({
     id: 10,
     world_id: 1,
     name: 'Main Campaign',
-    summary: null,
-    config: '{}',
     created_at: '2026-03-01 00:00:00',
     updated_at: '2026-03-01 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function buildToken(overrides: Partial<Token> = {}): Token {
-  return {
+  return buildTokenFactory({
     id: 1,
     world_id: 1,
     campaign_id: null,
@@ -186,7 +187,7 @@ function buildToken(overrides: Partial<Token> = {}): Token {
     created_at: '2026-03-01 00:00:00',
     updated_at: '2026-03-02 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function renderTokensPage(path = '/world/1/tokens') {
@@ -202,96 +203,20 @@ function renderTokensPage(path = '/world/1/tokens') {
 describe('TokensPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetFactoryIds();
 
-    window.db = {
-      verses: {
-        getAll: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      levels: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      abilities: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        addChild: vi.fn(),
-        removeChild: vi.fn(),
-        getChildren: vi.fn(),
-      },
-      worlds: {
-        getAll: vi.fn(),
-        getById: worldsGetByIdMock,
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      campaigns: {
-        getAllByWorld: campaignsGetAllByWorldMock,
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      battlemaps: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      tokens: {
-        getAllByWorld: tokensGetAllByWorldMock,
-        getAllByCampaign: vi.fn(),
-        getById: vi.fn(),
-        importImage: tokensImportImageMock,
-        add: tokensAddMock,
-        update: tokensUpdateMock,
-        delete: tokensDeleteMock,
-      },
-      arcs: {
-        getAllByCampaign: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      acts: {
-        getAllByArc: vi.fn(),
-        getAllByCampaign: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      sessions: {
-        getAllByAct: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      scenes: {
-        getAllByCampaign: vi.fn(),
-        getAllBySession: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-    } as unknown as DbApi;
+    const mockDb = setupWindowDb();
+    resetWindowDb();
+    mockDb.worlds.getById = worldsGetByIdMock as typeof mockDb.worlds.getById;
+    mockDb.campaigns.getAllByWorld =
+      campaignsGetAllByWorldMock as typeof mockDb.campaigns.getAllByWorld;
+    mockDb.tokens.getAllByWorld =
+      tokensGetAllByWorldMock as typeof mockDb.tokens.getAllByWorld;
+    mockDb.tokens.importImage =
+      tokensImportImageMock as typeof mockDb.tokens.importImage;
+    mockDb.tokens.add = tokensAddMock as typeof mockDb.tokens.add;
+    mockDb.tokens.update = tokensUpdateMock as typeof mockDb.tokens.update;
+    mockDb.tokens.delete = tokensDeleteMock as typeof mockDb.tokens.delete;
   });
 
   it('renders loading state, table columns, scope labels, and copy action visibility', async () => {

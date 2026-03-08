@@ -2,6 +2,14 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BattleMapRuntimePage from '../../../src/renderer/pages/BattleMapRuntimePage';
+import {
+  buildAbility,
+  buildBattleMap as buildBattleMapFactory,
+  buildCampaign as buildCampaignFactory,
+  buildToken as buildTokenFactory,
+  resetFactoryIds,
+} from '../../helpers/factories';
+import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
 
 const routerMockState = vi.hoisted(() => ({
   beforeUnloadHandler: null as
@@ -298,28 +306,15 @@ vi.mock('../../../src/renderer/components/runtime/AbilityPickerPanel', () => ({
     castingAbility: Ability | null;
     onAbilitySelect: (ability: Ability | null) => void;
   }) => {
-    const castableAbility: Ability = {
+    const castableAbility = buildAbility({
       id: 901,
       world_id: 1,
       name: 'Castable Bolt',
-      description: null,
-      type: 'active',
-      passive_subtype: null,
-      level_id: null,
-      effects: '[]',
-      conditions: '[]',
-      cast_cost: '{}',
-      trigger: null,
-      pick_count: null,
-      pick_timing: null,
-      pick_is_permanent: 0,
       range_cells: 6,
       aoe_shape: 'line',
       aoe_size_cells: 1,
       target_type: 'tile',
-      created_at: '2026-03-05 00:00:00',
-      updated_at: '2026-03-05 00:00:00',
-    };
+    });
 
     return (
       <div data-testid='ability-picker-panel'>
@@ -364,28 +359,15 @@ vi.mock('../../../src/renderer/components/runtime/StatBlockPopup', () => ({
           <button
             type='button'
             onClick={() =>
-              onAbilitySelect({
+              onAbilitySelect(buildAbility({
                 id: 990,
                 world_id: 1,
                 name: 'Popup Cast',
-                description: null,
-                type: 'active',
-                passive_subtype: null,
-                level_id: null,
-                effects: '[]',
-                conditions: '[]',
-                cast_cost: '{}',
-                trigger: null,
-                pick_count: null,
-                pick_timing: null,
-                pick_is_permanent: 0,
                 range_cells: 7,
                 aoe_shape: 'circle',
                 aoe_size_cells: 2,
                 target_type: 'tile',
-                created_at: '2026-03-05 00:00:00',
-                updated_at: '2026-03-05 00:00:00',
-              })}
+              }))}
           >
             Pick Popup Ability
           </button>
@@ -404,7 +386,7 @@ const tokensGetAllByWorldMock = vi.fn();
 const tokensGetAllByCampaignMock = vi.fn();
 
 function buildBattleMap(overrides: Partial<BattleMap> = {}): BattleMap {
-  return {
+  return buildBattleMapFactory({
     id: 61,
     world_id: 1,
     name: 'Dungeon Grid',
@@ -412,11 +394,11 @@ function buildBattleMap(overrides: Partial<BattleMap> = {}): BattleMap {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
-  return {
+  return buildCampaignFactory({
     id: 31,
     world_id: 1,
     name: 'Campaign One',
@@ -425,11 +407,11 @@ function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function buildToken(overrides: Partial<Token> = {}): Token {
-  return {
+  return buildTokenFactory({
     id: 71,
     world_id: 1,
     campaign_id: 31,
@@ -441,7 +423,7 @@ function buildToken(overrides: Partial<Token> = {}): Token {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function renderRuntimePage(path: string) {
@@ -467,104 +449,20 @@ describe('BattleMapRuntimePage', () => {
     vi.clearAllMocks();
     routerMockState.beforeUnloadHandler = null;
     vi.restoreAllMocks();
+    resetFactoryIds();
 
-    window.db = {
-      verses: {
-        getAll: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      levels: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      abilities: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        addChild: vi.fn(),
-        removeChild: vi.fn(),
-        getChildren: vi.fn(),
-      },
-      worlds: {
-        getAll: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      campaigns: {
-        getAllByWorld: campaignsGetAllByWorldMock,
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      battlemaps: {
-        getAllByWorld: vi.fn(),
-        getById: battlemapsGetByIdMock,
-        add: vi.fn(),
-        update: battlemapsUpdateMock,
-        delete: vi.fn(),
-      },
-      tokens: {
-        getAllByWorld: tokensGetAllByWorldMock,
-        getAllByCampaign: tokensGetAllByCampaignMock,
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      arcs: {
-        getAllByCampaign: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      acts: {
-        getAllByArc: vi.fn(),
-        getAllByCampaign: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      sessions: {
-        getAllByAct: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      scenes: {
-        getAllByCampaign: vi.fn(),
-        getAllBySession: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      statblocks: {
-        getAllByWorld: vi.fn(),
-        getLinkedStatblock: vi.fn(),
-        listAbilities: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-    } as unknown as DbApi;
+    const mockDb = setupWindowDb();
+    resetWindowDb();
+    mockDb.campaigns.getAllByWorld =
+      campaignsGetAllByWorldMock as typeof mockDb.campaigns.getAllByWorld;
+    mockDb.battlemaps.getById =
+      battlemapsGetByIdMock as typeof mockDb.battlemaps.getById;
+    mockDb.battlemaps.update =
+      battlemapsUpdateMock as typeof mockDb.battlemaps.update;
+    mockDb.tokens.getAllByWorld =
+      tokensGetAllByWorldMock as typeof mockDb.tokens.getAllByWorld;
+    mockDb.tokens.getAllByCampaign =
+      tokensGetAllByCampaignMock as typeof mockDb.tokens.getAllByCampaign;
 
     campaignsGetAllByWorldMock.mockResolvedValue([]);
     tokensGetAllByWorldMock.mockResolvedValue([]);

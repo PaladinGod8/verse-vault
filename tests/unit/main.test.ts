@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPC } from '../../src/shared/ipcChannels';
+import {
+  buildAbility,
+  buildStatBlock,
+  buildToken,
+  resetFactoryIds,
+} from '../helpers/factories';
 
 type EventHandler = (...args: unknown[]) => unknown;
 type IpcHandler = (...args: unknown[]) => unknown;
@@ -139,6 +145,7 @@ describe('main process', () => {
   const originalPlatform = process.platform;
 
   beforeEach(() => {
+    resetFactoryIds();
     Object.defineProperty(process, 'platform', {
       value: originalPlatform,
       configurable: true,
@@ -2390,7 +2397,7 @@ describe('main process', () => {
   });
 
   it('handles statblock linkage and assignment IPC success and validation errors', async () => {
-    const statblockRow: StatBlock = {
+    const statblockRow = buildStatBlock({
       id: 91,
       world_id: 1,
       campaign_id: null,
@@ -2401,8 +2408,8 @@ describe('main process', () => {
       config: '{}',
       created_at: '2026-01-01 00:00:00',
       updated_at: '2026-01-01 00:00:00',
-    };
-    const linkedTokenRow: Token = {
+    });
+    const linkedTokenRow = buildToken({
       id: 71,
       world_id: 1,
       campaign_id: 31,
@@ -2413,8 +2420,8 @@ describe('main process', () => {
       is_visible: 1,
       created_at: '2026-01-01 00:00:00',
       updated_at: '2026-01-02 00:00:00',
-    };
-    const linkedAbilityRow: Ability = {
+    });
+    const linkedAbilityRow = buildAbility({
       id: 21,
       world_id: 1,
       name: 'Quick Slash',
@@ -2435,7 +2442,7 @@ describe('main process', () => {
       target_type: null,
       created_at: '2026-01-01 00:00:00',
       updated_at: '2026-01-02 00:00:00',
-    };
+    });
 
     const statblocksByIdGetMock = vi.fn((id: number) => {
       if (id === 404) {

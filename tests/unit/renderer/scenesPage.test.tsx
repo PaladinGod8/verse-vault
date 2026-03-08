@@ -4,6 +4,12 @@ import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ScenesPage from '../../../src/renderer/pages/ScenesPage';
+import {
+  buildScene as buildSceneFactory,
+  buildSession as buildSessionFactory,
+  resetFactoryIds,
+} from '../../helpers/factories';
+import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
@@ -99,7 +105,7 @@ const arcsGetAllByCampaignMock = vi.fn();
 const actsGetAllByCampaignMock = vi.fn();
 
 function buildSession(overrides: Partial<Session> = {}): Session {
-  return {
+  return buildSessionFactory({
     id: 1,
     act_id: 1,
     name: 'Session One',
@@ -109,11 +115,11 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function buildScene(overrides: Partial<Scene> = {}): Scene {
-  return {
+  return buildSceneFactory({
     id: 1,
     session_id: 1,
     name: 'The Opening',
@@ -123,7 +129,7 @@ function buildScene(overrides: Partial<Scene> = {}): Scene {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function renderScenesPage(path: string) {
@@ -169,81 +175,25 @@ function getRenderedSceneNumbers() {
 describe('ScenesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetFactoryIds();
     setDragEndEvent(1, 2);
 
-    window.db = {
-      verses: {
-        getAll: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      levels: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      abilities: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        addChild: vi.fn(),
-        removeChild: vi.fn(),
-        getChildren: vi.fn(),
-      },
-      worlds: {
-        getAll: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      campaigns: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      arcs: {
-        getAllByCampaign: arcsGetAllByCampaignMock,
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      acts: {
-        getAllByArc: vi.fn(),
-        getAllByCampaign: actsGetAllByCampaignMock,
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      sessions: {
-        getAllByCampaign: vi.fn(),
-        getAllByAct: sessionsGetAllByActMock,
-        getById: sessionsGetByIdMock,
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      scenes: {
-        getAllBySession: scenesGetAllBySessionMock,
-        getById: vi.fn(),
-        add: scenesAddMock,
-        update: scenesUpdateMock,
-        delete: scenesDeleteMock,
-        moveTo: scenesMoveToMock,
-      },
-    } as unknown as DbApi;
+    const mockDb = setupWindowDb();
+    resetWindowDb();
+    mockDb.arcs.getAllByCampaign =
+      arcsGetAllByCampaignMock as typeof mockDb.arcs.getAllByCampaign;
+    mockDb.acts.getAllByCampaign =
+      actsGetAllByCampaignMock as typeof mockDb.acts.getAllByCampaign;
+    mockDb.sessions.getAllByAct =
+      sessionsGetAllByActMock as typeof mockDb.sessions.getAllByAct;
+    mockDb.sessions.getById =
+      sessionsGetByIdMock as typeof mockDb.sessions.getById;
+    mockDb.scenes.getAllBySession =
+      scenesGetAllBySessionMock as typeof mockDb.scenes.getAllBySession;
+    mockDb.scenes.add = scenesAddMock as typeof mockDb.scenes.add;
+    mockDb.scenes.update = scenesUpdateMock as typeof mockDb.scenes.update;
+    mockDb.scenes.delete = scenesDeleteMock as typeof mockDb.scenes.delete;
+    mockDb.scenes.moveTo = scenesMoveToMock as typeof mockDb.scenes.moveTo;
   });
 
   it('shows error when world id is invalid', async () => {
