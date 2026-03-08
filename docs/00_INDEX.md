@@ -67,7 +67,7 @@ Notes:
 
 ```bash
 gh run list -R PaladinGod8/verse-vault --limit 10
-gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --limit 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --exit-status
+gh run watch -R PaladinGod8/verse-vault --compact --exit-status
 ```
 
 ## Product Direction

@@ -134,8 +134,11 @@ Notes:
 # list recent runs
 gh run list -R PaladinGod8/verse-vault --limit 10
 
-# watch latest in-progress run live
-gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --limit 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --exit-status
+# watch the latest run live (compact output)
+gh run watch -R PaladinGod8/verse-vault --compact --exit-status
+
+# optional: watch only if a run is already in_progress
+gh run watch "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --compact --exit-status
 ```
 
 ## Local Development
