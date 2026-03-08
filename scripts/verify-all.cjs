@@ -102,16 +102,21 @@ function runCommand(cmd, commandArgs, options = {}) {
   const stderrPath = path.join(commandDir, 'stderr.log');
   const combinedPath = path.join(commandDir, 'combined.log');
 
+  const stdioMode = options.interactive ? 'inherit' : 'pipe';
   const result = spawnSync(cmd, commandArgs, {
-    stdio: 'pipe',
+    stdio: stdioMode,
     shell: process.platform === 'win32',
     env: { ...process.env, ...(options.env || {}) },
     encoding: 'utf8',
     timeout: options.timeout || 10 * 60 * 1000, // 10 minutes default
   });
 
-  const stdout = typeof result.stdout === 'string' ? result.stdout : '';
-  const stderr = typeof result.stderr === 'string' ? result.stderr : '';
+  const stdout = stdioMode === 'pipe' && typeof result.stdout === 'string'
+    ? result.stdout
+    : '';
+  const stderr = stdioMode === 'pipe' && typeof result.stderr === 'string'
+    ? result.stderr
+    : '';
   const combined = `${stdout}${stderr}`;
 
   fs.writeFileSync(stdoutPath, stdout, 'utf8');
@@ -403,7 +408,7 @@ steps.push(
 if (runDev) {
   steps.push({
     name: 'Start dev app (close the Electron window to finish)',
-    run: () => runCommand(yarnCmd, ['dev']),
+    run: () => runCommand(yarnCmd, ['dev'], { interactive: true }),
   });
 }
 
