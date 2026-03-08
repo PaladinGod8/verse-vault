@@ -16,6 +16,8 @@ yarn format         # auto-format with dprint
 yarn verify:rapid      # fast local preflight (parallel checks)
 yarn verify:all        # strict local gate (sequential full checks)
 yarn verify:all:dev    # strict gate + launches dev app at the end
+yarn test:e2e:local    # e2e with default Playwright worker cap
+yarn test:e2e:local:8  # local-only e2e with PLAYWRIGHT_WORKERS=8
 ```
 
 Use `verify:rapid` during iteration, then `verify:all` before push/PR.

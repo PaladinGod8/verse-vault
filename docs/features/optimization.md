@@ -178,19 +178,29 @@ its own isolated database.
 ### I want more Playwright parallelization
 
 Each worker launches a full Electron process (~200–400 MB RAM). Playwright defaults to CPU-based
-worker allocation. To override:
+worker allocation. This repository defaults to 2 workers in `playwright.config.ts`, and supports
+local overrides via `PLAYWRIGHT_WORKERS`.
+
+To override locally:
 
 ```typescript
 // In playwright.config.ts
 export default defineConfig({
-  workers: process.env.CI ? 1 : undefined, // explicit override
+  workers: workerCount, // from PLAYWRIGHT_WORKERS, fallback to 2
   // ...
 });
 ```
 
-For local development, leave `workers` undefined (Playwright auto-scales). On a 16 GB machine,
-tests should run stably with default settings. Monitor resource usage with Task Manager if you
-see flakiness.
+Windows command examples:
+
+```bash
+yarn test:e2e:local
+yarn test:e2e:local:8
+set PLAYWRIGHT_WORKERS=8&& yarn test:e2e:local
+```
+
+Use higher values only for local development. Keep CI on the default capped value for stability.
+Monitor Task Manager for CPU, memory, and disk saturation when tuning worker count.
 
 ### I want to measure the improvement
 
@@ -456,3 +466,4 @@ The following are **explicitly out of scope** for this optimization:
 - **`tests/unit/`** — Unit test files (parallel-safe)
 - **`tests/e2e/`** — E2E test files (parallel-safe with isolation)
 - **`tests/e2e/helpers/launchApp.ts`** — App launcher with `--user-data-dir` isolation
+
