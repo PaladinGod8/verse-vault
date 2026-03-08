@@ -25,7 +25,7 @@ function buildLevel(overrides?: Record<string, unknown>) {
     world_id: 10,
     name: 'Level One',
     category: 'dungeon',
-    description: null,
+    description: null as null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,

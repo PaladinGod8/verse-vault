@@ -24,7 +24,7 @@ function buildScene(overrides?: Record<string, unknown>) {
     id: 1,
     session_id: 3,
     name: 'Scene One',
-    notes: null,
+    notes: null as null,
     payload: '{}',
     sort_order: 0,
     created_at: '2026-01-01',

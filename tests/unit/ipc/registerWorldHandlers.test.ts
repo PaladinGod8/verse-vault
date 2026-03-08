@@ -35,10 +35,10 @@ function buildWorld(overrides?: Record<string, unknown>) {
   return {
     id: 1,
     name: 'Test World',
-    thumbnail: null,
-    short_description: null,
+    thumbnail: null as null,
+    short_description: null as null,
     config: '{}',
-    last_viewed_at: null,
+    last_viewed_at: null as null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,

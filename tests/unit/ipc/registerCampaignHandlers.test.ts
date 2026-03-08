@@ -24,7 +24,7 @@ function buildCampaign(overrides?: Record<string, unknown>) {
     id: 1,
     world_id: 10,
     name: 'Test Campaign',
-    summary: null,
+    summary: null as null,
     config: '{}',
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
