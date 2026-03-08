@@ -279,6 +279,28 @@ function finalizeAndPrune() {
   }
 }
 
+function printFailureLogHints() {
+  const latestExists = fs.existsSync(latestLogPath);
+  const runExists = fs.existsSync(runLogPath);
+  const preferredLogPath = latestExists ? latestLogPath : runLogPath;
+
+  process.stderr.write('\n[verify-all] Pipeline failed.\n');
+  process.stderr.write(`[verify-all] Latest pipeline log: ${latestLogPath}\n`);
+  process.stderr.write(`[verify-all] Current run log: ${runLogPath}\n`);
+
+  if (preferredLogPath) {
+    process.stderr.write(
+      `[verify-all] View tail now: powershell -Command "Get-Content -Path '${preferredLogPath}' -Tail 200"\n`,
+    );
+  }
+
+  if (!latestExists && !runExists) {
+    process.stderr.write(
+      '[verify-all] Warning: expected log files do not exist yet (finalization may have failed).\n',
+    );
+  }
+}
+
 function failRun(stepName, exitCode = 1) {
   runMeta.status = 'failed';
   runMeta.failedStep = stepName ? { name: stepName } : null;
@@ -288,6 +310,7 @@ function failRun(stepName, exitCode = 1) {
     const message = error instanceof Error ? error.stack || error.message : String(error);
     process.stderr.write(`[verify-all] Finalization error: ${message}\n`);
   }
+  printFailureLogHints();
   process.exit(exitCode);
 }
 
