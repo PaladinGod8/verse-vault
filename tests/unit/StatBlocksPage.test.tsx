@@ -12,6 +12,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import StatBlocksPage from '../../src/renderer/pages/StatBlocksPage';
+import {
+  buildStatBlock as buildStatBlockFactory,
+  buildWorld as buildWorldFactory,
+  resetFactoryIds,
+} from '../helpers/factories';
+import { resetWindowDb, setupWindowDb } from '../helpers/ipcMock';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
@@ -60,33 +66,26 @@ vi.mock('../../src/renderer/components/ui/ModalShell', () => ({
 }));
 
 function buildWorld(overrides: Partial<World> = {}): World {
-  return {
+  return buildWorldFactory({
     id: 1,
     name: 'Test World',
-    thumbnail: null,
-    short_description: null,
-    last_viewed_at: null,
-    config: '{}',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
-  };
+  });
 }
 
 function buildStatBlock(overrides: Partial<StatBlock> = {}): StatBlock {
-  return {
+  return buildStatBlockFactory({
     id: 1,
     world_id: 1,
-    campaign_id: null,
-    character_id: null,
     name: 'Barbarian',
-    default_token_id: null,
     description: 'A strong character',
     config: '{}',
     created_at: '2026-03-05T00:00:00Z',
     updated_at: '2026-03-05T00:00:00Z',
     ...overrides,
-  };
+  });
 }
 
 function renderPage(worldId: number | string | null = 1) {
@@ -117,31 +116,29 @@ describe('StatBlocksPage', () => {
   beforeEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    resetFactoryIds();
     user = userEvent.setup({ delay: null });
 
-    window.db = {
-      worlds: {
-        getAll: vi.fn(),
-        getById: vi.fn().mockResolvedValue(buildWorld()),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      statblocks: {
-        getAllByWorld: vi.fn().mockResolvedValue([]),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        listAbilities: vi.fn().mockResolvedValue([]),
-        attachAbility: vi.fn().mockResolvedValue(undefined),
-        detachAbility: vi.fn().mockResolvedValue(undefined),
-      },
-      abilities: {
-        getAllByWorld: vi.fn().mockResolvedValue([]),
-      },
-    } as unknown as DbApi;
+    const mockDb = setupWindowDb();
+    resetWindowDb();
+    mockDb.worlds.getById = vi
+      .fn()
+      .mockResolvedValue(buildWorld()) as typeof mockDb.worlds.getById;
+    mockDb.statblocks.getAllByWorld = vi
+      .fn()
+      .mockResolvedValue([]) as typeof mockDb.statblocks.getAllByWorld;
+    mockDb.statblocks.listAbilities = vi
+      .fn()
+      .mockResolvedValue([]) as typeof mockDb.statblocks.listAbilities;
+    mockDb.statblocks.attachAbility = vi
+      .fn()
+      .mockResolvedValue(undefined) as typeof mockDb.statblocks.attachAbility;
+    mockDb.statblocks.detachAbility = vi
+      .fn()
+      .mockResolvedValue(undefined) as typeof mockDb.statblocks.detachAbility;
+    mockDb.abilities.getAllByWorld = vi
+      .fn()
+      .mockResolvedValue([]) as typeof mockDb.abilities.getAllByWorld;
   });
 
   describe('world parameter validation', () => {

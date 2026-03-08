@@ -4,6 +4,12 @@ import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SessionsPage from '../../../src/renderer/pages/SessionsPage';
+import {
+  buildAct as buildActFactory,
+  buildSession as buildSessionFactory,
+  resetFactoryIds,
+} from '../../helpers/factories';
+import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
@@ -95,7 +101,7 @@ const sessionsUpdateMock = vi.fn();
 const sessionsDeleteMock = vi.fn();
 
 function buildAct(overrides: Partial<Act> = {}): Act {
-  return {
+  return buildActFactory({
     id: 1,
     arc_id: 1,
     name: 'Act One',
@@ -103,11 +109,11 @@ function buildAct(overrides: Partial<Act> = {}): Act {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function buildSession(overrides: Partial<Session> = {}): Session {
-  return {
+  return buildSessionFactory({
     id: 1,
     act_id: 1,
     name: 'Session One',
@@ -117,7 +123,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,
-  };
+  });
 }
 
 function formatPlannedAtForAssertion(value: string): string {
@@ -183,79 +189,17 @@ function getRenderedPlannedAtValues() {
 describe('SessionsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetFactoryIds();
     setDragEndEvent(1, 2);
 
-    window.db = {
-      verses: {
-        getAll: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      levels: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      abilities: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        addChild: vi.fn(),
-        removeChild: vi.fn(),
-        getChildren: vi.fn(),
-      },
-      worlds: {
-        getAll: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      campaigns: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      arcs: {
-        getAllByCampaign: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      acts: {
-        getAllByArc: vi.fn(),
-        getAllByCampaign: vi.fn(),
-        getById: actsGetByIdMock,
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        moveTo: vi.fn(),
-      },
-      sessions: {
-        getAllByAct: sessionsGetAllByActMock,
-        getById: vi.fn(),
-        add: sessionsAddMock,
-        update: sessionsUpdateMock,
-        delete: sessionsDeleteMock,
-        moveTo: vi.fn(),
-      },
-      scenes: {
-        getAllBySession: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-    } as unknown as DbApi;
+    const mockDb = setupWindowDb();
+    resetWindowDb();
+    mockDb.acts.getById = actsGetByIdMock as typeof mockDb.acts.getById;
+    mockDb.sessions.getAllByAct =
+      sessionsGetAllByActMock as typeof mockDb.sessions.getAllByAct;
+    mockDb.sessions.add = sessionsAddMock as typeof mockDb.sessions.add;
+    mockDb.sessions.update = sessionsUpdateMock as typeof mockDb.sessions.update;
+    mockDb.sessions.delete = sessionsDeleteMock as typeof mockDb.sessions.delete;
   });
 
   it('shows error when world id is invalid', async () => {
