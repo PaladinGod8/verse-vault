@@ -48,7 +48,11 @@ Async and isolation checklist (fix before moving to Gate 3):
 
 - Every async mock call and user interaction is `await`ed.
 - Elements that appear after async operations use `findBy*` queries, not `getBy*`.
-- `vi.clearAllMocks()` and `window.db` re-assignment appear in `beforeEach`, not at module level.
+- `vi.clearAllMocks()` appears in `beforeEach`; use shared helpers where they reduce duplication:
+  - use `setupWindowDb()` / `resetWindowDb()` from `tests/helpers/ipcMock.ts` for substantial `window.db` setup/reset
+  - use entity builders from `tests/helpers/factories.ts` for repeated/full-shape row fixtures
+  - use `resetFactoryIds()` in `beforeEach` when deterministic ID ordering is required
+  - keep concise one-off inline literals/mocks when they are clearer
 - `userEvent.setup()` is called per-test or in `beforeEach`, never shared across tests.
 - No `setTimeout`, `sleep`, or fixed delays — only async queries and mock resolution.
 - Flag any test that hangs or has a flaky timing window and treat it as a bug.

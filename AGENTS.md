@@ -83,7 +83,12 @@ Unit tests (Vitest + React Testing Library):
 
 - Always `await` every async mock call and every async user interaction.
 - Use `findBy*` queries (not `getBy*`) when an element appears after an async operation — `findBy*` retries automatically and will not cause a hanging test.
-- Call `vi.clearAllMocks()` in `beforeEach`; also re-assign `window.db` in `beforeEach` so mock state never leaks between tests.
+- Use shared test helpers where they improve clarity and reduce duplication:
+  - use entity factories from `tests/helpers/factories.ts` (for example `buildWorld`, `buildToken`) for repeated/full-shape entity fixtures
+  - call `resetFactoryIds()` in `beforeEach` when deterministic IDs matter
+  - use `setupWindowDb()` from `tests/helpers/ipcMock.ts` when a test needs substantial `window.db` mocking
+  - call `resetWindowDb()` in `beforeEach` when using the harness to clear mock state between tests
+  - small one-off inline literals/mocks are acceptable when they are clearer than factory or harness setup
 - Instantiate `userEvent.setup()` inside each test or in `beforeEach` — never share a user-event instance across tests.
 - Wrap async state updates that happen outside React's event system in `act(async () => { ... })`.
 - Never use `setTimeout`, `sleep`, or raw delays — replace with proper async queries or mock resolution.
