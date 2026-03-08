@@ -29,6 +29,14 @@ Command reference: use `README.md` -> **Developer Workflow Commands** for the ca
 - [ ] Run `yarn verify:all` before push/PR (strict ordered gate: rebuild -> format/type/lint -> unit coverage -> package -> e2e)
 - [ ] If `verify:all` fails, fix only reported failures and rerun until green
 
+### Test Helper Conventions (for new or updated tests)
+
+- [ ] Prefer shared entity factories from `tests/helpers/factories.ts` (for example `buildWorld()`, `buildToken()`) when tests need repeated or full-shape entity fixtures
+- [ ] If deterministic factory IDs matter for assertions, call `resetFactoryIds()` in `beforeEach`
+- [ ] Prefer `setupWindowDb()` from `tests/helpers/ipcMock.ts` when tests require substantial `window.db` mocking; keep tiny one-off inline mocks when they are clearer
+- [ ] After `setupWindowDb()`, override only the specific mocked methods needed by the test
+- [ ] Call `resetWindowDb()` in `beforeEach` when using the IPC mock harness
+
 ### 4. Remote CI Paper Trail
 
 - [ ] Push branch and open PR to `main`
