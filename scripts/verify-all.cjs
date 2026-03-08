@@ -8,8 +8,11 @@ const yarnCmd = 'yarn';
 const args = new Set(process.argv.slice(2));
 const runInstall = args.has('--install');
 const runDev = !args.has('--no-dev');
+const preRunRetentionLimit = 3;
+const postRunRetentionLimit = 3;
 
 const baseLogDir = path.resolve(process.cwd(), 'scripts', 'logs', 'pipeline');
+const runsDir = path.join(baseLogDir, 'runs');
 const latestLogPath = path.join(baseLogDir, 'latest.log');
 const latestMetaPath = path.join(baseLogDir, 'latest.json');
 
@@ -28,12 +31,13 @@ function createRunId() {
 }
 
 const runId = createRunId();
-const runDir = path.join(baseLogDir, 'runs', runId);
+const runDir = path.join(runsDir, runId);
 const runLogPath = path.join(runDir, 'run.log');
 const runMetaPath = path.join(runDir, 'meta.json');
 
-fs.mkdirSync(runDir, { recursive: true });
-fs.writeFileSync(runLogPath, '', 'utf8');
+let isRunLogReady = false;
+let hasFinalized = false;
+let isShuttingDown = false;
 
 const runMeta = {
   runId,
@@ -51,6 +55,9 @@ const runMeta = {
 let currentStepMeta = null;
 
 function appendRunLog(text) {
+  if (!isRunLogReady) {
+    return;
+  }
   fs.appendFileSync(runLogPath, text, 'utf8');
 }
 
@@ -175,44 +182,67 @@ function sleep(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
+function removeDirectoryWithRetries(absolutePath) {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      fs.rmSync(absolutePath, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      const err = error;
+      const lockErrorCodes = ['EBUSY', 'EPERM', 'ENOTEMPTY'];
+
+      if (err && lockErrorCodes.includes(err.code)) {
+        if (attempt < 5) {
+          logLine(
+            `[verify-all] Cleanup retry ${attempt}/5 for locked path: ${absolutePath} (${err.code})`,
+          );
+          sleep(200 * attempt);
+          continue;
+        }
+
+        logLine(
+          `[verify-all] Skipping cleanup for locked path: ${absolutePath} (${err.code}).`,
+        );
+        return;
+      }
+
+      throw error;
+    }
+  }
+}
+
+function pruneRunDirectories(keepCount, reason) {
+  fs.mkdirSync(runsDir, { recursive: true });
+
+  const runDirectories = fs
+    .readdirSync(runsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right));
+
+  const excess = runDirectories.length - keepCount;
+  if (excess <= 0) {
+    return;
+  }
+
+  for (const runName of runDirectories.slice(0, excess)) {
+    const absolutePath = path.join(runsDir, runName);
+    logLine(`[verify-all] Pruning old run (${reason}): ${absolutePath}`);
+    removeDirectoryWithRetries(absolutePath);
+  }
+}
+
 function cleanDirectories(dirs) {
   for (const dir of dirs) {
     const absolute = path.resolve(process.cwd(), dir);
-    let removed = false;
-
-    for (let attempt = 1; attempt <= 5; attempt += 1) {
-      try {
-        fs.rmSync(absolute, { recursive: true, force: true });
-        removed = true;
-        break;
-      } catch (error) {
-        const err = error;
-        const lockErrorCodes = ['EBUSY', 'EPERM', 'ENOTEMPTY'];
-
-        if (err && lockErrorCodes.includes(err.code)) {
-          if (attempt < 5) {
-            logLine(
-              `[verify-all] Cleanup retry ${attempt}/5 for locked path: ${absolute} (${err.code})`,
-            );
-            sleep(200 * attempt);
-            continue;
-          }
-
-          logLine(
-            `[verify-all] Skipping cleanup for locked path: ${absolute} (${err.code}).`,
-          );
-          removed = true;
-          break;
-        }
-
-        throw error;
-      }
-    }
-
-    if (!removed) {
-      throw new Error(`[verify-all] Failed to clean directory: ${absolute}`);
-    }
+    removeDirectoryWithRetries(absolute);
   }
+}
+
+function initializeRunLogging() {
+  fs.mkdirSync(runDir, { recursive: true });
+  fs.writeFileSync(runLogPath, '', 'utf8');
+  isRunLogReady = true;
 }
 
 function finalizeRun() {
@@ -222,12 +252,60 @@ function finalizeRun() {
   fs.writeFileSync(latestMetaPath, JSON.stringify(runMeta, null, 2), 'utf8');
 }
 
+function finalizeAndPrune() {
+  if (hasFinalized) {
+    return;
+  }
+
+  hasFinalized = true;
+  let finalError = null;
+
+  try {
+    finalizeRun();
+  } catch (error) {
+    finalError = error;
+  }
+
+  try {
+    pruneRunDirectories(postRunRetentionLimit, 'post-run');
+  } catch (error) {
+    if (!finalError) {
+      finalError = error;
+    }
+  }
+
+  if (finalError) {
+    throw finalError;
+  }
+}
+
 function failRun(stepName, exitCode = 1) {
   runMeta.status = 'failed';
   runMeta.failedStep = stepName ? { name: stepName } : null;
-  finalizeRun();
+  try {
+    finalizeAndPrune();
+  } catch (error) {
+    const message = error instanceof Error ? error.stack || error.message : String(error);
+    process.stderr.write(`[verify-all] Finalization error: ${message}\n`);
+  }
   process.exit(exitCode);
 }
+
+function handleTerminationSignal(signalName) {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  logErrorLine(`[verify-all] Received ${signalName}. Finalizing and pruning before exit...`);
+  failRun(currentStepMeta ? currentStepMeta.name : `Interrupted (${signalName})`, 130);
+}
+
+fs.mkdirSync(runsDir, { recursive: true });
+pruneRunDirectories(preRunRetentionLimit, 'pre-run');
+initializeRunLogging();
+process.on('SIGINT', () => handleTerminationSignal('SIGINT'));
+process.on('SIGTERM', () => handleTerminationSignal('SIGTERM'));
 
 const steps = [];
 
@@ -326,7 +404,7 @@ try {
   runMeta.status = 'passed';
   runMeta.failedStep = null;
   logLine('\n[verify-all] Complete.');
-  finalizeRun();
+  finalizeAndPrune();
 } catch (error) {
   const message = error instanceof Error ? error.stack || error.message : String(error);
   logErrorLine(`[verify-all] Unhandled error: ${message}`);
