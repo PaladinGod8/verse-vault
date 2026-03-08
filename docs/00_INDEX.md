@@ -16,7 +16,8 @@ yarn format         # auto-format with dprint
 yarn verify:rapid      # fast local preflight (parallel checks)
 yarn verify:all        # strict local gate (sequential full checks)
 yarn verify:all:dev    # strict gate + launches dev app at the end
-yarn test:e2e:local    # e2e with default Playwright worker cap
+yarn test:e2e          # local e2e (packages first, then runs Playwright)
+yarn test:e2e:local    # local alias of test:e2e
 yarn test:e2e:local:8  # local-only e2e with PLAYWRIGHT_WORKERS=8
 ```
 
