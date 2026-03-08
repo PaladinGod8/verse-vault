@@ -162,4 +162,3 @@ Additional commands:
 - `.github/workflows/ci.yml` - workflow definition
 - `scripts/verify-all.cjs` - strict local sequential gate
 - `scripts/verify-rapid.cjs` - local parallel fast gate with cache fingerprinting
-

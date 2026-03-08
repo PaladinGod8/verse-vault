@@ -466,4 +466,3 @@ The following are **explicitly out of scope** for this optimization:
 - **`tests/unit/`** — Unit test files (parallel-safe)
 - **`tests/e2e/`** — E2E test files (parallel-safe with isolation)
 - **`tests/e2e/helpers/launchApp.ts`** — App launcher with `--user-data-dir` isolation
-
