@@ -69,6 +69,30 @@ This keeps PR feedback loops fast while retaining a strong full-lint safety net 
 
 Caching ESLint metadata reduces repeat lint cost across CI jobs and reruns without weakening strictness (`--max-warnings=0` remains enforced).
 
+## CI Pipeline
+
+Workflow file: `.github/workflows/ci.yml`
+
+### Trigger Filters
+
+CI runs on push/PR to `main`. Commits that only touch `docs/**`, `*.md`, or `.github/CODEOWNERS` are skipped via `paths-ignore`. Manual runs via `workflow_dispatch` always execute regardless of changed files.
+
+### Job Structure
+
+| Job                       | Depends on  | Purpose                                                |
+| ------------------------- | ----------- | ------------------------------------------------------ |
+| `bootstrap`               | -           | Checkout, setup, install, rebuild                      |
+| `fast-checks` (matrix x4) | `bootstrap` | Format, typecheck, lint, unit coverage (parallel)      |
+| `package`                 | `bootstrap` | `yarn package` -> `out/` artifact                      |
+| `e2e`                     | `package`   | Playwright E2E against packaged artifact               |
+| `ci-summary`              | all         | Fails the pipeline if any upstream job reports failure |
+
+### Optimizations
+
+- **`fetch-depth: 1`** on all checkout steps - fetches only the tip commit. Safe because no CI job requires git history.
+- **Yarn download cache** - `actions/cache@v4` per job caches the Yarn tarball store (`yarn cache dir`), keyed by `runner.os + yarn.lock hash`. `yarn install` and `yarn postinstall` (electron-rebuild) still run every job; only the network download is skipped on a cache hit. `node_modules` is intentionally not cached because it contains the compiled `better-sqlite3.node` binary, which must be rebuilt fresh for the current Electron ABI.
+- **Existing tool cache** - `.vite` and `node_modules/.cache/eslint` are cached under a separate `toolcache` key keyed by lockfile + config hashes.
+
 ## Common Gotchas
 
 - **`better-sqlite3` must be rebuilt** after `yarn install` or Electron version bumps. `postinstall` handles this automatically, but Electron must not be running (Windows EPERM).

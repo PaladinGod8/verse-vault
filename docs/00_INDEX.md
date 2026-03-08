@@ -37,6 +37,12 @@ On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on t
 - `e2e` (after `package`)
 - `ci-summary` final status gate
 
+CI optimizations (applied to all jobs):
+
+- `fetch-depth: 1` on all checkout steps (tip commit only; no full history fetch)
+- `paths-ignore` on push/pull_request: commits touching only `docs/**`, `*.md`, or `.github/CODEOWNERS` skip CI
+- Yarn download cache: `actions/cache@v4` keyed by `runner.os + yarn.lock hash`; `node_modules` is NOT cached (native module safety)
+
 Primary debugging paper trail:
 
 - GitHub Actions workflow/job/step logs
