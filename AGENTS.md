@@ -134,6 +134,11 @@ Full pipeline:
 - `yarn verify:all`
 - `yarn verify:all:dev`
 
+One-off hook bypass commands (use sparingly):
+
+- `git commit --no-verify -m "<message>"`
+- `git push --no-verify origin`
+
 Unless the user asks otherwise, do not run long/full pipelines repeatedly when targeted checks are enough.
 
 ## Output Contract for Agents
