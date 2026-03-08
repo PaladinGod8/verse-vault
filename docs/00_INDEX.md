@@ -5,7 +5,9 @@
 ```bash
 yarn install        # installs deps + rebuilds native modules (postinstall)
 yarn start          # dev mode with hot reload
-yarn lint           # ESLint check
+yarn lint           # ESLint check (cached default, strict --max-warnings=0)
+yarn lint:full      # ESLint full uncached run (debug cache-related lint issues)
+yarn lint:changed   # ESLint changed-file mode (primarily CI pull_request path)
 yarn format:check   # dprint check (no writes)
 yarn format         # auto-format with dprint
 ```
@@ -25,9 +27,12 @@ Use `verify:rapid` during iteration, then `verify:all` before push/PR.
 
 ## GitHub Actions Paper Trail
 
-On push/PR to `main`, `.github/workflows/ci.yml` runs CI on the self-hosted runner:
+On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on the self-hosted runner:
 
 - `fast-checks` matrix (`format`, `typecheck`, `lint`, `unit`)
+  - Lint mode selection:
+    - `pull_request`: runs `yarn lint:changed` (PR diff-aware lint for faster feedback)
+    - `push`/`workflow_dispatch`: runs `yarn lint` (full strict lint gate)
 - `package`
 - `e2e` (after `package`)
 - `ci-summary` final status gate

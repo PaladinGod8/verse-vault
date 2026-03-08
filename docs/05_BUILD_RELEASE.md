@@ -52,6 +52,23 @@ yarn rebuild   # electron-rebuild -f -w better-sqlite3
 
 **Output directories**: `.vite/` (build cache/artifacts), `out/` (packaged app)
 
+## CI Lint Strategy
+
+CI uses event-aware lint execution to balance PR velocity with merge safety:
+
+- `pull_request` runs `yarn lint:changed` to lint only changed tracked `.ts/.tsx` files in the PR diff context.
+- `push` and `workflow_dispatch` run `yarn lint` to enforce a full strict repository lint gate before/at merge.
+
+This keeps PR feedback loops fast while retaining a strong full-lint safety net on branch integration paths.
+
+### ESLint Cache in CI
+
+- ESLint cache location: `node_modules/.cache/eslint/.eslintcache`
+- `yarn lint` and `yarn lint:changed` both use the same cache location.
+- `.github/workflows/ci.yml` restores/saves `node_modules/.cache/eslint` via `actions/cache`.
+
+Caching ESLint metadata reduces repeat lint cost across CI jobs and reruns without weakening strictness (`--max-warnings=0` remains enforced).
+
 ## Common Gotchas
 
 - **`better-sqlite3` must be rebuilt** after `yarn install` or Electron version bumps. `postinstall` handles this automatically, but Electron must not be running (Windows EPERM).

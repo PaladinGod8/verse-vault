@@ -23,7 +23,15 @@ function run(command, args, options = {}) {
 }
 
 function runGit(args) {
-  return run('git', args, { shell: true });
+  return run('git', args, { shell: false });
+}
+
+function runYarn(args, options = {}) {
+  if (process.platform === 'win32') {
+    const comSpec = process.env.ComSpec || 'cmd.exe';
+    return run(comSpec, ['/d', '/s', '/c', 'yarn', ...args], { ...options, shell: false });
+  }
+  return run('yarn', args, { ...options, shell: false });
 }
 
 function quoteForShell(value) {
@@ -131,7 +139,7 @@ function isTrackedExistingTypeScriptFile(filePath) {
 
 function runFullFallback(reason) {
   console.log(`[lint:changed] mode=full-fallback reason=${reason}`);
-  const fallback = run('yarn', ['lint'], { inherit: true, shell: true });
+  const fallback = runYarn(['lint'], { inherit: true });
   if (fallback.error) {
     console.error('[lint:changed] Failed to start "yarn lint".');
     console.error(fallback.error.message);
@@ -142,8 +150,7 @@ function runFullFallback(reason) {
 
 function runChangedFilesLint(files) {
   console.log(`[lint:changed] mode=changed-files count=${files.length}`);
-  const result = run(
-    'yarn',
+  const result = runYarn(
     [
       'eslint',
       '--cache',
@@ -152,7 +159,7 @@ function runChangedFilesLint(files) {
       '--max-warnings=0',
       ...files,
     ],
-    { inherit: true, shell: true },
+    { inherit: true },
   );
 
   if (result.error) {
