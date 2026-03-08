@@ -30,7 +30,7 @@ defaults:
 
 jobs:
   bootstrap:
-    runs-on: self-hosted
+    runs-on: [self-hosted, ci]
     timeout-minutes: 20
 
     steps:
@@ -111,10 +111,11 @@ jobs:
 
   fast-checks:
     needs: bootstrap
-    runs-on: self-hosted
+    runs-on: [self-hosted, ci]
     timeout-minutes: 25
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         include:
           - id: format
@@ -220,7 +221,7 @@ jobs:
 
   package:
     needs: bootstrap
-    runs-on: self-hosted
+    runs-on: [self-hosted, ci, package]
     timeout-minutes: 30
 
     steps:
@@ -307,9 +308,14 @@ jobs:
           if-no-files-found: ignore
 
   e2e:
-    needs: package
-    runs-on: self-hosted
+    needs: [fast-checks, package]
+    runs-on: [self-hosted, ci]
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        shard: [1, 2, 3, 4, 5]
 
     steps:
       - name: Checkout
@@ -388,14 +394,14 @@ jobs:
           name: packaged-app
           path: out/
 
-      - name: Run e2e tests (reuse packaged artifact)
-        run: yarn test:e2e:ci
+      - name: Run e2e tests (reuse packaged artifact, shard ${{ matrix.shard }}/5)
+        run: yarn test:e2e:ci --shard=${{ matrix.shard }}/5
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 10
           if-no-files-found: ignore
@@ -403,7 +409,7 @@ jobs:
   ci-summary:
     if: always()
     needs: [fast-checks, package, e2e]
-    runs-on: self-hosted
+    runs-on: [self-hosted, ci]
     steps:
       - name: Fail if any CI job failed
         run: |
