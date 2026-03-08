@@ -387,8 +387,7 @@ steps.push(
     name: 'Run e2e tests',
     run: () => {
       cleanDirectories(['test-results', 'playwright-report']);
-      const playwrightWorkersForStep =
-        process.env.PLAYWRIGHT_WORKERS ?? (runDev ? '8' : undefined);
+      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS ?? (runDev ? '8' : undefined);
       return runCommand(yarnCmd, ['test:e2e'], {
         env: {
           PLAYWRIGHT_HTML_OPEN: 'never',
