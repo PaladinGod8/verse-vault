@@ -65,18 +65,28 @@ Recommended cadence:
 
 ## Self-Hosted Runner Ops (Windows)
 
-Use these PowerShell commands to manage all configured runners for this repo.
+Use repository-local scripts to manage all configured runners for this repo.
+Run from repository root (`c:\code\personal\verse-vault`):
+
+```bash
+cmd /c yarn runner:status
+cmd /c yarn runner:start
+cmd /c yarn runner:stop
+cmd /c yarn runner:restart
+```
+
+Direct PowerShell equivalent:
 
 ```powershell
-# show runner services
-Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
-
-# start all runners
-Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Where-Object Status -ne "Running" | Start-Service; Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
-
-# stop all runners
-Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Stop-Service -Force
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action status
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action start
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action stop
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action restart
 ```
+
+Notes:
+- `start` / `stop` / `restart` auto-request elevation (UAC) when needed.
+- If your PowerShell profile blocks `yarn.ps1`, prefer `cmd /c yarn ...` as shown above.
 
 ## GitHub Actions In Terminal
 

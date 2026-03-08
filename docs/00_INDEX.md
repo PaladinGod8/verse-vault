@@ -41,16 +41,27 @@ Primary debugging paper trail:
 
 ### Runner Operations (Windows PowerShell)
 
-```powershell
-# show runner services
-Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
+From repository root (`c:\code\personal\verse-vault`):
 
-# start all runners
-Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Where-Object Status -ne "Running" | Start-Service; Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Sort-Object Name | Format-Table Name,Status,StartType -AutoSize
-
-# stop all runners
-Get-Service "actions.runner.PaladinGod8-verse-vault.*" | Stop-Service -Force
+```bash
+cmd /c yarn runner:status
+cmd /c yarn runner:start
+cmd /c yarn runner:stop
+cmd /c yarn runner:restart
 ```
+
+Direct PowerShell equivalent:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action status
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action start
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action stop
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action restart
+```
+
+Notes:
+- `start` / `stop` / `restart` auto-request elevation (UAC) when needed.
+- If PowerShell execution policy blocks `yarn.ps1`, use `cmd /c yarn ...`.
 
 ### Watch Current CI Run (Terminal)
 
