@@ -56,12 +56,13 @@ describe('registerAbilityHandlers', () => {
   } = {}) {
     const defaultAbility = buildAbility();
     const runMock = vi.fn(() => ({ changes: 1, lastInsertRowid: 1 }));
+    const getAbilityById = options.getAbilityById;
 
     const prepareMock = vi.fn((sql: string) => {
       if (sql === 'SELECT * FROM abilities WHERE id = ?') {
         return {
-          get: options.getAbilityById
-            ? vi.fn((id: unknown) => options.getAbilityById!(id as number))
+          get: getAbilityById
+            ? vi.fn((id: unknown) => getAbilityById(id as number))
             : vi.fn(() =>
               'insertedAbility' in options
                 ? (options.insertedAbility === null ? undefined : options.insertedAbility)
@@ -71,9 +72,9 @@ describe('registerAbilityHandlers', () => {
       }
       if (sql === 'SELECT id, world_id FROM abilities WHERE id = ?') {
         return {
-          get: options.getAbilityById
+          get: getAbilityById
             ? vi.fn((id: unknown) => {
-              const a = options.getAbilityById!(id as number);
+              const a = getAbilityById(id as number);
               return a
                 ? { id: (a as { id: number; }).id, world_id: (a as { world_id: number; }).world_id }
                 : undefined;
@@ -169,7 +170,6 @@ describe('registerAbilityHandlers', () => {
       registerAbilityHandlers(db);
       const h = getHandlers();
       h[IPC.ABILITIES_ADD]({}, { world_id: 10, name: 'Slash', type: 'active' });
-      const runMock = vi.fn();
       // just verify no throw
       expect(true).toBe(true);
     });
@@ -428,7 +428,6 @@ describe('registerAbilityHandlers', () => {
       const db = createDbMock({ children: [childAbility] });
       vi.clearAllMocks();
       registerAbilityHandlers(db);
-      const h = getHandlers();
       // need to get the GET_CHILDREN handler which is the last one registered for children
       const freshHandlers = getHandlers();
       expect(freshHandlers[IPC.ABILITIES_GET_CHILDREN]({}, 1)).toEqual([childAbility]);
