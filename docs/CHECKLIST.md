@@ -49,6 +49,9 @@ Otherwise, skip the ADR.
 - Do not create new doc files outside `docs/` or outside the files listed in `docs/00_INDEX.md`
 - Do not hardcode IPC channel strings; always use `src/shared/ipcChannels.ts`
 - Do not import `ipcRenderer` directly in renderer code; use `window.db`
+- Do not import `electron` in renderer files — ESLint `no-restricted-imports` will error; route all IPC through `window.db`
+- Do not import from `src/main.ts`, `src/main/**`, or `src/database/**` in renderer files — ESLint `import/no-restricted-paths` enforces process-layer isolation; `src/shared/**` and `forge.env.d.ts` are unrestricted
+- Do not import from `src/renderer/**` in `src/preload.ts` — same boundary rule applies
 - Do not ship cloud-only flows for core features; preserve offline-first behavior
 - Do not commit generated artifacts — `dist/`, `out/`, `.vite/`, and `coverage/` are enforced by `.gitignore` and must never be staged or committed
 
