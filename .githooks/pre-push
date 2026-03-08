@@ -2,7 +2,7 @@
 
 LOG_DIR="scripts/logs/githooks"
 MAX_FAILURE_LOGS=3
-HOOK_NAME="pre-commit"
+HOOK_NAME="pre-push"
 LAST_STAGE_OUTPUT=""
 LAST_STAGE_COMMAND=""
 
@@ -51,10 +51,10 @@ persist_failure_log() {
   } >"$log_file"
 
   prune_failure_logs
-  echo "[pre-commit] Failure log written to $log_file"
+  echo "[pre-push] Failure log written to $log_file"
 }
 
-block_commit() {
+block_push() {
   stage_name="$1"
   status_code="$2"
   block_reason="$3"
@@ -64,36 +64,22 @@ block_commit() {
   exit "$status_code"
 }
 
-echo "[pre-commit] Running commit quality checks..."
+echo "[pre-push] Running formatter..."
 
 if command -v yarn >/dev/null 2>&1; then
-  echo "[pre-commit] 1/2 type-check"
-  run_stage yarn type-check
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "type-check" "$status" "[pre-commit] Commit blocked by type-check."
-  fi
-
-  echo "[pre-commit] 2/2 lint"
-  run_stage yarn lint
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "lint" "$status" "[pre-commit] Commit blocked by lint."
-  fi
+  run_stage yarn format
 else
-  echo "[pre-commit] 1/2 type-check"
-  run_stage node_modules/.bin/tsc --noEmit
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "type-check" "$status" "[pre-commit] Commit blocked by type-check."
-  fi
-
-  echo "[pre-commit] 2/2 lint"
-  run_stage node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "lint" "$status" "[pre-commit] Commit blocked by lint."
-  fi
+  run_stage node_modules/.bin/dprint fmt
 fi
 
+status=$?
+if [ "$status" -ne 0 ]; then
+  block_push "format" "$status" "[pre-push] Push blocked by formatter errors."
+fi
+
+if ! git diff --quiet -- .; then
+  block_push "format-dirty" 1 "[pre-push] Formatter updated files. Commit the formatting changes, then push again."
+fi
+
+echo "[pre-push] Formatting complete. Proceeding with push."
 exit 0
