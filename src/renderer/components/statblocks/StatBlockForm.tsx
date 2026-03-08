@@ -3,7 +3,6 @@ import type {
   PassiveScoreDefinition,
   ResourceStatisticDefinition,
   StatBlockStatisticsConfig,
-  WorldStatisticsConfig,
 } from '../../../shared/statisticsTypes';
 import {
   getPassiveScoreValue,
@@ -32,10 +31,14 @@ type StatBlockFormProps = {
   campaignId?: number | null;
   initialData?: StatBlock;
   availableAbilities: Ability[];
+  resourceDefinitions?: ResourceStatisticDefinition[];
+  passiveScoreDefinitions?: PassiveScoreDefinition[];
   initialAbilityIds?: number[];
   onSubmit: (data: StatBlockFormSubmitData) => Promise<void>;
   onCancel: () => void;
 };
+
+const EMPTY_ABILITY_IDS: number[] = [];
 
 export default function StatBlockForm({
   mode = 'create',
@@ -43,10 +46,13 @@ export default function StatBlockForm({
   campaignId,
   initialData,
   availableAbilities,
-  initialAbilityIds = [],
+  resourceDefinitions = [],
+  passiveScoreDefinitions = [],
+  initialAbilityIds,
   onSubmit,
   onCancel,
 }: StatBlockFormProps) {
+  const normalizedInitialAbilityIds = initialAbilityIds ?? EMPTY_ABILITY_IDS;
   const [name, setName] = useState(initialData?.name ?? '');
   const [description, setDescription] = useState(
     initialData?.description ?? '',
@@ -54,16 +60,10 @@ export default function StatBlockForm({
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
   const [skills, setSkills] = useState<StatBlockSkillValue[]>([]);
   const [selectedAbilityIds, setSelectedAbilityIds] = useState<number[]>(
-    initialAbilityIds,
+    normalizedInitialAbilityIds,
   );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [worldResources, setWorldResources] = useState<
-    ResourceStatisticDefinition[]
-  >([]);
-  const [worldPassiveScores, setWorldPassiveScores] = useState<
-    PassiveScoreDefinition[]
-  >([]);
   const [statisticsConfig, setStatisticsConfig] = useState<StatBlockStatisticsConfig | null>(null);
 
   const isEditMode = mode === 'edit';
@@ -75,45 +75,20 @@ export default function StatBlockForm({
     [availableAbilities, worldId],
   );
 
-  // Load world and extract statistics definitions
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadWorld = async () => {
-      try {
-        const existingWorld = await window.db.worlds.getById(worldId);
-        if (isMounted && existingWorld) {
-          try {
-            const worldConfig: WorldStatisticsConfig = JSON.parse(
-              existingWorld.config,
-            );
-            setWorldResources(worldConfig.statistics?.resources ?? []);
-            setWorldPassiveScores(worldConfig.statistics?.passiveScores ?? []);
-          } catch {
-            setWorldResources([]);
-            setWorldPassiveScores([]);
-          }
-        }
-      } catch {
-        if (isMounted) {
-          setWorldResources([]);
-          setWorldPassiveScores([]);
-        }
-      }
-    };
-
-    void loadWorld();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [worldId]);
+  const worldResources = useMemo(
+    () => resourceDefinitions,
+    [resourceDefinitions],
+  );
+  const worldPassiveScores = useMemo(
+    () => passiveScoreDefinitions,
+    [passiveScoreDefinitions],
+  );
 
   // Initialize form state for create/edit
   useEffect(() => {
     setName(initialData?.name ?? '');
     setDescription(initialData?.description ?? '');
-    setSelectedAbilityIds(initialAbilityIds);
+    setSelectedAbilityIds(normalizedInitialAbilityIds);
 
     if (mode === 'edit' && initialData?.config) {
       setBaseConfig(parseStatBlockConfigObject(initialData.config));
@@ -124,7 +99,7 @@ export default function StatBlockForm({
 
     setBaseConfig({});
     setSkills([]);
-  }, [mode, initialData, initialAbilityIds]);
+  }, [mode, initialData, normalizedInitialAbilityIds]);
 
   useEffect(() => {
     if (mode === 'create') {
@@ -416,6 +391,7 @@ export default function StatBlockForm({
               />
               <input
                 type='number'
+                aria-label={`Skill rank ${index + 1}`}
                 value={skill.rank}
                 onChange={(event) => {
                   const nextValue = Number(event.target.value);
