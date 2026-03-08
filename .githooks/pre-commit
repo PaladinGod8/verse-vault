@@ -64,36 +64,20 @@ block_commit() {
   exit "$status_code"
 }
 
-echo "[pre-commit] Running commit quality checks..."
+echo "[pre-commit] Running doc guards..."
 
-if command -v yarn >/dev/null 2>&1; then
-  echo "[pre-commit] 1/2 type-check"
-  run_stage yarn type-check
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "type-check" "$status" "[pre-commit] Commit blocked by type-check."
-  fi
+echo "[pre-commit] 1/2 guard-docs"
+run_stage node scripts/guard-docs.cjs
+status=$?
+if [ "$status" -ne 0 ]; then
+  block_commit "guard-docs" "$status" "[pre-commit] Commit blocked by guard-docs."
+fi
 
-  echo "[pre-commit] 2/2 lint"
-  run_stage yarn lint
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "lint" "$status" "[pre-commit] Commit blocked by lint."
-  fi
-else
-  echo "[pre-commit] 1/2 type-check"
-  run_stage node_modules/.bin/tsc --noEmit
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "type-check" "$status" "[pre-commit] Commit blocked by type-check."
-  fi
-
-  echo "[pre-commit] 2/2 lint"
-  run_stage node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
-  status=$?
-  if [ "$status" -ne 0 ]; then
-    block_commit "lint" "$status" "[pre-commit] Commit blocked by lint."
-  fi
+echo "[pre-commit] 2/2 guard-ipc-docs"
+run_stage node scripts/guard-ipc-docs.cjs
+status=$?
+if [ "$status" -ne 0 ]; then
+  block_commit "guard-ipc-docs" "$status" "[pre-commit] Commit blocked by guard-ipc-docs."
 fi
 
 exit 0
