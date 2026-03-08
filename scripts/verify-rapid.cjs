@@ -25,6 +25,7 @@ const TASKS = [
   { name: 'format', command: 'yarn', args: ['format:check'] },
   { name: 'typecheck', command: 'yarn', args: ['type-check'] },
   { name: 'lint', command: 'yarn', args: ['lint:cache'] },
+  { name: 'docs-lint', command: 'yarn', args: ['lint:docs'] },
   { name: 'unit', command: 'yarn', args: ['test:unit:quick'] },
 ];
 

@@ -23,6 +23,10 @@ function run(command, args, options = {}) {
 }
 
 function runGit(args) {
+  if (process.platform === 'win32') {
+    const comSpec = process.env.ComSpec || 'cmd.exe';
+    return run(comSpec, ['/d', '/s', '/c', 'git', ...args], { shell: false });
+  }
   return run('git', args, { shell: false });
 }
 
@@ -137,6 +141,17 @@ function isLintableFile(filePath) {
   return !trackedResult.error && trackedResult.status === 0;
 }
 
+function isTrackedMarkdownFile(filePath) {
+  if (!/\.md$/i.test(filePath)) {
+    return false;
+  }
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+  const trackedResult = runGit(['ls-files', '--error-unmatch', '--', filePath]);
+  return !trackedResult.error && trackedResult.status === 0;
+}
+
 function runFullFallback(reason) {
   console.log(`[lint:changed] mode=full-fallback reason=${reason}`);
   const fallback = runYarn(['lint'], { inherit: true });
@@ -165,10 +180,32 @@ function runChangedFilesLint(files) {
   if (result.error) {
     console.error('[lint:changed] Failed to start ESLint.');
     console.error(result.error.message);
-    process.exit(2);
+    return 2;
   }
 
-  process.exit(result.status ?? 1);
+  return result.status ?? 1;
+}
+
+function runMarkdownChangedLint() {
+  const markdownlint = runYarn(['lint:md:pr'], { inherit: true });
+  if (markdownlint.error) {
+    console.error('[lint:changed] Failed to start markdownlint-cli2.');
+    console.error(markdownlint.error.message);
+    process.exit(2);
+  }
+  if ((markdownlint.status ?? 1) !== 0) {
+    process.exit(markdownlint.status ?? 1);
+  }
+
+  const vale = runYarn(['lint:vale:pr'], { inherit: true });
+  if (vale.error) {
+    console.error('[lint:changed] Failed to start Vale.');
+    console.error(vale.error.message);
+    process.exit(2);
+  }
+  if ((vale.status ?? 1) !== 0) {
+    process.exit(vale.status ?? 1);
+  }
 }
 
 function main() {
@@ -191,12 +228,27 @@ function main() {
   }
 
   const filesToLint = changedFiles.filter(isLintableFile);
-  if (filesToLint.length === 0) {
+  const markdownFilesToLint = changedFiles.filter(isTrackedMarkdownFile);
+  if (filesToLint.length === 0 && markdownFilesToLint.length === 0) {
     console.log('[lint:changed] mode=changed-files no lintable file changes');
     process.exit(0);
   }
 
-  runChangedFilesLint(filesToLint);
+  if (filesToLint.length > 0) {
+    const eslintStatus = runChangedFilesLint(filesToLint);
+    if (eslintStatus !== 0) {
+      process.exit(eslintStatus);
+    }
+  } else {
+    console.log('[lint:changed] mode=changed-files no ESLint-target file changes');
+  }
+
+  if (markdownFilesToLint.length > 0) {
+    console.log(`[lint:changed] mode=changed-files markdown-count=${markdownFilesToLint.length}`);
+    runMarkdownChangedLint();
+  } else {
+    console.log('[lint:changed] mode=changed-files no markdown file changes');
+  }
 }
 
 main();
