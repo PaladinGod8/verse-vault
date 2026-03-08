@@ -124,6 +124,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps
 ```
 
 Notes:
+
 - `start` / `stop` / `restart` auto-request elevation (UAC) when needed.
 - This removes the old requirement to manually open an admin terminal and `cd` into `C:\code\action-runners\`.
 - If PowerShell execution policy blocks `yarn.ps1`, use `cmd /c yarn ...`.
