@@ -1,24 +1,82 @@
 #!/bin/sh
 
-echo "[pre-commit] Running staged docs guards..."
+echo "[pre-commit] Running commit quality checks..."
 
 if command -v yarn >/dev/null 2>&1; then
-  yarn guard:ipc-docs:staged
+  echo "[pre-commit] 1/4 format:check"
+  yarn format:check
   status=$?
   if [ "$status" -ne 0 ]; then
-    echo "[pre-commit] Commit blocked by IPC docs guard."
+    echo "[pre-commit] format:check failed. Applying yarn format and restaging staged files..."
+    staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+    yarn format
+    status=$?
+    if [ "$status" -ne 0 ]; then
+      echo "[pre-commit] Commit blocked by formatter errors."
+      exit "$status"
+    fi
+
+    printf '%s\n' "$staged_files" | while IFS= read -r path; do
+      [ -z "$path" ] && continue
+      [ -e "$path" ] && git add -- "$path"
+    done
+  fi
+
+  echo "[pre-commit] 2/4 type-check"
+  yarn type-check
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "[pre-commit] Commit blocked by type-check."
     exit "$status"
   fi
 
+  echo "[pre-commit] 3/4 lint"
+  yarn lint
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "[pre-commit] Commit blocked by lint."
+    exit "$status"
+  fi
+
+  echo "[pre-commit] 4/4 guard:docs:staged"
   yarn guard:docs:staged
 else
-  node scripts/guard-ipc-docs.cjs --staged
+  echo "[pre-commit] 1/4 format:check"
+  node_modules/.bin/dprint check
   status=$?
   if [ "$status" -ne 0 ]; then
-    echo "[pre-commit] Commit blocked by IPC docs guard."
+    echo "[pre-commit] format:check failed. Applying format and restaging staged files..."
+    staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+    node_modules/.bin/dprint fmt
+    status=$?
+    if [ "$status" -ne 0 ]; then
+      echo "[pre-commit] Commit blocked by formatter errors."
+      exit "$status"
+    fi
+
+    printf '%s\n' "$staged_files" | while IFS= read -r path; do
+      [ -z "$path" ] && continue
+      [ -e "$path" ] && git add -- "$path"
+    done
+  fi
+
+  echo "[pre-commit] 2/4 type-check"
+  node_modules/.bin/tsc --noEmit
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "[pre-commit] Commit blocked by type-check."
     exit "$status"
   fi
 
+  echo "[pre-commit] 3/4 lint"
+  node_modules/.bin/eslint --ext .ts,.tsx . --max-warnings=0
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "[pre-commit] Commit blocked by lint."
+    exit "$status"
+  fi
+
+  echo "[pre-commit] 4/4 guard:docs:staged"
   node scripts/guard-docs.cjs --staged
 fi
 
