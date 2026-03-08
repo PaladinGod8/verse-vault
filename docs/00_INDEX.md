@@ -27,6 +27,13 @@ yarn test:e2e:local:8  # local-only e2e with PLAYWRIGHT_WORKERS=8
 
 Use `verify:rapid` during iteration, then `verify:all` before push/PR.
 
+## One-off Git Hook Bypass (use sparingly)
+
+```bash
+git commit --no-verify -m "<message>"
+git push --no-verify origin
+```
+
 ## GitHub Actions Paper Trail
 
 On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on the self-hosted runner:

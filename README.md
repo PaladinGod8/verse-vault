@@ -34,6 +34,7 @@ When a commit contains only formatting changes (no behavior changes), you can us
 
 ```bash
 git commit --no-verify -m "<message>"
+git push --no-verify origin
 ```
 
 ## Development loop
@@ -123,6 +124,13 @@ Mode: High
 
 ```bash
 yarn guard:docs --staged
+```
+
+### One-off Git Hook Bypass (use sparingly)
+
+```bash
+git commit --no-verify -m "<message>"
+git push --no-verify origin
 ```
 
 If githook checks fail, this prompt is the standard recovery template:
