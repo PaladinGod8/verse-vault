@@ -132,6 +132,11 @@ Two local verification modes are available:
 
 - Full strict gate: `yarn verify:all`
 - Rapid fast gate: `yarn verify:rapid`
+- E2E local worker override examples:
+  - `yarn test:e2e:local` (default worker cap from `playwright.config.ts`)
+  - `yarn test:e2e:local:8` (sets `PLAYWRIGHT_WORKERS=8` locally)
+
+CI still runs `yarn test:e2e` with the config default worker cap for stability on self-hosted runners.
 
 ### Rapid mode details
 
@@ -157,3 +162,4 @@ Additional commands:
 - `.github/workflows/ci.yml` - workflow definition
 - `scripts/verify-all.cjs` - strict local sequential gate
 - `scripts/verify-rapid.cjs` - local parallel fast gate with cache fingerprinting
+

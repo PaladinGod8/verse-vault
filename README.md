@@ -21,6 +21,8 @@ yarn start     # dev mode with hot reload
 yarn lint      # ESLint
 yarn format    # dprint auto-format
 yarn test      # unit (Vitest) + e2e (Playwright)
+yarn test:e2e:local  # e2e using default worker cap from playwright.config.ts
+yarn test:e2e:local:8  # local-only e2e override with 8 workers
 yarn test:unit:coverage  # unit tests + v8 coverage report
 yarn guard:docs  # fail if architecture/map docs are missing for relevant code/config changes
 yarn guard:ipc-docs  # fail if IPC files changed without docs/03_IPC_CONTRACT.md updates
@@ -88,6 +90,9 @@ gh run watch "$(gh run list -R PaladinGod8/verse-vault --status in_progress --li
 
 # fast local preflight before push
 yarn verify:rapid
+
+# local e2e override for high-core machines
+yarn test:e2e:local:8
 ```
 
 Use VSCodeCounter on major changes.

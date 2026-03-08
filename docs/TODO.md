@@ -324,7 +324,7 @@ Priority caching opportunities based on verify-all.cjs analysis:
 
 **Test Suite Parallelism** (already optimized per docs/features/optimization.md)
 
-- [x] Unit tests: thread pool with minThreads:2, maxThreads:(cpus-1)
+- [x] Unit tests: forks pool with maxWorkers:(cpus-1, minimum 2)
 - [x] E2E tests: 2 Playwright workers with --user-data-dir isolation
 - [ ] Audit if additional test grouping/segmentation would improve parallel execution
 - [ ] Consider splitting long-running test files for better load distribution

@@ -79,7 +79,7 @@ Async and isolation checklist (required for every E2E test):
 - Every test wraps its body in `try/finally` and calls `closeApp(app, userDataDir)` in the `finally` block.
 - All waits use `waitForFunction`, `waitForSelector`, or `expect(locator).toBeVisible()` — never `page.waitForTimeout`.
 - After `launchApp()`, the test waits for a known stable UI element before asserting anything.
-- `smoke` and `medium` projects run with `fullyParallel: true` (up to 2 workers) — each test must be fully isolated with its own temp database directory.
+- `smoke` and `medium` projects run with `fullyParallel: true` (default cap: 2 workers, local override via `PLAYWRIGHT_WORKERS`) — each test must be fully isolated with its own temp database directory.
 - `runtime` project runs with `fullyParallel: false` — tests still must be stateless and order-independent.
 - No shared file-system paths, database files, or process-level state between tests or workers.
 - Any test that hangs, leaks an Electron process, or leaves a temp directory is treated as a bug and fixed before this gate can pass.
