@@ -19,6 +19,8 @@ const TOKEN_IMAGE_PROTOCOL = 'vv-media';
 const TOKEN_IMAGE_HOST = 'token-images';
 const WORLD_IMAGE_HOST = 'world-images';
 
+//TEST ME!
+
 function registerTokenImageProtocol(): void {
   protocol.handle(TOKEN_IMAGE_PROTOCOL, async (request) => {
     let requestUrl: URL;
