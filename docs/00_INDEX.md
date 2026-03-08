@@ -5,17 +5,12 @@ Test Me!
 ## Quick Start
 
 ```bash
-yarn install        # installs deps + rebuilds native modules (postinstall)
-yarn start          # dev mode with hot reload
-yarn lint           # Full lint gate (ESLint + markdownlint-cli2 + Vale)
-yarn lint:code      # ESLint check only (cached default, strict --max-warnings=0)
-yarn lint:full      # Full uncached lint gate (eslint full + docs lint)
-yarn lint:changed   # PR-diff changed-file mode (ESLint + tracked markdown lint)
-yarn lint:docs      # markdownlint-cli2 + Vale on tracked Markdown
-yarn lint:docs:list-partitions # list partition keys for targeted lint runs
-yarn format:check   # dprint check (no writes)
-yarn format         # auto-format with dprint
+yarn install
+yarn start
+yarn verify:rapid
 ```
+
+For complete setup, command reference, and troubleshooting, see [04_DEVELOPMENT.md](04_DEVELOPMENT.md).
 
 ## Workflow Gates
 
@@ -55,8 +50,10 @@ On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on t
 CI optimizations (applied to all jobs):
 
 - `fetch-depth: 1` on all checkout steps (tip commit only; no full history fetch)
-- no markdown/docs path-ignore: docs-only changes still run lint/test gates for standardized documentation quality
-- Yarn download cache: `actions/cache@v4` keyed by `runner.os + yarn.lock hash`; `node_modules` is NOT cached (native module safety)
+- no markdown/docs path-ignore: docs-only changes still run lint/test gates for
+  standardized documentation quality
+- Yarn download cache: `actions/cache@v4` keyed by `runner.os + yarn.lock hash`;
+  `node_modules` is NOT cached (native module safety)
 
 Primary debugging paper trail:
 
@@ -127,17 +124,21 @@ Core design intent:
 - [01_ARCHITECTURE.md](01_ARCHITECTURE.md) - data-flow diagram + security rules
 - [02_CODEBASE_MAP.md](02_CODEBASE_MAP.md) **(LIVING)** - where to change things
 - [03_IPC_CONTRACT.md](03_IPC_CONTRACT.md) **(LIVING)** - all IPC channels and payloads
+- [04_DEVELOPMENT.md](04_DEVELOPMENT.md) - local setup, command reference, troubleshooting
 - [05_BUILD_RELEASE.md](05_BUILD_RELEASE.md) - packaging and release
-- [06_AGENTIC_TESTING_QUALITY_GATE.md](06_AGENTIC_TESTING_QUALITY_GATE.md) - cross-agent final testing prompt
+- [06_AGENTIC_TESTING_QUALITY_GATE.md](06_AGENTIC_TESTING_QUALITY_GATE.md) -
+  cross-agent final testing prompt
 - [CHECKLIST.md](CHECKLIST.md) - feature workflow
 - [TODO.md](TODO.md) - roadmap and backlog
 - [adr/](adr/) - architectural decision records
 
 ## Key Facts
 
-- **Stack**: Electron 35 / React 19 / Vite 6 / TypeScript / better-sqlite3 12 / Tailwind CSS v4 / Zustand 5 / React Router 7
+- **Stack**: Electron 35 / React 19 / Vite 6 / TypeScript / better-sqlite3 12 /
+  Tailwind CSS v4 / Zustand 5 / React Router 7
 - **DB file location**: `%APPDATA%\\Verse Vault\\verse-vault.db` (Windows userData)
 - **Routing**: HashRouter (no web server needed)
 - **Client state**: Zustand stores in `src/store/` (pattern exists, not yet wired to feature domains)
 - **Package manager**: Yarn 1.22
-- **Offline-first baseline**: SQLite + IPC architecture keeps core capabilities local by default
+- **Offline-first baseline**: SQLite + IPC architecture keeps core capabilities
+  local by default

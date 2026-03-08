@@ -1,356 +1,79 @@
 # Verse Vault
 
-Verse Vault is a centralized, offline-first Electron desktop platform for managing TTRPG campaigns and creative writing/worldbuilding projects in one local workspace.
+Verse Vault is an offline-first desktop app for managing TTRPG campaigns,
+worldbuilding, and writing workflows in one local workspace.
 
-Built with Electron Forge, React, Vite, TypeScript, and SQLite.
+## Why Verse Vault
 
-## Product Direction
+- Local-first data ownership with SQLite storage
+- Offline-first workflows for core campaign and writing operations
+- Secure Electron boundaries (`contextIsolation: true`, `nodeIntegration: false`)
+- Typed IPC architecture (`Main <-> Preload <-> Renderer`)
 
-Primary Goals:
+## Tech Stack
 
-- Centralize campaign management, session prep, lore, and manuscript work.
-- Keep core workflows offline-first with local data ownership.
-- Build reusable linked entities (characters, factions, locations, timelines, assets, plot lines).
-- Maintain a secure local-first architecture (isolated renderer, typed IPC bridge, main-process DB access).
+- Electron 35
+- React 19 + Vite 6
+- TypeScript
+- better-sqlite3
+- Tailwind CSS v4
+- Zustand 5
+- React Router 7
 
-## Dev setup
+## Getting Started
 
-```bash
-yarn install   # installs deps + rebuilds native modules
-yarn start     # dev mode with hot reload
-yarn lint      # ESLint
-yarn format    # dprint auto-format
-yarn test      # unit (Vitest) + e2e (Playwright, includes packaging)
-yarn test:e2e  # local e2e (packages first, then runs Playwright)
-yarn test:e2e:local  # local alias of test:e2e (packages first, default worker cap)
-yarn test:e2e:local:8  # local-only e2e override with 8 workers
-yarn test:unit:coverage  # unit tests + v8 coverage report
-yarn guard:docs  # fail if architecture/map docs are missing for relevant code/config changes
-yarn guard:ipc-docs  # fail if IPC files changed without docs/03_IPC_CONTRACT.md updates
-yarn hooks:install  # one-time: enforce repo hooks (docs guards on commit)
-```
+### Prerequisites
 
-When a commit contains only formatting changes (no behavior changes), you can use a one-off hook bypass:
+- Node.js 22 LTS (recommended)
+- Yarn 1.22.x
+- Windows, macOS, or Linux
 
-```bash
-git commit --no-verify -m "<message>"
-git push --no-verify origin
-```
+Optional (docs linting only):
 
-## Development loop
+- [Vale CLI](https://vale.sh/)
+
+### Install
 
 ```bash
-yarn verify:rapid
-# fast local preflight (format/typecheck/lint cache/unit quick in parallel)
-
-yarn verify:all
-# checks rebuild/lint/format/unit/package/e2e (no dev launch)
-
-yarn verify:all:dev
-# same checks, then starts Electron dev
-
-# optional fresh install variants
-yarn verify:all:fresh
-yarn verify:all:dev:fresh
+yarn install
 ```
 
-Recommended cadence:
+### Start Development App
 
-1. Run `yarn verify:rapid` while iterating.
-2. Run `yarn verify:all` before push/PR.
-3. Push branch and use GitHub Actions (`.github/workflows/ci.yml`) as the remote paper trail:
-   - logs per job/step
-   - `coverage-report` artifact
-   - `packaged-app` artifact
-   - `playwright-report` artifact
-
-### Nuclear option (deep debugging/testing)
-
-Use this when caches may be stale/corrupted/inconsistent and you want a full clean baseline.
-
-```powershell
-# repository-defined fresh pipeline (reinstall + full strict gate)
-yarn verify:all:fresh
+```bash
+yarn start
 ```
 
-For the strictest local "raw/no-cache" run, clear all local caches/build outputs and run uncached checks:
+### Run Core Quality Checks
 
-```powershell
-Remove-Item -Recurse -Force .vite,node_modules,.cache,coverage,playwright-report,test-results,out -ErrorAction SilentlyContinue
-yarn cache clean
-yarn install --frozen-lockfile --force
-yarn lint:full
+```bash
+yarn lint
 yarn format:check
-yarn test:unit:coverage
-yarn package
-yarn test:e2e:ci
+yarn test:unit:run
 ```
 
-Notes:
+## Project Scripts
 
-- `yarn lint:full` is the uncached lint variant (`yarn lint` uses ESLint cache).
-- `yarn test:e2e:ci` reuses the package step above so packaging is not repeated.
-- This path is intentionally slow and should be used only for deep-dive validation.
+Common scripts:
 
-### CI cache incident recovery (when corruption/staleness is suspected)
+- `yarn start` - start Electron in development mode
+- `yarn package` - package app to `out/`
+- `yarn test:e2e` - package + run Playwright E2E
+- `yarn verify:rapid` - fast local preflight
+- `yarn verify:all` - full local verification gate
 
-In this repository's GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), use this recovery flow:
+For the complete script catalog and workflows, see [docs/04_DEVELOPMENT.md](docs/04_DEVELOPMENT.md).
 
-1. Force a cold cache namespace by bumping a cache key prefix (example: `v2-...`) for both Yarn cache and tool cache keys.
-2. Temporarily remove `restore-keys` so CI cannot fall back to older caches during recovery.
-3. Re-run CI to rebuild caches from a clean baseline.
-4. Optionally delete old GitHub Actions caches in the repository Actions cache UI.
-5. After green runs, keep a dedicated cache version prefix pattern so future cache flushes are one-line changes.
+## Documentation
 
-Example key pattern:
+- [docs/00_INDEX.md](docs/00_INDEX.md) - documentation entry point
+- [docs/01_ARCHITECTURE.md](docs/01_ARCHITECTURE.md) - process boundaries and security rules
+- [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md) - living map of where to change code
+- [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md) - living IPC channel and payload contract
+- [docs/04_DEVELOPMENT.md](docs/04_DEVELOPMENT.md) - local setup, workflow, validation, troubleshooting
+- [docs/05_BUILD_RELEASE.md](docs/05_BUILD_RELEASE.md) - packaging and release details
+- [AGENTS.md](AGENTS.md) - coding agent rules for this repository
 
-```yaml
-key: v2-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-key: v2-${{ runner.os }}-node-${{ env.NODE_VERSION }}-toolcache-${{ hashFiles('yarn.lock', 'package.json', 'vite.*.config.ts', 'vitest.config.ts', 'playwright.config.ts') }}
-```
+## License
 
-## Developer Workflow Commands
-
-### Agent mode and effort controls
-
-```text
-ASK
-AGENT
-Mode: Medium
-Mode: High
-```
-
-### Githook guardrails
-
-```bash
-yarn guard:docs --staged
-```
-
-### One-off Git Hook Bypass (use sparingly)
-
-```bash
-git commit --no-verify -m "<message>"
-git push --no-verify origin
-```
-
-If githook checks fail, this prompt is the standard recovery template:
-
-```text
-I encountered a failure when trying to commit because of the githooks guardrails (inclusive of linting, tsc, and guard-docs)
-
-check the scripts/logs/ and find the latest githook failure to see the full breakdown.
-
-please update all relevant livingdocs and fix all relevant linting, and tsc issues.
-```
-
-### Targeted test commands
-
-```bash
-npx vitest <test-file-path> --no-file-parallelism --reporter=verbose
-npx vitest <test-file-path> -t="<specific test name>" --no-file-parallelism --reporter=verbose
-yarn test:unit:run --no-file-parallelism
-```
-
-### VS Code markdown preview
-
-1. Click the markdown file.
-2. Click inside the markdown content so the text cursor appears.
-3. Press `CTRL + SHIFT + V`.
-
-## Self-Hosted Runner Ops (Windows)
-
-Use repository-local scripts to manage all configured runners for this repo.
-Run from repository root (`c:\code\personal\verse-vault`):
-
-```bash
-cmd /c yarn runner:status
-cmd /c yarn runner:start
-cmd /c yarn runner:stop
-cmd /c yarn runner:restart
-```
-
-Direct PowerShell equivalent:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action status
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action start
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action stop
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action restart
-```
-
-Notes:
-
-- `start` / `stop` / `restart` auto-request elevation (UAC) when needed.
-- If your PowerShell profile blocks `yarn.ps1`, prefer `cmd /c yarn ...` as shown above.
-
-## GitHub Actions In Terminal
-
-Use GitHub CLI (`gh`) from any terminal (including VS Code terminal).
-
-```bash
-# list recent runs
-gh run list -R PaladinGod8/verse-vault --limit 10
-
-# watch the current in-progress run live (compact output)
-gh run watch "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault --compact --exit-status
-
-# fast local preflight before push
-yarn verify:rapid
-
-# local e2e (packages first, then Playwright)
-yarn test:e2e
-
-# local e2e override for high-core machines
-yarn test:e2e:local:8
-```
-
-Use VSCodeCounter on major changes.
-
-See [docs/00_INDEX.md](docs/00_INDEX.md) for orientation and architecture.
-See [docs/features/github-actions-setup.md](docs/features/github-actions-setup.md) for CI pipeline details and artifacts.
-See [AGENTS.md](AGENTS.md) for cross-agent working rules (Codex/Copilot/Claude).
-
-## Prompting playbook (Codex / Copilot / Claude)
-
-Use this sequence in chat (VS Code or ChatGPT web). Keep phases separate.
-
-### 0. Session start prompt
-
-```text
-Read and follow AGENTS.md for this repository.
-Use phase-based work only (Code -> Tests -> Docs).
-Before edits, restate scope and acceptance criteria.
-```
-
-### 1. Feature discovery prompt
-
-```text
-Help me define this feature from my description:
-<paste feature idea>
-
-Return:
-1) problem statement
-2) acceptance criteria
-3) non-goals
-4) affected files
-5) whether this should be split into smaller sequential tasks
-```
-
-### 2. Task-splitting prompt (when feature is large)
-
-```text
-Split this feature into the smallest safe sequential implementation prompts.
-Each step must be independently testable and reversible.
-For each step, include: scope, files, risks, and done criteria.
-```
-
-Note:
-
-- convert split steps into copy-pastable prompts in markdown under docs/prompts/
-- can be carried out in sequential order regardless of whether it is in a new chat / context window or not
-- write hook-required living docs as you go in each small commit step
-- require one final commit message line per step using:
-  - `feat:` for feature behavior
-  - `test:` for test-only changes
-  - `fix:` for refactors/fixes
-  - `chore:` for chores/docs/tooling
-
-### 3. Phase 1 prompt (code + required docs)
-
-```text
-Phase 1 (Code + required docs):
-Implement step <N> only.
-Do not write tests in this step.
-If githooks require docs updates for touched files, update only those living docs in this same step.
-Follow AGENTS.md architecture and IPC rules.
-At end, return: files changed, behavior changed, risks, final git commit message.
-```
-
-### 4. Phase 2 prompt (tests only)
-
-```text
-Phase 2 (Tests only):
-Based on current git diff, add or update unit/e2e tests for the feature.
-Do not change production code.
-If githooks require docs updates for touched files, update only those living docs in this same step.
-At end, return: test files changed, behaviors covered, gaps, final git commit message.
-```
-
-Notes:
-
-- write more tests if pipeline indicates <80% code coverage on pipeline failure
-
-### 5. Manual pipeline + fix loop prompt
-
-You run local checks manually:
-
-```bash
-yarn verify:all
-```
-
-If it fails, paste failures and use:
-
-```text
-Fix only the reported failures from this output:
-<paste error output>
-Do not make unrelated refactors.
-Return exact files changed, why, and final git commit message.
-```
-
-### 6. Phase 3 prompt (feature docs only)
-
-```text
-Phase 3 (Feature docs only):
-Document the completed feature in docs/features/<feature-slug>.md.
-Create the file if missing, otherwise update it.
-Do not do broad final docs reconciliation in this step.
-Do not change code or tests.
-Return exact doc entries updated and final git commit message.
-```
-
-### Should agents generate prompts for you?
-
-Yes, as a draft generator. This is useful, but keep control by requiring:
-
-- explicit acceptance criteria and non-goals
-- phase boundaries (code vs tests vs docs)
-- file scope limits
-- your manual validation gate (`yarn verify:all` + product checks)
-
-## Feature workflow
-
-Every feature or refactor follows three explicit phases (do not merge them):
-
-**Phase 1 - Code** (you or agent)
-Implement the feature/refactor. Keep scope focused. Keep githook-required living docs in the same small commit.
-
-**Phase 2 - Tests** (agent)
-Agent reads what changed via `git diff`, writes/updates Vitest unit tests and/or Playwright e2e tests, and keeps githook-required living docs in the same small commit when needed.
-
-**Phase 3 - Feature docs** (agent)
-Agent creates or updates the feature document:
-
-- [`docs/features/<feature-slug>.md`](docs/features/) - feature intent, scope, and delivered behavior
-
-Every small step ends with one proposed commit message line:
-
-- `feat:` feature behavior
-- `test:` test-only changes
-- `fix:` refactors/fixes
-- `chore:` chores/docs/tooling
-
-Run local validation and manual feature verification per step, then commit per step (small batch size).
-
-## Docs
-
-| File                                                 | Purpose                                           |
-| ---------------------------------------------------- | ------------------------------------------------- |
-| [docs/00_INDEX.md](docs/00_INDEX.md)                 | Re-entry map, quick start, product direction      |
-| [docs/01_ARCHITECTURE.md](docs/01_ARCHITECTURE.md)   | Process diagram and engineering rules             |
-| [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md)   | **Living** - where to change feature code         |
-| [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md)   | **Living** - IPC channels and payload contracts   |
-| [docs/features/](docs/features/)                     | Feature-level docs, one markdown file per feature |
-| [docs/05_BUILD_RELEASE.md](docs/05_BUILD_RELEASE.md) | Packaging and release                             |
-| [docs/CHECKLIST.md](docs/CHECKLIST.md)               | Feature completion checklist                      |
-| [docs/TODO.md](docs/TODO.md)                         | Product roadmap and backlog                       |
-| [docs/adr/](docs/adr/)                               | Architectural decision records                    |
+MIT
