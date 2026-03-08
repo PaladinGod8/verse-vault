@@ -18,6 +18,10 @@ import { registerWorldHandlers } from './main/ipc/registerWorldHandlers';
 const TOKEN_IMAGE_PROTOCOL = 'vv-media';
 const TOKEN_IMAGE_HOST = 'token-images';
 const WORLD_IMAGE_HOST = 'world-images';
+const IS_DEV = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
+const SHOULD_INSTALL_REACT_DEVTOOLS =
+  IS_DEV && !process.env.VITEST && process.env.VV_ENABLE_REACT_DEVTOOLS === '1';
 
 // TEST ME #3
 
@@ -88,8 +92,8 @@ const createWindow = () => {
     );
   }
 
-  // Open DevTools only in development.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+  // Open DevTools only when explicitly enabled in development.
+  if (SHOULD_OPEN_DEVTOOLS) {
     mainWindow.webContents.openDevTools();
   }
 };
@@ -121,7 +125,7 @@ app.on('ready', async () => {
   registerIpcHandlers();
   registerTokenImageProtocol();
 
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL && !process.env.VITEST) {
+  if (SHOULD_INSTALL_REACT_DEVTOOLS) {
     try {
       const { installExtension, REACT_DEVELOPER_TOOLS } = await import(
         'electron-devtools-installer'
