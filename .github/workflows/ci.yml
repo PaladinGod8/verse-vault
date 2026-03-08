@@ -61,7 +61,7 @@ jobs:
       - name: Debug tar and gzip resolution
         run: |
           where tar
-          where gzip || echo gzip-not-found
+          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -148,7 +148,7 @@ jobs:
       - name: Debug tar and gzip resolution
         run: |
           where tar
-          where gzip || echo gzip-not-found
+          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -236,7 +236,7 @@ jobs:
       - name: Debug tar and gzip resolution
         run: |
           where tar
-          where gzip || echo gzip-not-found
+          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
@@ -319,7 +319,7 @@ jobs:
       - name: Debug tar and gzip resolution
         run: |
           where tar
-          where gzip || echo gzip-not-found
+          where gzip >nul 2>&1 && where gzip || echo gzip-not-found
 
       - name: Get Yarn cache directory
         id: yarn-cache-dir
