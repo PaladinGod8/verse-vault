@@ -10,6 +10,7 @@ Command reference: use `README.md` -> **Developer Workflow Commands** for the ca
 - [ ] If new IPC channel: add constant to `src/shared/ipcChannels.ts` first
 - [ ] Run `yarn verify:rapid` during implementation for fast local feedback
 - [ ] Run `yarn lint` and `yarn format:check` before committing code changes
+- [ ] If you touch a file that has an ESLint override in `.eslintrc.cjs` (annotated with `// TODO: remove override after <feature>`), check whether your changes now bring it within budget — if so, remove the override entry and verify `yarn lint` still passes
 
 ### 2. Docs (mandatory)
 
@@ -54,6 +55,9 @@ Otherwise, skip the ADR.
 - Do not import from `src/renderer/**` in `src/preload.ts` — same boundary rule applies
 - Do not ship cloud-only flows for core features; preserve offline-first behavior
 - Do not commit generated artifacts — `dist/`, `out/`, `.vite/`, and `coverage/` are enforced by `.gitignore` and must never be staged or committed
+- Do not let new `src/**` files exceed 400 lines or new `tests/**` files exceed 600 lines — ESLint `max-lines` will error; split the file instead
+- Do not write functions (outside React components and test callbacks) exceeding 80 lines — ESLint `max-lines-per-function` will error; extract helpers instead
+- Do not write functions with cyclomatic complexity > 15 — ESLint `complexity` will error; simplify branching logic or extract sub-functions
 
 ---
 
@@ -61,5 +65,6 @@ Otherwise, skip the ADR.
 
 1. Skim `docs/02_CODEBASE_MAP.md` and confirm it reflects current code.
 2. Skim `docs/03_IPC_CONTRACT.md` for missing channel updates.
-3. Resolve or delete TODO items that are no longer relevant.
-4. Verify current priorities still align with the platform direction in `README.md` and `docs/TODO.md`.
+3. Scan `.eslintrc.cjs` overrides for `// TODO: remove override after` entries — if the referenced feature has landed, remove the override and verify `yarn lint` passes.
+4. Resolve or delete TODO items that are no longer relevant.
+5. Verify current priorities still align with the platform direction in `README.md` and `docs/TODO.md`.
