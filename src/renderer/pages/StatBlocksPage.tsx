@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { WorldStatisticsConfig } from '../../shared/statisticsTypes';
 import StatBlockCard from '../components/statblocks/StatBlockCard';
@@ -10,8 +10,11 @@ import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
+const CLOSE_DIALOG_DELAY_MS = 30;
+
 export default function StatBlocksPage() {
   const toast = useToast();
+  const isMountedRef = useRef(true);
   const { id } = useParams();
   const worldId = useMemo(() => {
     if (!id) {
@@ -41,6 +44,22 @@ export default function StatBlocksPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<StatBlock | null>(null);
 
+  const closeCreateModal = useCallback(() => {
+    window.setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsCreateOpen(false);
+      }
+    }, CLOSE_DIALOG_DELAY_MS);
+  }, []);
+
+  const closeDeleteConfirmation = useCallback(() => {
+    window.setTimeout(() => {
+      if (isMountedRef.current) {
+        setPendingDelete(null);
+      }
+    }, CLOSE_DIALOG_DELAY_MS);
+  }, []);
+
   const worldStatistics = useMemo(() => {
     if (!world?.config) {
       return {
@@ -63,8 +82,11 @@ export default function StatBlocksPage() {
     }
   }, [world?.config]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isActive: () => boolean = () => true) => {
     if (worldId === null) {
+      if (!isActive()) {
+        return;
+      }
       setWorld(null);
       setWorldAbilities([]);
       setStatblocks([]);
@@ -74,11 +96,17 @@ export default function StatBlocksPage() {
       return;
     }
 
+    if (!isActive()) {
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
     try {
       const existingWorld = await window.db.worlds.getById(worldId);
+      if (!isActive()) {
+        return;
+      }
       if (!existingWorld) {
         setWorld(null);
         setWorldAbilities([]);
@@ -102,33 +130,43 @@ export default function StatBlocksPage() {
         }),
       );
 
+      if (!isActive()) {
+        return;
+      }
       setWorld(existingWorld);
       setWorldAbilities(abilities);
       setStatblocks(list);
       setAssignedAbilitiesByStatBlockId(Object.fromEntries(linkedAbilityEntries));
     } catch {
+      if (!isActive()) {
+        return;
+      }
       setWorld(null);
       setWorldAbilities([]);
       setStatblocks([]);
       setAssignedAbilitiesByStatBlockId({});
       setError('Unable to load statblocks right now.');
     } finally {
-      setIsLoading(false);
+      if (isActive()) {
+        setIsLoading(false);
+      }
     }
   }, [worldId]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    void (async () => {
-      await loadData();
-      if (!isMounted) {
-        return;
-      }
-    })();
+    isMountedRef.current = true;
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    void loadData(() => isActive);
+
+    return () => {
+      isActive = false;
     };
   }, [loadData]);
 
@@ -251,7 +289,7 @@ export default function StatBlocksPage() {
           ? updateError.message
           : 'Please try again.',
       );
-      void loadData();
+      await loadData(() => isMountedRef.current);
       throw updateError;
     }
   };
@@ -282,7 +320,12 @@ export default function StatBlocksPage() {
       );
     } finally {
       setDeletingId((current) => (current === sb.id ? null : current));
-      setPendingDelete((current) => (current?.id === sb.id ? null : current));
+      window.setTimeout(() => {
+        if (!isMountedRef.current) {
+          return;
+        }
+        setPendingDelete((current) => (current?.id === sb.id ? null : current));
+      }, CLOSE_DIALOG_DELAY_MS);
     }
   };
 
@@ -383,8 +426,10 @@ export default function StatBlocksPage() {
               mode='create'
               worldId={worldId}
               availableAbilities={worldAbilities}
+              resourceDefinitions={worldStatistics.resources}
+              passiveScoreDefinitions={worldStatistics.passiveScores}
               onSubmit={handleCreate}
-              onCancel={() => setIsCreateOpen(false)}
+              onCancel={closeCreateModal}
             />
           </ModalShell>
         )
@@ -409,6 +454,8 @@ export default function StatBlocksPage() {
               worldId={editingStatBlock.world_id}
               initialData={editingStatBlock}
               availableAbilities={worldAbilities}
+              resourceDefinitions={worldStatistics.resources}
+              passiveScoreDefinitions={worldStatistics.passiveScores}
               initialAbilityIds={(assignedAbilitiesByStatBlockId[editingStatBlock.id] ?? [])
                 .map((ability) => ability.id)}
               onSubmit={handleUpdate}
@@ -425,7 +472,7 @@ export default function StatBlocksPage() {
         onConfirm={() => {
           void handleDelete();
         }}
-        onCancel={() => setPendingDelete(null)}
+        onCancel={closeDeleteConfirmation}
         confirmLabel='Delete'
         isConfirming={deletingId !== null}
       />

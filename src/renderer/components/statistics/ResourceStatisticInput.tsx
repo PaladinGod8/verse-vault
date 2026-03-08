@@ -67,6 +67,7 @@ export default function ResourceStatisticInput({
           <input
             type='number'
             id={`${definition.id}-current`}
+            aria-label={`Current ${definition.name}`}
             value={current}
             onChange={(e) => handleCurrentChange(Number(e.target.value))}
             disabled={disabled}
@@ -87,6 +88,7 @@ export default function ResourceStatisticInput({
           <input
             type='number'
             id={`${definition.id}-maximum`}
+            aria-label={`Maximum ${definition.name}`}
             value={maximum}
             onChange={(e) => handleMaximumChange(Number(e.target.value))}
             disabled={disabled}
