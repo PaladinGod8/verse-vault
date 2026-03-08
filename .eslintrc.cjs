@@ -53,6 +53,15 @@ module.exports = {
     'complexity': ['error', 15],
   },
   overrides: [
+    {
+      files: ['**/*.yml', '**/*.yaml'],
+      parser: 'yaml-eslint-parser',
+      extends: ['plugin:yml/standard'],
+      rules: {
+        'max-lines-per-function': 'off',
+        'complexity': 'off',
+      },
+    },
     // ── Renderer: no direct electron imports ───────────────────────────────
     {
       files: ['src/renderer/**'],
