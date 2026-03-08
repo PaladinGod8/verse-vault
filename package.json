@@ -40,7 +40,11 @@
     "verify:all:dev:fresh": "node scripts/verify-all.cjs --install",
     "verify:rapid": "node scripts/verify-rapid.cjs",
     "verify:rapid:fresh": "node scripts/verify-rapid.cjs --fresh-cache",
-    "verify:rapid:rebuild": "node scripts/verify-rapid.cjs --rebuild-native"
+    "verify:rapid:rebuild": "node scripts/verify-rapid.cjs --rebuild-native",
+    "runner:status": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action status",
+    "runner:start": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action start",
+    "runner:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action stop",
+    "runner:restart": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action restart"
   },
   "devDependencies": {
     "@dnd-kit/core": "^6.3.1",
