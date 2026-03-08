@@ -210,7 +210,7 @@ describe('AbilityChildrenManager', () => {
       name: 'Available abilities',
     });
     await user.click(
-      within(availableSection.closest('section') as HTMLElement).getByRole(
+      await within(availableSection.closest('section') as HTMLElement).findByRole(
         'button',
         { name: 'Add' },
       ),
