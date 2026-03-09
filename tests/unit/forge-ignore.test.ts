@@ -137,8 +137,8 @@ describe('isIgnoredFromPackage', () => {
       expect(isIgnoredFromPackage('/tsconfig.json')).toBe(true);
     });
 
-    it('returns true for /.prettierrc.json', () => {
-      expect(isIgnoredFromPackage('/.prettierrc.json')).toBe(true);
+    it('returns true for /dprint.json', () => {
+      expect(isIgnoredFromPackage('/dprint.json')).toBe(true);
     });
   });
 
