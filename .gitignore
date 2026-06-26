@@ -101,6 +101,7 @@ docs/sample-character-sheets/
 .VSCodeCounter/
 
 # Coding Agents
+.agents/
 .claude/
 
 # Playwright
