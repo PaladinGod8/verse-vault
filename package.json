@@ -66,6 +66,8 @@
     "verify:rapid": "node scripts/verify-rapid.cjs",
     "verify:rapid:fresh": "node scripts/verify-rapid.cjs --fresh-cache",
     "verify:rapid:rebuild": "node scripts/verify-rapid.cjs --rebuild-native",
+    "verify:smart": "node scripts/verify-smart.cjs",
+    "verify:smart:fresh": "node scripts/verify-smart.cjs --fresh-cache",
     "runner:status": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action status",
     "runner:start": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action start",
     "runner:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\runner-services.ps1 -Action stop",
