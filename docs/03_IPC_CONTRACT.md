@@ -1,681 +1,121 @@
-# IPC Contract (Living)
+# IPC Contract
 
-> **Update this file whenever you add, change, or remove an IPC channel.**
-> Channel constants live in `src/shared/ipcChannels.ts`.
+This document is a current-state contract index. It is generated from `src/shared/ipcChannels.ts`, `src/shared/ipcCatalog.ts`, and the shared `DbApi` contract. Do not hand-edit generated rows.
 
-## Scope Note
+## Contract Rules
 
-Current channels cover an initial local content-record scaffold (`verses`) plus worlds/levels/abilities handlers, campaign CRUD handlers, BattleMap CRUD handlers, world/campaign-scoped token CRUD + token image import handlers, session CRUD handlers, scene CRUD handlers, statblock CRUD handlers, and statblock linkage/assignment handlers in the main process. This is the foundation for the broader offline-first domain model (campaign, worldbuilding, manuscript, and session entities).
+- Add or change a channel in `src/shared/ipcChannels.ts`.
+- Update the matching entry in `src/shared/ipcCatalog.ts`.
+- Keep `src/preload.ts` aligned with the shared `DbApi` contract.
 
-IPC Domain Split reconciliation (2026-03-08): `src/main.ts` remains bootstrap/orchestration only, channel registration is delegated to domain registrar modules under `src/main/ipc/register*Handlers.ts`, and the Channels table below is reconciled against `src/shared/ipcChannels.ts` (82/82 channel constants documented with registrar-file handler references).
+## Domain Summary
 
-Worlds channel constants and `World`/`DbApi.worlds` types are aligned at the shared contract layer, with handlers in `main` and bridge methods exposed in `preload` for read/create/update/delete/markViewed access from renderer through `window.db.worlds`.
+<!-- BEGIN GENERATED IPC SUMMARY -->
 
-World Config Step 02 (2026-03-06) extends world add/update handlers to accept and persist optional `config` field (JSON string for world-specific configuration like statistics definitions); validates config is valid JSON before persisting. Default Statistics Step 08 (2026-03-06) extends `WORLDS_ADD` handler to auto-populate `config` with D&D 5e-style default statistics (`DEFAULT_RESOURCE_DEFINITIONS` and `DEFAULT_PASSIVE_SCORE_DEFINITIONS` from `src/shared/statisticsTypes.ts` wrapped in a `WorldStatisticsConfig`) when not explicitly provided, while respecting explicitly-provided config values.
+| Domain     | Channels | Handlers                                    |
+| ---------- | -------- | ------------------------------------------- |
+| verses     | 4        | `src/main/ipc/registerVerseHandlers.ts`     |
+| worlds     | 7        | `src/main/ipc/registerWorldHandlers.ts`     |
+| levels     | 5        | `src/main/ipc/registerLevelHandlers.ts`     |
+| abilities  | 8        | `src/main/ipc/registerAbilityHandlers.ts`   |
+| campaigns  | 5        | `src/main/ipc/registerCampaignHandlers.ts`  |
+| battlemaps | 5        | `src/main/ipc/registerBattleMapHandlers.ts` |
+| tokens     | 9        | `src/main/ipc/registerTokenHandlers.ts`     |
+| arcs       | 5        | `src/main/ipc/registerArcHandlers.ts`       |
+| acts       | 7        | `src/main/ipc/registerActHandlers.ts`       |
+| sessions   | 7        | `src/main/ipc/registerSessionHandlers.ts`   |
+| scenes     | 7        | `src/main/ipc/registerSceneHandlers.ts`     |
+| statblocks | 13       | `src/main/ipc/registerStatBlockHandlers.ts` |
 
-StatBlock Step 01 (2026-03-05) adds 6 channel constants (`STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `STATBLOCKS_GET_BY_ID`, `STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, `STATBLOCKS_DELETE`) and shared `StatBlock` interface plus `DbApi.statblocks` method signatures; no handlers or preload wiring yet.
-
-StatBlock Step 03 (2026-03-06) wires 3 read handlers in main (`STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, `STATBLOCKS_GET_BY_ID`); Step 05 will wire preload bridges.
-
-StatBlock Step 04 (2026-03-06) wires 3 mutation handlers in main (`STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, `STATBLOCKS_DELETE`); Step 05 wires preload bridges.
-
-StatBlock Step 05 (2026-03-06) wires all 6 preload bridges via `window.db.statblocks.*`, exposing the full statblock API to the renderer.
-
-StatBlock Linkage Backbone Step 01 (2026-03-07) adds 7 channel constants and full main/preload wiring for statblock-token linking (`STATBLOCKS_LINK_TOKEN`, `STATBLOCKS_UNLINK_TOKEN`, `STATBLOCKS_GET_LINKED_TOKENS`, `STATBLOCKS_GET_LINKED_STATBLOCK`) and statblock-ability assignment (`STATBLOCKS_ATTACH_ABILITY`, `STATBLOCKS_DETACH_ABILITY`, `STATBLOCKS_LIST_ABILITIES`), with same-world validation in `main`.
-
-Casting Range Overlay Step 01 (2026-03-05) extends `ABILITIES_ADD` and `ABILITIES_UPDATE` payloads with four new optional fields (`range_cells`, `aoe_shape`, `aoe_size_cells`, `target_type`) and updates the `Ability` response type accordingly; no new channels added.
-
-Abilities Step 07 (2026-02-27) exposes ability mutation bridges in preload (`window.db.abilities.add/update/delete/addChild/removeChild`) on top of Step 06 read bridges (`getAllByWorld/getById/getChildren`), with shared `Ability` + `AbilityChild` interfaces and full `DbApi.abilities` signatures aligned to all 8 channels.
-
-Campaign Step 07 (2026-02-27) wires campaign CRUD handlers in `main` for `CAMPAIGNS_GET_ALL_BY_WORLD`, `CAMPAIGNS_GET_BY_ID`, `CAMPAIGNS_ADD`, `CAMPAIGNS_UPDATE`, and `CAMPAIGNS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
-
-BattleMap Step 01 (2026-03-03) adds shared constants for planned battlemaps CRUD (`BATTLEMAPS_GET_ALL_BY_WORLD`, `BATTLEMAPS_GET_BY_ID`, `BATTLEMAPS_ADD`, `BATTLEMAPS_UPDATE`, `BATTLEMAPS_DELETE`) and schema bootstrap in `db.ts`; BattleMap Step 02 (2026-03-03) wires all 5 handlers in `main`; BattleMap Step 03 (2026-03-03) wires preload bridge methods and shared `BattleMap` + `DbApi.battlemaps` signatures.
-
-Runtime Step 01 (2026-03-04) adds token CRUD constants (`TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_ADD`, `TOKENS_UPDATE`, `TOKENS_DELETE`), wires all 5 token handlers in `main`, and exposes `window.db.tokens.getAllByCampaign/getById/add/update/delete` in preload with shared `Token` and `DbApi.tokens` signatures.
-
-Tokens Step 01 (2026-03-04) adds `TOKENS_GET_ALL_BY_WORLD` constant; wires world-scoped read handler in `main`; updates `TOKENS_ADD` to require `world_id` and accept optional `campaign_id`; adds `window.db.tokens.getAllByWorld(worldId)` preload bridge; updates `Token` interface (`world_id: number`, `campaign_id: number | null`) and `DbApi.tokens.add` signature.
-
-Token Grid Variants Step 01 (2026-03-05) adds no new IPC channels, but extends shared token contracts used by existing token channels: `Token.grid_type?: TokenGridType` plus additive `TokenFootprintConfig`, `TokenFramingConfig`, and `TokenConfigShape` for grid-aware footprint/framing metadata.
-
-Token Grid Variants Step 02 (2026-03-05) wires `grid_type` field through existing `TOKENS_ADD` and `TOKENS_UPDATE` handlers in `main`, updates payloads in `DbApi.tokens.add` and `DbApi.tokens.update` signatures in `forge.env.d.ts`, validates `grid_type` input with new `ensureTokenGridType()` function, and exposes updated preload methods via `window.db.tokens.add()` and `window.db.tokens.update()` accepting optional `grid_type: TokenGridType` parameter.
-
-Token Grid Variants Step 05 (2026-03-05) adds no new IPC channels, but finalizes shared token config contracts used by existing token channels: `TokenFootprintConfig` now includes deterministic occupancy metadata (`version`, `grid_type`, `square_cells`, `hex_cells`) and `TokenFramingConfig` includes derived center/extent fields (`center_x_cells`, `center_y_cells`, `extent_x_cells`, `extent_y_cells`, `max_extent_cells`). `TOKENS_ADD` and `TOKENS_UPDATE` continue to accept `config?: string`, now validated/normalized through a shared db-layer helper (`ensureTokenConfigJsonText`) that preserves legacy token configs while enforcing finite/structured additive footprint data.
-
-Tokens Image DnD Step 01 (2026-03-04) adds `TOKENS_IMPORT_IMAGE` (`db:tokens:importImage`), with main-process validation for payload shape/mime/size and app-owned persistence under `app.getPath('userData')/token-images`; preload exposes `window.db.tokens.importImage(payload)` with shared `TokenImageImportPayload`/`TokenImageImportResult` typing.
-
-Tokens Image Protocol Step 02 (2026-03-05) keeps the same IPC channel and payload/response shapes, but changes `TOKENS_IMPORT_IMAGE` response semantics: `image_src` now uses app-local `vv-media://token-images/<encoded-file-name>` URLs instead of direct `file://` URLs. Main process registers a `vv-media` protocol handler that serves files from the app-owned `token-images` directory with path traversal guards.
-
-Tokens Move Step 01 (2026-03-05) adds `TOKENS_MOVE_TO_WORLD` (`db:tokens:moveToWorld`) and `TOKENS_MOVE_TO_CAMPAIGN` (`db:tokens:moveToCampaign`) handlers for in-place token scope transitions; both require transactional validation that target campaign (if applicable) is in the same world as the token's parent world, and both return the updated `Token` row on success.
-
-Token Move Step 01 (2026-03-05) adds token move channels `TOKENS_MOVE_TO_WORLD` and `TOKENS_MOVE_TO_CAMPAIGN`, wires main-process handlers, and extends `DbApi.tokens` signatures with `moveToWorld(tokenId)` and `moveToCampaign(tokenId, targetCampaignId)`. Token Move Step 02 (2026-03-05) wires both methods in preload via `window.db.tokens.moveToWorld(tokenId)` and `window.db.tokens.moveToCampaign(tokenId, targetCampaignId)`.
-
-World Image Import Step 01 (2026-03-05) adds `WORLDS_IMPORT_IMAGE` (`db:worlds:importImage`) for local world thumbnail upload; reuses `TokenImageImportPayload`/`TokenImageImportResult` shapes and the existing `vv-media://` protocol, writing files to `app.getPath('userData')/world-images/` and returning `vv-media://world-images/<encoded-file-name>` as `image_src`; preload exposes `window.db.worlds.importImage(payload)`; `vv-media` protocol handler extended to serve both `token-images` and `world-images` hosts.
-
-Runtime Step 01 (2026-03-04) also hardens BattleMap config validation in `main` so `config` is a JSON object with runtime-ready defaults at `runtime.grid`, `runtime.map`, and `runtime.camera`; scene payload validation remains backward-compatible while validating optional runtime linkage field `payload.runtime.battlemap_id`.
-
-Session Step 08 (2026-02-27) wires session CRUD handlers in `main` for `SESSIONS_GET_ALL_BY_CAMPAIGN`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, and `SESSIONS_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
-
-Scene Step 09 (2026-02-27) wires scene CRUD handlers in `main` for `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, and `SCENES_DELETE`. Preload bridge methods are wired in Step 10 (2026-02-28).
-
-Scenes Move Step 01 (2026-03-03) adds `SCENES_MOVE_TO_SESSION` in main with transactional move/resequence semantics and exposes `window.db.scenes.moveTo(sceneId, newSessionId)` in preload and shared types.
-
-Campaign Scenes Index Step 01 (2026-03-03) adds `SCENES_GET_ALL_BY_CAMPAIGN` in main as a read-only campaign query (`scenes -> sessions -> acts -> arcs`, filtered by `arcs.campaign_id`) and exposes `window.db.scenes.getAllByCampaign(campaignId)` in preload.
-
-Campaign/Session/Scene Preload Step 10 (2026-02-28) exposes all 15 campaign/session/scene CRUD channels as typed bridge methods via `window.db.campaigns`, `window.db.sessions`, and `window.db.scenes`; Campaign Scenes Index Step 01 extends this with one additional read channel (16 total).
-
-Campaign/Session/Scene Shared Types Step 11 (2026-02-28) adds `Campaign`, `Session`, and `Scene` global interfaces plus `DbApi.campaigns`, `DbApi.sessions`, and `DbApi.scenes` signatures to `forge.env.d.ts`; Campaign Scenes Index Step 01 adds `CampaignSceneListItem` and `DbApi.scenes.getAllByCampaign`; Runtime Step 01 adds `Token`, `DbApi.tokens`, and runtime config/payload support interfaces (`BattleMapRuntime*`, `BattleMapConfig`, `ScenePayload*`).
-
-Arc/Act Step 01 (2026-02-28) adds `arcs` and `acts` tables, migrates `sessions.campaign_id` → `sessions.act_id`, adds full CRUD + reparenting channels for arcs and acts (`ARCS_*`, `ACTS_*`), replaces `SESSIONS_GET_ALL_BY_CAMPAIGN` handler with `SESSIONS_GET_ALL_BY_ACT`, adds `SESSIONS_MOVE_TO_ACT`, and exposes `window.db.arcs.*`, `window.db.acts.*`, and updated `window.db.sessions.getAllByAct/moveTo` bridge methods. `SESSIONS_GET_ALL_BY_CAMPAIGN` constant retained for renderer compatibility until Step 02.
+<!-- END GENERATED IPC SUMMARY -->
 
 ## Channels
 
-| Constant                              | String Value                       | Direction        | Request Payload                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Response                                                                                                         | Handler                                     |
-| ------------------------------------- | ---------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `IPC.VERSES_GET_ALL`                  | `db:verses:getAll`                 | renderer -> main | _(none)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `Verse[]`                                                                                                        | `src/main/ipc/registerVerseHandlers.ts`     |
-| `IPC.VERSES_ADD`                      | `db:verses:add`                    | renderer -> main | `{ text: string; reference?: string; tags?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Verse`                                                                                                          | `src/main/ipc/registerVerseHandlers.ts`     |
-| `IPC.VERSES_UPDATE`                   | `db:verses:update`                 | renderer -> main | `id: number, data: { text?: string; reference?: string; tags?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                             | `Verse`                                                                                                          | `src/main/ipc/registerVerseHandlers.ts`     |
-| `IPC.VERSES_DELETE`                   | `db:verses:delete`                 | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerVerseHandlers.ts`     |
-| `IPC.WORLDS_GET_ALL`                  | `db:worlds:getAll`                 | renderer -> main | _(none)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `World[]`                                                                                                        | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.WORLDS_GET_BY_ID`                | `db:worlds:getById`                | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `World \| null`                                                                                                  | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.WORLDS_ADD`                      | `db:worlds:add`                    | renderer -> main | `{ name: string; thumbnail?: string \| null; short_description?: string \| null; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                  | `World`                                                                                                          | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.WORLDS_UPDATE`                   | `db:worlds:update`                 | renderer -> main | `id: number, data: { name?: string; thumbnail?: string \| null; short_description?: string \| null; config?: string }`                                                                                                                                                                                                                                                                                                                                                                               | `World`                                                                                                          | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.WORLDS_DELETE`                   | `db:worlds:delete`                 | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.WORLDS_MARK_VIEWED`              | `db:worlds:markViewed`             | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `World \| null`                                                                                                  | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.WORLDS_IMPORT_IMAGE`             | `db:worlds:importImage`            | renderer -> main | `{ fileName: string; mimeType: string; bytes: Uint8Array }`                                                                                                                                                                                                                                                                                                                                                                                                                                          | `{ image_src: string }`                                                                                          | `src/main/ipc/registerWorldHandlers.ts`     |
-| `IPC.LEVELS_GET_ALL_BY_WORLD`         | `db:levels:getAllByWorld`          | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Level[]`                                                                                                        | `src/main/ipc/registerLevelHandlers.ts`     |
-| `IPC.LEVELS_GET_BY_ID`                | `db:levels:getById`                | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Level \| null`                                                                                                  | `src/main/ipc/registerLevelHandlers.ts`     |
-| `IPC.LEVELS_ADD`                      | `db:levels:add`                    | renderer -> main | `{ world_id: number; name: string; category: string; description?: string \| null }`                                                                                                                                                                                                                                                                                                                                                                                                                 | `Level`                                                                                                          | `src/main/ipc/registerLevelHandlers.ts`     |
-| `IPC.LEVELS_UPDATE`                   | `db:levels:update`                 | renderer -> main | `id: number, data: { name?: string; category?: string; description?: string \| null }`                                                                                                                                                                                                                                                                                                                                                                                                               | `Level`                                                                                                          | `src/main/ipc/registerLevelHandlers.ts`     |
-| `IPC.LEVELS_DELETE`                   | `db:levels:delete`                 | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerLevelHandlers.ts`     |
-| `IPC.ABILITIES_GET_ALL_BY_WORLD`      | `db:abilities:getAllByWorld`       | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Ability[]`                                                                                                      | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_GET_BY_ID`             | `db:abilities:getById`             | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Ability \| null`                                                                                                | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_ADD`                   | `db:abilities:add`                 | renderer -> main | `{ world_id: number; name: string; description?: string \| null; type: string; passive_subtype?: string \| null; level_id?: number \| null; effects?: string; conditions?: string; cast_cost?: string; trigger?: string \| null; pick_count?: number \| null; pick_timing?: string \| null; pick_is_permanent?: number; range_cells?: number \| null; aoe_shape?: 'circle' \| 'rectangle' \| 'cone' \| 'line' \| null; aoe_size_cells?: number \| null; target_type?: 'tile' \| 'token' \| null }`   | `Ability`                                                                                                        | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_UPDATE`                | `db:abilities:update`              | renderer -> main | `id: number, data: { name?: string; description?: string \| null; type?: string; passive_subtype?: string \| null; level_id?: number \| null; effects?: string; conditions?: string; cast_cost?: string; trigger?: string \| null; pick_count?: number \| null; pick_timing?: string \| null; pick_is_permanent?: number; range_cells?: number \| null; aoe_shape?: 'circle' \| 'rectangle' \| 'cone' \| 'line' \| null; aoe_size_cells?: number \| null; target_type?: 'tile' \| 'token' \| null }` | `Ability`                                                                                                        | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_DELETE`                | `db:abilities:delete`              | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_ADD_CHILD`             | `db:abilities:addChild`            | renderer -> main | `{ parent_id: number; child_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `{ parent_id: number; child_id: number }`                                                                        | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_REMOVE_CHILD`          | `db:abilities:removeChild`         | renderer -> main | `{ parent_id: number; child_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `{ parent_id: number; child_id: number }`                                                                        | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.ABILITIES_GET_CHILDREN`          | `db:abilities:getChildren`         | renderer -> main | `abilityId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `Ability[]`                                                                                                      | `src/main/ipc/registerAbilityHandlers.ts`   |
-| `IPC.CAMPAIGNS_GET_ALL_BY_WORLD`      | `db:campaigns:getAllByWorld`       | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Campaign[]`                                                                                                     | `src/main/ipc/registerCampaignHandlers.ts`  |
-| `IPC.CAMPAIGNS_GET_BY_ID`             | `db:campaigns:getById`             | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Campaign \| null`                                                                                               | `src/main/ipc/registerCampaignHandlers.ts`  |
-| `IPC.CAMPAIGNS_ADD`                   | `db:campaigns:add`                 | renderer -> main | `{ world_id: number; name: string; summary?: string \| null; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                      | `Campaign`                                                                                                       | `src/main/ipc/registerCampaignHandlers.ts`  |
-| `IPC.CAMPAIGNS_UPDATE`                | `db:campaigns:update`              | renderer -> main | `id: number, data: { name?: string; summary?: string \| null; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                     | `Campaign`                                                                                                       | `src/main/ipc/registerCampaignHandlers.ts`  |
-| `IPC.CAMPAIGNS_DELETE`                | `db:campaigns:delete`              | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerCampaignHandlers.ts`  |
-| `IPC.BATTLEMAPS_GET_ALL_BY_WORLD`     | `db:battlemaps:getAllByWorld`      | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }[]`       | `src/main/ipc/registerBattleMapHandlers.ts` |
-| `IPC.BATTLEMAPS_GET_BY_ID`            | `db:battlemaps:getById`            | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string } \| null` | `src/main/ipc/registerBattleMapHandlers.ts` |
-| `IPC.BATTLEMAPS_ADD`                  | `db:battlemaps:add`                | renderer -> main | `{ world_id: number; name: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                                                | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }`         | `src/main/ipc/registerBattleMapHandlers.ts` |
-| `IPC.BATTLEMAPS_UPDATE`               | `db:battlemaps:update`             | renderer -> main | `id: number, data: { name?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                                               | `{ id: number; world_id: number; name: string; config: string; created_at: string; updated_at: string }`         | `src/main/ipc/registerBattleMapHandlers.ts` |
-| `IPC.BATTLEMAPS_DELETE`               | `db:battlemaps:delete`             | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerBattleMapHandlers.ts` |
-| `IPC.TOKENS_GET_ALL_BY_WORLD`         | `db:tokens:getAllByWorld`          | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Token[]`                                                                                                        | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_GET_ALL_BY_CAMPAIGN`      | `db:tokens:getAllByCampaign`       | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `Token[]`                                                                                                        | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_GET_BY_ID`                | `db:tokens:getById`                | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Token \| null`                                                                                                  | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_IMPORT_IMAGE`             | `db:tokens:importImage`            | renderer -> main | `{ fileName: string; mimeType: string; bytes: Uint8Array }`                                                                                                                                                                                                                                                                                                                                                                                                                                          | `{ image_src: string }`                                                                                          | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_ADD`                      | `db:tokens:add`                    | renderer -> main | `{ world_id: number; campaign_id?: number \| null; name: string; image_src?: string \| null; config?: string; grid_type?: TokenGridType; is_visible?: number }`                                                                                                                                                                                                                                                                                                                                      | `Token`                                                                                                          | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_UPDATE`                   | `db:tokens:update`                 | renderer -> main | `id: number, data: { name?: string; image_src?: string \| null; config?: string; grid_type?: TokenGridType; is_visible?: number }`                                                                                                                                                                                                                                                                                                                                                                   | `Token`                                                                                                          | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_MOVE_TO_WORLD`            | `db:tokens:moveToWorld`            | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Token`                                                                                                          | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_MOVE_TO_CAMPAIGN`         | `db:tokens:moveToCampaign`         | renderer -> main | `id: number, targetCampaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `Token`                                                                                                          | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.TOKENS_DELETE`                   | `db:tokens:delete`                 | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerTokenHandlers.ts`     |
-| `IPC.ARCS_GET_ALL_BY_CAMPAIGN`        | `db:arcs:getAllByCampaign`         | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `Arc[]`                                                                                                          | `src/main/ipc/registerArcHandlers.ts`       |
-| `IPC.ARCS_GET_BY_ID`                  | `db:arcs:getById`                  | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Arc \| null`                                                                                                    | `src/main/ipc/registerArcHandlers.ts`       |
-| `IPC.ARCS_ADD`                        | `db:arcs:add`                      | renderer -> main | `{ campaign_id: number; name: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Arc`                                                                                                            | `src/main/ipc/registerArcHandlers.ts`       |
-| `IPC.ARCS_UPDATE`                     | `db:arcs:update`                   | renderer -> main | `id: number, data: { name?: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                           | `Arc`                                                                                                            | `src/main/ipc/registerArcHandlers.ts`       |
-| `IPC.ARCS_DELETE`                     | `db:arcs:delete`                   | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerArcHandlers.ts`       |
-| `IPC.ACTS_GET_ALL_BY_ARC`             | `db:acts:getAllByArc`              | renderer -> main | `arcId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `Act[]`                                                                                                          | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.ACTS_GET_ALL_BY_CAMPAIGN`        | `db:acts:getAllByCampaign`         | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `Act[]`                                                                                                          | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.ACTS_GET_BY_ID`                  | `db:acts:getById`                  | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Act \| null`                                                                                                    | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.ACTS_ADD`                        | `db:acts:add`                      | renderer -> main | `{ arc_id: number; name: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                              | `Act`                                                                                                            | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.ACTS_UPDATE`                     | `db:acts:update`                   | renderer -> main | `id: number, data: { name?: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                           | `Act`                                                                                                            | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.ACTS_DELETE`                     | `db:acts:delete`                   | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.ACTS_MOVE_TO_ARC`                | `db:acts:moveToArc`                | renderer -> main | `actId: number, newArcId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Act`                                                                                                            | `src/main/ipc/registerActHandlers.ts`       |
-| `IPC.SESSIONS_GET_ALL_BY_CAMPAIGN`    | `db:sessions:getAllByCampaign`     | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `Session[]`                                                                                                      | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SESSIONS_GET_ALL_BY_ACT`         | `db:sessions:getAllByAct`          | renderer -> main | `actId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `Session[]`                                                                                                      | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SESSIONS_GET_BY_ID`              | `db:sessions:getById`              | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Session \| null`                                                                                                | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SESSIONS_ADD`                    | `db:sessions:add`                  | renderer -> main | `{ act_id: number; name: string; notes?: string \| null; planned_at?: string \| null; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                         | `Session`                                                                                                        | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SESSIONS_UPDATE`                 | `db:sessions:update`               | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; planned_at?: string \| null; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                      | `Session`                                                                                                        | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SESSIONS_DELETE`                 | `db:sessions:delete`               | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SESSIONS_MOVE_TO_ACT`            | `db:sessions:moveToAct`            | renderer -> main | `sessionId: number, newActId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Session`                                                                                                        | `src/main/ipc/registerSessionHandlers.ts`   |
-| `IPC.SCENES_GET_ALL_BY_CAMPAIGN`      | `db:scenes:getAllByCampaign`       | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `CampaignSceneListItem[]`                                                                                        | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.SCENES_GET_ALL_BY_SESSION`       | `db:scenes:getAllBySession`        | renderer -> main | `sessionId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `Scene[]`                                                                                                        | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.SCENES_GET_BY_ID`                | `db:scenes:getById`                | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Scene \| null`                                                                                                  | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.SCENES_ADD`                      | `db:scenes:add`                    | renderer -> main | `{ session_id: number; name: string; notes?: string \| null; payload?: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                | `Scene`                                                                                                          | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.SCENES_UPDATE`                   | `db:scenes:update`                 | renderer -> main | `id: number, data: { name?: string; notes?: string \| null; payload?: string; sort_order?: number }`                                                                                                                                                                                                                                                                                                                                                                                                 | `Scene`                                                                                                          | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.SCENES_DELETE`                   | `db:scenes:delete`                 | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.SCENES_MOVE_TO_SESSION`          | `db:scenes:moveToSession`          | renderer -> main | `sceneId: number, newSessionId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `Scene`                                                                                                          | `src/main/ipc/registerSceneHandlers.ts`     |
-| `IPC.STATBLOCKS_GET_ALL_BY_WORLD`     | `db:statblocks:getAllByWorld`      | renderer -> main | `worldId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock[]`                                                                                                    | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN`  | `db:statblocks:getAllByCampaign`   | renderer -> main | `campaignId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `StatBlock[]`                                                                                                    | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_GET_BY_ID`            | `db:statblocks:getById`            | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `StatBlock \| null`                                                                                              | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_ADD`                  | `db:statblocks:add`                | renderer -> main | `{ world_id: number; campaign_id?: number; name: string; description?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock`                                                                                                      | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_UPDATE`               | `db:statblocks:update`             | renderer -> main | `id: number, data: { name?: string; description?: string; config?: string }`                                                                                                                                                                                                                                                                                                                                                                                                                         | `StatBlock`                                                                                                      | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_DELETE`               | `db:statblocks:delete`             | renderer -> main | `id: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ id: number }`                                                                                                 | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_LINK_TOKEN`           | `db:statblocks:linkToken`          | renderer -> main | `{ statblock_id: number; token_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ statblock_id: number; token_id: number }`                                                                     | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_UNLINK_TOKEN`         | `db:statblocks:unlinkToken`        | renderer -> main | `{ statblock_id: number; token_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `{ statblock_id: number; token_id: number }`                                                                     | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_GET_LINKED_TOKENS`    | `db:statblocks:getLinkedTokens`    | renderer -> main | `statblockId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Token[]`                                                                                                        | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_GET_LINKED_STATBLOCK` | `db:statblocks:getLinkedStatblock` | renderer -> main | `tokenId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `StatBlock \| null`                                                                                              | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_ATTACH_ABILITY`       | `db:statblocks:attachAbility`      | renderer -> main | `{ statblock_id: number; ability_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `{ statblock_id: number; ability_id: number }`                                                                   | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_DETACH_ABILITY`       | `db:statblocks:detachAbility`      | renderer -> main | `{ statblock_id: number; ability_id: number }`                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `{ statblock_id: number; ability_id: number }`                                                                   | `src/main/ipc/registerStatBlockHandlers.ts` |
-| `IPC.STATBLOCKS_LIST_ABILITIES`       | `db:statblocks:listAbilities`      | renderer -> main | `statblockId: number`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Ability[]`                                                                                                      | `src/main/ipc/registerStatBlockHandlers.ts` |
+<!-- BEGIN GENERATED IPC TABLE -->
 
-## Types Reference
+| Constant                              | String value                       | Bridge                                    | Handler                                     | Type source                           |
+| ------------------------------------- | ---------------------------------- | ----------------------------------------- | ------------------------------------------- | ------------------------------------- |
+| `IPC.VERSES_GET_ALL`                  | `db:verses:getAll`                 | `window.db.verses.getAll`                 | `src/main/ipc/registerVerseHandlers.ts`     | `DbApi.verses.getAll`                 |
+| `IPC.VERSES_ADD`                      | `db:verses:add`                    | `window.db.verses.add`                    | `src/main/ipc/registerVerseHandlers.ts`     | `DbApi.verses.add`                    |
+| `IPC.VERSES_UPDATE`                   | `db:verses:update`                 | `window.db.verses.update`                 | `src/main/ipc/registerVerseHandlers.ts`     | `DbApi.verses.update`                 |
+| `IPC.VERSES_DELETE`                   | `db:verses:delete`                 | `window.db.verses.delete`                 | `src/main/ipc/registerVerseHandlers.ts`     | `DbApi.verses.delete`                 |
+| `IPC.WORLDS_GET_ALL`                  | `db:worlds:getAll`                 | `window.db.worlds.getAll`                 | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.getAll`                 |
+| `IPC.WORLDS_GET_BY_ID`                | `db:worlds:getById`                | `window.db.worlds.getById`                | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.getById`                |
+| `IPC.WORLDS_ADD`                      | `db:worlds:add`                    | `window.db.worlds.add`                    | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.add`                    |
+| `IPC.WORLDS_UPDATE`                   | `db:worlds:update`                 | `window.db.worlds.update`                 | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.update`                 |
+| `IPC.WORLDS_DELETE`                   | `db:worlds:delete`                 | `window.db.worlds.delete`                 | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.delete`                 |
+| `IPC.WORLDS_MARK_VIEWED`              | `db:worlds:markViewed`             | `window.db.worlds.markViewed`             | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.markViewed`             |
+| `IPC.WORLDS_IMPORT_IMAGE`             | `db:worlds:importImage`            | `window.db.worlds.importImage`            | `src/main/ipc/registerWorldHandlers.ts`     | `DbApi.worlds.importImage`            |
+| `IPC.LEVELS_GET_ALL_BY_WORLD`         | `db:levels:getAllByWorld`          | `window.db.levels.getAllByWorld`          | `src/main/ipc/registerLevelHandlers.ts`     | `DbApi.levels.getAllByWorld`          |
+| `IPC.LEVELS_GET_BY_ID`                | `db:levels:getById`                | `window.db.levels.getById`                | `src/main/ipc/registerLevelHandlers.ts`     | `DbApi.levels.getById`                |
+| `IPC.LEVELS_ADD`                      | `db:levels:add`                    | `window.db.levels.add`                    | `src/main/ipc/registerLevelHandlers.ts`     | `DbApi.levels.add`                    |
+| `IPC.LEVELS_UPDATE`                   | `db:levels:update`                 | `window.db.levels.update`                 | `src/main/ipc/registerLevelHandlers.ts`     | `DbApi.levels.update`                 |
+| `IPC.LEVELS_DELETE`                   | `db:levels:delete`                 | `window.db.levels.delete`                 | `src/main/ipc/registerLevelHandlers.ts`     | `DbApi.levels.delete`                 |
+| `IPC.ABILITIES_GET_ALL_BY_WORLD`      | `db:abilities:getAllByWorld`       | `window.db.abilities.getAllByWorld`       | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.getAllByWorld`       |
+| `IPC.ABILITIES_GET_BY_ID`             | `db:abilities:getById`             | `window.db.abilities.getById`             | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.getById`             |
+| `IPC.ABILITIES_ADD`                   | `db:abilities:add`                 | `window.db.abilities.add`                 | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.add`                 |
+| `IPC.ABILITIES_UPDATE`                | `db:abilities:update`              | `window.db.abilities.update`              | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.update`              |
+| `IPC.ABILITIES_DELETE`                | `db:abilities:delete`              | `window.db.abilities.delete`              | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.delete`              |
+| `IPC.ABILITIES_ADD_CHILD`             | `db:abilities:addChild`            | `window.db.abilities.addChild`            | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.addChild`            |
+| `IPC.ABILITIES_REMOVE_CHILD`          | `db:abilities:removeChild`         | `window.db.abilities.removeChild`         | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.removeChild`         |
+| `IPC.ABILITIES_GET_CHILDREN`          | `db:abilities:getChildren`         | `window.db.abilities.getChildren`         | `src/main/ipc/registerAbilityHandlers.ts`   | `DbApi.abilities.getChildren`         |
+| `IPC.CAMPAIGNS_GET_ALL_BY_WORLD`      | `db:campaigns:getAllByWorld`       | `window.db.campaigns.getAllByWorld`       | `src/main/ipc/registerCampaignHandlers.ts`  | `DbApi.campaigns.getAllByWorld`       |
+| `IPC.CAMPAIGNS_GET_BY_ID`             | `db:campaigns:getById`             | `window.db.campaigns.getById`             | `src/main/ipc/registerCampaignHandlers.ts`  | `DbApi.campaigns.getById`             |
+| `IPC.CAMPAIGNS_ADD`                   | `db:campaigns:add`                 | `window.db.campaigns.add`                 | `src/main/ipc/registerCampaignHandlers.ts`  | `DbApi.campaigns.add`                 |
+| `IPC.CAMPAIGNS_UPDATE`                | `db:campaigns:update`              | `window.db.campaigns.update`              | `src/main/ipc/registerCampaignHandlers.ts`  | `DbApi.campaigns.update`              |
+| `IPC.CAMPAIGNS_DELETE`                | `db:campaigns:delete`              | `window.db.campaigns.delete`              | `src/main/ipc/registerCampaignHandlers.ts`  | `DbApi.campaigns.delete`              |
+| `IPC.BATTLEMAPS_GET_ALL_BY_WORLD`     | `db:battlemaps:getAllByWorld`      | `window.db.battlemaps.getAllByWorld`      | `src/main/ipc/registerBattleMapHandlers.ts` | `DbApi.battlemaps.getAllByWorld`      |
+| `IPC.BATTLEMAPS_GET_BY_ID`            | `db:battlemaps:getById`            | `window.db.battlemaps.getById`            | `src/main/ipc/registerBattleMapHandlers.ts` | `DbApi.battlemaps.getById`            |
+| `IPC.BATTLEMAPS_ADD`                  | `db:battlemaps:add`                | `window.db.battlemaps.add`                | `src/main/ipc/registerBattleMapHandlers.ts` | `DbApi.battlemaps.add`                |
+| `IPC.BATTLEMAPS_UPDATE`               | `db:battlemaps:update`             | `window.db.battlemaps.update`             | `src/main/ipc/registerBattleMapHandlers.ts` | `DbApi.battlemaps.update`             |
+| `IPC.BATTLEMAPS_DELETE`               | `db:battlemaps:delete`             | `window.db.battlemaps.delete`             | `src/main/ipc/registerBattleMapHandlers.ts` | `DbApi.battlemaps.delete`             |
+| `IPC.TOKENS_GET_ALL_BY_CAMPAIGN`      | `db:tokens:getAllByCampaign`       | `window.db.tokens.getAllByCampaign`       | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.getAllByCampaign`       |
+| `IPC.TOKENS_GET_BY_ID`                | `db:tokens:getById`                | `window.db.tokens.getById`                | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.getById`                |
+| `IPC.TOKENS_ADD`                      | `db:tokens:add`                    | `window.db.tokens.add`                    | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.add`                    |
+| `IPC.TOKENS_UPDATE`                   | `db:tokens:update`                 | `window.db.tokens.update`                 | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.update`                 |
+| `IPC.TOKENS_DELETE`                   | `db:tokens:delete`                 | `window.db.tokens.delete`                 | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.delete`                 |
+| `IPC.TOKENS_GET_ALL_BY_WORLD`         | `db:tokens:getAllByWorld`          | `window.db.tokens.getAllByWorld`          | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.getAllByWorld`          |
+| `IPC.TOKENS_IMPORT_IMAGE`             | `db:tokens:importImage`            | `window.db.tokens.importImage`            | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.importImage`            |
+| `IPC.TOKENS_MOVE_TO_WORLD`            | `db:tokens:moveToWorld`            | `window.db.tokens.moveToWorld`            | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.moveToWorld`            |
+| `IPC.TOKENS_MOVE_TO_CAMPAIGN`         | `db:tokens:moveToCampaign`         | `window.db.tokens.moveToCampaign`         | `src/main/ipc/registerTokenHandlers.ts`     | `DbApi.tokens.moveToCampaign`         |
+| `IPC.ARCS_GET_ALL_BY_CAMPAIGN`        | `db:arcs:getAllByCampaign`         | `window.db.arcs.getAllByCampaign`         | `src/main/ipc/registerArcHandlers.ts`       | `DbApi.arcs.getAllByCampaign`         |
+| `IPC.ARCS_GET_BY_ID`                  | `db:arcs:getById`                  | `window.db.arcs.getById`                  | `src/main/ipc/registerArcHandlers.ts`       | `DbApi.arcs.getById`                  |
+| `IPC.ARCS_ADD`                        | `db:arcs:add`                      | `window.db.arcs.add`                      | `src/main/ipc/registerArcHandlers.ts`       | `DbApi.arcs.add`                      |
+| `IPC.ARCS_UPDATE`                     | `db:arcs:update`                   | `window.db.arcs.update`                   | `src/main/ipc/registerArcHandlers.ts`       | `DbApi.arcs.update`                   |
+| `IPC.ARCS_DELETE`                     | `db:arcs:delete`                   | `window.db.arcs.delete`                   | `src/main/ipc/registerArcHandlers.ts`       | `DbApi.arcs.delete`                   |
+| `IPC.ACTS_GET_ALL_BY_ARC`             | `db:acts:getAllByArc`              | `window.db.acts.getAllByArc`              | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.getAllByArc`              |
+| `IPC.ACTS_GET_ALL_BY_CAMPAIGN`        | `db:acts:getAllByCampaign`         | `window.db.acts.getAllByCampaign`         | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.getAllByCampaign`         |
+| `IPC.ACTS_GET_BY_ID`                  | `db:acts:getById`                  | `window.db.acts.getById`                  | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.getById`                  |
+| `IPC.ACTS_ADD`                        | `db:acts:add`                      | `window.db.acts.add`                      | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.add`                      |
+| `IPC.ACTS_UPDATE`                     | `db:acts:update`                   | `window.db.acts.update`                   | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.update`                   |
+| `IPC.ACTS_DELETE`                     | `db:acts:delete`                   | `window.db.acts.delete`                   | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.delete`                   |
+| `IPC.ACTS_MOVE_TO_ARC`                | `db:acts:moveToArc`                | `window.db.acts.moveTo`                   | `src/main/ipc/registerActHandlers.ts`       | `DbApi.acts.moveTo`                   |
+| `IPC.SESSIONS_GET_ALL_BY_CAMPAIGN`    | `db:sessions:getAllByCampaign`     | `window.db.sessions.getAllByCampaign`     | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.getAllByCampaign`     |
+| `IPC.SESSIONS_GET_ALL_BY_ACT`         | `db:sessions:getAllByAct`          | `window.db.sessions.getAllByAct`          | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.getAllByAct`          |
+| `IPC.SESSIONS_GET_BY_ID`              | `db:sessions:getById`              | `window.db.sessions.getById`              | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.getById`              |
+| `IPC.SESSIONS_ADD`                    | `db:sessions:add`                  | `window.db.sessions.add`                  | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.add`                  |
+| `IPC.SESSIONS_UPDATE`                 | `db:sessions:update`               | `window.db.sessions.update`               | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.update`               |
+| `IPC.SESSIONS_DELETE`                 | `db:sessions:delete`               | `window.db.sessions.delete`               | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.delete`               |
+| `IPC.SESSIONS_MOVE_TO_ACT`            | `db:sessions:moveToAct`            | `window.db.sessions.moveTo`               | `src/main/ipc/registerSessionHandlers.ts`   | `DbApi.sessions.moveTo`               |
+| `IPC.SCENES_GET_ALL_BY_CAMPAIGN`      | `db:scenes:getAllByCampaign`       | `window.db.scenes.getAllByCampaign`       | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.getAllByCampaign`       |
+| `IPC.SCENES_GET_ALL_BY_SESSION`       | `db:scenes:getAllBySession`        | `window.db.scenes.getAllBySession`        | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.getAllBySession`        |
+| `IPC.SCENES_GET_BY_ID`                | `db:scenes:getById`                | `window.db.scenes.getById`                | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.getById`                |
+| `IPC.SCENES_ADD`                      | `db:scenes:add`                    | `window.db.scenes.add`                    | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.add`                    |
+| `IPC.SCENES_UPDATE`                   | `db:scenes:update`                 | `window.db.scenes.update`                 | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.update`                 |
+| `IPC.SCENES_DELETE`                   | `db:scenes:delete`                 | `window.db.scenes.delete`                 | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.delete`                 |
+| `IPC.SCENES_MOVE_TO_SESSION`          | `db:scenes:moveToSession`          | `window.db.scenes.moveTo`                 | `src/main/ipc/registerSceneHandlers.ts`     | `DbApi.scenes.moveTo`                 |
+| `IPC.STATBLOCKS_GET_ALL_BY_WORLD`     | `db:statblocks:getAllByWorld`      | `window.db.statblocks.getAllByWorld`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.getAllByWorld`      |
+| `IPC.STATBLOCKS_GET_ALL_BY_CAMPAIGN`  | `db:statblocks:getAllByCampaign`   | `window.db.statblocks.getAllByCampaign`   | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.getAllByCampaign`   |
+| `IPC.STATBLOCKS_GET_BY_ID`            | `db:statblocks:getById`            | `window.db.statblocks.getById`            | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.getById`            |
+| `IPC.STATBLOCKS_ADD`                  | `db:statblocks:add`                | `window.db.statblocks.add`                | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.add`                |
+| `IPC.STATBLOCKS_UPDATE`               | `db:statblocks:update`             | `window.db.statblocks.update`             | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.update`             |
+| `IPC.STATBLOCKS_DELETE`               | `db:statblocks:delete`             | `window.db.statblocks.delete`             | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.delete`             |
+| `IPC.STATBLOCKS_LINK_TOKEN`           | `db:statblocks:linkToken`          | `window.db.statblocks.linkToken`          | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.linkToken`          |
+| `IPC.STATBLOCKS_UNLINK_TOKEN`         | `db:statblocks:unlinkToken`        | `window.db.statblocks.unlinkToken`        | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.unlinkToken`        |
+| `IPC.STATBLOCKS_GET_LINKED_TOKENS`    | `db:statblocks:getLinkedTokens`    | `window.db.statblocks.getLinkedTokens`    | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.getLinkedTokens`    |
+| `IPC.STATBLOCKS_GET_LINKED_STATBLOCK` | `db:statblocks:getLinkedStatblock` | `window.db.statblocks.getLinkedStatblock` | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.getLinkedStatblock` |
+| `IPC.STATBLOCKS_ATTACH_ABILITY`       | `db:statblocks:attachAbility`      | `window.db.statblocks.attachAbility`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.attachAbility`      |
+| `IPC.STATBLOCKS_DETACH_ABILITY`       | `db:statblocks:detachAbility`      | `window.db.statblocks.detachAbility`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.detachAbility`      |
+| `IPC.STATBLOCKS_LIST_ABILITIES`       | `db:statblocks:listAbilities`      | `window.db.statblocks.listAbilities`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.listAbilities`      |
 
-```typescript
-// forge.env.d.ts
-interface Verse {
-  id: number;
-  text: string;
-  reference: string | null;
-  tags: string | null;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface World {
-  id: number;
-  name: string;
-  thumbnail: string | null;
-  short_description: string | null;
-  last_viewed_at: string | null;
-  config: string;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface Level {
-  id: number;
-  world_id: number;
-  name: string;
-  category: string;
-  description: string | null;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface Ability {
-  id: number;
-  world_id: number;
-  name: string;
-  description: string | null;
-  type: string;
-  passive_subtype: string | null;
-  level_id: number | null;
-  effects: string;
-  conditions: string;
-  cast_cost: string;
-  trigger: string | null;
-  pick_count: number | null;
-  pick_timing: string | null;
-  pick_is_permanent: number;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface AbilityChild {
-  parent_id: number;
-  child_id: number;
-}
-
-interface Campaign {
-  id: number;
-  world_id: number;
-  name: string;
-  summary: string | null;
-  config: string;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface BattleMap {
-  id: number;
-  world_id: number;
-  name: string;
-  config: string;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-type BattleMapGridMode = 'square' | 'hex' | 'none';
-
-interface BattleMapRuntimeGridConfig {
-  mode: BattleMapGridMode;
-  cellSize: number;
-  originX: number;
-  originY: number;
-}
-
-interface BattleMapRuntimeMapConfig {
-  imageSrc: string | null;
-  backgroundColor: string;
-}
-
-interface BattleMapRuntimeCameraConfig {
-  x: number;
-  y: number;
-  zoom: number;
-}
-
-interface BattleMapRuntimeConfig {
-  grid: BattleMapRuntimeGridConfig;
-  map: BattleMapRuntimeMapConfig;
-  camera: BattleMapRuntimeCameraConfig;
-  [key: string]: unknown;
-}
-
-interface BattleMapConfig {
-  runtime?: BattleMapRuntimeConfig;
-  [key: string]: unknown;
-}
-
-interface ScenePayloadRuntime {
-  battlemap_id?: number | null;
-  [key: string]: unknown;
-}
-
-interface ScenePayload {
-  runtime?: ScenePayloadRuntime;
-  [key: string]: unknown;
-}
-
-interface TokenImageImportPayload {
-  fileName: string;
-  mimeType: string;
-  bytes: Uint8Array;
-}
-
-interface TokenImageImportResult {
-  image_src: string;
-}
-
-type TokenGridType = 'square' | 'hex';
-
-interface TokenFootprintConfig {
-  width_cells?: number;
-  height_cells?: number;
-  radius_cells?: number;
-  [key: string]: unknown;
-}
-
-interface TokenFramingConfig {
-  anchor_x?: number;
-  anchor_y?: number;
-  offset_x_px?: number;
-  offset_y_px?: number;
-  [key: string]: unknown;
-}
-
-interface TokenConfigShape {
-  footprint?: TokenFootprintConfig;
-  framing?: TokenFramingConfig;
-  [key: string]: unknown;
-}
-
-interface Token {
-  id: number;
-  world_id: number;
-  campaign_id: number | null;
-  grid_type?: TokenGridType;
-  name: string;
-  image_src: string | null;
-  config: string;
-  is_visible: number;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface Arc {
-  id: number;
-  campaign_id: number;
-  name: string;
-  sort_order: number;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface Act {
-  id: number;
-  arc_id: number;
-  name: string;
-  sort_order: number;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface Session {
-  id: number;
-  act_id: number;
-  name: string;
-  notes: string | null;
-  planned_at: string | null;
-  sort_order: number;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface Scene {
-  id: number;
-  session_id: number;
-  name: string;
-  notes: string | null;
-  payload: string;
-  sort_order: number;
-  created_at: string; // ISO datetime string from SQLite
-  updated_at: string; // ISO datetime string from SQLite
-}
-
-interface CampaignSceneListItem extends Scene {
-  session_name: string;
-  act_id: number;
-  act_name: string;
-  arc_id: number;
-  arc_name: string;
-}
-
-interface StatBlockTokenLink {
-  statblock_id: number;
-  token_id: number;
-}
-
-interface StatBlockAbilityAssignment {
-  statblock_id: number;
-  ability_id: number;
-}
-
-interface StatBlockSkillValue {
-  key: string;
-  rank: number;
-}
-
-interface DbApi {
-  abilities: {
-    getAllByWorld(worldId: number): Promise<Ability[]>;
-    getById(id: number): Promise<Ability | null>;
-    add(data: {
-      world_id: number;
-      name: string;
-      description?: string | null;
-      type: string;
-      passive_subtype?: string | null;
-      level_id?: number | null;
-      effects?: string;
-      conditions?: string;
-      cast_cost?: string;
-      trigger?: string | null;
-      pick_count?: number | null;
-      pick_timing?: string | null;
-      pick_is_permanent?: number;
-    }): Promise<Ability>;
-    update(
-      id: number,
-      data: {
-        name?: string;
-        description?: string | null;
-        type?: string;
-        passive_subtype?: string | null;
-        level_id?: number | null;
-        effects?: string;
-        conditions?: string;
-        cast_cost?: string;
-        trigger?: string | null;
-        pick_count?: number | null;
-        pick_timing?: string | null;
-        pick_is_permanent?: number;
-      },
-    ): Promise<Ability>;
-    delete(id: number): Promise<{ id: number; }>;
-    addChild(data: AbilityChild): Promise<AbilityChild>;
-    removeChild(data: AbilityChild): Promise<AbilityChild>;
-    getChildren(abilityId: number): Promise<Ability[]>;
-  };
-  campaigns: {
-    getAllByWorld(worldId: number): Promise<Campaign[]>;
-    getById(id: number): Promise<Campaign | null>;
-    add(data: {
-      world_id: number;
-      name: string;
-      summary?: string | null;
-      config?: string;
-    }): Promise<Campaign>;
-    update(
-      id: number,
-      data: { name?: string; summary?: string | null; config?: string; },
-    ): Promise<Campaign>;
-    delete(id: number): Promise<{ id: number; }>;
-  };
-  battlemaps: {
-    getAllByWorld(worldId: number): Promise<BattleMap[]>;
-    getById(id: number): Promise<BattleMap | null>;
-    add(data: {
-      world_id: number;
-      name: string;
-      config?: string;
-    }): Promise<BattleMap>;
-    update(
-      id: number,
-      data: { name?: string; config?: string; },
-    ): Promise<BattleMap>;
-    delete(id: number): Promise<{ id: number; }>;
-  };
-  tokens: {
-    getAllByWorld(worldId: number): Promise<Token[]>;
-    getAllByCampaign(campaignId: number): Promise<Token[]>;
-    getById(id: number): Promise<Token | null>;
-    importImage(
-      payload: TokenImageImportPayload,
-    ): Promise<TokenImageImportResult>;
-    add(data: {
-      world_id: number;
-      campaign_id?: number | null;
-      name: string;
-      image_src?: string | null;
-      config?: string;
-      is_visible?: number;
-    }): Promise<Token>;
-    update(
-      id: number,
-      data: {
-        name?: string;
-        image_src?: string | null;
-        config?: string;
-        is_visible?: number;
-      },
-    ): Promise<Token>;
-    moveToWorld(tokenId: number): Promise<Token>;
-    moveToCampaign(tokenId: number, targetCampaignId: number): Promise<Token>;
-    delete(id: number): Promise<{ id: number; }>;
-  };
-  arcs: {
-    getAllByCampaign(campaignId: number): Promise<Arc[]>;
-    getById(id: number): Promise<Arc | null>;
-    add(data: {
-      campaign_id: number;
-      name: string;
-      sort_order?: number;
-    }): Promise<Arc>;
-    update(
-      id: number,
-      data: { name?: string; sort_order?: number; },
-    ): Promise<Arc>;
-    delete(id: number): Promise<{ id: number; }>;
-  };
-  acts: {
-    getAllByArc(arcId: number): Promise<Act[]>;
-    getAllByCampaign(campaignId: number): Promise<Act[]>;
-    getById(id: number): Promise<Act | null>;
-    add(data: {
-      arc_id: number;
-      name: string;
-      sort_order?: number;
-    }): Promise<Act>;
-    update(
-      id: number,
-      data: { name?: string; sort_order?: number; },
-    ): Promise<Act>;
-    delete(id: number): Promise<{ id: number; }>;
-    moveTo(actId: number, newArcId: number): Promise<Act>;
-  };
-  sessions: {
-    getAllByAct(actId: number): Promise<Session[]>;
-    getById(id: number): Promise<Session | null>;
-    add(data: {
-      act_id: number;
-      name: string;
-      notes?: string | null;
-      planned_at?: string | null;
-      sort_order?: number;
-    }): Promise<Session>;
-    update(
-      id: number,
-      data: {
-        name?: string;
-        notes?: string | null;
-        planned_at?: string | null;
-        sort_order?: number;
-      },
-    ): Promise<Session>;
-    delete(id: number): Promise<{ id: number; }>;
-    moveTo(sessionId: number, newActId: number): Promise<Session>;
-  };
-  scenes: {
-    getAllByCampaign(campaignId: number): Promise<CampaignSceneListItem[]>;
-    getAllBySession(sessionId: number): Promise<Scene[]>;
-    getById(id: number): Promise<Scene | null>;
-    add(data: {
-      session_id: number;
-      name: string;
-      notes?: string | null;
-      payload?: string;
-      sort_order?: number;
-    }): Promise<Scene>;
-    update(
-      id: number,
-      data: {
-        name?: string;
-        notes?: string | null;
-        payload?: string;
-        sort_order?: number;
-      },
-    ): Promise<Scene>;
-    delete(id: number): Promise<{ id: number; }>;
-    moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
-  };
-  statblocks: {
-    getAllByWorld(worldId: number): Promise<StatBlock[]>;
-    getAllByCampaign(campaignId: number): Promise<StatBlock[]>;
-    getById(id: number): Promise<StatBlock | null>;
-    add(data: {
-      world_id: number;
-      campaign_id?: number;
-      name: string;
-      description?: string;
-      config?: string;
-    }): Promise<StatBlock>;
-    update(
-      id: number,
-      data: { name?: string; description?: string; config?: string; },
-    ): Promise<StatBlock>;
-    delete(id: number): Promise<{ id: number; }>;
-    linkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
-    unlinkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
-    getLinkedTokens(statblockId: number): Promise<Token[]>;
-    getLinkedStatblock(tokenId: number): Promise<StatBlock | null>;
-    attachAbility(
-      data: StatBlockAbilityAssignment,
-    ): Promise<StatBlockAbilityAssignment>;
-    detachAbility(
-      data: StatBlockAbilityAssignment,
-    ): Promise<StatBlockAbilityAssignment>;
-    listAbilities(statblockId: number): Promise<Ability[]>;
-  };
-}
-
-interface StatBlock {
-  id: number;
-  world_id: number;
-  campaign_id: number | null;
-  character_id: number | null;
-  name: string;
-  default_token_id: number | null;
-  description: string | null;
-  config: string; // JSON object; extensible for mechanics
-  created_at: string;
-  updated_at: string;
-}
-```
-
-## Notes
-
-- All channels use `ipcMain.handle` / `ipcRenderer.invoke` (Promise-based).
-- `tags` is stored as a raw string; format is not yet enforced.
-- `VERSES_UPDATE` uses SQL `COALESCE`; passing `undefined`/`null` keeps that field unchanged.
-- Worlds read path is wired end-to-end for `WORLDS_GET_ALL` and `WORLDS_GET_BY_ID` (`main` handlers + `window.db.worlds.getAll/getById` in preload).
-- Worlds create path is wired end-to-end for `WORLDS_ADD` (`main` handler + `window.db.worlds.add` in preload), with required trimmed-name validation in `main`.
-- Worlds mutation paths are wired end-to-end for `WORLDS_UPDATE`, `WORLDS_DELETE`, and `WORLDS_MARK_VIEWED` (`main` handlers + `window.db.worlds.update/delete/markViewed` in preload).
-- `WORLDS_UPDATE` updates only provided fields (`name`, `thumbnail`, `short_description`, `config`), validates `name` when present, validates `config` as valid JSON when present, and always refreshes `updated_at`. The `config` field stores world-level statistics configuration as a JSON string.
-- `WORLDS_MARK_VIEWED` updates `last_viewed_at` and returns the refreshed row or `null` when the id does not exist.
-- `WORLDS_IMPORT_IMAGE` accepts `{ fileName, mimeType, bytes }`, requires `bytes` to be a non-empty `Uint8Array`, accepts only `image/png`, `image/jpeg`, `image/webp`, or `image/gif`, enforces a 5 MB size limit, writes under `app.getPath('userData')/world-images` using a unique filename (`timestamp-uuid.ext`), and returns `{ image_src }` as `vv-media://world-images/<encoded-file-name>`; validation reuses `ensureTokenImageImportPayload`; preload bridge is `window.db.worlds.importImage(payload)`.
-- `vv-media` protocol handler now serves both `token-images` and `world-images` hosts; host/path traversal guards apply to both directories.
-- Levels read path is wired end-to-end for `LEVELS_GET_ALL_BY_WORLD` and `LEVELS_GET_BY_ID` (`main` handlers + `window.db.levels.getAllByWorld/getById` in preload). All 5 levels channels are fully wired end-to-end: mutation channels (`LEVELS_ADD`, `LEVELS_UPDATE`, `LEVELS_DELETE`) have handlers in `registerLevelHandlers()` and are bridged via `window.db.levels.add/update/delete` in preload.
-- `LEVELS_ADD` validates `name.trim()` and `category.trim()` as non-empty, inserts a levels row scoped to `world_id`, and returns the inserted row.
-- `LEVELS_UPDATE` updates only the fields explicitly provided (`name`, `category`, `description`), validates trimmed values when present, always sets `updated_at = datetime('now')`, and throws `'Level not found'` if the row does not exist after update. Uses the same `hasOwnProperty`-based partial-update pattern as `WORLDS_UPDATE`, correctly handling intentional `null` sets for the nullable `description` field.
-- `LEVELS_DELETE` deletes by id and returns `{ id }`; does not throw when the row did not exist.
-- Ability read handlers are wired in `registerAbilityHandlers()` for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN`; all use deterministic ordering for list returns (`updated_at DESC`).
-- `ABILITIES_ADD` validates required trimmed `name` and `type`, inserts an ability row, and returns the inserted row via a post-insert `SELECT`.
-- `ABILITIES_UPDATE` uses explicit `hasOwnProperty` checks for partial updates (including nullable fields), validates trimmed `name`/`type` when present, always sets `updated_at = datetime('now')`, and returns a refreshed row.
-- `ABILITIES_DELETE` deletes by id and returns `{ id }`.
-- `ABILITIES_ADD_CHILD` validates parent/child ids as non-self links, ensures both abilities exist, enforces same-world linking (`parent.world_id === child.world_id`), inserts into `ability_children`, and converts duplicate-link unique constraint failures into a clear `'Child ability link already exists'` error.
-- `ABILITIES_REMOVE_CHILD` deletes by `(parent_id, child_id)` and returns `{ parent_id, child_id }` even when no row existed (idempotent no-op behavior).
-- Ability read channels are wired end-to-end for `ABILITIES_GET_ALL_BY_WORLD`, `ABILITIES_GET_BY_ID`, and `ABILITIES_GET_CHILDREN` (`main` handlers + `window.db.abilities.getAllByWorld/getById/getChildren` preload bridge methods).
-- Ability mutation channels are now also wired end-to-end in Step 07 via preload: `window.db.abilities.add/update/delete/addChild/removeChild` invoke `ABILITIES_ADD`, `ABILITIES_UPDATE`, `ABILITIES_DELETE`, `ABILITIES_ADD_CHILD`, and `ABILITIES_REMOVE_CHILD`.
-- Campaign handlers are wired in `registerCampaignHandlers()` for `CAMPAIGNS_GET_ALL_BY_WORLD`, `CAMPAIGNS_GET_BY_ID`, `CAMPAIGNS_ADD`, `CAMPAIGNS_UPDATE`, and `CAMPAIGNS_DELETE`.
-- `CAMPAIGNS_ADD` validates `name.trim()` as required, inserts a campaign row (`world_id`, `name`, `summary`, `config`), and returns the inserted row via a post-insert `SELECT`.
-- `CAMPAIGNS_UPDATE` updates only explicitly provided fields (`name`, `summary`, `config`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
-- `CAMPAIGNS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Campaign preload bridge methods are wired end-to-end in Step 10 via `window.db.campaigns.getAllByWorld/getById/add/update/delete`.
-- BattleMap handlers are wired in `registerBattleMapHandlers()` for `BATTLEMAPS_GET_ALL_BY_WORLD`, `BATTLEMAPS_GET_BY_ID`, `BATTLEMAPS_ADD`, `BATTLEMAPS_UPDATE`, and `BATTLEMAPS_DELETE`.
-- `BATTLEMAPS_GET_ALL_BY_WORLD` is scoped by `world_id` and returns deterministic order (`updated_at DESC, id DESC`); `BATTLEMAPS_GET_BY_ID` returns a row or `null`.
-- `BATTLEMAPS_ADD` validates required trimmed `name`, defaults omitted `config` to `'{}'`, validates `config` as a JSON object, normalizes runtime defaults (`runtime.grid`, `runtime.map`, `runtime.camera`), inserts (`world_id`, `name`, `config`), and returns the inserted row.
-- `BATTLEMAPS_UPDATE` updates only explicitly provided fields (`name`, `config`) using `hasOwnProperty` checks, validates trimmed `name` and object JSON `config` when present, normalizes runtime defaults for `config`, always refreshes `updated_at`, and returns the refreshed row (throws `'BattleMap not found'` when missing).
-- `BATTLEMAPS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- BattleMap channels are wired end-to-end in Step 03 via `window.db.battlemaps.getAllByWorld/getById/add/update/delete` and shared `BattleMap` + `DbApi.battlemaps` signatures in `forge.env.d.ts`.
-- Token main handlers are wired for `TOKENS_GET_ALL_BY_WORLD`, `TOKENS_GET_ALL_BY_CAMPAIGN`, `TOKENS_GET_BY_ID`, `TOKENS_IMPORT_IMAGE`, `TOKENS_ADD`, `TOKENS_UPDATE`, `TOKENS_MOVE_TO_WORLD`, `TOKENS_MOVE_TO_CAMPAIGN`, and `TOKENS_DELETE`.
-- `TOKENS_GET_ALL_BY_WORLD` is scoped by `world_id` (validated positive integer) and returns tokens ordered by `name ASC`; added in Tokens Step 01 (2026-03-04).
-- `TOKENS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns deterministic order (`updated_at DESC, id DESC`); `TOKENS_GET_BY_ID` returns a row or `null`.
-- `TOKENS_IMPORT_IMAGE` accepts `{ fileName, mimeType, bytes }`, requires `bytes` to be a non-empty `Uint8Array`, accepts only `image/png`, `image/jpeg`, `image/webp`, or `image/gif`, enforces a 5 MB size limit, writes under `app.getPath('userData')/token-images` using a unique filename (`timestamp-random.ext`), and returns `{ image_src }` as `vv-media://token-images/<encoded-file-name>`.
-- `vv-media` is registered in main via `protocol.handle(...)` and serves only files inside `app.getPath('userData')/token-images`; invalid host/path traversal requests return 400/404 and are rejected.
-- `TOKENS_ADD` requires `world_id` (positive integer), accepts optional `campaign_id` (positive integer or null), validates required trimmed `name`, defaults omitted `grid_type` to `'square'`, validates provided `grid_type` as `'square'|'hex'`, defaults omitted `config` to `'{}'`, validates provided `config` as a JSON object, validates `is_visible` as `0|1`, inserts (`world_id`, `campaign_id`, `name`, `image_src`, `config`, `grid_type`, `is_visible`), and returns the inserted row.
-- `TOKENS_UPDATE` updates only explicitly provided fields (`name`, `image_src`, `config`, `grid_type`, `is_visible`) using `hasOwnProperty` checks, validates trimmed `name`, object JSON `config`, `grid_type` as `'square'|'hex'`, and `is_visible` as `0|1` when present, always refreshes `updated_at`, and returns the refreshed row (throws `'Token not found'` when missing).
-- `TOKENS_MOVE_TO_WORLD` validates `tokenId` as a positive integer, verifies the token exists, then transactionally sets `campaign_id = NULL` and returns the refreshed token row.
-- `TOKENS_MOVE_TO_CAMPAIGN` validates `tokenId` and `targetCampaignId` as positive integers, verifies both token and target campaign exist, enforces `token.world_id === campaign.world_id`, then transactionally updates `campaign_id` and returns the refreshed token row.
-- `TOKENS_DELETE` deletes by id and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- Token channels are wired end-to-end via `window.db.tokens.getAllByWorld/getAllByCampaign/getById/importImage/add/update/moveToWorld/moveToCampaign/delete` and shared `Token` + `TokenImageImportPayload` + `TokenImageImportResult` + `DbApi.tokens` signatures in `forge.env.d.ts`.
-- Arc main handlers are wired for `ARCS_GET_ALL_BY_CAMPAIGN`, `ARCS_GET_BY_ID`, `ARCS_ADD`, `ARCS_UPDATE`, and `ARCS_DELETE`.
-- `ARCS_GET_ALL_BY_CAMPAIGN` is scoped by `campaign_id` and returns arcs ordered by `sort_order ASC, id ASC`.
-- `ARCS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted, inserts (`campaign_id`, `name`, `sort_order`), and returns the inserted row.
-- `ARCS_UPDATE` updates only explicitly provided fields (`name`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
-- `ARCS_DELETE` deletes by id, compacts remaining sibling `sort_order` values within `campaign_id`, and returns `{ id }` (idempotent no-op when row does not exist).
-- Arc preload bridge methods are wired via `window.db.arcs.getAllByCampaign/getById/add/update/delete`.
-- Act main handlers are wired for `ACTS_GET_ALL_BY_ARC`, `ACTS_GET_ALL_BY_CAMPAIGN`, `ACTS_GET_BY_ID`, `ACTS_ADD`, `ACTS_UPDATE`, `ACTS_DELETE`, and `ACTS_MOVE_TO_ARC`.
-- `ACTS_GET_ALL_BY_ARC` is scoped by `arc_id` and returns acts ordered by `sort_order ASC, id ASC`.
-- `ACTS_GET_ALL_BY_CAMPAIGN` uses a JOIN across arcs to return all acts for a campaign ordered by arc sort_order then act sort_order.
-- `ACTS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted, inserts (`arc_id`, `name`, `sort_order`), and returns the inserted row.
-- `ACTS_MOVE_TO_ARC` moves an act to a new arc, appends at the tail of the new arc's sort order, resequences the old arc, and returns the updated act.
-- Act preload bridge methods are wired via `window.db.acts.getAllByArc/getAllByCampaign/getById/add/update/delete/moveTo`.
-- Session main handlers are wired for `SESSIONS_GET_ALL_BY_ACT`, `SESSIONS_GET_BY_ID`, `SESSIONS_ADD`, `SESSIONS_UPDATE`, `SESSIONS_DELETE`, and `SESSIONS_MOVE_TO_ACT`.
-- `SESSIONS_GET_ALL_BY_ACT` is scoped by `act_id` and returns sessions ordered by `sort_order ASC, id ASC`.
-- `SESSIONS_ADD` validates required trimmed `name`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the act), inserts (`act_id`, `name`, `notes`, `planned_at`, `sort_order`), and returns the inserted row.
-- `SESSIONS_UPDATE` updates only explicitly provided fields (`name`, `notes`, `planned_at`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, always refreshes `updated_at`, and returns the refreshed row.
-- `SESSIONS_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `act_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- `SESSIONS_MOVE_TO_ACT` moves a session to a new act, appends at the tail of the new act's sort order, resequences the old act, and returns the updated session.
-- Session preload bridge methods are wired via `window.db.sessions.getAllByAct/getById/add/update/delete/moveTo`.
-- Scene main handlers are wired for `SCENES_GET_ALL_BY_CAMPAIGN`, `SCENES_GET_ALL_BY_SESSION`, `SCENES_GET_BY_ID`, `SCENES_ADD`, `SCENES_UPDATE`, `SCENES_DELETE`, and `SCENES_MOVE_TO_SESSION`.
-- `SCENES_GET_ALL_BY_CAMPAIGN` joins `scenes -> sessions -> acts -> arcs`, filters by `arcs.campaign_id`, and returns deterministic hierarchy order (`arc.sort_order/id`, `act.sort_order/id`, `session.sort_order/id`, `scene.sort_order/id`).
-- `SCENES_GET_ALL_BY_SESSION` is scoped by `session_id` and returns scenes ordered by `sort_order ASC, id ASC`.
-- `SCENES_ADD` validates required trimmed `name`, validates optional `payload` as JSON text when provided, defaults omitted `payload` to `'{}'`, preserves backward-compatible payload shape while validating optional `payload.runtime.battlemap_id` as a positive integer or `null`, appends to the sibling tail when `sort_order` is omitted (`MAX(sort_order) + 1` within the session), inserts (`session_id`, `name`, `notes`, `payload`, `sort_order`), and returns the inserted row.
-- `SCENES_UPDATE` updates only explicitly provided fields (`name`, `notes`, `payload`, `sort_order`) using `hasOwnProperty` checks, validates trimmed `name` when present, validates JSON `payload` when present with the same optional runtime linkage rule (`payload.runtime.battlemap_id`), always refreshes `updated_at`, and returns the refreshed row.
-- `SCENES_DELETE` deletes by id, compacts remaining sibling `sort_order` values to contiguous numbering within `session_id`, and returns `{ id }` even when no row existed (idempotent no-op behavior).
-- `SCENES_MOVE_TO_SESSION` runs inside a transaction, validates source scene + target session, returns unchanged row when target equals current `session_id`, appends moved scene to target tail (`MAX(sort_order) + 1`), resequences the old session, and returns the refreshed moved row.
-- Scene preload bridge methods are wired end-to-end in Step 10 via `window.db.scenes.getAllBySession/getById/add/update/delete`, extended in Scenes Move Step 01 with `window.db.scenes.moveTo`, and extended in Campaign Scenes Index Step 01 with `window.db.scenes.getAllByCampaign`.
-- StatBlock read handlers are wired in `main` for `STATBLOCKS_GET_ALL_BY_WORLD`, `STATBLOCKS_GET_ALL_BY_CAMPAIGN`, and `STATBLOCKS_GET_BY_ID` (Step 03); mutation handlers for `STATBLOCKS_ADD`, `STATBLOCKS_UPDATE`, and `STATBLOCKS_DELETE` are wired in Step 04.
-- StatBlock preload bridges are wired end-to-end in Step 05 via `window.db.statblocks.getAllByWorld/getAllByCampaign/getById/add/update/delete`.
-- StatBlock linkage backbone handlers are wired in `main` for token linking (`STATBLOCKS_LINK_TOKEN`, `STATBLOCKS_UNLINK_TOKEN`, `STATBLOCKS_GET_LINKED_TOKENS`, `STATBLOCKS_GET_LINKED_STATBLOCK`) and ability assignment (`STATBLOCKS_ATTACH_ABILITY`, `STATBLOCKS_DETACH_ABILITY`, `STATBLOCKS_LIST_ABILITIES`); preload bridges expose matching `window.db.statblocks` methods.
-- StatBlock Integration Step 03 (2026-03-07) consumes assignment channels in renderer CRUD flows: `StatBlocksPage` now calls `window.db.statblocks.listAbilities` during page load and reconciles edit/create selections via `window.db.statblocks.attachAbility` and `window.db.statblocks.detachAbility` while constraining selectable options to `window.db.abilities.getAllByWorld(worldId)` results.
-- `STATBLOCKS_LINK_TOKEN` and `STATBLOCKS_ATTACH_ABILITY` enforce same-world constraints (`token.world_id === statblock.world_id`, `ability.world_id === statblock.world_id`) and return clear duplicate-link/duplicate-assignment errors.
-- `STATBLOCKS_ADD` and `STATBLOCKS_UPDATE` now validate statblock `config` as JSON object text and normalize optional MVP `skills` shape (`[{ key: string; rank: number }]`) when present.
-- Never hardcode channel strings; always import from `src/shared/ipcChannels.ts`.
+<!-- END GENERATED IPC TABLE -->
