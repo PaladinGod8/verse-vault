@@ -79,6 +79,12 @@ Follow the repo-specific TDD skill for your agent surface: Claude Code uses `.cl
 
 Codex note: the repo-local source for the Codex skill lives in this checkout at `.codex/skills/verse-vault-tdd/SKILL.md`. Run `yarn skills:sync` to install it to `~/.codex/skills/verse-vault-tdd` (or `$CODEX_HOME/skills/verse-vault-tdd`); keep it aligned with `.claude/skills/tdd/SKILL.md`, and treat this `AGENTS.md` section as the source of truth for repo rules.
 
+### Fix Bug
+
+For bug fixes specifically, follow the repo-specific Fix Bug skill for your agent surface: Claude Code uses `.claude/skills/fix-bug/SKILL.md`; Codex uses `$verse-vault-fix-bug` from `~/.codex/skills/verse-vault-fix-bug` (or `$CODEX_HOME/skills/verse-vault-fix-bug`). It layers root-cause analysis and the repo's main/preload/renderer layer rules on top of the same Chicago School TDD workflow as the TDD skill above.
+
+Codex note: the repo-local source for the Codex skill lives in this checkout at `.codex/skills/verse-vault-fix-bug/SKILL.md`. Run `yarn skills:sync` to install it to `~/.codex/skills/verse-vault-fix-bug` (or `$CODEX_HOME/skills/verse-vault-fix-bug`); keep it aligned with `.claude/skills/fix-bug/SKILL.md`, and treat this `AGENTS.md` section as the source of truth for repo rules.
+
 ### Prompt-Splitting Requirement
 
 When an agent creates sequential implementation prompts under `docs/prompts/`, include a final step named `Final Quality Gate` that references `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` and requires all gates to pass in order.

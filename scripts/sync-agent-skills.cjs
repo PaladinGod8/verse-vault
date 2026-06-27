@@ -21,6 +21,16 @@ const SYNC_TARGETS = [
     destinationRoot: () => path.join(os.homedir(), '.claude'),
     destinationName: 'verse-vault-tdd',
   },
+  {
+    source: path.join(REPO_ROOT, '.codex', 'skills', 'verse-vault-fix-bug'),
+    destinationRoot: () => process.env.CODEX_HOME || path.join(os.homedir(), '.codex'),
+    destinationName: 'verse-vault-fix-bug',
+  },
+  {
+    source: path.join(REPO_ROOT, '.claude', 'skills', 'fix-bug'),
+    destinationRoot: () => path.join(os.homedir(), '.claude'),
+    destinationName: 'verse-vault-fix-bug',
+  },
 ];
 
 function copyDirRecursive(sourceDir, targetDir) {
