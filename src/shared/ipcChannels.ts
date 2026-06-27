@@ -88,4 +88,10 @@ export const IPC = {
   STATBLOCKS_ATTACH_ABILITY: 'db:statblocks:attachAbility',
   STATBLOCKS_DETACH_ABILITY: 'db:statblocks:detachAbility',
   STATBLOCKS_LIST_ABILITIES: 'db:statblocks:listAbilities',
+  CHARACTERS_GET_ALL_BY_WORLD: 'db:characters:getAllByWorld',
+  CHARACTERS_GET_BY_ID: 'db:characters:getById',
+  CHARACTERS_ADD: 'db:characters:add',
+  CHARACTERS_UPDATE: 'db:characters:update',
+  CHARACTERS_DELETE: 'db:characters:delete',
+  CHARACTERS_IMPORT_IMAGE: 'db:characters:importImage',
 } as const;

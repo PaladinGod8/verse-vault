@@ -28,6 +28,7 @@ const HANDLERS = {
   sessions: 'src/main/ipc/registerSessionHandlers.ts',
   scenes: 'src/main/ipc/registerSceneHandlers.ts',
   statblocks: 'src/main/ipc/registerStatBlockHandlers.ts',
+  characters: 'src/main/ipc/registerCharacterHandlers.ts',
 } as const;
 
 function entries(
@@ -213,6 +214,22 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'STATBLOCKS_LIST_ABILITIES',
       'window.db.statblocks.listAbilities',
       'DbApi.statblocks.listAbilities',
+    ],
+  ]),
+  ...entries('characters', HANDLERS.characters, [
+    [
+      'CHARACTERS_GET_ALL_BY_WORLD',
+      'window.db.characters.getAllByWorld',
+      'DbApi.characters.getAllByWorld',
+    ],
+    ['CHARACTERS_GET_BY_ID', 'window.db.characters.getById', 'DbApi.characters.getById'],
+    ['CHARACTERS_ADD', 'window.db.characters.add', 'DbApi.characters.add'],
+    ['CHARACTERS_UPDATE', 'window.db.characters.update', 'DbApi.characters.update'],
+    ['CHARACTERS_DELETE', 'window.db.characters.delete', 'DbApi.characters.delete'],
+    [
+      'CHARACTERS_IMPORT_IMAGE',
+      'window.db.characters.importImage',
+      'DbApi.characters.importImage',
     ],
   ]),
 ];

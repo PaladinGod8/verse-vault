@@ -51,6 +51,7 @@ not generated.
 | `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting            |
 | `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates          |
 | `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links |
+| `characters.md`                       | World-scoped character wiki entries with search and image   |
 
 ## Notes
 

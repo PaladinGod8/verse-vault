@@ -13,6 +13,7 @@ import BattleMapRuntimePage from './pages/BattleMapRuntimePage';
 import BattleMapsPage from './pages/BattleMapsPage';
 import CampaignScenesPage from './pages/CampaignScenesPage';
 import CampaignsPage from './pages/CampaignsPage';
+import CharactersPage from './pages/CharactersPage';
 import LevelsPage from './pages/LevelsPage';
 import ScenesPage from './pages/ScenesPage';
 import SessionsPage from './pages/SessionsPage';
@@ -35,6 +36,7 @@ export default function App() {
         <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
         <Route path='/world/:id/tokens' element={<TokensPage />} />
         <Route path='/world/:id/statblocks' element={<StatBlocksPage />} />
+        <Route path='/world/:id/characters' element={<CharactersPage />} />
         <Route
           path='/world/:id/statistics'
           element={<WorldStatisticsConfigPage />}

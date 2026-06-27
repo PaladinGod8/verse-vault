@@ -51,6 +51,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/battlemaps`                                                           | `BattleMapsPage`            | `src/renderer/pages/BattleMapsPage.tsx`            |
 | `/world/:id/tokens`                                                               | `TokensPage`                | `src/renderer/pages/TokensPage.tsx`                |
 | `/world/:id/statblocks`                                                           | `StatBlocksPage`            | `src/renderer/pages/StatBlocksPage.tsx`            |
+| `/world/:id/characters`                                                           | `CharactersPage`            | `src/renderer/pages/CharactersPage.tsx`            |
 | `/world/:id/statistics`                                                           | `WorldStatisticsConfigPage` | `src/renderer/pages/WorldStatisticsConfigPage.tsx` |
 | `/world/:id/battlemaps/:battleMapId/runtime`                                      | `BattleMapRuntimePage`      | `src/renderer/pages/BattleMapRuntimePage.tsx`      |
 | `/world/:id/campaign/:campaignId/scenes`                                          | `CampaignScenesPage`        | `src/renderer/pages/CampaignScenesPage.tsx`        |
@@ -79,5 +80,6 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerSessionHandlers.ts`   | sessions   | 7        |
 | `src/main/ipc/registerSceneHandlers.ts`     | scenes     | 7        |
 | `src/main/ipc/registerStatBlockHandlers.ts` | statblocks | 13       |
+| `src/main/ipc/registerCharacterHandlers.ts` | characters | 6        |
 
 <!-- END GENERATED REGISTRARS -->

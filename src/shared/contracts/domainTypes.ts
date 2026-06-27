@@ -262,3 +262,15 @@ export interface StatBlock {
   created_at: string;
   updated_at: string;
 }
+
+export interface Character {
+  id: number;
+  world_id: number;
+  name: string;
+  profile: string | null;
+  image_src: string | null;
+  sections: string; // JSON text of CharacterSections
+  wiki_summary: string; // JSON text of CharacterWikiSummary
+  created_at: string;
+  updated_at: string;
+}

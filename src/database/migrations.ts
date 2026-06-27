@@ -17,6 +17,41 @@ export function runMigrations(db: Database.Database): void {
   runStatBlocksSchemaMigration(db);
   runStatBlockLinkageSchemaMigration(db);
   runWorldConfigMigration(db);
+  runCharactersSchemaMigration(db);
+}
+
+function runCharactersSchemaMigration(db: Database.Database): void {
+  const cols = db.pragma('table_info(characters)') as Array<{ name: string; }>;
+  if (!cols || !Array.isArray(cols)) {
+    return;
+  }
+
+  const addColumn = (columnName: string, sql: string) => {
+    if (!cols.some((c) => c.name === columnName)) {
+      db.exec(sql);
+    }
+  };
+
+  addColumn(
+    'world_id',
+    'ALTER TABLE characters ADD COLUMN world_id INTEGER REFERENCES worlds(id) ON DELETE CASCADE',
+  );
+  addColumn(
+    'name',
+    "ALTER TABLE characters ADD COLUMN name TEXT NOT NULL DEFAULT ''",
+  );
+  addColumn('profile', 'ALTER TABLE characters ADD COLUMN profile TEXT');
+  addColumn('image_src', 'ALTER TABLE characters ADD COLUMN image_src TEXT');
+  addColumn(
+    'sections',
+    "ALTER TABLE characters ADD COLUMN sections TEXT NOT NULL DEFAULT '{}'",
+  );
+  addColumn(
+    'wiki_summary',
+    "ALTER TABLE characters ADD COLUMN wiki_summary TEXT NOT NULL DEFAULT '{}'",
+  );
+
+  db.exec('CREATE INDEX IF NOT EXISTS idx_characters_world_id ON characters(world_id)');
 }
 
 function runStatBlocksSchemaMigration(db: Database.Database): void {

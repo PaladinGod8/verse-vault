@@ -405,4 +405,68 @@ describe('preload', () => {
       config: '{"resources":[]}',
     });
   });
+
+  it('forwards characters CRUD calls to their IPC channels', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.characters.getAllByWorld(1);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_GET_ALL_BY_WORLD, 1);
+
+    await api.characters.getById(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_GET_BY_ID, 2);
+
+    await api.characters.add({ world_id: 1, name: 'Ledros Igni' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_ADD, {
+      world_id: 1,
+      name: 'Ledros Igni',
+    });
+
+    await api.characters.update(2, { name: 'Updated' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_UPDATE, 2, {
+      name: 'Updated',
+    });
+
+    await api.characters.delete(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_DELETE, 2);
+  });
+
+  it('forwards characters.importImage to CHARACTERS_IMPORT_IMAGE', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const payload: TokenImageImportPayload = {
+      fileName: 'character.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([7, 8, 9]),
+    };
+
+    await api.characters.importImage(payload);
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_IMPORT_IMAGE, {
+      fileName: 'character.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([7, 8, 9]),
+    });
+  });
+
+  it('throws error when characters.importImage receives non-Uint8Array bytes', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const invalidPayload = {
+      fileName: 'character.png',
+      mimeType: 'image/png',
+      bytes: [7, 8, 9],
+    } as unknown as TokenImageImportPayload;
+
+    try {
+      await api.characters.importImage(invalidPayload);
+      expect.fail('Should have thrown an error');
+    } catch (err) {
+      expect((err as Error).message).toBe(
+        'Character image bytes must be a Uint8Array',
+      );
+    }
+  });
 });

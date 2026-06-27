@@ -142,6 +142,23 @@ const dbApi: DbApi = {
       });
     },
   },
+  characters: {
+    getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.CHARACTERS_GET_ALL_BY_WORLD, worldId),
+    getById: (id) => ipcRenderer.invoke(IPC.CHARACTERS_GET_BY_ID, id),
+    add: (data) => ipcRenderer.invoke(IPC.CHARACTERS_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.CHARACTERS_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.CHARACTERS_DELETE, id),
+    importImage: (payload) => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('Character image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.CHARACTERS_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: new Uint8Array(payload.bytes),
+      });
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('db', dbApi);

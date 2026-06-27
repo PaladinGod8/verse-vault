@@ -26,6 +26,7 @@ This document is a current-state contract index. It is generated from `src/share
 | sessions   | 7        | `src/main/ipc/registerSessionHandlers.ts`   |
 | scenes     | 7        | `src/main/ipc/registerSceneHandlers.ts`     |
 | statblocks | 13       | `src/main/ipc/registerStatBlockHandlers.ts` |
+| characters | 6        | `src/main/ipc/registerCharacterHandlers.ts` |
 
 <!-- END GENERATED IPC SUMMARY -->
 
@@ -117,5 +118,11 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.STATBLOCKS_ATTACH_ABILITY`       | `db:statblocks:attachAbility`      | `window.db.statblocks.attachAbility`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.attachAbility`      |
 | `IPC.STATBLOCKS_DETACH_ABILITY`       | `db:statblocks:detachAbility`      | `window.db.statblocks.detachAbility`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.detachAbility`      |
 | `IPC.STATBLOCKS_LIST_ABILITIES`       | `db:statblocks:listAbilities`      | `window.db.statblocks.listAbilities`      | `src/main/ipc/registerStatBlockHandlers.ts` | `DbApi.statblocks.listAbilities`      |
+| `IPC.CHARACTERS_GET_ALL_BY_WORLD`     | `db:characters:getAllByWorld`      | `window.db.characters.getAllByWorld`      | `src/main/ipc/registerCharacterHandlers.ts` | `DbApi.characters.getAllByWorld`      |
+| `IPC.CHARACTERS_GET_BY_ID`            | `db:characters:getById`            | `window.db.characters.getById`            | `src/main/ipc/registerCharacterHandlers.ts` | `DbApi.characters.getById`            |
+| `IPC.CHARACTERS_ADD`                  | `db:characters:add`                | `window.db.characters.add`                | `src/main/ipc/registerCharacterHandlers.ts` | `DbApi.characters.add`                |
+| `IPC.CHARACTERS_UPDATE`               | `db:characters:update`             | `window.db.characters.update`             | `src/main/ipc/registerCharacterHandlers.ts` | `DbApi.characters.update`             |
+| `IPC.CHARACTERS_DELETE`               | `db:characters:delete`             | `window.db.characters.delete`             | `src/main/ipc/registerCharacterHandlers.ts` | `DbApi.characters.delete`             |
+| `IPC.CHARACTERS_IMPORT_IMAGE`         | `db:characters:importImage`        | `window.db.characters.importImage`        | `src/main/ipc/registerCharacterHandlers.ts` | `DbApi.characters.importImage`        |
 
 <!-- END GENERATED IPC TABLE -->

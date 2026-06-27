@@ -43,6 +43,7 @@ declare global {
   type StatBlockSkillValue = DomainTypes.StatBlockSkillValue;
   type StatBlockConfig = DomainTypes.StatBlockConfig;
   type StatBlock = DomainTypes.StatBlock;
+  type Character = DomainTypes.Character;
   type DbApi = import('./src/shared/contracts/dbApi').DbApi;
 
   interface Window {

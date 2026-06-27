@@ -12,6 +12,7 @@ import type {
   BattleMap,
   Campaign,
   CampaignSceneListItem,
+  Character,
   Level,
   Scene,
   Session,
@@ -72,6 +73,7 @@ export const DB_API_METHODS = {
     'detachAbility',
     'listAbilities',
   ],
+  characters: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage'],
 } as const;
 
 export interface DbApi {
@@ -341,5 +343,31 @@ export interface DbApi {
       data: StatBlockAbilityAssignment,
     ): Promise<StatBlockAbilityAssignment>;
     listAbilities(statblockId: number): Promise<Ability[]>;
+  };
+  characters: {
+    getAllByWorld(worldId: number): Promise<Character[]>;
+    getById(id: number): Promise<Character | null>;
+    add(data: {
+      world_id: number;
+      name: string;
+      profile?: string | null;
+      image_src?: string | null;
+      sections?: string;
+      wiki_summary?: string;
+    }): Promise<Character>;
+    update(
+      id: number,
+      data: {
+        name?: string;
+        profile?: string | null;
+        image_src?: string | null;
+        sections?: string;
+        wiki_summary?: string;
+      },
+    ): Promise<Character>;
+    delete(id: number): Promise<{ id: number; }>;
+    importImage(
+      payload: TokenImageImportPayload,
+    ): Promise<TokenImageImportResult>;
   };
 }

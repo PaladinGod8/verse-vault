@@ -5,6 +5,7 @@ import { registerActHandlers } from '../../../src/main/ipc/registerActHandlers';
 import { registerArcHandlers } from '../../../src/main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from '../../../src/main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from '../../../src/main/ipc/registerCampaignHandlers';
+import { registerCharacterHandlers } from '../../../src/main/ipc/registerCharacterHandlers';
 import { registerLevelHandlers } from '../../../src/main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from '../../../src/main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from '../../../src/main/ipc/registerSessionHandlers';
@@ -228,6 +229,18 @@ describe('IPC registrar channel wiring', () => {
           IPC.STATBLOCKS_LIST_ABILITIES,
         ],
       },
+      {
+        name: 'characters',
+        register: () => registerCharacterHandlers(dbMock),
+        expected: [
+          IPC.CHARACTERS_GET_ALL_BY_WORLD,
+          IPC.CHARACTERS_GET_BY_ID,
+          IPC.CHARACTERS_ADD,
+          IPC.CHARACTERS_UPDATE,
+          IPC.CHARACTERS_DELETE,
+          IPC.CHARACTERS_IMPORT_IMAGE,
+        ],
+      },
     ];
 
     for (const { name, register, expected } of channelsByRegistrar) {
@@ -254,6 +267,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerSceneHandlers(dbMock),
       () => registerAbilityHandlers(dbMock),
       () => registerStatBlockHandlers(dbMock),
+      () => registerCharacterHandlers(dbMock),
     ];
 
     const allRegisteredChannels = allRegisterCalls

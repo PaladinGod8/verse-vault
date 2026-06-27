@@ -112,6 +112,16 @@ export function createMockDb(): DbApi {
       detachAbility: vi.fn().mockResolvedValue({ statblock_id: 1, ability_id: 1 }),
       listAbilities: vi.fn().mockResolvedValue([]),
     },
+    characters: {
+      getAllByWorld: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue({ id: 1 } as Character),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      importImage: vi.fn().mockResolvedValue({
+        image_src: 'vv-media://character-images/mock.png',
+      }),
+    },
   };
 
   return mockDb;

@@ -213,3 +213,18 @@ export function buildStatBlockAbilityAssignment(
     ...overrides,
   };
 }
+
+export function buildCharacter(overrides: Partial<Character> = {}): Character {
+  return {
+    id: getNextId(),
+    world_id: getNextId(),
+    name: 'Test Character',
+    profile: 'A test character profile',
+    image_src: null,
+    sections: '{}',
+    wiki_summary: '{}',
+    created_at: DEFAULT_TIMESTAMP,
+    updated_at: DEFAULT_TIMESTAMP,
+    ...overrides,
+  };
+}

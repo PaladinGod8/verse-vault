@@ -55,6 +55,7 @@ const registerSessionHandlersMock = vi.fn();
 const registerSceneHandlersMock = vi.fn();
 const registerAbilityHandlersMock = vi.fn();
 const registerStatBlockHandlersMock = vi.fn();
+const registerCharacterHandlersMock = vi.fn();
 
 vi.mock('electron-squirrel-startup', () => false);
 vi.mock('electron', () => ({
@@ -110,6 +111,9 @@ vi.mock('../../src/main/ipc/registerAbilityHandlers', () => ({
 }));
 vi.mock('../../src/main/ipc/registerStatBlockHandlers', () => ({
   registerStatBlockHandlers: registerStatBlockHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerCharacterHandlers', () => ({
+  registerCharacterHandlers: registerCharacterHandlersMock,
 }));
 
 function setForgeGlobals(devServerUrl: string | undefined): void {
@@ -169,6 +173,7 @@ describe('main bootstrap orchestration', () => {
     expect(registerSceneHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerAbilityHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerStatBlockHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerCharacterHandlersMock).toHaveBeenCalledWith(dbMock);
 
     expect(browserWindowCtorMock).toHaveBeenCalledTimes(1);
     expect(loadFileMock).toHaveBeenCalledTimes(1);
@@ -197,6 +202,14 @@ describe('main bootstrap orchestration', () => {
     expect(worldResponse.status).toBe(200);
     expect(netFetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/world-images/world.png'),
+    );
+
+    const characterResponse = await protocolHandler({
+      url: 'vv-media://character-images/character.png',
+    });
+    expect(characterResponse.status).toBe(200);
+    expect(netFetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/character-images/character.png'),
     );
 
     const unknownHostResponse = await protocolHandler({

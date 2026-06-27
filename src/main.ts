@@ -13,6 +13,7 @@ import { registerActHandlers } from './main/ipc/registerActHandlers';
 import { registerArcHandlers } from './main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from './main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from './main/ipc/registerCampaignHandlers';
+import { registerCharacterHandlers } from './main/ipc/registerCharacterHandlers';
 import { registerLevelHandlers } from './main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from './main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from './main/ipc/registerSessionHandlers';
@@ -24,6 +25,7 @@ import { registerWorldHandlers } from './main/ipc/registerWorldHandlers';
 const TOKEN_IMAGE_PROTOCOL = 'vv-media';
 const TOKEN_IMAGE_HOST = 'token-images';
 const WORLD_IMAGE_HOST = 'world-images';
+const CHARACTER_IMAGE_HOST = 'character-images';
 const IS_DEV = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
 const SHOULD_INSTALL_REACT_DEVTOOLS = IS_DEV && !process.env.VITEST
@@ -44,6 +46,8 @@ function registerTokenImageProtocol(): void {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'token-images'));
     } else if (requestUrl.hostname === WORLD_IMAGE_HOST) {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'world-images'));
+    } else if (requestUrl.hostname === CHARACTER_IMAGE_HOST) {
+      imagesDir = path.resolve(path.join(app.getPath('userData'), 'character-images'));
     } else {
       return new Response('Media host not found', { status: 404 });
     }
@@ -120,6 +124,7 @@ function registerIpcHandlers() {
   registerSceneHandlers(db);
   registerAbilityHandlers(db);
   registerStatBlockHandlers(db);
+  registerCharacterHandlers(db);
 }
 
 // This method will be called when Electron has finished
