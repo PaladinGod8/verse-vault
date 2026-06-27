@@ -160,7 +160,7 @@ Three reparent operations are supported. All are atomic transactions in the main
   - canonical order is reloaded from backend,
   - if reload also fails, UI falls back to the pre-drag snapshot.
 
-## Validation
+## Validation and Error Rules
 
 - `name`: required, trimmed; blank blocked in both renderer and main handlers.
 - `summary` / `notes`: optional; empty string maps to `null` in forms.
@@ -168,17 +168,23 @@ Three reparent operations are supported. All are atomic transactions in the main
 - `planned_at` (Session): main handlers accept `string | null` and do not enforce a strict datetime format.
 - `payload` (Scene): must be valid JSON when provided; empty form input defaults to `'{}'`.
 
-## Non-Goals
+## Tests
 
-- Scene runtime/execution engine (playback, branching).
-- Prompt templating or LLM workflow integration.
-- Multi-select or bulk reparenting.
-- Drag-and-drop cross-level reparenting (dialog only).
-- Undo/redo for reorder or reparent operations.
-- Collaboration/conflict resolution.
+- `tests/unit/ArcsPage.test.tsx`, `tests/unit/ActsPage.test.tsx`, `tests/unit/MoveActDialog.test.tsx` — arc/act page rendering, reorder, and reparent dialog.
+- `tests/unit/ipc/registerArcHandlers.test.ts`, `tests/unit/ipc/registerActHandlers.test.ts` — main-process handler semantics for arcs/acts.
+- `tests/unit/renderer/campaignForm.test.tsx`, `campaignsPage.test.tsx`, `campaignScenesPage.test.tsx` — campaign CRUD and campaign-wide scenes index.
+- `tests/unit/renderer/sessionForm.test.tsx`, `sessionsPage.test.tsx` — session CRUD, `planned_at` handling.
+- `tests/unit/renderer/sceneForm.test.tsx`, `scenesPage.test.tsx` — scene CRUD, payload JSON validation.
+- `tests/e2e/arc-act.test.ts` — serial end-to-end flow across world → campaign → arc → act → session.
 
-## Known Limits
+## Known Limits and Non-Goals
 
+- Scene runtime/execution engine (playback, branching) is not implemented.
+- Prompt templating or LLM workflow integration is not implemented.
+- Multi-select or bulk reparenting is not implemented.
+- Drag-and-drop cross-level reparenting is not implemented (dialog only).
+- Undo/redo for reorder or reparent operations is not implemented.
+- Collaboration/conflict resolution is not implemented.
 - Reorder persistence is multiple per-row updates, not a single atomic batch IPC call.
 - No undo stack for reorder or reparent operations.
 - Campaign rows still use `updated_at DESC`; sequence semantics apply only to arcs, acts, sessions, and scenes.

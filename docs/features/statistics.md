@@ -1,6 +1,6 @@
 # Statistics System
 
-## Overview
+## Purpose
 
 The Statistics System provides a flexible framework for defining and managing TTRPG character statistics at both the world level (configuration) and statblock level (values). It supports two types of statistics:
 
@@ -79,7 +79,7 @@ Formula: `floor((saveDC - 10) / 2)`
 
 Currently defaults to base value but designed for future customization.
 
-## User Workflows
+## User-Facing Behavior
 
 ### DM: Configure World Statistics
 
@@ -117,7 +117,7 @@ Currently defaults to base value but designed for future customization.
    - First 3 resources shown (HP, MP, AC)
    - All passive scores shown as compact badges
 
-## Technical Details
+## Data Model
 
 ### Storage Format
 
@@ -171,7 +171,7 @@ Currently defaults to base value but designed for future customization.
 }
 ```
 
-### Key Files
+## Architecture Notes
 
 **Types:**
 
@@ -195,13 +195,21 @@ Currently defaults to base value but designed for future customization.
 - World config migration in `src/database/db.ts`
 - IPC handlers updated: `WORLDS_ADD`, `WORLDS_UPDATE`
 
-### Validation Rules
+## Validation and Error Rules
 
 - Resource current must be ≤ maximum
 - Resource values must be ≥ 0
 - Abbreviations max 5 characters
 - Passive score base values 0-99 (flexible range)
 - IDs must be unique within type (resources vs passive scores)
+
+## Tests
+
+- Unit tests: `tests/unit/statisticsCalculations.test.ts`, `tests/unit/statblockStatisticsUtils.test.ts`
+- E2E tests: `tests/e2e/world-statistics-config.test.ts`, `tests/e2e/statblock-statistics.test.ts`
+- Coverage target: >80% for new code
+
+## Known Limits and Non-Goals
 
 ### Edge Cases
 
@@ -210,7 +218,7 @@ Currently defaults to base value but designed for future customization.
 - **Invalid JSON**: Parse functions return empty arrays on error
 - **World Without Config**: Falls back to empty statistics arrays
 
-## Future Enhancements
+### Future Enhancements
 
 - Custom save DC per passive score (override default)
 - Damage types and resistances
@@ -219,12 +227,6 @@ Currently defaults to base value but designed for future customization.
 - Spellcasting statistics
 - Export/import statistics templates
 - Community-shared statistics packs (D&D, Pathfinder, homebrew systems)
-
-## Testing
-
-- Unit tests: `tests/unit/statisticsCalculations.test.ts`, `tests/unit/statblockStatisticsUtils.test.ts`
-- E2E tests: `tests/e2e/world-statistics-config.test.ts`, `tests/e2e/statblock-statistics.test.ts`
-- Coverage target: >80% for new code
 
 ## Related Documentation
 

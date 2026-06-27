@@ -136,10 +136,10 @@ Pure math functions (no PixiJS, no side effects):
 
 ### Frontend Overlay Layer
 
-- **Layer Insertion** — New `rangeOverlayContainer` (PixiJS Container) is inserted into the stage graph between `gridContainer` and `tokenContainer`, ensuring overlays render above the grid but below tokens.
+- **Layer Insertion** — `rangeOverlayContainer` (PixiJS Container) is created in [createRuntimeStage.ts](../../src/renderer/lib/runtime/createRuntimeStage.ts) and inserted into the stage graph between `gridContainer` and `tokenContainer`, ensuring overlays render above the grid but below tokens.
 
 - **Runtime Overlay Renderer**
-  - `BattlemapRangeOverlay.tsx` (or equivalent) renders using PixiJS primitives (circles, polygons).
+  - [castingOverlay.ts](../../src/renderer/lib/runtime/castingOverlay.ts) draws into `rangeOverlayLayer` using PixiJS primitives (circles, polygons).
   - Listens to token selection state and ability picker selection.
   - Updates overlay visuals on state change and continuous pointer movement.
 
@@ -237,7 +237,12 @@ When updating an ability with new range/AoE fields:
 - `aoe_shape IN ('none', 'circle', 'cone', 'line', 'rectangle')` — Prevents invalid shape values.
 - `target_type IN ('tile', 'token')` — Prevents invalid target types.
 
-## Limits and Non-Goals
+## Tests
+
+- `tests/unit/renderer/lib/castingRangeMath.test.ts` — shape polygon generation, Sutherland-Hodgman tile coverage, angle computation.
+- `tests/e2e/casting-range-overlay.test.ts` — range ring/AoE overlay rendering and pointer-tracking interactions.
+
+## Known Limits and Non-Goals
 
 ### Explicit Non-Goals
 

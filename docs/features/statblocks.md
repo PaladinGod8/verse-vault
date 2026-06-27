@@ -53,7 +53,7 @@ interface StatBlock {
 
 - `UNIQUE(statblock_id, ability_id)` prevents duplicate assignments
 
-## IPC + Preload Contract
+## Architecture Notes
 
 Channels are defined in `src/shared/ipcChannels.ts` and bridged through `window.db.statblocks`.
 
@@ -76,7 +76,7 @@ Linkage + assignment:
 - `STATBLOCKS_DETACH_ABILITY`
 - `STATBLOCKS_LIST_ABILITIES`
 
-## Validation and Guardrails
+## Validation and Error Rules
 
 Main-process rules:
 
@@ -93,7 +93,7 @@ Error semantics:
 - `Token is already linked to a statblock`
 - `Ability is already attached to statblock`
 
-## Renderer Behavior
+## User-Facing Behavior
 
 ### StatBlocks page
 
@@ -129,7 +129,7 @@ Config behavior:
 - assigned ability chips
 - skill chips
 
-## Runtime Integration
+### Runtime Integration
 
 Runtime feature files:
 
@@ -183,6 +183,22 @@ const abilities = linked ? await window.db.statblocks.listAbilities(linked.id) :
 5. Use ability picker for active abilities.
 6. Double-click token to inspect full statblock popup.
 
+## Tests
+
+- `tests/unit/main.test.ts`
+- `tests/unit/renderer/components/statblocks.test.tsx`
+- `tests/unit/renderer/abilityPickerPanel.test.tsx`
+- `tests/unit/renderer/battleMapRuntimePage.test.tsx`
+- `tests/e2e/statblock-statistics.test.ts`
+- `tests/e2e/battlemap-runtime-statblock-popup.test.ts`
+
+## Known Limits and Non-Goals
+
+- No dedicated renderer UI yet for link/unlink token operations (API is available and tested through integration flows).
+- Runtime popup is read-first; it does not edit statblocks in place.
+- No combat state machine or rule resolution built into statblocks.
+- `characters` is currently a stub table (`id`/timestamps only) so `statblocks.character_id` has a valid FK target; full character CRUD is deferred.
+
 ## Related Files
 
 - `src/database/db.ts`
@@ -195,19 +211,3 @@ const abilities = linked ? await window.db.statblocks.listAbilities(linked.id) :
 - `src/renderer/components/runtime/AbilityPickerPanel.tsx`
 - `src/renderer/components/runtime/StatBlockPopup.tsx`
 - `src/renderer/pages/BattleMapRuntimePage.tsx`
-
-## Test Coverage
-
-- `tests/unit/main.test.ts`
-- `tests/unit/renderer/components/statblocks.test.tsx`
-- `tests/unit/renderer/abilityPickerPanel.test.tsx`
-- `tests/unit/renderer/battleMapRuntimePage.test.tsx`
-- `tests/e2e/statblock-statistics.test.ts`
-- `tests/e2e/battlemap-runtime-statblock-popup.test.ts`
-
-## Known Limits
-
-- No dedicated renderer UI yet for link/unlink token operations (API is available and tested through integration flows).
-- Runtime popup is read-first; it does not edit statblocks in place.
-- No combat state machine or rule resolution built into statblocks.
-- `characters` is currently a stub table (`id`/timestamps only) so `statblocks.character_id` has a valid FK target; full character CRUD is deferred.

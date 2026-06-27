@@ -207,7 +207,7 @@ The same formula applies on the Y axis.
 - Zoom level is not persisted across sessions; each runtime session starts from the saved camera config (default `camera.zoom = 1`).
 - Zoom changes are retained only for the current runtime session.
 
-## IPC and Preload Contract
+## Architecture Notes
 
 ### IPC Channels (`src/shared/ipcChannels.ts`)
 
@@ -286,7 +286,7 @@ Default runtime config when omitted:
 - `camera.y = 0`
 - `camera.zoom = 1`
 
-## Validation and Handler Semantics
+## Validation and Error Rules
 
 ### Renderer Form Validation
 
@@ -326,13 +326,6 @@ Default runtime config when omitted:
 - `runtime.camera.x` and `runtime.camera.y` must be finite numbers.
 - `runtime.camera.zoom` must be a finite number greater than `0`.
 
-## Key Source Files
-
-| File                                                                                                                           | Purpose                                                                                                                     |
-| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| [src/renderer/lib/runtimeMath.ts](../../src/renderer/lib/runtimeMath.ts)                                                       | `MIN_CAMERA_ZOOM`, `MAX_CAMERA_ZOOM`, `getRuntimeSceneBounds`, `getMinZoomForScene`, `clampCameraZoom`, `getSafeCameraZoom` |
-| [src/renderer/components/runtime/BattleMapRuntimeCanvas.tsx](../../src/renderer/components/runtime/BattleMapRuntimeCanvas.tsx) | `handleWheel` event handler, `getEffectiveMinZoom`, `WHEEL_ZOOM_BASE`, `WHEEL_LINE_HEIGHT`, `WHEEL_PAGE_HEIGHT`             |
-
 ## Tests
 
 | Test file                                                                                                        | Coverage                                                                                                                   |
@@ -341,7 +334,7 @@ Default runtime config when omitted:
 | [tests/unit/renderer/battleMapRuntimeCanvas.test.tsx](../../tests/unit/renderer/battleMapRuntimeCanvas.test.tsx) | Wheel zoom-in/out changes camera scale; zoom clamps at bounds; no zoom during token drag                                   |
 | [tests/e2e/battlemap-runtime-play.test.ts](../../tests/e2e/battlemap-runtime-play.test.ts)                       | Smoke test: scroll down → canvas differs from pre-zoom snapshot; scroll up → canvas remains visible and functional         |
 
-## Known Limits
+## Known Limits and Non-Goals
 
 - BattleMaps are currently managed only as world-level records; there is no dedicated detail/editor route.
 - `config` is stored as JSON text; runtime keys are validated, but non-runtime keys have no domain-specific schema validation.
@@ -352,3 +345,10 @@ Default runtime config when omitted:
 - **Touch pinch-to-zoom not implemented**: Only pointer-based panning and wheel zoom are available. Multi-touch gestures are a separate follow-up.
 - **Scene bounds always equal viewport**: `getRuntimeSceneBounds` returns the viewport size regardless of the map image's natural dimensions. If the rendering model changes to use actual map image dimensions (e.g., large maps scrolled within a smaller viewport), `getRuntimeSceneBounds` must be updated.
 - **No explicit zoom UI controls**: Zoom is controlled only via mouse wheel. There are no dedicated zoom buttons or slider controls in the UI.
+
+## Related Files
+
+| File                                                                                                                           | Purpose                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| [src/renderer/lib/runtimeMath.ts](../../src/renderer/lib/runtimeMath.ts)                                                       | `MIN_CAMERA_ZOOM`, `MAX_CAMERA_ZOOM`, `getRuntimeSceneBounds`, `getMinZoomForScene`, `clampCameraZoom`, `getSafeCameraZoom` |
+| [src/renderer/components/runtime/BattleMapRuntimeCanvas.tsx](../../src/renderer/components/runtime/BattleMapRuntimeCanvas.tsx) | `handleWheel` event handler, `getEffectiveMinZoom`, `WHEEL_ZOOM_BASE`, `WHEEL_LINE_HEIGHT`, `WHEEL_PAGE_HEIGHT`             |

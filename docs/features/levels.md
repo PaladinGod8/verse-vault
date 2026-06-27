@@ -47,7 +47,7 @@ The Levels feature provides a local-first workflow to create, view, edit, and de
   - `UPDATE` (partial — only fields explicitly provided)
   - `DELETE`
 
-## Data Shape
+## Data Model
 
 `Level` records include:
 
@@ -69,7 +69,12 @@ The Levels feature provides a local-first workflow to create, view, edit, and de
 - Delete returns `{ id }` even if the row did not exist prior to delete.
 - Renderer form surfaces thrown `Error.message` values and falls back to generic messages (`Failed to create level.` / `Failed to save level changes.`) for non-Error throws.
 
-## Current Limits
+## Tests
+
+- `tests/unit/renderer/levelForm.test.tsx` — create/edit validation.
+- `tests/unit/renderer/levelsPage.test.tsx` — page load states, table rendering, create/edit/delete flows.
+
+## Known Limits and Non-Goals
 
 - Levels are displayed in insertion order from the backend (`getAllByWorld` does not specify an explicit sort order beyond backend defaults).
 - After create, the new level is moved to the top of local state; after edit, the level stays in its current position.

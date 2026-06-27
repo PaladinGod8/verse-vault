@@ -1,5 +1,14 @@
 # Tokens Feature
 
+## Purpose
+
+Tokens are generic, composable visual assets used in battlemaps. Design intent is deliberately
+scope-agnostic: a token can represent a character, a limb, an item, a wall, a structure, or any
+other visual element. This doc covers token scoping, grid/footprint authoring, scope-move
+actions, image upload, and the world-id migration — kept as numbered sections (1-8) rather than
+the standard feature template because each section is a distinct sub-feature with its own
+behavior, data, and tests.
+
 ## 1. Overview
 
 Tokens are generic, composable visual assets used in battlemaps.
@@ -13,7 +22,7 @@ Tokens are world-first scoped:
 - copied campaign tokens do not stay linked to their world source row
 - token create/edit supports desktop image upload via drag-and-drop or file picker; `TokenImageDropzone` is the sole image input mechanism — no URL text input
 
-## 2. Data Shape
+## 2. Data Model
 
 ### `Token` Interface
 

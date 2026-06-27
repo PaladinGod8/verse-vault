@@ -6,7 +6,7 @@ All CRUD create/edit/move/confirm dialogs in the app share a single `ModalShell`
 
 This fix pins the app to the `versevault` light theme and applies DaisyUI semantic color classes to `ModalShell` so all 13+ modal surfaces inherit a consistent light appearance.
 
-## Changes
+## Architecture Notes
 
 ### `index.html`
 
@@ -30,16 +30,16 @@ Added `bg-base-100 text-base-content` to the `modal-box` div class list. These a
 - Move act / session / scene dialogs
 - Confirm delete dialog
 
-## Non-Goals
-
-- No dark-mode toggle or theme-switching infrastructure added.
-- No per-form style changes.
-- No changes to the modal backdrop/scrim.
-
-## Testing
+## Tests
 
 `tests/unit/renderer/modalShell.test.tsx` — added one test case:
 
 - **renders modal panel with DaisyUI light-mode classes** — asserts `bg-base-100` and `text-base-content` are present on the dialog element when open.
 
 `ModalShell.tsx` coverage: 100% statements / 100% functions / 100% lines / 88% branches.
+
+## Known Limits and Non-Goals
+
+- No dark-mode toggle or theme-switching infrastructure added.
+- No per-form style changes.
+- No changes to the modal backdrop/scrim.

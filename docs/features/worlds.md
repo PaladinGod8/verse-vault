@@ -75,7 +75,7 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
   between token images (`token-images` host) and world thumbnail images (`world-images` host).
   Each host resolves to its own `userData/` subdirectory.
 
-## Data Shape
+## Data Model
 
 `World` records include:
 
@@ -94,7 +94,16 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
 - Update throws `World not found` when the row does not exist after update.
 - Renderer forms surface thrown `Error.message` values and fallback generic messages for non-Error throws.
 
-## Current Limits
+## Tests
+
+- `tests/unit/renderer/worldCard.test.tsx` — card rendering and delete action.
+- `tests/unit/renderer/worldForm.test.tsx` — create/edit validation and thumbnail upload payload.
+- `tests/unit/renderer/worldImageDropzone.test.tsx` — drag-and-drop/file-picker upload, mime/size validation.
+- `tests/unit/renderer/worldPage.test.tsx` — world placeholder route load states.
+- `tests/unit/renderer/worldPagePlaceholder.test.tsx` — placeholder route fallback behavior.
+- `tests/unit/renderer/worldsHomePage.test.tsx` — worlds home load states, create/edit/delete flows.
+
+## Known Limits and Non-Goals
 
 - `/world/:id` is intentionally a placeholder page, not the full world workspace.
 - Delete handler returns `{ id }` even if the row did not exist prior to delete.

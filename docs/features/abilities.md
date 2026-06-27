@@ -88,7 +88,7 @@ The Abilities feature provides a local-first workflow to create, view, edit, and
   - `abilities`
   - `ability_children` (`UNIQUE(parent_id, child_id)`)
 
-## Data Shape
+## Data Model
 
 `Ability` includes:
 
@@ -166,7 +166,15 @@ The Abilities feature provides a local-first workflow to create, view, edit, and
   - `pick_is_permanent = 0`
 - `ability_children` uniqueness on `(parent_id, child_id)`.
 
-## Limits and Non-Goals
+## Tests
+
+- `tests/unit/renderer/abilitiesPage.test.tsx` — page load states, table rendering, create/edit/delete flows.
+- `tests/unit/renderer/abilityForm.test.tsx` — create/edit validation and JSON field normalization.
+- `tests/unit/renderer/abilityChildrenManager.test.tsx` — child link search, add/remove flows.
+- `tests/unit/renderer/abilityPickerPanel.test.tsx` — runtime ability picker filtering and fallback states.
+- `tests/e2e/abilities.test.ts` — end-to-end create/edit/delete and child-link flows.
+
+## Known Limits and Non-Goals
 
 - No dedicated ability detail route yet; interaction is table + modal driven.
 - The list table intentionally shows only summary columns (name/type/subtype/trigger), not full JSON payload fields.
