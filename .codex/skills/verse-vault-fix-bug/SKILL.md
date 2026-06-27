@@ -25,13 +25,13 @@ Fix bugs using Chicago School TDD (state-based testing, same philosophy as `vers
 
 Reference: `docs/01_ARCHITECTURE.md`, `docs/02_CODEBASE_MAP.md`.
 
-| Layer | Location | What to look for |
-|-------|----------|------------------|
-| Main (IPC handlers) | `src/main/ipc/*.ts`, `src/main.ts` | Wrong channel wiring, validation gaps, missing handler registration |
-| Database | `src/database/*.ts` | Schema/migration mismatches, query logic errors |
-| Preload bridge | `src/preload.ts` | Missing/incorrect `window.db` method exposure |
-| Shared contracts | `src/shared/contracts/*.ts`, `forge.env.d.ts`, `src/shared/ipcChannels.ts` | Type/channel mismatches between main and renderer |
-| Renderer | `src/renderer/**` | Component state bugs, stale props, incorrect `window.db` usage |
+| Layer               | Location                                                                   | What to look for                                                    |
+| ------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Main (IPC handlers) | `src/main/ipc/*.ts`, `src/main.ts`                                         | Wrong channel wiring, validation gaps, missing handler registration |
+| Database            | `src/database/*.ts`                                                        | Schema/migration mismatches, query logic errors                     |
+| Preload bridge      | `src/preload.ts`                                                           | Missing/incorrect `window.db` method exposure                       |
+| Shared contracts    | `src/shared/contracts/*.ts`, `forge.env.d.ts`, `src/shared/ipcChannels.ts` | Type/channel mismatches between main and renderer                   |
+| Renderer            | `src/renderer/**`                                                          | Component state bugs, stale props, incorrect `window.db` usage      |
 
 Respect the layer boundaries in `docs/01_ARCHITECTURE.md` Rules of the Road while diagnosing -> never assume the renderer can reach `better-sqlite3` directly; trace through `window.db` -> preload -> IPC channel -> main handler -> `src/database`.
 
@@ -48,13 +48,13 @@ Check whether the bug violates an invariant that should be enforced close to the
 
 ### Test location
 
-| Bug location | Test location |
-|--------------|----------------|
-| `src/main/ipc/*.ts` | `tests/unit/ipc/*.test.ts` |
-| `src/database/*.ts` | `tests/unit/database/*.test.ts` |
-| `src/preload.ts` | `tests/unit/preload.test.ts` |
-| `src/shared/*.ts` | `tests/unit/shared/*.test.ts` |
-| `src/renderer/**` | `tests/unit/renderer/**.test.tsx` |
+| Bug location         | Test location                                         |
+| -------------------- | ----------------------------------------------------- |
+| `src/main/ipc/*.ts`  | `tests/unit/ipc/*.test.ts`                            |
+| `src/database/*.ts`  | `tests/unit/database/*.test.ts`                       |
+| `src/preload.ts`     | `tests/unit/preload.test.ts`                          |
+| `src/shared/*.ts`    | `tests/unit/shared/*.test.ts`                         |
+| `src/renderer/**`    | `tests/unit/renderer/**.test.tsx`                     |
 | End-to-end user flow | `tests/e2e/*.test.ts` (requires `yarn package` first) |
 
 Follow existing patterns in `tests/unit/App.test.tsx` and `tests/e2e/app.test.ts`. Mock `window.db` for renderer unit tests -> never import main-process code into renderer tests.

@@ -11,6 +11,23 @@ Shared repo contract for coding agents. Keep this file short; route detail into 
 
 If instructions conflict, follow the highest-priority item and call out the conflict in your response.
 
+## Response Style (Default-On, All Agents)
+
+Applies regardless of agent (Claude Code, Codex, etc.) and overrides any agent-level default — repo-local instructions win over global config.
+
+Respond terse, compressed, "smart caveman" style. Keep all technical substance; drop only fluff.
+
+- Drop articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries, hedging. Fragments OK. Short synonyms (big not extensive, fix not "implement a solution for").
+- No tool-call narration, no decorative tables/emoji, no dumping long raw error logs unless asked — quote shortest decisive line.
+- Standard tech acronyms OK (DB/API/HTTP); never invent abbreviations reader can't decode.
+- Keep verbatim: code blocks, exact error strings, commit-type keywords (feat/fix/test/chore), API/CLI names, file paths.
+- Active every response, every session, this repo. No revert after many turns. Off only if user says "stop caveman" / "normal mode" for that session.
+- Drop the style (write normal) for: security warnings, irreversible-action confirmations, multi-step sequences where omitted conjunctions risk misread, final code/commit message/PR text.
+- Never self-reference or announce the style.
+
+Pattern: `[thing] [action] [reason]. [next step].`
+Example: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
+
 ## Project Baseline
 
 - Stack: Electron 35, React 19, Vite 6, TypeScript, better-sqlite3, Tailwind v4, Zustand 5, React Router 7
