@@ -3,36 +3,15 @@ import { Link, useParams } from 'react-router-dom';
 import type {
   PassiveScoreDefinition,
   ResourceStatisticDefinition,
-  WorldStatisticsConfig,
 } from '../../shared/statisticsTypes';
-import PassiveScoreDefinitionForm from '../components/statistics/PassiveScoreDefinitionForm';
-import ResourceDefinitionForm from '../components/statistics/ResourceDefinitionForm';
-import ConfirmDialog from '../components/ui/ConfirmDialog';
-import ModalShell from '../components/ui/ModalShell';
+import PassiveScoreSection from '../components/statistics/PassiveScoreSection';
+import ResourceSection from '../components/statistics/ResourceSection';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
-
-function parseWorldStatisticsConfig(rawConfig: string): WorldStatisticsConfig {
-  try {
-    const parsed = JSON.parse(rawConfig) as WorldStatisticsConfig;
-
-    return {
-      ...parsed,
-      statistics: {
-        ...parsed.statistics,
-        resources: parsed.statistics?.resources ?? [],
-        passiveScores: parsed.statistics?.passiveScores ?? [],
-      },
-    };
-  } catch {
-    return {
-      statistics: {
-        resources: [],
-        passiveScores: [],
-      },
-    };
-  }
-}
+import {
+  parseWorldStatisticsConfig,
+  saveWorldStatisticsList,
+} from '../lib/worldStatisticsConfigHelpers';
 
 export default function WorldStatisticsConfigPage() {
   const { id } = useParams();
@@ -146,20 +125,10 @@ export default function WorldStatisticsConfigPage() {
     if (!world) return;
 
     try {
-      const config = parseWorldStatisticsConfig(world.config);
-      const updatedResources = [...(config.statistics?.resources ?? []), data];
-
-      const updatedConfig: WorldStatisticsConfig = {
-        ...config,
-        statistics: {
-          ...config.statistics,
-          resources: updatedResources,
-        },
-      };
-
-      const updatedWorld = await window.db.worlds.update(world.id, {
-        config: JSON.stringify(updatedConfig),
-      });
+      const updatedWorld = await saveWorldStatisticsList(world, 'resources', [
+        ...resources,
+        data,
+      ]);
 
       setWorld(updatedWorld);
       setIsCreateResourceOpen(false);
@@ -177,22 +146,8 @@ export default function WorldStatisticsConfigPage() {
     if (!world || !editingResource) return;
 
     try {
-      const config = parseWorldStatisticsConfig(world.config);
-      const updatedResources = (config.statistics?.resources ?? []).map((r) =>
-        r.id === editingResource.id ? data : r
-      );
-
-      const updatedConfig: WorldStatisticsConfig = {
-        ...config,
-        statistics: {
-          ...config.statistics,
-          resources: updatedResources,
-        },
-      };
-
-      const updatedWorld = await window.db.worlds.update(world.id, {
-        config: JSON.stringify(updatedConfig),
-      });
+      const updatedResources = resources.map((r) => (r.id === editingResource.id ? data : r));
+      const updatedWorld = await saveWorldStatisticsList(world, 'resources', updatedResources);
 
       setWorld(updatedWorld);
       setEditingResource(null);
@@ -212,22 +167,8 @@ export default function WorldStatisticsConfigPage() {
     setIsDeletingResource(true);
 
     try {
-      const config = parseWorldStatisticsConfig(world.config);
-      const updatedResources = (config.statistics?.resources ?? []).filter(
-        (r) => r.id !== pendingDeleteResource.id,
-      );
-
-      const updatedConfig: WorldStatisticsConfig = {
-        ...config,
-        statistics: {
-          ...config.statistics,
-          resources: updatedResources,
-        },
-      };
-
-      const updatedWorld = await window.db.worlds.update(world.id, {
-        config: JSON.stringify(updatedConfig),
-      });
+      const updatedResources = resources.filter((r) => r.id !== pendingDeleteResource.id);
+      const updatedWorld = await saveWorldStatisticsList(world, 'resources', updatedResources);
 
       setWorld(updatedWorld);
       toast.success(
@@ -249,23 +190,10 @@ export default function WorldStatisticsConfigPage() {
     if (!world) return;
 
     try {
-      const config = parseWorldStatisticsConfig(world.config);
-      const updatedPassiveScores = [
-        ...(config.statistics?.passiveScores ?? []),
+      const updatedWorld = await saveWorldStatisticsList(world, 'passiveScores', [
+        ...passiveScores,
         data,
-      ];
-
-      const updatedConfig: WorldStatisticsConfig = {
-        ...config,
-        statistics: {
-          ...config.statistics,
-          passiveScores: updatedPassiveScores,
-        },
-      };
-
-      const updatedWorld = await window.db.worlds.update(world.id, {
-        config: JSON.stringify(updatedConfig),
-      });
+      ]);
 
       setWorld(updatedWorld);
       setIsCreatePassiveScoreOpen(false);
@@ -283,22 +211,14 @@ export default function WorldStatisticsConfigPage() {
     if (!world || !editingPassiveScore) return;
 
     try {
-      const config = parseWorldStatisticsConfig(world.config);
-      const updatedPassiveScores = (config.statistics?.passiveScores ?? []).map(
-        (ps) => (ps.id === editingPassiveScore.id ? data : ps),
+      const updatedPassiveScores = passiveScores.map((ps) =>
+        ps.id === editingPassiveScore.id ? data : ps
       );
-
-      const updatedConfig: WorldStatisticsConfig = {
-        ...config,
-        statistics: {
-          ...config.statistics,
-          passiveScores: updatedPassiveScores,
-        },
-      };
-
-      const updatedWorld = await window.db.worlds.update(world.id, {
-        config: JSON.stringify(updatedConfig),
-      });
+      const updatedWorld = await saveWorldStatisticsList(
+        world,
+        'passiveScores',
+        updatedPassiveScores,
+      );
 
       setWorld(updatedWorld);
       setEditingPassiveScore(null);
@@ -318,22 +238,14 @@ export default function WorldStatisticsConfigPage() {
     setIsDeletingPassiveScore(true);
 
     try {
-      const config = parseWorldStatisticsConfig(world.config);
-      const updatedPassiveScores = (
-        config.statistics?.passiveScores ?? []
-      ).filter((ps) => ps.id !== pendingDeletePassiveScore.id);
-
-      const updatedConfig: WorldStatisticsConfig = {
-        ...config,
-        statistics: {
-          ...config.statistics,
-          passiveScores: updatedPassiveScores,
-        },
-      };
-
-      const updatedWorld = await window.db.worlds.update(world.id, {
-        config: JSON.stringify(updatedConfig),
-      });
+      const updatedPassiveScores = passiveScores.filter(
+        (ps) => ps.id !== pendingDeletePassiveScore.id,
+      );
+      const updatedWorld = await saveWorldStatisticsList(
+        world,
+        'passiveScores',
+        updatedPassiveScores,
+      );
 
       setWorld(updatedWorld);
       toast.success(
@@ -381,305 +293,43 @@ export default function WorldStatisticsConfigPage() {
           : world
           ? (
             <div className='space-y-8'>
-              <section>
-                <div className='mb-4 flex items-center justify-between'>
-                  <h2 className='text-lg font-semibold text-slate-900'>
-                    Primary Resources
-                  </h2>
-                  <button
-                    onClick={() => setIsCreateResourceOpen(true)}
-                    className='rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700'
-                  >
-                    Add Resource
-                  </button>
-                </div>
+              <ResourceSection
+                resources={resources}
+                isCreateOpen={isCreateResourceOpen}
+                onCreateOpen={() => setIsCreateResourceOpen(true)}
+                onCreateClose={() => setIsCreateResourceOpen(false)}
+                onCreateSubmit={handleCreateResource}
+                editingResource={editingResource}
+                onEditOpen={setEditingResource}
+                onEditClose={() => setEditingResource(null)}
+                onEditSubmit={handleUpdateResource}
+                pendingDelete={pendingDeleteResource}
+                onDeleteRequest={setPendingDeleteResource}
+                onDeleteConfirm={handleDeleteResource}
+                onDeleteCancel={() => setPendingDeleteResource(null)}
+                isDeleting={isDeletingResource}
+              />
 
-                {resources.length === 0
-                  ? (
-                    <p className='text-sm text-slate-600'>
-                      No resources defined yet. Add your first resource to get started.
-                    </p>
-                  )
-                  : (
-                    <div className='overflow-hidden rounded-lg border border-slate-200'>
-                      <table className='w-full'>
-                        <thead className='bg-slate-50'>
-                          <tr>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              ID
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Name
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Abbreviation
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Default
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className='divide-y divide-slate-200'>
-                          {resources.map((resource) => (
-                            <tr key={resource.id} className='hover:bg-slate-50'>
-                              <td className='px-4 py-2 text-sm text-slate-900'>
-                                {resource.id}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-900'>
-                                {resource.name}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-700'>
-                                {resource.abbreviation}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-700'>
-                                {resource.isDefault ? 'Yes' : 'No'}
-                              </td>
-                              <td className='px-4 py-2 text-sm'>
-                                <div className='flex gap-2'>
-                                  <button
-                                    onClick={() =>
-                                      setEditingResource(resource)}
-                                    className='text-blue-600 hover:text-blue-800'
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      setPendingDeleteResource(resource)}
-                                    className='text-red-600 hover:text-red-800'
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-              </section>
-
-              <section>
-                <div className='mb-4 flex items-center justify-between'>
-                  <h2 className='text-lg font-semibold text-slate-900'>
-                    Core Ability Scores & Passive Scores
-                  </h2>
-                  <button
-                    onClick={() => setIsCreatePassiveScoreOpen(true)}
-                    className='rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700'
-                  >
-                    Add Passive Score
-                  </button>
-                </div>
-
-                {passiveScores.length === 0
-                  ? (
-                    <p className='text-sm text-slate-600'>
-                      No passive scores defined yet. Add your first passive score to get started.
-                    </p>
-                  )
-                  : (
-                    <div className='overflow-hidden rounded-lg border border-slate-200'>
-                      <table className='w-full'>
-                        <thead className='bg-slate-50'>
-                          <tr>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              ID
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Name
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Abbreviation
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Type
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Default
-                            </th>
-                            <th className='px-4 py-2 text-left text-xs font-medium text-slate-700'>
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className='divide-y divide-slate-200'>
-                          {passiveScores.map((ps) => (
-                            <tr key={ps.id} className='hover:bg-slate-50'>
-                              <td className='px-4 py-2 text-sm text-slate-900'>
-                                {ps.id}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-900'>
-                                {ps.name}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-700'>
-                                {ps.abbreviation}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-700'>
-                                {ps.type === 'ability_score'
-                                  ? 'Ability'
-                                  : ps.type === 'proficiency_bonus'
-                                  ? 'PB'
-                                  : 'Custom'}
-                              </td>
-                              <td className='px-4 py-2 text-sm text-slate-700'>
-                                {ps.isDefault ? 'Yes' : 'No'}
-                              </td>
-                              <td className='px-4 py-2 text-sm'>
-                                <div className='flex gap-2'>
-                                  <button
-                                    onClick={() => setEditingPassiveScore(ps)}
-                                    className='text-blue-600 hover:text-blue-800'
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => setPendingDeletePassiveScore(ps)}
-                                    className='text-red-600 hover:text-red-800'
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-              </section>
+              <PassiveScoreSection
+                passiveScores={passiveScores}
+                isCreateOpen={isCreatePassiveScoreOpen}
+                onCreateOpen={() => setIsCreatePassiveScoreOpen(true)}
+                onCreateClose={() => setIsCreatePassiveScoreOpen(false)}
+                onCreateSubmit={handleCreatePassiveScore}
+                editingPassiveScore={editingPassiveScore}
+                onEditOpen={setEditingPassiveScore}
+                onEditClose={() => setEditingPassiveScore(null)}
+                onEditSubmit={handleUpdatePassiveScore}
+                pendingDelete={pendingDeletePassiveScore}
+                onDeleteRequest={setPendingDeletePassiveScore}
+                onDeleteConfirm={handleDeletePassiveScore}
+                onDeleteCancel={() => setPendingDeletePassiveScore(null)}
+                isDeleting={isDeletingPassiveScore}
+              />
             </div>
           )
           : null}
       </main>
-
-      {/* Create Resource Modal */}
-      {isCreateResourceOpen
-        ? (
-          <ModalShell
-            isOpen={isCreateResourceOpen}
-            onClose={() => setIsCreateResourceOpen(false)}
-            labelledBy='create-resource-title'
-            boxClassName='max-w-lg'
-          >
-            <h2
-              id='create-resource-title'
-              className='mb-4 text-lg font-semibold text-slate-900'
-            >
-              Create Resource
-            </h2>
-            <ResourceDefinitionForm
-              mode='create'
-              existingIds={resources.map((r) => r.id)}
-              onSubmit={handleCreateResource}
-              onCancel={() => setIsCreateResourceOpen(false)}
-            />
-          </ModalShell>
-        )
-        : null}
-
-      {/* Edit Resource Modal */}
-      {editingResource
-        ? (
-          <ModalShell
-            isOpen={editingResource !== null}
-            onClose={() => setEditingResource(null)}
-            labelledBy='edit-resource-title'
-            boxClassName='max-w-lg'
-          >
-            <h2
-              id='edit-resource-title'
-              className='mb-4 text-lg font-semibold text-slate-900'
-            >
-              Edit Resource
-            </h2>
-            <ResourceDefinitionForm
-              mode='edit'
-              initialValues={editingResource}
-              existingIds={resources.map((r) => r.id)}
-              onSubmit={handleUpdateResource}
-              onCancel={() => setEditingResource(null)}
-            />
-          </ModalShell>
-        )
-        : null}
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        isOpen={pendingDeleteResource !== null}
-        title={`Delete "${pendingDeleteResource?.name ?? ''}"?`}
-        message='This will remove the resource definition. Existing statblock data will not be affected.'
-        onConfirm={handleDeleteResource}
-        onCancel={() => setPendingDeleteResource(null)}
-        confirmLabel='Delete'
-        isConfirming={isDeletingResource}
-      />
-
-      {/* Create Passive Score Modal */}
-      {isCreatePassiveScoreOpen
-        ? (
-          <ModalShell
-            isOpen={isCreatePassiveScoreOpen}
-            onClose={() => setIsCreatePassiveScoreOpen(false)}
-            labelledBy='create-passive-score-title'
-            boxClassName='max-w-lg'
-          >
-            <h2
-              id='create-passive-score-title'
-              className='mb-4 text-lg font-semibold text-slate-900'
-            >
-              Create Passive Score
-            </h2>
-            <PassiveScoreDefinitionForm
-              mode='create'
-              existingIds={passiveScores.map((ps) => ps.id)}
-              onSubmit={handleCreatePassiveScore}
-              onCancel={() => setIsCreatePassiveScoreOpen(false)}
-            />
-          </ModalShell>
-        )
-        : null}
-
-      {/* Edit Passive Score Modal */}
-      {editingPassiveScore
-        ? (
-          <ModalShell
-            isOpen={editingPassiveScore !== null}
-            onClose={() => setEditingPassiveScore(null)}
-            labelledBy='edit-passive-score-title'
-            boxClassName='max-w-lg'
-          >
-            <h2
-              id='edit-passive-score-title'
-              className='mb-4 text-lg font-semibold text-slate-900'
-            >
-              Edit Passive Score
-            </h2>
-            <PassiveScoreDefinitionForm
-              mode='edit'
-              initialValues={editingPassiveScore}
-              existingIds={passiveScores.map((ps) => ps.id)}
-              onSubmit={handleUpdatePassiveScore}
-              onCancel={() => setEditingPassiveScore(null)}
-            />
-          </ModalShell>
-        )
-        : null}
-
-      {/* Delete Passive Score Confirmation */}
-      <ConfirmDialog
-        isOpen={pendingDeletePassiveScore !== null}
-        title={`Delete "${pendingDeletePassiveScore?.name ?? ''}"?`}
-        message='This will remove the passive score definition. Existing statblock data will not be affected.'
-        onConfirm={handleDeletePassiveScore}
-        onCancel={() => setPendingDeletePassiveScore(null)}
-        confirmLabel='Delete'
-        isConfirming={isDeletingPassiveScore}
-      />
     </div>
   );
 }
