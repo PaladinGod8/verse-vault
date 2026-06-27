@@ -8,8 +8,10 @@ import CharacterForm from '../components/characters/CharacterForm';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { useAppSettings } from '../hooks/useAppSettings';
 import { useCharacterCrud } from '../hooks/useCharacterCrud';
 import { useCharacterFactionMemberships } from '../hooks/useCharacterFactionMemberships';
+import { buildDetailImageStyle, resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { parsePositiveIntParam } from '../lib/routeParams';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
@@ -30,9 +32,14 @@ function parseJson<T>(jsonText: string): T {
 
 export default function CharacterDetailPage() {
   const toast = useToast();
+  const { config } = useAppSettings();
   const { id, characterId } = useParams();
   const worldId = useMemo(() => parsePositiveIntParam(id), [id]);
   const parsedCharacterId = useMemo(() => parsePositiveIntParam(characterId), [characterId]);
+  const imageDimensions = useMemo(
+    () => resolveCardDisplayDimensions(config, 'characterDetail'),
+    [config],
+  );
 
   const [character, setCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +126,8 @@ export default function CharacterDetailPage() {
                       <img
                         src={imageSrc}
                         alt={character.name}
-                        className='h-24 w-24 rounded object-cover'
+                        className='rounded object-cover'
+                        style={buildDetailImageStyle(imageDimensions)}
                       />
                     )
                     : null}

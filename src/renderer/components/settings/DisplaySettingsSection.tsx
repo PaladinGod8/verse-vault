@@ -1,12 +1,18 @@
 import type {
   AppCardSize,
+  AppCardDisplaySurface,
   AppSettingsConfig,
   AppThemePreference,
 } from '../../../shared/contracts/settingsTypes';
 import {
+  resolveCardDisplayDimensions,
+  updateCardDisplaySettings,
+} from '../../lib/cardDisplaySettings';
+import {
   buildCustomThemeCssVariables,
   resolveThemeColorHex,
 } from '../../lib/themeCustomization';
+import CardDisplaySizeControl from './CardDisplaySizeControl';
 import ThemeColorRoleControl from './ThemeColorRoleControl';
 
 type DisplaySettingsSectionProps = {
@@ -24,6 +30,33 @@ const CARD_SIZE_OPTIONS: Array<{ value: AppCardSize; label: string; }> = [
   { value: 'small', label: 'Small' },
   { value: 'medium', label: 'Medium' },
   { value: 'large', label: 'Large' },
+];
+
+const CARD_DISPLAY_CONTROL_DEFINITIONS: Array<{
+  surface: AppCardDisplaySurface;
+  title: string;
+  description: string;
+}> = [
+  {
+    surface: 'characterCard',
+    title: 'Character cards',
+    description: 'Standard list-card footprint for character galleries.',
+  },
+  {
+    surface: 'factionCard',
+    title: 'Faction cards',
+    description: 'Standard list-card footprint for faction galleries.',
+  },
+  {
+    surface: 'characterDetail',
+    title: 'Character detail image',
+    description: 'Portrait size used on individual character pages.',
+  },
+  {
+    surface: 'factionDetail',
+    title: 'Faction detail image',
+    description: 'Emblem size used on individual faction pages.',
+  },
 ];
 
 /**
@@ -87,6 +120,38 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
           ))}
         </select>
       </div>
+
+      <section className='space-y-4'>
+        <div className='space-y-1'>
+          <h3 className='text-base font-semibold text-slate-900'>Card image sizing</h3>
+          <p className='text-sm text-slate-600'>
+            Fine-tune image framing for cards and detail pages. Drag preview handle or enter
+            exact dimensions.
+          </p>
+        </div>
+
+        <div className='grid gap-4 xl:grid-cols-2'>
+          {CARD_DISPLAY_CONTROL_DEFINITIONS.map(({ surface, title, description }) => {
+            const dimensions = resolveCardDisplayDimensions(config, surface);
+
+            return (
+              <CardDisplaySizeControl
+                key={surface}
+                surface={surface}
+                title={title}
+                description={description}
+                width={dimensions.width}
+                height={dimensions.height}
+                lockAspectRatio={dimensions.lockAspectRatio}
+                onCommit={(next) =>
+                  onChange({
+                    cardDisplays: updateCardDisplaySettings(config.cardDisplays, surface, next),
+                  })}
+              />
+            );
+          })}
+        </div>
+      </section>
 
       {isCustomTheme
         ? (

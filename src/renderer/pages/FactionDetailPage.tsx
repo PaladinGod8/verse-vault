@@ -6,8 +6,10 @@ import FactionForm, { type FactionFormValues } from '../components/factions/Fact
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { useAppSettings } from '../hooks/useAppSettings';
 import { useFactionCrud } from '../hooks/useFactionCrud';
 import { parsePositiveIntParam } from '../lib/routeParams';
+import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 type FactionMemberWithCharacterName = FactionMember & { character_name: string; };
@@ -48,9 +50,14 @@ function deriveMemberGroups(members: FactionMemberWithCharacterName[]): {
 
 export default function FactionDetailPage() {
   const toast = useToast();
+  const { config } = useAppSettings();
   const { id, factionId } = useParams();
   const worldId = useMemo(() => parsePositiveIntParam(id), [id]);
   const parsedFactionId = useMemo(() => parsePositiveIntParam(factionId), [factionId]);
+  const imageDimensions = useMemo(
+    () => resolveCardDisplayDimensions(config, 'factionDetail'),
+    [config],
+  );
 
   const [faction, setFaction] = useState<Faction | null>(null);
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
@@ -150,6 +157,7 @@ export default function FactionDetailPage() {
               plainMembers={plainMembers}
               worldId={worldId}
               onEdit={() => setIsEditOpen(true)}
+              imageDimensions={imageDimensions}
             />
           )
           : null}

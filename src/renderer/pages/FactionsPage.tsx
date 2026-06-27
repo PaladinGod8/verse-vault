@@ -8,9 +8,11 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { useAppSettings } from '../hooks/useAppSettings';
 import { useFactionCrud } from '../hooks/useFactionCrud';
 import { useFactionTypes } from '../hooks/useFactionTypes';
 import { useWorldFactionsData } from '../hooks/useWorldFactionsData';
+import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { factionMatchesQuery } from '../lib/factionSearch';
 import { parsePositiveIntParam } from '../lib/routeParams';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
@@ -25,8 +27,13 @@ function parseFactionJson<T>(jsonText: string): T {
 
 export default function FactionsPage() {
   const toast = useToast();
+  const { config } = useAppSettings();
   const { id } = useParams();
   const worldId = useMemo(() => parsePositiveIntParam(id), [id]);
+  const cardDisplayDimensions = useMemo(
+    () => resolveCardDisplayDimensions(config, 'factionCard'),
+    [config],
+  );
 
   const { world, factions, factionTypes, isLoading, error, reload: reloadFactions } =
     useWorldFactionsData(worldId);
@@ -162,6 +169,7 @@ export default function FactionsPage() {
                   onEdit={() => setEditingFaction(faction)}
                   onDelete={() => setPendingDeleteFaction(faction)}
                   isDeleting={deletingFactionId === faction.id}
+                  displayDimensions={cardDisplayDimensions}
                 />
               ))}
             </div>

@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CharacterWikiSummary } from '../../../shared/contracts/characterTypes';
+import { buildCardFrameStyle, buildCardMediaStyle } from '../../lib/cardDisplaySettings';
 
 type CharacterCardProps = {
   character: Character;
@@ -8,6 +9,10 @@ type CharacterCardProps = {
   onDelete: () => void;
   isDeleting?: boolean;
   primaryFactionName?: string | null;
+  displayDimensions?: {
+    width: number;
+    height: number;
+  };
 };
 
 function parseWikiSummary(wikiSummaryJson: string): CharacterWikiSummary {
@@ -24,6 +29,7 @@ export default function CharacterCard({
   onDelete,
   isDeleting = false,
   primaryFactionName = null,
+  displayDimensions = { width: 320, height: 160 },
 }: CharacterCardProps) {
   const navigate = useNavigate();
   const imageSrc = character.image_src?.trim() ?? '';
@@ -69,10 +75,15 @@ export default function CharacterCard({
       tabIndex={0}
       aria-label={`Open ${character.name}`}
       className='overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2'
+      style={buildCardFrameStyle(displayDimensions)}
       onClick={handleOpen}
       onKeyDown={handleCardKeyDown}
     >
-      <div className='h-40 bg-slate-100'>
+      <div
+        className='bg-slate-100'
+        style={buildCardMediaStyle(displayDimensions)}
+        data-testid='character-card-media-frame'
+      >
         {showImage
           ? (
             <img

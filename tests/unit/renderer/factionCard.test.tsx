@@ -82,4 +82,18 @@ describe('FactionCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('applies caller-provided card frame dimensions', () => {
+    renderCard({
+      faction: buildFaction({ image_src: 'vv-media://faction-images/cult.png' }),
+      displayDimensions: { width: 340, height: 180 },
+    });
+
+    expect(screen.getByRole('button', { name: 'Open Cult of Contagion' })).toHaveStyle({
+      maxWidth: '340px',
+    });
+    expect(screen.getByTestId('faction-card-media-frame')).toHaveStyle({
+      height: '180px',
+    });
+  });
 });

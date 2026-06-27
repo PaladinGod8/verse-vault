@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppSettingsProvider } from '../../../src/renderer/hooks/useAppSettings';
 import CharacterDetailPage from '../../../src/renderer/pages/CharacterDetailPage';
 import { buildCharacter, resetFactoryIds } from '../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
@@ -21,13 +22,15 @@ vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
 function renderPage(worldId = 1, characterId = 5) {
   return render(
     <MemoryRouter initialEntries={[`/world/${worldId}/characters/${characterId}`]}>
-      <Routes>
-        <Route
-          path='/world/:id/characters/:characterId'
-          element={<CharacterDetailPage />}
-        />
-        <Route path='/world/:id/factions/:factionId' element={<div>Faction Detail Stub</div>} />
-      </Routes>
+      <AppSettingsProvider>
+        <Routes>
+          <Route
+            path='/world/:id/characters/:characterId'
+            element={<CharacterDetailPage />}
+          />
+          <Route path='/world/:id/factions/:factionId' element={<div>Faction Detail Stub</div>} />
+        </Routes>
+      </AppSettingsProvider>
     </MemoryRouter>,
   );
 }
@@ -117,5 +120,37 @@ describe('CharacterDetailPage', () => {
       5,
       expect.objectContaining({ name: 'Updated Name' }),
     );
+  });
+
+  it('applies stored character detail image dimensions from app settings', async () => {
+    const character = buildCharacter({
+      id: 5,
+      world_id: 1,
+      name: 'Ledros Igni',
+      image_src: 'vv-media://character-images/ledros.png',
+    });
+    (mockDb.settings.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1,
+      config: JSON.stringify({
+        cardDisplays: {
+          characterDetail: {
+            width: 144,
+            height: 192,
+            lockAspectRatio: false,
+          },
+        },
+      }),
+      created_at: '',
+      updated_at: '',
+    });
+    (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    renderPage();
+
+    expect(await screen.findByRole('img', { name: 'Ledros Igni' })).toHaveStyle({
+      width: '144px',
+      height: '192px',
+    });
   });
 });

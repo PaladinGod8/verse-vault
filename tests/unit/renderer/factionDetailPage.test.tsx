@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppSettingsProvider } from '../../../src/renderer/hooks/useAppSettings';
 import FactionDetailPage from '../../../src/renderer/pages/FactionDetailPage';
 import { buildFaction, resetFactoryIds } from '../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
@@ -21,13 +22,15 @@ vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
 function renderPage(worldId = 1, factionId = 5) {
   return render(
     <MemoryRouter initialEntries={[`/world/${worldId}/factions/${factionId}`]}>
-      <Routes>
-        <Route path='/world/:id/factions/:factionId' element={<FactionDetailPage />} />
-        <Route
-          path='/world/:id/characters/:characterId'
-          element={<div>Character Detail Stub</div>}
-        />
-      </Routes>
+      <AppSettingsProvider>
+        <Routes>
+          <Route path='/world/:id/factions/:factionId' element={<FactionDetailPage />} />
+          <Route
+            path='/world/:id/characters/:characterId'
+            element={<div>Character Detail Stub</div>}
+          />
+        </Routes>
+      </AppSettingsProvider>
     </MemoryRouter>,
   );
 }
@@ -164,5 +167,38 @@ describe('FactionDetailPage', () => {
       5,
       expect.objectContaining({ name: 'Updated Faction' }),
     );
+  });
+
+  it('applies stored faction detail image dimensions from app settings', async () => {
+    const faction = buildFaction({
+      id: 5,
+      world_id: 1,
+      name: 'Cult of Contagion',
+      image_src: 'vv-media://faction-images/cult.png',
+    });
+    (mockDb.settings.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1,
+      config: JSON.stringify({
+        cardDisplays: {
+          factionDetail: {
+            width: 180,
+            height: 140,
+            lockAspectRatio: false,
+          },
+        },
+      }),
+      created_at: '',
+      updated_at: '',
+    });
+    (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
+    (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    renderPage();
+
+    expect(await screen.findByRole('img', { name: 'Cult of Contagion' })).toHaveStyle({
+      width: '180px',
+      height: '140px',
+    });
   });
 });

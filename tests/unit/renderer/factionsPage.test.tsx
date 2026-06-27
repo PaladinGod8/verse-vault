@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppSettingsProvider } from '../../../src/renderer/hooks/useAppSettings';
 import FactionsPage from '../../../src/renderer/pages/FactionsPage';
 import {
   buildFaction,
@@ -26,9 +27,11 @@ vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
 function renderPage(worldId = 1) {
   return render(
     <MemoryRouter initialEntries={[`/world/${worldId}/factions`]}>
-      <Routes>
-        <Route path='/world/:id/factions' element={<FactionsPage />} />
-      </Routes>
+      <AppSettingsProvider>
+        <Routes>
+          <Route path='/world/:id/factions' element={<FactionsPage />} />
+        </Routes>
+      </AppSettingsProvider>
     </MemoryRouter>,
   );
 }

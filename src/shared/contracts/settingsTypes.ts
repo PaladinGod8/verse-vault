@@ -2,6 +2,11 @@
 
 export type AppThemePreference = 'light' | 'dark' | 'custom';
 export type AppCardSize = 'small' | 'medium' | 'large';
+export type AppCardDisplaySurface =
+  | 'characterCard'
+  | 'factionCard'
+  | 'characterDetail'
+  | 'factionDetail';
 export type AppThemeColorRole = 'primary' | 'secondary' | 'accent';
 export type AppThemePalette =
   | 'slate'
@@ -22,11 +27,21 @@ export interface AppThemeColorSelection {
 }
 
 export type AppThemeColors = Partial<Record<AppThemeColorRole, AppThemeColorSelection>>;
+export interface AppCardDisplayDimensions {
+  width?: number;
+  height?: number;
+  lockAspectRatio?: boolean;
+}
+
+export type AppCardDisplaySettings = Partial<
+  Record<AppCardDisplaySurface, AppCardDisplayDimensions>
+>;
 
 /** Parsed shape of `AppSettings.config`. Add new preference fields here as features need them. */
 export interface AppSettingsConfig {
   theme?: AppThemePreference;
   cardSize?: AppCardSize;
+  cardDisplays?: AppCardDisplaySettings;
   themeColors?: AppThemeColors;
   [key: string]: unknown;
 }

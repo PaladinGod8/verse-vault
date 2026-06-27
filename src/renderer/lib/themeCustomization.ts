@@ -96,6 +96,12 @@ export function mergeAppSettingsConfig(
   current: AppSettingsConfig,
   patch: Partial<AppSettingsConfig>,
 ): AppSettingsConfig {
+  const nextCardDisplays = patch.cardDisplays
+    ? {
+      ...(current.cardDisplays ?? {}),
+      ...patch.cardDisplays,
+    }
+    : current.cardDisplays;
   const nextThemeColors = patch.themeColors
     ? {
       ...(current.themeColors ?? {}),
@@ -110,6 +116,10 @@ export function mergeAppSettingsConfig(
 
   if (nextThemeColors) {
     nextConfig.themeColors = nextThemeColors;
+  }
+
+  if (nextCardDisplays) {
+    nextConfig.cardDisplays = nextCardDisplays;
   }
 
   return nextConfig;

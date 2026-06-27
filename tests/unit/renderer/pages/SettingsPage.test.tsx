@@ -31,6 +31,9 @@ describe('SettingsPage', () => {
     expect(window.db.settings.get).toHaveBeenCalled();
     expect(screen.getByLabelText('Theme')).toHaveValue('dark');
     expect(screen.getByLabelText('Card size')).toHaveValue('medium');
+    expect(screen.getByLabelText('Character cards width')).toHaveValue(320);
+    expect(screen.getByLabelText('Character cards height')).toHaveValue(160);
+    expect(screen.getByLabelText('Faction detail image width')).toHaveValue(96);
     expect(screen.queryByRole('heading', { name: 'Theme preview' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Blue' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Custom color' })).not.toBeInTheDocument();
@@ -130,5 +133,54 @@ describe('SettingsPage', () => {
     await userEvent.selectOptions(screen.getByLabelText('Card size'), 'large');
 
     expect(await screen.findByText('Failed to save settings.')).toBeInTheDocument();
+  });
+
+  it('persists card display dimensions and aspect-ratio lock changes', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const characterCardWidthInput = await screen.findByLabelText('Character cards width');
+    const characterCardHeightInput = screen.getByLabelText('Character cards height');
+    const characterCardAspectLock = screen.getAllByLabelText('Lock aspect ratio')[0];
+
+    fireEvent.change(characterCardWidthInput, { target: { value: '400' } });
+
+    await waitFor(() => {
+      expect(window.db.settings.update).toHaveBeenCalled();
+    });
+
+    let latestConfig = JSON.parse(
+      (window.db.settings.update as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[0] as string,
+    );
+
+    expect(latestConfig).toMatchObject({
+      cardDisplays: {
+        characterCard: {
+          width: 400,
+          height: 200,
+          lockAspectRatio: true,
+        },
+      },
+    });
+    expect(characterCardHeightInput).toHaveValue(200);
+
+    await user.click(characterCardAspectLock);
+    fireEvent.change(characterCardHeightInput, { target: { value: '260' } });
+
+    await waitFor(() => {
+      latestConfig = JSON.parse(
+        (window.db.settings.update as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[0] as string,
+      );
+
+      expect(latestConfig).toMatchObject({
+        cardDisplays: {
+          characterCard: {
+            width: 400,
+            height: 260,
+            lockAspectRatio: false,
+          },
+        },
+      });
+    });
   });
 });

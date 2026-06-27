@@ -11,6 +11,7 @@ threading them through per-world records.
 - Single global Settings page at `/settings`.
 - Singleton SQLite row in `app_settings` with one JSON `config` blob.
 - Current editable preferences: `theme` and `cardSize`.
+- Advanced display sizing for character/faction cards and detail-page images.
 - Theme customization supports one custom seed color that derives a matching
   dark-theme palette for primary, secondary, and accent roles.
 - Out of scope: per-world overrides, sync/import-export, and app-wide visual application
@@ -26,6 +27,13 @@ threading them through per-world records.
 - Renders one `Display` section with:
   - `Theme` select: `Light`, `Dark`, or `Custom`
   - `Card size` select: `Small`, `Medium`, or `Large`
+  - `Card image sizing` controls for:
+    - Character cards
+    - Faction cards
+    - Character detail image
+    - Faction detail image
+  - Each sizing control includes numeric `width` / `height`, `Lock aspect ratio`,
+    and a draggable resize preview handle.
   - Custom-only `Theme preview` sample for common action buttons, chips, and text emphasis
   - Custom-only `Theme color` control with preset palettes plus browser color picker/hex input
 - Saves immediately on change through `window.db.settings.update(...)`.
@@ -33,6 +41,9 @@ threading them through per-world records.
 - Theme changes are managed from Settings page and persist through same settings row.
 - Stored custom theme color applies immediately on top of dark base surfaces; light/dark
   themes ignore custom palette state until the user switches back to `Custom`.
+- Character and faction gallery cards now read their max card width + media height from
+  settings. Character and faction detail headers read portrait/emblem image size from
+  settings.
 - Save failures surface a toast: `Failed to save settings.` plus the thrown error message.
 - UI falls back to `dark` theme and `medium` card size when the stored JSON omits those keys.
 
@@ -66,6 +77,12 @@ interface AppSettings {
 interface AppSettingsConfig {
   theme?: 'light' | 'dark' | 'custom';
   cardSize?: 'small' | 'medium' | 'large';
+  cardDisplays?: {
+    characterCard?: { width?: number; height?: number; lockAspectRatio?: boolean };
+    factionCard?: { width?: number; height?: number; lockAspectRatio?: boolean };
+    characterDetail?: { width?: number; height?: number; lockAspectRatio?: boolean };
+    factionDetail?: { width?: number; height?: number; lockAspectRatio?: boolean };
+  };
   themeColors?: {
     primary?: { palette: string; customHex?: string };
   };
@@ -88,10 +105,14 @@ interface AppSettingsConfig {
 - `tests/unit/ipc/registerSettingsHandlers.test.ts`:
   verifies singleton-row creation and update payload persistence.
 - `tests/unit/renderer/pages/SettingsPage.test.tsx`:
-  verifies load, custom-only preview/color controls, palette persistence, custom hex
-  persistence, and save-failure toast.
+  verifies load, custom-only preview/color controls, card sizing persistence, draggable
+  resize commit, palette persistence, custom hex persistence, and save-failure toast.
 - `tests/unit/App.test.tsx`:
   verifies stored custom theme color becomes dark-derived document CSS variables on boot.
+- `tests/unit/renderer/characterCard.test.tsx` and `factionCard.test.tsx`:
+  verify card frame dimensions apply to gallery cards.
+- `tests/unit/renderer/characterDetailPage.test.tsx` and `factionDetailPage.test.tsx`:
+  verify stored image dimensions apply on detail pages.
 - `tests/unit/ipc/registrars.test.ts`:
   verifies settings registrar wiring and channel coverage.
 - `tests/unit/main.bootstrap.test.ts`:
@@ -104,6 +125,7 @@ interface AppSettingsConfig {
 - Stored `theme` and `cardSize` preferences are persisted now, but not every renderer
   surface consumes `cardSize` yet.
 - No debounce/batching; every select change writes immediately.
+- Drag-resize preview writes on pointer release; numeric inputs write on direct change.
 - Custom theme derives shared semantic/app-primary color roles from one seed color; it is
   not a fully independent per-screen styling system.
 - No settings search, grouping beyond `Display`, or reset-to-default action yet.

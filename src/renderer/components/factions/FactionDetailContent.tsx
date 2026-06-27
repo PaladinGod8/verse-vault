@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { FactionSections, FactionWikiSummary } from '../../../shared/contracts/factionTypes';
 import { FACTION_BASIC_INFO_FIELDS } from '../../lib/factionWikiSummaryFieldConfig';
+import { buildDetailImageStyle } from '../../lib/cardDisplaySettings';
 
 type FactionMemberWithCharacterName = FactionMember & { character_name: string; };
 
@@ -24,6 +25,10 @@ type FactionDetailContentProps = {
   plainMembers: FactionMemberWithCharacterName[];
   worldId: number | null;
   onEdit: () => void;
+  imageDimensions?: {
+    width: number;
+    height: number;
+  };
 };
 
 export default function FactionDetailContent({
@@ -39,6 +44,7 @@ export default function FactionDetailContent({
   plainMembers,
   worldId,
   onEdit,
+  imageDimensions = { width: 96, height: 96 },
 }: FactionDetailContentProps) {
   const wikiSummaryRecord = wikiSummary as Record<string, string | null | undefined>;
 
@@ -47,7 +53,14 @@ export default function FactionDetailContent({
       <div className='flex items-start justify-between gap-4'>
         <div className='flex items-start gap-4'>
           {imageSrc
-            ? <img src={imageSrc} alt={faction.name} className='h-24 w-24 rounded object-cover' />
+            ? (
+              <img
+                src={imageSrc}
+                alt={faction.name}
+                className='rounded object-cover'
+                style={buildDetailImageStyle(imageDimensions)}
+              />
+            )
             : null}
           <div>
             <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>

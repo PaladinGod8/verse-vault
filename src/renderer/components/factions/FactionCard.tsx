@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildCardFrameStyle, buildCardMediaStyle } from '../../lib/cardDisplaySettings';
 
 type FactionCardProps = {
   faction: Faction;
@@ -7,6 +8,10 @@ type FactionCardProps = {
   onEdit: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
+  displayDimensions?: {
+    width: number;
+    height: number;
+  };
 };
 
 export default function FactionCard({
@@ -15,6 +20,7 @@ export default function FactionCard({
   onEdit,
   onDelete,
   isDeleting = false,
+  displayDimensions = { width: 320, height: 160 },
 }: FactionCardProps) {
   const navigate = useNavigate();
   const imageSrc = faction.image_src?.trim() ?? '';
@@ -58,10 +64,15 @@ export default function FactionCard({
       tabIndex={0}
       aria-label={`Open ${faction.name}`}
       className='overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2'
+      style={buildCardFrameStyle(displayDimensions)}
       onClick={handleOpen}
       onKeyDown={handleCardKeyDown}
     >
-      <div className='h-40 bg-slate-100'>
+      <div
+        className='bg-slate-100'
+        style={buildCardMediaStyle(displayDimensions)}
+        data-testid='faction-card-media-frame'
+      >
         {showImage
           ? (
             <img

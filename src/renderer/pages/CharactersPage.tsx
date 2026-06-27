@@ -6,9 +6,11 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { useAppSettings } from '../hooks/useAppSettings';
 import { useCharacterCrud } from '../hooks/useCharacterCrud';
 import { useWorldCharactersData } from '../hooks/useWorldCharactersData';
 import { characterMatchesQuery } from '../lib/characterSearch';
+import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { parsePositiveIntParam } from '../lib/routeParams';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
@@ -22,8 +24,13 @@ function parseCharacterJson<T>(jsonText: string): T {
 
 export default function CharactersPage() {
   const toast = useToast();
+  const { config } = useAppSettings();
   const { id } = useParams();
   const worldId = useMemo(() => parsePositiveIntParam(id), [id]);
+  const cardDisplayDimensions = useMemo(
+    () => resolveCardDisplayDimensions(config, 'characterCard'),
+    [config],
+  );
 
   const { world, characters, isLoading, error, reload: reloadCharacters } = useWorldCharactersData(
     worldId,
@@ -157,6 +164,7 @@ export default function CharactersPage() {
                     onDelete={() => setPendingDeleteCharacter(character)}
                     isDeleting={deletingCharacterId === character.id}
                     primaryFactionName={primaryFactionName}
+                    displayDimensions={cardDisplayDimensions}
                   />
                 );
               })}

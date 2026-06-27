@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppSettingsProvider } from '../../../src/renderer/hooks/useAppSettings';
 import CharactersPage from '../../../src/renderer/pages/CharactersPage';
 import { buildCharacter, buildWorld, resetFactoryIds } from '../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
@@ -26,9 +27,11 @@ vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
 function renderPage(worldId = 1) {
   return render(
     <MemoryRouter initialEntries={[`/world/${worldId}/characters`]}>
-      <Routes>
-        <Route path='/world/:id/characters' element={<CharactersPage />} />
-      </Routes>
+      <AppSettingsProvider>
+        <Routes>
+          <Route path='/world/:id/characters' element={<CharactersPage />} />
+        </Routes>
+      </AppSettingsProvider>
     </MemoryRouter>,
   );
 }

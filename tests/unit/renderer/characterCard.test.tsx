@@ -109,4 +109,18 @@ describe('CharacterCard', () => {
     expect(screen.getByRole('button', { name: 'Deleting...' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Edit' })).toBeDisabled();
   });
+
+  it('applies caller-provided card frame dimensions', () => {
+    renderCard({
+      character: buildCharacter({ image_src: 'vv-media://character-images/ledros.png' }),
+      displayDimensions: { width: 360, height: 220 },
+    });
+
+    expect(screen.getByRole('button', { name: 'Open Ledros Igni' })).toHaveStyle({
+      maxWidth: '360px',
+    });
+    expect(screen.getByTestId('character-card-media-frame')).toHaveStyle({
+      height: '220px',
+    });
+  });
 });
