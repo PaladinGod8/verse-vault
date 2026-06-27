@@ -7,6 +7,7 @@ type CharacterCardProps = {
   onEdit: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
+  primaryFactionName?: string | null;
 };
 
 function parseWikiSummary(wikiSummaryJson: string): CharacterWikiSummary {
@@ -22,6 +23,7 @@ export default function CharacterCard({
   onEdit,
   onDelete,
   isDeleting = false,
+  primaryFactionName = null,
 }: CharacterCardProps) {
   const navigate = useNavigate();
   const imageSrc = character.image_src?.trim() ?? '';
@@ -93,6 +95,10 @@ export default function CharacterCard({
         </h2>
 
         {mainEpithet ? <p className='text-xs text-slate-500'>{mainEpithet}</p> : null}
+
+        {primaryFactionName
+          ? <p className='text-xs text-slate-500'>{primaryFactionName}</p>
+          : null}
 
         <div className='flex gap-2 pt-3'>
           <button

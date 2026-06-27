@@ -52,6 +52,25 @@ describe('CharacterCard', () => {
     expect(screen.getByText('The Brandslayer')).toBeInTheDocument();
   });
 
+  it('renders the primary faction name below the epithet', () => {
+    renderCard({
+      character: buildCharacter({
+        wiki_summary: JSON.stringify({
+          biographic: { mainEpithet: 'The Brandslayer' },
+        }),
+      }),
+      primaryFactionName: 'Cult of Contagion',
+    });
+
+    expect(screen.getByText('Cult of Contagion')).toBeInTheDocument();
+  });
+
+  it('renders no primary faction text when the character has no primary faction', () => {
+    renderCard();
+
+    expect(screen.queryByText('Cult of Contagion')).not.toBeInTheDocument();
+  });
+
   it('renders the character image when image_src is set', () => {
     renderCard({
       character: buildCharacter({ image_src: 'vv-media://character-images/ledros.png' }),

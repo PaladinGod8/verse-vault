@@ -143,15 +143,23 @@ export default function CharactersPage() {
           )
           : (
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-              {visibleCharacters.map((character) => (
-                <CharacterCard
-                  key={character.id}
-                  character={character}
-                  onEdit={() => setEditingCharacter(character)}
-                  onDelete={() => setPendingDeleteCharacter(character)}
-                  isDeleting={deletingCharacterId === character.id}
-                />
-              ))}
+              {visibleCharacters.map((character) => {
+                const primaryFactionId = primaryFactionByCharacterId.get(character.id);
+                const primaryFactionName = primaryFactionId === undefined
+                  ? null
+                  : allFactions.find((faction) => faction.id === primaryFactionId)?.name ?? null;
+
+                return (
+                  <CharacterCard
+                    key={character.id}
+                    character={character}
+                    onEdit={() => setEditingCharacter(character)}
+                    onDelete={() => setPendingDeleteCharacter(character)}
+                    isDeleting={deletingCharacterId === character.id}
+                    primaryFactionName={primaryFactionName}
+                  />
+                );
+              })}
             </div>
           )}
       </main>
