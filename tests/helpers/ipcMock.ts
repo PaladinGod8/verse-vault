@@ -152,12 +152,12 @@ export function createMockDb(): DbApi {
         created_at: '2026-01-01 00:00:00',
         updated_at: '2026-01-01 00:00:00',
       } as AppSettings),
-      update: vi.fn().mockResolvedValue({
+      update: vi.fn(async (config: string) => ({
         id: 1,
-        config: '{}',
+        config,
         created_at: '2026-01-01 00:00:00',
         updated_at: '2026-01-01 00:00:00',
-      } as AppSettings),
+      } as AppSettings)),
     },
   };
 

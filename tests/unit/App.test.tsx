@@ -228,6 +228,52 @@ describe('App routes', () => {
     expect(screen.queryByRole('button', { name: /Switch to .* mode/ })).not.toBeInTheDocument();
   });
 
+  it('applies stored custom theme color as a dark-derived palette', async () => {
+    worldsGetAllMock.mockResolvedValue([]);
+    settingsGetMock.mockResolvedValue(
+      buildSettings({
+        config: JSON.stringify({
+          theme: 'custom',
+          themeColors: {
+            primary: {
+              palette: 'custom',
+              customHex: '#ff44aa',
+            },
+          },
+        }),
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('No worlds yet');
+
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-dark');
+      expect(document.documentElement.style.colorScheme).toBe('dark');
+      expect(document.documentElement.style.getPropertyValue('--color-base-100')).not.toBe('');
+      expect(document.documentElement.style.getPropertyValue('--color-base-200')).not.toBe('');
+      expect(document.documentElement.style.getPropertyValue('--color-neutral')).not.toBe('');
+      expect(document.documentElement.style.getPropertyValue('--color-base-100')).not.toBe(
+        '#0f172a',
+      );
+      expect(document.documentElement.style.getPropertyValue('--color-neutral')).not.toBe(
+        '#020617',
+      );
+      expect(document.documentElement.style.getPropertyValue('--color-primary')).toBe('#ff44aa');
+      expect(document.documentElement.style.getPropertyValue('--color-secondary')).not.toBe('');
+      expect(document.documentElement.style.getPropertyValue('--color-secondary')).not.toBe(
+        '#cbd5e1',
+      );
+      expect(document.documentElement.style.getPropertyValue('--color-accent')).not.toBe('');
+      expect(document.documentElement.style.getPropertyValue('--color-accent')).not.toBe('#38bdf8');
+    });
+  });
+
   it('navigates to world page when a world card is opened', async () => {
     const user = userEvent.setup();
     const world = buildWorld();

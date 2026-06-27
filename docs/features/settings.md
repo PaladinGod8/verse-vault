@@ -11,6 +11,8 @@ threading them through per-world records.
 - Single global Settings page at `/settings`.
 - Singleton SQLite row in `app_settings` with one JSON `config` blob.
 - Current editable preferences: `theme` and `cardSize`.
+- Theme customization supports one custom seed color that derives a matching
+  dark-theme palette for primary, secondary, and accent roles.
 - Out of scope: per-world overrides, sync/import-export, and app-wide visual application
   of preferences other than theme.
 
@@ -22,11 +24,15 @@ threading them through per-world records.
 - Loads the singleton row through `window.db.settings.get()`.
 - Shows explicit loading and load-failure states.
 - Renders one `Display` section with:
-  - `Theme` select: `Light` or `Dark`
+  - `Theme` select: `Light`, `Dark`, or `Custom`
   - `Card size` select: `Small`, `Medium`, or `Large`
+  - Custom-only `Theme preview` sample for common action buttons, chips, and text emphasis
+  - Custom-only `Theme color` control with preset palettes plus browser color picker/hex input
 - Saves immediately on change through `window.db.settings.update(...)`.
 - App boot defaults to dark mode when no theme preference exists yet.
 - Theme changes are managed from Settings page and persist through same settings row.
+- Stored custom theme color applies immediately on top of dark base surfaces; light/dark
+  themes ignore custom palette state until the user switches back to `Custom`.
 - Save failures surface a toast: `Failed to save settings.` plus the thrown error message.
 - UI falls back to `dark` theme and `medium` card size when the stored JSON omits those keys.
 
@@ -36,7 +42,9 @@ threading them through per-world records.
 - Renderer files:
   - `src/renderer/pages/SettingsPage.tsx`
   - `src/renderer/components/settings/DisplaySettingsSection.tsx`
+  - `src/renderer/components/settings/ThemeColorRoleControl.tsx`
   - `src/renderer/hooks/useAppSettings.ts`
+  - `src/renderer/lib/themeCustomization.ts`
 - IPC channels: `SETTINGS_GET`, `SETTINGS_UPDATE` in `src/shared/ipcChannels.ts`.
 - Main handler: `src/main/ipc/registerSettingsHandlers.ts`, registered in `src/main.ts`.
 - Preload bridge: `window.db.settings` in `src/preload.ts`, typed via
@@ -56,8 +64,11 @@ interface AppSettings {
 }
 
 interface AppSettingsConfig {
-  theme?: 'light' | 'dark';
+  theme?: 'light' | 'dark' | 'custom';
   cardSize?: 'small' | 'medium' | 'large';
+  themeColors?: {
+    primary?: { palette: string; customHex?: string };
+  };
 }
 ```
 
@@ -77,7 +88,10 @@ interface AppSettingsConfig {
 - `tests/unit/ipc/registerSettingsHandlers.test.ts`:
   verifies singleton-row creation and update payload persistence.
 - `tests/unit/renderer/pages/SettingsPage.test.tsx`:
-  verifies load, default select values, persistence calls, and save-failure toast.
+  verifies load, custom-only preview/color controls, palette persistence, custom hex
+  persistence, and save-failure toast.
+- `tests/unit/App.test.tsx`:
+  verifies stored custom theme color becomes dark-derived document CSS variables on boot.
 - `tests/unit/ipc/registrars.test.ts`:
   verifies settings registrar wiring and channel coverage.
 - `tests/unit/main.bootstrap.test.ts`:
@@ -90,4 +104,6 @@ interface AppSettingsConfig {
 - Stored `theme` and `cardSize` preferences are persisted now, but not every renderer
   surface consumes `cardSize` yet.
 - No debounce/batching; every select change writes immediately.
+- Custom theme derives shared semantic/app-primary color roles from one seed color; it is
+  not a fully independent per-screen styling system.
 - No settings search, grouping beyond `Display`, or reset-to-default action yet.

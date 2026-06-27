@@ -88,30 +88,35 @@ body {
 
 html[data-theme='versevault-dark'],
 html[data-theme='versevault-dark'] body {
-  background-color: #020617;
-  color: #e2e8f0;
+  background-color: var(--color-neutral);
+  color: var(--color-base-content);
 }
 
 html[data-theme='versevault-dark'] #root {
   background:
-    radial-gradient(circle at top, rgb(30 41 59 / 0.55), transparent 45%),
-    linear-gradient(180deg, #020617 0%, #0f172a 100%);
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 48%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-neutral) 92%, black) 0%,
+      var(--color-base-100) 58%,
+      color-mix(in srgb, var(--color-base-200) 88%, black) 100%
+    );
 }
 
 html[data-theme='versevault-dark'] .bg-white {
-  background-color: rgb(15 23 42 / 0.92) !important;
+  background-color: color-mix(in srgb, var(--color-base-100) 94%, transparent) !important;
 }
 
 html[data-theme='versevault-dark'] .bg-slate-50 {
-  background-color: rgb(15 23 42 / 0.86) !important;
+  background-color: color-mix(in srgb, var(--color-base-200) 90%, transparent) !important;
 }
 
 html[data-theme='versevault-dark'] .bg-slate-100 {
-  background-color: rgb(30 41 59 / 0.9) !important;
+  background-color: color-mix(in srgb, var(--color-base-300) 92%, transparent) !important;
 }
 
 html[data-theme='versevault-dark'] .bg-slate-900 {
-  background-color: #e2e8f0 !important;
+  background-color: var(--color-primary) !important;
 }
 
 html[data-theme='versevault-dark'] .text-slate-900 {
@@ -119,16 +124,16 @@ html[data-theme='versevault-dark'] .text-slate-900 {
 }
 
 html[data-theme='versevault-dark'] .text-slate-800 {
-  color: #e2e8f0 !important;
+  color: color-mix(in srgb, var(--color-base-content) 96%, white) !important;
 }
 
 html[data-theme='versevault-dark'] .text-slate-700 {
-  color: #cbd5e1 !important;
+  color: color-mix(in srgb, var(--color-base-content) 84%, white) !important;
 }
 
 html[data-theme='versevault-dark'] .text-slate-600,
 html[data-theme='versevault-dark'] .text-slate-500 {
-  color: #94a3b8 !important;
+  color: color-mix(in srgb, var(--color-base-content) 62%, transparent) !important;
 }
 
 html[data-theme='versevault-dark'] .text-white {
@@ -138,11 +143,11 @@ html[data-theme='versevault-dark'] .text-white {
 html[data-theme='versevault-dark'] .border-slate-100,
 html[data-theme='versevault-dark'] .border-slate-200,
 html[data-theme='versevault-dark'] .border-slate-300 {
-  border-color: rgb(51 65 85 / 0.95) !important;
+  border-color: color-mix(in srgb, var(--color-base-300) 78%, white) !important;
 }
 
 html[data-theme='versevault-dark'] .hover\:bg-slate-50:hover {
-  background-color: rgb(30 41 59 / 0.9) !important;
+  background-color: var(--color-base-300) !important;
 }
 
 html[data-theme='versevault-dark'] .hover\:bg-slate-800:hover {
@@ -152,4 +157,25 @@ html[data-theme='versevault-dark'] .hover\:bg-slate-800:hover {
 html[data-theme='versevault-dark'] .hover\:text-slate-900:hover,
 html[data-theme='versevault-dark'] .hover\:text-slate-800:hover {
   color: #f8fafc !important;
+}
+
+html[data-theme] .btn-primary,
+html[data-theme] .bg-slate-900,
+html[data-theme] .bg-slate-800 {
+  background-color: var(--color-primary) !important;
+  color: var(--color-primary-content) !important;
+}
+
+html[data-theme] .text-white {
+  color: var(--color-primary-content) !important;
+}
+
+html[data-theme] .btn-secondary {
+  background-color: var(--color-secondary) !important;
+  color: var(--color-secondary-content) !important;
+}
+
+html[data-theme] .badge-accent {
+  background-color: var(--color-accent) !important;
+  color: var(--color-accent-content) !important;
 }
