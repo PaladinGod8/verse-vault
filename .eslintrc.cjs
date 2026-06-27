@@ -95,6 +95,24 @@ module.exports = {
         'max-lines': ['error', { max: 600, skipBlankLines: true, skipComments: true }],
       },
     },
+    {
+      files: ['tests/e2e/*.test.ts'],
+      rules: {
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector: "CallExpression[callee.property.name='waitForTimeout']",
+            message:
+              'Use deterministic waits such as expect(...).toBeVisible(), waitForFunction(), or requestAnimationFrame-based helpers instead of waitForTimeout().',
+          },
+          {
+            selector: "CallExpression[callee.name='setTimeout']",
+            message:
+              'Do not add raw timing waits to E2E specs; use deterministic Playwright waits instead.',
+          },
+        ],
+      },
+    },
 
     // ── React components: max-lines-per-function does not apply ────────────
     // React component functions are a UI module unit, not a traditional function;
@@ -128,17 +146,6 @@ module.exports = {
       },
     },
 
-    // ── Known violations: src/database/db.ts ───────────────────────────────
-    // TODO: remove override after DB module split
-    {
-      files: ['src/database/db.ts'],
-      rules: {
-        'max-lines': 'off',
-        'max-lines-per-function': 'off',
-        'complexity': 'off',
-      },
-    },
-
     // ── Known violations: BattleMapRuntimeCanvas.tsx ───────────────────────
     // TODO: remove override after component split (BattleMapRuntimeCanvas)
     {
@@ -155,6 +162,32 @@ module.exports = {
       files: ['src/renderer/pages/BattleMapRuntimePage.tsx'],
       rules: {
         'max-lines': 'off',
+        'complexity': 'off',
+      },
+    },
+
+    // ── Known violations: runtime canvas/page extraction ───────────────────
+    // These functions were extracted verbatim out of BattleMapRuntimeCanvas.tsx
+    // and BattleMapRuntimePage.tsx (both exempt from max-lines-per-function/
+    // complexity as React component/page files). The complexity is carried
+    // over, not newly introduced; splitting it further was assessed as
+    // higher regression risk than the lint debt, since Vitest mocks PixiJS
+    // and can't verify drag/pan/zoom behavior at a finer grain.
+    // TODO: revisit if any of these modules grow further.
+    {
+      files: [
+        'src/renderer/hooks/useBattleMapRuntimeBootstrap.ts',
+        'src/renderer/hooks/useBattleMapRuntimeCampaignData.ts',
+        'src/renderer/hooks/useBattleMapRuntimeScreenState.ts',
+        'src/renderer/hooks/useRuntimeCamera.ts',
+        'src/renderer/hooks/useRuntimePersistence.ts',
+        'src/renderer/hooks/useRuntimeTokens.ts',
+        'src/renderer/lib/runtime/castingOverlay.ts',
+        'src/renderer/lib/runtime/layerRendering.ts',
+        'src/renderer/lib/runtime/tokenDisplay.ts',
+      ],
+      rules: {
+        'max-lines-per-function': 'off',
         'complexity': 'off',
       },
     },
@@ -207,16 +240,10 @@ module.exports = {
         'src/renderer/pages/WorldPage.tsx',
         'src/renderer/pages/WorldsHomePage.tsx',
         'src/renderer/pages/WorldPagePlaceholder.tsx',
-        'src/renderer/pages/WorldStatisticsConfigPage.tsx',
         'src/renderer/pages/CampaignScenesPage.tsx',
-        'src/renderer/components/abilities/AbilityForm.tsx',
         'src/renderer/pages/AbilitiesPage.tsx',
-        'src/renderer/pages/ActsPage.tsx',
         'src/renderer/pages/ArcsPage.tsx',
-        'src/renderer/pages/ScenesPage.tsx',
-        'src/renderer/pages/SessionsPage.tsx',
         'src/renderer/pages/StatBlocksPage.tsx',
-        'src/renderer/pages/TokensPage.tsx',
       ],
       rules: {
         'max-lines': 'off',

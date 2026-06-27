@@ -374,6 +374,14 @@ steps.push(
     run: () => runCommand(yarnCmd, ['type-check']),
   },
   {
+    name: 'Check generated docs freshness',
+    run: () => runCommand(yarnCmd, ['docs:check']),
+  },
+  {
+    name: 'Guard shared contracts',
+    run: () => runCommand(yarnCmd, ['guard:contracts']),
+  },
+  {
     name: 'Run lint (strict, no warnings)',
     run: () => runCommand(yarnCmd, ['lint']),
   },

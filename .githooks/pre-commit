@@ -66,18 +66,41 @@ block_commit() {
 
 echo "[pre-commit] Running doc guards..."
 
-echo "[pre-commit] 1/2 guard-docs"
+echo "[pre-commit] 1/5 generate docs"
+run_stage node scripts/generate-codebase-map.cjs
+status=$?
+if [ "$status" -ne 0 ]; then
+  block_commit "generate-codebase-map" "$status" "[pre-commit] Commit blocked by codebase map generation."
+fi
+
+echo "[pre-commit] 2/5 generate IPC contract docs"
+run_stage node scripts/generate-ipc-contract-docs.cjs
+status=$?
+if [ "$status" -ne 0 ]; then
+  block_commit "generate-ipc-contract-docs" "$status" "[pre-commit] Commit blocked by IPC contract generation."
+fi
+
+git add docs/02_CODEBASE_MAP.md docs/03_IPC_CONTRACT.md
+
+echo "[pre-commit] 3/5 guard-docs"
 run_stage node scripts/guard-docs.cjs
 status=$?
 if [ "$status" -ne 0 ]; then
   block_commit "guard-docs" "$status" "[pre-commit] Commit blocked by guard-docs."
 fi
 
-echo "[pre-commit] 2/2 guard-ipc-docs"
+echo "[pre-commit] 4/5 guard-ipc-docs"
 run_stage node scripts/guard-ipc-docs.cjs
 status=$?
 if [ "$status" -ne 0 ]; then
   block_commit "guard-ipc-docs" "$status" "[pre-commit] Commit blocked by guard-ipc-docs."
+fi
+
+echo "[pre-commit] 5/5 guard-contracts"
+run_stage node scripts/guard-contracts.cjs
+status=$?
+if [ "$status" -ne 0 ]; then
+  block_commit "guard-contracts" "$status" "[pre-commit] Commit blocked by guard-contracts."
 fi
 
 exit 0

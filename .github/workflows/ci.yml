@@ -118,6 +118,9 @@ jobs:
           - id: typecheck
             label: Type check
             command: yarn type-check
+          - id: contracts-docs
+            label: Contracts and generated docs
+            command: yarn docs:check && yarn guard:contracts
           - id: lint
             label: Lint
             command: yarn lint

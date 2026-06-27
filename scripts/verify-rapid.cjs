@@ -24,6 +24,9 @@ const CACHE_DIRS = [
 const TASKS = [
   { name: 'format', command: 'yarn', args: ['format:check'] },
   { name: 'typecheck', command: 'yarn', args: ['type-check'] },
+  { name: 'docs-check', command: 'yarn', args: ['docs:check'] },
+  { name: 'guard-contracts', command: 'yarn', args: ['guard:contracts'] },
+  { name: 'guard-e2e-timing', command: 'yarn', args: ['guard:e2e-timing'] },
   { name: 'lint', command: 'yarn', args: ['lint:cache'] },
   { name: 'docs-lint', command: 'yarn', args: ['lint:docs'] },
   { name: 'unit', command: 'yarn', args: ['test:unit:quick'] },
