@@ -1,3 +1,9 @@
+/**
+ * @role IPC constant registry
+ * @owns Channel names shared across main, preload, docs, and tests
+ * @seam Stable channel-key source of truth for the IPC contract
+ * @calls No runtime dependencies beyond consumers importing IPC
+ */
 /** Single source of truth for all IPC channel names. Import this in both main.ts and preload.ts. */
 export const IPC = {
   VERSES_GET_ALL: 'db:verses:getAll',

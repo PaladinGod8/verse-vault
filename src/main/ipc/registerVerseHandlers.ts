@@ -1,3 +1,9 @@
+/**
+ * @role Verse IPC registrar
+ * @owns Verse CRUD channel handlers
+ * @seam Main-process adapter for verse IPC requests
+ * @calls SQLite statements only
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

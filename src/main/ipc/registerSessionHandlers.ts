@@ -1,3 +1,9 @@
+/**
+ * @role Session IPC registrar
+ * @owns Session CRUD, campaign index, and move channel handlers
+ * @seam Main-process adapter for session IPC requests
+ * @calls SQLite statements and resequencing helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

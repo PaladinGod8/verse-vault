@@ -1,3 +1,9 @@
+/**
+ * @role World IPC registrar
+ * @owns World CRUD, viewed-state, and image import channel handlers
+ * @seam Main-process adapter for world IPC requests
+ * @calls SQLite statements, filesystem persistence, and shared image validation
+ */
 import type Database from 'better-sqlite3';
 import { app, ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';

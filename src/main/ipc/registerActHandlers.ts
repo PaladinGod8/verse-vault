@@ -1,3 +1,9 @@
+/**
+ * @role Act IPC registrar
+ * @owns Act CRUD and reparenting channel handlers
+ * @seam Main-process adapter for act IPC requests
+ * @calls SQLite statements and sort-order resequencing helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

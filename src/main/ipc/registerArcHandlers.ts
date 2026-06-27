@@ -1,3 +1,9 @@
+/**
+ * @role Arc IPC registrar
+ * @owns Arc CRUD channel handlers and sibling resequencing
+ * @seam Main-process adapter for arc IPC requests
+ * @calls SQLite statements and transactional ordering helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

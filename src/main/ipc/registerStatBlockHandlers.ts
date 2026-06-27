@@ -1,3 +1,9 @@
+/**
+ * @role StatBlock IPC registrar
+ * @owns StatBlock CRUD, linkage, and assignment channel handlers
+ * @seam Main-process adapter for statblock IPC requests
+ * @calls SQLite statements and statblock validation helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

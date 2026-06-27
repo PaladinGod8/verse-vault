@@ -1,3 +1,9 @@
+/**
+ * @role Token IPC registrar
+ * @owns Token CRUD, moves, and image import channel handlers
+ * @seam Main-process adapter for token IPC requests
+ * @calls SQLite statements, token db helpers, and filesystem persistence
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';

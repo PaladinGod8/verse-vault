@@ -1,3 +1,9 @@
+/**
+ * @role Scene IPC registrar
+ * @owns Scene CRUD, campaign index, and move channel handlers
+ * @seam Main-process adapter for scene IPC requests
+ * @calls SQLite statements, payload validation, and resequencing helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

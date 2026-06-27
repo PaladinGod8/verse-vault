@@ -1,3 +1,9 @@
+/**
+ * @role Level IPC registrar
+ * @owns Level CRUD channel handlers
+ * @seam Main-process adapter for level IPC requests
+ * @calls SQLite statements and trimmed-field validation
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

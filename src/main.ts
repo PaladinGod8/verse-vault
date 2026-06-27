@@ -1,3 +1,9 @@
+/**
+ * @role Main bootstrap entrypoint
+ * @owns BrowserWindow startup, protocol registration, and registrar wiring
+ * @seam Main process entrypoint for preload and database adapters
+ * @calls getDatabase, closeDatabase, and register*Handlers modules
+ */
 import { app, BrowserWindow, net, protocol } from 'electron';
 import { pathToFileURL } from 'node:url';
 import path from 'path';
@@ -22,8 +28,6 @@ const IS_DEV = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
 const SHOULD_INSTALL_REACT_DEVTOOLS = IS_DEV && !process.env.VITEST
   && process.env.VV_ENABLE_REACT_DEVTOOLS === '1';
-
-// TEST ME #4
 
 function registerTokenImageProtocol(): void {
   protocol.handle(TOKEN_IMAGE_PROTOCOL, async (request) => {

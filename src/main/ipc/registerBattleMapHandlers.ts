@@ -1,3 +1,9 @@
+/**
+ * @role BattleMap IPC registrar
+ * @owns BattleMap CRUD channel handlers and runtime config validation
+ * @seam Main-process adapter for battlemap IPC requests
+ * @calls SQLite statements and shared JSON validation helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

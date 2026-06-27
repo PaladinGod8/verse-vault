@@ -1,3 +1,9 @@
+/**
+ * @role Campaign IPC registrar
+ * @owns Campaign CRUD channel handlers
+ * @seam Main-process adapter for campaign IPC requests
+ * @calls SQLite statements and partial-update helpers
+ */
 import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { IPC } from '../../shared/ipcChannels';

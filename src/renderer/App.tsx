@@ -1,3 +1,9 @@
+/**
+ * @role Renderer route map
+ * @owns Top-level route-to-page wiring and shared UI providers
+ * @seam Renderer navigation entrypoint for feature pages
+ * @calls React Router Route definitions and ToastProvider
+ */
 import { Route, Routes } from 'react-router-dom';
 import { ToastProvider } from './components/ui/ToastProvider';
 import AbilitiesPage from './pages/AbilitiesPage';
