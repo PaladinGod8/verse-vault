@@ -1,23 +1,20 @@
 import { expect, test } from '@playwright/test';
+import { waitForAnimationFrames } from './helpers';
 import { closeApp, launchApp } from './helpers/launchApp';
 
 async function getMainWindow(
   app: import('playwright').ElectronApplication,
 ): Promise<import('@playwright/test').Page> {
-  const firstWindow = await app.firstWindow();
+  await expect
+    .poll(
+      () => app.windows().some((candidate) => !candidate.url().startsWith('devtools://')),
+      { timeout: 12000 },
+    )
+    .toBe(true);
 
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    const windows = app.windows();
-    const mainWindow = windows.find(
-      (candidate) => !candidate.url().startsWith('devtools://'),
-    );
-    if (mainWindow) {
-      return mainWindow;
-    }
-    await firstWindow.waitForTimeout(100);
-  }
-
-  return firstWindow;
+  return app.windows().find(
+    (candidate) => !candidate.url().startsWith('devtools://'),
+  ) ?? await app.firstWindow();
 }
 
 function battleMapRow(
@@ -245,7 +242,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
         { timeout: 5000 },
       )
       .toBe('none');
-    await window.waitForTimeout(250);
+    await waitForAnimationFrames(window, 3);
     const noGridSnapshot = await runtimeCanvas.screenshot();
     expect(noGridSnapshot.equals(squareGridSnapshot)).toBe(false);
     await expect(
@@ -306,7 +303,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
       .getByRole('button', { name: tokenName })
       .first();
     await placedTokenButton.click();
-    await window.waitForTimeout(450);
+    await waitForAnimationFrames(window, 5);
 
     const runtimeCanvasAfterReload = window.locator('canvas').first();
     await expect(runtimeCanvasAfterReload).toBeVisible();
@@ -323,7 +320,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.down();
     await window.mouse.move(centerX + 120, centerY + 75, { steps: 10 });
     await window.mouse.up();
-    await window.waitForTimeout(250);
+    await waitForAnimationFrames(window, 3);
 
     const panStartX = canvasBounds.x + canvasBounds.width * 0.2;
     const panStartY = canvasBounds.y + canvasBounds.height * 0.2;
@@ -331,13 +328,13 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     await window.mouse.down();
     await window.mouse.move(panStartX + 220, panStartY + 170, { steps: 14 });
     await window.mouse.up();
-    await window.waitForTimeout(250);
+    await waitForAnimationFrames(window, 3);
 
     // Use a rendered grid mode for zoom smoke checks so the frame always has
     // stable visual structure even if tokens happen to be off-screen.
     await reloadedGridModeSelect.selectOption('square');
     await expect(reloadedGridModeSelect).toHaveValue('square');
-    await window.waitForTimeout(250);
+    await waitForAnimationFrames(window, 3);
 
     // Wheel zoom smoke test: zoom in then zoom out; canvas must remain functional.
     await window.mouse.move(centerX, centerY);
@@ -347,7 +344,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     let postZoomInSnapshot = preZoomSnapshot;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       await window.mouse.wheel(0, 1800);
-      await window.waitForTimeout(220);
+      await waitForAnimationFrames(window, 3);
       postZoomInSnapshot = await runtimeCanvasAfterReload.screenshot();
       if (!postZoomInSnapshot.equals(preZoomSnapshot)) {
         break;
@@ -356,7 +353,7 @@ test('battlemap play runtime flow supports render, grid, token, camera, and exit
     expect(postZoomInSnapshot.equals(preZoomSnapshot)).toBe(false);
     // Scroll up (negative deltaY) → zoom out toward effective min
     await window.mouse.wheel(0, -20000);
-    await window.waitForTimeout(300);
+    await waitForAnimationFrames(window, 4);
     await expect(runtimeCanvasAfterReload).toBeVisible();
 
     await window.getByRole('button', { name: 'Exit Runtime' }).click();

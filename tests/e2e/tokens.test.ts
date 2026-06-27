@@ -56,7 +56,6 @@ async function launchElectronApp(): Promise<Page> {
   app = result.app;
   userDataDir = result.userDataDir;
 
-  const firstWindow = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows().find((candidate) => {
       const url = candidate.webContents.getURL();
@@ -70,25 +69,16 @@ async function launchElectronApp(): Promise<Page> {
     win.focus();
   });
 
-  const start = Date.now();
-  let mainWindow: Page | null = null;
-  while (Date.now() - start < 12000) {
-    const windows = app.windows();
-    for (const candidate of windows) {
-      if (!candidate.url().startsWith('devtools://')) {
-        mainWindow = candidate;
-        break;
-      }
-    }
-    if (mainWindow) {
-      break;
-    }
-    await firstWindow.waitForTimeout(100);
-  }
+  await expect
+    .poll(
+      () => app?.windows().some((candidate) => !candidate.url().startsWith('devtools://')),
+      { timeout: 12000 },
+    )
+    .toBe(true);
 
-  if (!mainWindow) {
-    mainWindow = firstWindow;
-  }
+  const mainWindow = app.windows().find(
+    (candidate) => !candidate.url().startsWith('devtools://'),
+  ) ?? await app.firstWindow();
 
   await mainWindow.bringToFront();
   await mainWindow.waitForLoadState('domcontentloaded');

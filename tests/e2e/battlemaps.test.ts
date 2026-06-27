@@ -4,18 +4,20 @@ import { closeApp, launchApp } from './helpers/launchApp';
 async function getMainWindow(
   app: import('playwright').ElectronApplication,
 ): Promise<import('@playwright/test').Page> {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
-    const windows = app.windows();
-    const mainWindow = windows.find(
-      (candidate) => !candidate.url().startsWith('devtools://'),
-    );
-    if (mainWindow) {
-      return mainWindow;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
+  await expect
+    .poll(
+      () => app.windows().some((candidate) => !candidate.url().startsWith('devtools://')),
+      { timeout: 3000 },
+    )
+    .toBe(true);
 
-  throw new Error('Unable to find Electron main window for E2E test.');
+  const mainWindow = app.windows().find(
+    (candidate) => !candidate.url().startsWith('devtools://'),
+  );
+  if (!mainWindow) {
+    throw new Error('Unable to find Electron main window for E2E test.');
+  }
+  return mainWindow;
 }
 
 function battleMapRow(

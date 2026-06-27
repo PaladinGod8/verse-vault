@@ -1,5 +1,5 @@
 import { type ElectronApplication, expect, type Page, test } from '@playwright/test';
-import { ensureWorldsLanding } from './helpers';
+import { ensureWorldsLanding, waitForAnimationFrames } from './helpers';
 import { closeApp, launchApp } from './helpers/launchApp';
 
 let app: ElectronApplication;
@@ -96,7 +96,7 @@ test.describe('StatBlock Statistics', () => {
     // Close any open modals before navigating away
     const escapeKey = 'Escape';
     await page.keyboard.press(escapeKey);
-    await page.waitForTimeout(100);
+    await waitForAnimationFrames(page, 2);
     await ensureWorldsLanding(page);
   });
 

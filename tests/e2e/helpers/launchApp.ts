@@ -1,15 +1,62 @@
-import { type ElectronApplication } from '@playwright/test';
+import { type ElectronApplication, expect } from '@playwright/test';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { _electron as electron } from 'playwright';
 
-// Resolved relative to this helper file: tests/e2e/helpers/ -> project root
-const mainJs = path.join(__dirname, '../../../.vite/build/main.js');
+const repoRoot = path.join(__dirname, '../../..');
+
+interface LaunchTarget {
+  args: string[];
+  executablePath?: string;
+}
 
 export interface LaunchResult {
   app: ElectronApplication;
   userDataDir: string;
+}
+
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
+  const mainJs = path.join(repoRoot, '.vite/build/main.js');
+  if (await pathExists(mainJs)) {
+    return {
+      args: [mainJs, `--user-data-dir=${userDataDir}`],
+    };
+  }
+
+  const packageJson = JSON.parse(
+    await fs.readFile(path.join(repoRoot, 'package.json'), 'utf8'),
+  ) as { productName?: string; name?: string; };
+  const appName = packageJson.productName ?? packageJson.name;
+  if (!appName) {
+    throw new Error('Unable to resolve Electron launch target: package name is missing.');
+  }
+
+  const packagedApp = path.join(
+    repoRoot,
+    'out',
+    `${appName}-win32-x64`,
+    'resources',
+    'app.asar',
+  );
+  if (await pathExists(packagedApp)) {
+    return {
+      args: [packagedApp, `--user-data-dir=${userDataDir}`],
+    };
+  }
+
+  throw new Error(
+    'Unable to resolve Electron launch target. Run `yarn package` or generate the Vite main bundle first.',
+  );
 }
 
 /**
@@ -22,6 +69,7 @@ export interface LaunchResult {
  */
 export async function launchApp(): Promise<LaunchResult> {
   const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vv-e2e-'));
+  const launchTarget = await resolveLaunchTarget(userDataDir);
 
   const env = { ...process.env };
   // CRITICAL: VS Code / some terminals set ELECTRON_RUN_AS_NODE=1, which
@@ -29,30 +77,23 @@ export async function launchApp(): Promise<LaunchResult> {
   delete env.ELECTRON_RUN_AS_NODE;
 
   const app = await electron.launch({
-    args: [mainJs, `--user-data-dir=${userDataDir}`],
+    ...launchTarget,
     env,
   });
 
   // Ensure test code that calls app.firstWindow() attaches to the app window,
   // not a stray DevTools window.
-  await app.evaluate(async ({ BrowserWindow }) => {
-    const deadline = Date.now() + 5000;
-    while (Date.now() < deadline) {
-      const windows = BrowserWindow.getAllWindows();
-      const mainWindow = windows.find((candidate) => {
-        const url = candidate.webContents.getURL();
-        return !url.startsWith('devtools://');
-      });
-      if (mainWindow) {
-        windows
-          .filter((candidate) => candidate.webContents.getURL().startsWith('devtools://'))
-          .forEach((candidate) => candidate.close());
-        return;
-      }
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 100);
-      });
-    }
+  await expect
+    .poll(
+      () => app.windows().some((candidate) => !candidate.url().startsWith('devtools://')),
+      { timeout: 5000 },
+    )
+    .toBe(true);
+
+  await app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()
+      .filter((candidate) => candidate.webContents.getURL().startsWith('devtools://'))
+      .forEach((candidate) => candidate.close());
   });
 
   return { app, userDataDir };

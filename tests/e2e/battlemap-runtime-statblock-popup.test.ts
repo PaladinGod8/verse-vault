@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { cleanupElectronApp, launchElectronApp } from './helpers';
+import { cleanupElectronApp, launchElectronApp, waitForAnimationFrames } from './helpers';
 
 test('runtime resolves linked statblock abilities and opens popup on token double click', async () => {
   const context = await launchElectronApp();
@@ -179,7 +179,7 @@ test('runtime resolves linked statblock abilities and opens popup on token doubl
 
     const baselineScreenshot = await canvas.screenshot();
     await linkedAbilityButton.click();
-    await page.waitForTimeout(250);
+    await waitForAnimationFrames(page, 3);
     const castEnabledScreenshot = await canvas.screenshot();
     expect(Buffer.compare(baselineScreenshot, castEnabledScreenshot)).not.toBe(0);
 
@@ -197,7 +197,7 @@ test('runtime resolves linked statblock abilities and opens popup on token doubl
       .click();
     await expect(linkedAbilityButton).toBeVisible();
     await linkedAbilityButton.click();
-    await page.waitForTimeout(200);
+    await waitForAnimationFrames(page, 2);
 
     const canvasBounds = await canvas.boundingBox();
     expect(canvasBounds).not.toBeNull();
@@ -207,7 +207,7 @@ test('runtime resolves linked statblock abilities and opens popup on token doubl
 
     const centerX = canvasBounds.x + canvasBounds.width * 0.5;
     const centerY = canvasBounds.y + canvasBounds.height * 0.5;
-    await page.waitForTimeout(450);
+    await waitForAnimationFrames(page, 5);
     await page.mouse.dblclick(centerX, centerY, { button: 'left' });
 
     const popup = page.getByRole('dialog', {
@@ -223,7 +223,7 @@ test('runtime resolves linked statblock abilities and opens popup on token doubl
     expect(Buffer.compare(afterPopupCloseScreenshot, baselineScreenshot)).not.toBe(0);
 
     await linkedAbilityButton.click();
-    await page.waitForTimeout(200);
+    await waitForAnimationFrames(page, 2);
     const castDisabledScreenshot = await canvas.screenshot();
     expect(Buffer.compare(castDisabledScreenshot, afterPopupCloseScreenshot)).not.toBe(0);
   } finally {

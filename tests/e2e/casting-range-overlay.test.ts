@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { cleanupElectronApp, launchElectronApp } from './helpers';
+import { cleanupElectronApp, launchElectronApp, waitForAnimationFrames } from './helpers';
 
 test('casting range overlay renders and tracks pointer in runtime', async () => {
   const context = await launchElectronApp();
@@ -138,7 +138,7 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     await expect(canvas).toBeVisible();
 
     // Take baseline screenshot (no overlay)
-    await page.waitForTimeout(500); // Allow initial render
+    await waitForAnimationFrames(page, 6);
     const baselineScreenshot = await canvas.screenshot();
 
     // Place and select token via runtime token palette.
@@ -177,7 +177,7 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     await abilityButton.click();
 
     // Wait for overlay to render
-    await page.waitForTimeout(300);
+    await waitForAnimationFrames(page, 4);
 
     // Take screenshot in cast mode
     const castModeScreenshot = await canvas.screenshot();
@@ -189,14 +189,14 @@ test('casting range overlay renders and tracks pointer in runtime', async () => 
     // force:true skips Playwright's hit-test so the position doesn't need to
     // resolve back to the canvas element (canvas height varies by CI environment).
     await canvas.hover({ position: { x: 400, y: 190 }, force: true });
-    await page.waitForTimeout(100);
+    await waitForAnimationFrames(page, 2);
 
     // For circle AoE, pointer movement may not produce visible changes,
     // but the interaction validates that pointer events are handled without error
 
     // Exit cast mode (click ability again to deselect)
     await abilityButton.click();
-    await page.waitForTimeout(100);
+    await waitForAnimationFrames(page, 2);
 
     // Take screenshot after exit
     const afterExitScreenshot = await canvas.screenshot();
