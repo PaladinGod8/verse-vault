@@ -1,34 +1,13 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require('child_process');
+const { parseRoleHeader, SEAM_FILES } = require('./lib/generated-docs.cjs');
+const { buildCodebaseMapDoc, CODEBASE_MAP_PATH } = require('./lib/generated-docs.cjs');
+const fs = require('fs');
+const path = require('path');
 
 const args = new Set(process.argv.slice(2));
 const stagedOnly = args.has('--staged');
-
-const DOCS = {
-  ARCHITECTURE: 'docs/01_ARCHITECTURE.md',
-  CODEBASE_MAP: 'docs/02_CODEBASE_MAP.md',
-};
-
-const CODEBASE_MAP_ROOT_FILES = new Set([
-  'forge.env.d.ts',
-  'forge.config.ts',
-  'vite.base.config.ts',
-  'vite.main.config.ts',
-  'vite.preload.config.ts',
-  'vite.renderer.config.ts',
-]);
-
-const ARCHITECTURE_RELEVANT_FILES = new Set([
-  'src/main.ts',
-  'src/preload.ts',
-  'src/shared/ipcChannels.ts',
-  'src/database/db.ts',
-  'forge.env.d.ts',
-  'forge.config.ts',
-  'vite.main.config.ts',
-  'vite.preload.config.ts',
-]);
 
 function runGit(commandArgs) {
   return spawnSync('git', commandArgs, {
@@ -73,79 +52,43 @@ function getChangedFiles() {
   return diffResult.stdout.split(/\r?\n/).map(normalizePath).filter(Boolean);
 }
 
-function needsCodebaseMapDoc(filePath) {
-  if (filePath.startsWith('src/')) {
-    return true;
-  }
-  return CODEBASE_MAP_ROOT_FILES.has(filePath);
+function codebaseMapIsFresh(repoRoot) {
+  const targetPath = path.join(repoRoot, CODEBASE_MAP_PATH);
+  const current = fs.existsSync(targetPath) ? fs.readFileSync(targetPath, 'utf8') : '';
+  return current === buildCodebaseMapDoc(repoRoot);
 }
 
-function needsArchitectureDoc(filePath) {
-  if (ARCHITECTURE_RELEVANT_FILES.has(filePath)) {
-    return true;
-  }
-  return filePath.startsWith('src/database/');
-}
-
-function collectRuleHits(changedFiles) {
-  return {
-    codebaseMapHits: changedFiles.filter(needsCodebaseMapDoc),
-    architectureHits: changedFiles.filter(needsArchitectureDoc),
-  };
+function findMissingHeaders(repoRoot, changedFiles) {
+  return changedFiles
+    .filter((file) => SEAM_FILES.includes(file))
+    .filter((file) => !parseRoleHeader(fs.readFileSync(path.join(repoRoot, file), 'utf8')));
 }
 
 function main() {
+  const repoRoot = process.cwd();
   const changedFiles = getChangedFiles();
   if (!changedFiles) {
     return;
   }
 
-  const changedSet = new Set(changedFiles);
-  const { codebaseMapHits, architectureHits } = collectRuleHits(changedFiles);
+  const missingHeaders = findMissingHeaders(repoRoot, changedFiles);
+  const fresh = codebaseMapIsFresh(repoRoot);
 
-  const failures = [];
-
-  if (codebaseMapHits.length > 0 && !changedSet.has(DOCS.CODEBASE_MAP)) {
-    failures.push({
-      doc: DOCS.CODEBASE_MAP,
-      reason: 'Source/config/directory changes detected without codebase map update.',
-      files: codebaseMapHits,
-    });
+  if (!fresh) {
+    console.error(`[guard:docs] ${CODEBASE_MAP_PATH} is stale. Run yarn docs:generate.`);
   }
-
-  if (architectureHits.length > 0 && !changedSet.has(DOCS.ARCHITECTURE)) {
-    failures.push({
-      doc: DOCS.ARCHITECTURE,
-      reason: 'Architecture-relevant files changed without architecture doc update.',
-      files: architectureHits,
-    });
-  }
-
-  if (failures.length === 0) {
-    if (codebaseMapHits.length === 0 && architectureHits.length === 0) {
-      console.log(
-        '[guard:docs] No architecture/map-relevant file changes detected.',
-      );
-    } else {
-      console.log(
-        '[guard:docs] Required docs updates detected for changed files.',
-      );
-    }
-    return;
-  }
-
-  console.error(
-    '[guard:docs] Required docs were not updated for the staged/changed files.',
-  );
-  for (const failure of failures) {
-    console.error(`[guard:docs] Missing doc update: ${failure.doc}`);
-    console.error(`[guard:docs] Reason: ${failure.reason}`);
-    console.error('[guard:docs] Triggering file(s):');
-    for (const file of failure.files) {
+  if (missingHeaders.length > 0) {
+    console.error('[guard:docs] Missing required role headers in touched seam files:');
+    for (const file of missingHeaders) {
       console.error(`  - ${file}`);
     }
   }
-  process.exit(1);
+
+  if (!fresh || missingHeaders.length > 0) {
+    process.exit(1);
+  }
+
+  console.log('[guard:docs] Codebase map is current and touched seam headers are present.');
 }
 
 main();

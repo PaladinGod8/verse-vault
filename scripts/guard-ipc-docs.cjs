@@ -1,94 +1,39 @@
 #!/usr/bin/env node
 
-const { spawnSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const { buildIpcContractDoc, IPC_CONTRACT_PATH } = require('./lib/generated-docs.cjs');
+const { validateCatalogCoverage } = require('./lib/contracts.cjs');
 
-const args = new Set(process.argv.slice(2));
-const stagedOnly = args.has('--staged');
+const repoRoot = process.cwd();
+const targetPath = path.join(repoRoot, IPC_CONTRACT_PATH);
+const current = fs.existsSync(targetPath) ? fs.readFileSync(targetPath, 'utf8') : '';
+const expected = buildIpcContractDoc(repoRoot);
+const report = validateCatalogCoverage(repoRoot);
 
-const IPC_RELATED_FILES = new Set([
-  'src/shared/ipcChannels.ts',
-  'src/main.ts',
-  'src/preload.ts',
-  'forge.env.d.ts',
-]);
+let failed = false;
 
-const IPC_CONTRACT_DOC = 'docs/03_IPC_CONTRACT.md';
-
-function runGit(commandArgs) {
-  return spawnSync('git', commandArgs, {
-    encoding: 'utf8',
-  });
-}
-
-function normalizePath(filePath) {
-  return filePath.trim().replace(/\\/g, '/');
-}
-
-function getChangedFiles() {
-  const repoCheck = runGit(['rev-parse', '--is-inside-work-tree']);
-  if (repoCheck.error) {
-    console.error('[guard:ipc-docs] Failed to execute git.');
-    console.error(repoCheck.error.message);
-    process.exit(2);
-  }
-  if (repoCheck.status !== 0) {
-    console.warn('[guard:ipc-docs] Not inside a Git work tree. Skipping.');
-    return null;
-  }
-
-  const diffArgs = stagedOnly
-    ? ['diff', '--cached', '--name-only', '--diff-filter=ACMR']
-    : ['diff', '--name-only', '--diff-filter=ACMR', 'HEAD'];
-
-  const diffResult = runGit(diffArgs);
-  if (diffResult.error) {
-    console.error('[guard:ipc-docs] Failed to execute git diff.');
-    console.error(diffResult.error.message);
-    process.exit(2);
-  }
-  if (diffResult.status !== 0) {
-    console.error('[guard:ipc-docs] Failed to read changed files from git.');
-    if (diffResult.stderr) {
-      console.error(diffResult.stderr.trim());
-    }
-    process.exit(2);
-  }
-
-  return diffResult.stdout.split(/\r?\n/).map(normalizePath).filter(Boolean);
-}
-
-function main() {
-  const changedFiles = getChangedFiles();
-  if (!changedFiles) {
-    return;
-  }
-
-  const changedSet = new Set(changedFiles);
-  const changedIpcFiles = changedFiles.filter((file) => IPC_RELATED_FILES.has(file));
-
-  if (changedIpcFiles.length === 0) {
-    console.log('[guard:ipc-docs] No IPC-related file changes detected.');
-    return;
-  }
-
-  if (changedSet.has(IPC_CONTRACT_DOC)) {
-    console.log(
-      '[guard:ipc-docs] IPC changes detected and docs/03_IPC_CONTRACT.md is updated.',
-    );
-    return;
-  }
-
+if (current !== expected) {
+  failed = true;
   console.error(
-    '[guard:ipc-docs] IPC-related files changed without updating docs/03_IPC_CONTRACT.md.',
+    `[guard:ipc-docs] ${IPC_CONTRACT_PATH} is stale. Run yarn docs:generate.`,
   );
-  console.error('[guard:ipc-docs] Changed IPC-related file(s):');
-  for (const file of changedIpcFiles) {
-    console.error(`  - ${file}`);
-  }
-  console.error(
-    `[guard:ipc-docs] Please update ${IPC_CONTRACT_DOC} in this change set.`,
-  );
+}
+
+if (
+  report.missingKeys.length > 0
+  || report.extraKeys.length > 0
+  || report.duplicateKeys.length > 0
+  || report.invalidBridges.length > 0
+  || report.invalidTypeSources.length > 0
+  || report.missingHandlers.length > 0
+) {
+  failed = true;
+  console.error('[guard:ipc-docs] IPC catalog coverage is incomplete or inconsistent.');
+}
+
+if (failed) {
   process.exit(1);
 }
 
-main();
+console.log('[guard:ipc-docs] IPC contract doc and catalog coverage are current.');
