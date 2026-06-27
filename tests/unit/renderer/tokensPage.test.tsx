@@ -150,6 +150,8 @@ const tokensGetAllByWorldMock = vi.fn();
 const tokensImportImageMock = vi.fn();
 const tokensAddMock = vi.fn();
 const tokensUpdateMock = vi.fn();
+const tokensMoveToWorldMock = vi.fn();
+const tokensMoveToCampaignMock = vi.fn();
 const tokensDeleteMock = vi.fn();
 const campaignsGetAllByWorldMock = vi.fn();
 
@@ -214,6 +216,8 @@ describe('TokensPage', () => {
     mockDb.tokens.importImage = tokensImportImageMock as typeof mockDb.tokens.importImage;
     mockDb.tokens.add = tokensAddMock as typeof mockDb.tokens.add;
     mockDb.tokens.update = tokensUpdateMock as typeof mockDb.tokens.update;
+    mockDb.tokens.moveToWorld = tokensMoveToWorldMock as typeof mockDb.tokens.moveToWorld;
+    mockDb.tokens.moveToCampaign = tokensMoveToCampaignMock as typeof mockDb.tokens.moveToCampaign;
     mockDb.tokens.delete = tokensDeleteMock as typeof mockDb.tokens.delete;
   });
 
@@ -831,6 +835,71 @@ describe('TokensPage', () => {
         'Please try again.',
       );
     });
+  });
+
+  it('moves a campaign-scoped token back to world scope without reloading', async () => {
+    const user = userEvent.setup();
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([
+      buildCampaign({ id: 51, name: 'Campaign One' }),
+    ]);
+    tokensGetAllByWorldMock.mockResolvedValue([
+      buildToken({ id: 91, campaign_id: 51, name: 'Scout' }),
+    ]);
+    tokensMoveToWorldMock.mockResolvedValue(
+      buildToken({ id: 91, campaign_id: null, name: 'Scout' }),
+    );
+
+    renderTokensPage();
+
+    await screen.findByText('Scout');
+    await user.click(screen.getByRole('button', { name: 'Move to World' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Move Token to World',
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Move' }));
+
+    await waitFor(() => {
+      expect(tokensMoveToWorldMock).toHaveBeenCalledWith(91);
+    });
+    expect(tokensGetAllByWorldMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('World')).toBeInTheDocument();
+    expect(toastSuccessMock).toHaveBeenCalledWith('Moved "Scout" to World.');
+  });
+
+  it('moves a token to another campaign and updates the row in place', async () => {
+    const user = userEvent.setup();
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([
+      buildCampaign({ id: 51, name: 'Campaign One' }),
+      buildCampaign({ id: 52, name: 'Campaign Two' }),
+    ]);
+    tokensGetAllByWorldMock.mockResolvedValue([
+      buildToken({ id: 92, campaign_id: 51, name: 'Ranger' }),
+    ]);
+    tokensMoveToCampaignMock.mockResolvedValue(
+      buildToken({ id: 92, campaign_id: 52, name: 'Ranger' }),
+    );
+
+    renderTokensPage();
+
+    await screen.findByText('Ranger');
+    await user.click(screen.getByRole('button', { name: 'Move to Campaign' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Move Token to Campaign',
+    });
+    await user.selectOptions(
+      within(dialog).getByLabelText('Target Campaign'),
+      '52',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Move' }));
+
+    await waitFor(() => {
+      expect(tokensMoveToCampaignMock).toHaveBeenCalledWith(92, 52);
+    });
+    expect(tokensGetAllByWorldMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('Campaign: Campaign Two')).toBeInTheDocument();
+    expect(toastSuccessMock).toHaveBeenCalledWith('Moved "Ranger" to Campaign Two.');
   });
 
   it('shows error message when getAllByWorld rejects', async () => {

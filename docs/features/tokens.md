@@ -253,6 +253,14 @@ TokensPage
      \- Delete (existing)
 ```
 
+### Renderer Composition Seams
+
+- `TokensPage` is the route shell and modal composition layer for `/world/:id/tokens`.
+- `useWorldTokensData` owns world/token/campaign loading and reload behavior.
+- `useTokenCrud` owns create, edit, and delete mutations plus save/delete pending state.
+- `useTokenMoveCopy` owns copy/move mutations plus in-place scope updates after move.
+- `useTokenDialogs` owns create/edit/delete/copy/move dialog state so token mutations can be changed without reopening the whole page component.
+
 ### Validation and Error Handling
 
 #### Validation Rules
