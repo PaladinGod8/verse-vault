@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CharacterCard from '../components/characters/CharacterCard';
 import CharacterForm from '../components/characters/CharacterForm';
@@ -33,6 +33,30 @@ export default function CharactersPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   const [pendingDeleteCharacter, setPendingDeleteCharacter] = useState<Character | null>(null);
+  const [allFactions, setAllFactions] = useState<Faction[]>([]);
+  const [primaryFactionByCharacterId, setPrimaryFactionByCharacterId] = useState<
+    Map<number, number>
+  >(new Map());
+
+  useEffect(() => {
+    if (worldId === null) {
+      return;
+    }
+    let isMounted = true;
+    void Promise.all([
+      window.db.factions.getAllByWorld(worldId),
+      window.db.factionMembers.getAllPrimaryByWorld(worldId),
+    ]).then(([factionsList, primaryRows]) => {
+      if (!isMounted) return;
+      setAllFactions(factionsList);
+      setPrimaryFactionByCharacterId(
+        new Map(primaryRows.map((row) => [row.character_id, row.faction_id])),
+      );
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [worldId]);
 
   const { isSaving, deletingCharacterId, handleCreate, handleUpdate, handleDelete } =
     useCharacterCrud({
@@ -47,8 +71,11 @@ export default function CharactersPage() {
     });
 
   const visibleCharacters = useMemo(
-    () => characters.filter((character) => characterMatchesQuery(character, searchQuery)),
-    [characters, searchQuery],
+    () =>
+      characters.filter((character) =>
+        characterMatchesQuery(character, searchQuery, primaryFactionByCharacterId, allFactions)
+      ),
+    [characters, searchQuery, primaryFactionByCharacterId, allFactions],
   );
 
   return (
@@ -120,7 +147,6 @@ export default function CharactersPage() {
                 <CharacterCard
                   key={character.id}
                   character={character}
-                  onOpen={() => setEditingCharacter(character)}
                   onEdit={() => setEditingCharacter(character)}
                   onDelete={() => setPendingDeleteCharacter(character)}
                   isDeleting={deletingCharacterId === character.id}

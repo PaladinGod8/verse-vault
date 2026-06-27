@@ -469,4 +469,110 @@ describe('preload', () => {
       );
     }
   });
+
+  it('forwards factions CRUD calls to their IPC channels', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.factions.getAllByWorld(1);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_GET_ALL_BY_WORLD, 1);
+
+    await api.factions.getById(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_GET_BY_ID, 2);
+
+    await api.factions.add({ world_id: 1, name: 'Cult of Contagion' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_ADD, {
+      world_id: 1,
+      name: 'Cult of Contagion',
+    });
+
+    await api.factions.update(2, { name: 'Updated' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_UPDATE, 2, {
+      name: 'Updated',
+    });
+
+    await api.factions.delete(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_DELETE, 2);
+  });
+
+  it('forwards factions.importImage to FACTIONS_IMPORT_IMAGE', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const payload: TokenImageImportPayload = {
+      fileName: 'faction.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([7, 8, 9]),
+    };
+
+    await api.factions.importImage(payload);
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_IMPORT_IMAGE, {
+      fileName: 'faction.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([7, 8, 9]),
+    });
+  });
+
+  it('throws error when factions.importImage receives non-Uint8Array bytes', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const invalidPayload = {
+      fileName: 'faction.png',
+      mimeType: 'image/png',
+      bytes: [7, 8, 9],
+    } as unknown as TokenImageImportPayload;
+
+    try {
+      await api.factions.importImage(invalidPayload);
+      expect.fail('Should have thrown an error');
+    } catch (err) {
+      expect((err as Error).message).toBe(
+        'Faction image bytes must be a Uint8Array',
+      );
+    }
+  });
+
+  it('forwards factionTypes CRUD calls to their IPC channels', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.factionTypes.getAllByWorld(1);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_TYPES_GET_ALL_BY_WORLD, 1);
+
+    await api.factionTypes.add({ world_id: 1, name: 'Company' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_TYPES_ADD, {
+      world_id: 1,
+      name: 'Company',
+    });
+
+    await api.factionTypes.rename(2, 'Renamed');
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_TYPES_RENAME, 2, 'Renamed');
+
+    await api.factionTypes.delete(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_TYPES_DELETE, 2);
+  });
+
+  it('forwards factionMembers calls to their IPC channels', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.factionMembers.getAllByFaction(1);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_MEMBERS_GET_ALL_BY_FACTION, 1);
+
+    await api.factionMembers.getAllByCharacter(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_MEMBERS_GET_ALL_BY_CHARACTER, 2);
+
+    await api.factionMembers.getAllPrimaryByWorld(3);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD, 3);
+
+    await api.factionMembers.setForFaction(1, [{ character_id: 2, role: 'member' }]);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_MEMBERS_SET_FOR_FACTION, 1, [
+      { character_id: 2, role: 'member' },
+    ]);
+
+    await api.factionMembers.setPrimary(2, 1);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTION_MEMBERS_SET_PRIMARY, 2, 1);
+  });
 });

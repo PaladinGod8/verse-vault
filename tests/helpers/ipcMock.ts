@@ -122,6 +122,29 @@ export function createMockDb(): DbApi {
         image_src: 'vv-media://character-images/mock.png',
       }),
     },
+    factions: {
+      getAllByWorld: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue({ id: 1 } as Faction),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      importImage: vi.fn().mockResolvedValue({
+        image_src: 'vv-media://faction-images/mock.png',
+      }),
+    },
+    factionTypes: {
+      getAllByWorld: vi.fn().mockResolvedValue([]),
+      add: vi.fn().mockResolvedValue({ id: 1 } as FactionType),
+      rename: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+    },
+    factionMembers: {
+      getAllByFaction: vi.fn().mockResolvedValue([]),
+      getAllByCharacter: vi.fn().mockResolvedValue([]),
+      getAllPrimaryByWorld: vi.fn().mockResolvedValue([]),
+      setForFaction: vi.fn().mockResolvedValue({ faction_id: 1 }),
+      setPrimary: vi.fn().mockResolvedValue({ character_id: 1, faction_id: 1 }),
+    },
   };
 
   return mockDb;

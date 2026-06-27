@@ -228,3 +228,30 @@ export function buildCharacter(overrides: Partial<Character> = {}): Character {
     ...overrides,
   };
 }
+
+export function buildFaction(overrides: Partial<Faction> = {}): Faction {
+  return {
+    id: getNextId(),
+    world_id: getNextId(),
+    name: 'Test Faction',
+    profile: 'A test faction profile',
+    image_src: null,
+    sections: '{}',
+    wiki_summary: '{}',
+    type_id: null,
+    parent_faction_id: null,
+    created_at: DEFAULT_TIMESTAMP,
+    updated_at: DEFAULT_TIMESTAMP,
+    ...overrides,
+  };
+}
+
+export function buildFactionType(overrides: Partial<FactionType> = {}): FactionType {
+  return {
+    id: getNextId(),
+    world_id: getNextId(),
+    name: 'Test Type',
+    created_at: DEFAULT_TIMESTAMP,
+    ...overrides,
+  };
+}

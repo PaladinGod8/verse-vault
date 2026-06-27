@@ -149,6 +149,28 @@ function ShieldIcon() {
   );
 }
 
+function FactionsIcon() {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='20'
+      height='20'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      <circle cx='6' cy='6' r='3' />
+      <circle cx='18' cy='6' r='3' />
+      <circle cx='12' cy='18' r='3' />
+      <path d='M6 9v3a3 3 0 0 0 3 3h0M18 9v3a3 3 0 0 1-3 3h0' />
+    </svg>
+  );
+}
+
 function BarChartIcon() {
   return (
     <svg
@@ -263,6 +285,19 @@ export default function WorldSidebar({ worldId }: WorldSidebarProps) {
       >
         <UsersIcon />
         <span>Characters</span>
+      </NavLink>
+      <NavLink
+        to={`/world/${worldId}/factions`}
+        className={({ isActive }) =>
+          [
+            'flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-xs leading-tight font-medium transition',
+            isActive
+              ? 'bg-slate-100 text-slate-900'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
+          ].join(' ')}
+      >
+        <FactionsIcon />
+        <span>Factions</span>
       </NavLink>
       <NavLink
         to={`/world/${worldId}/statistics`}

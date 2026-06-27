@@ -44,6 +44,9 @@ declare global {
   type StatBlockConfig = DomainTypes.StatBlockConfig;
   type StatBlock = DomainTypes.StatBlock;
   type Character = DomainTypes.Character;
+  type Faction = DomainTypes.Faction;
+  type FactionType = DomainTypes.FactionType;
+  type FactionMember = DomainTypes.FactionMember;
   type DbApi = import('./src/shared/contracts/dbApi').DbApi;
 
   interface Window {

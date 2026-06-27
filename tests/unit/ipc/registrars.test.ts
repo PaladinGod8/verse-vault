@@ -6,6 +6,9 @@ import { registerArcHandlers } from '../../../src/main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from '../../../src/main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from '../../../src/main/ipc/registerCampaignHandlers';
 import { registerCharacterHandlers } from '../../../src/main/ipc/registerCharacterHandlers';
+import { registerFactionHandlers } from '../../../src/main/ipc/registerFactionHandlers';
+import { registerFactionMemberHandlers } from '../../../src/main/ipc/registerFactionMemberHandlers';
+import { registerFactionTypeHandlers } from '../../../src/main/ipc/registerFactionTypeHandlers';
 import { registerLevelHandlers } from '../../../src/main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from '../../../src/main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from '../../../src/main/ipc/registerSessionHandlers';
@@ -241,6 +244,39 @@ describe('IPC registrar channel wiring', () => {
           IPC.CHARACTERS_IMPORT_IMAGE,
         ],
       },
+      {
+        name: 'factions',
+        register: () => registerFactionHandlers(dbMock),
+        expected: [
+          IPC.FACTIONS_GET_ALL_BY_WORLD,
+          IPC.FACTIONS_GET_BY_ID,
+          IPC.FACTIONS_ADD,
+          IPC.FACTIONS_UPDATE,
+          IPC.FACTIONS_DELETE,
+          IPC.FACTIONS_IMPORT_IMAGE,
+        ],
+      },
+      {
+        name: 'factionTypes',
+        register: () => registerFactionTypeHandlers(dbMock),
+        expected: [
+          IPC.FACTION_TYPES_GET_ALL_BY_WORLD,
+          IPC.FACTION_TYPES_ADD,
+          IPC.FACTION_TYPES_RENAME,
+          IPC.FACTION_TYPES_DELETE,
+        ],
+      },
+      {
+        name: 'factionMembers',
+        register: () => registerFactionMemberHandlers(dbMock),
+        expected: [
+          IPC.FACTION_MEMBERS_GET_ALL_BY_FACTION,
+          IPC.FACTION_MEMBERS_GET_ALL_BY_CHARACTER,
+          IPC.FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD,
+          IPC.FACTION_MEMBERS_SET_FOR_FACTION,
+          IPC.FACTION_MEMBERS_SET_PRIMARY,
+        ],
+      },
     ];
 
     for (const { name, register, expected } of channelsByRegistrar) {
@@ -268,6 +304,9 @@ describe('IPC registrar channel wiring', () => {
       () => registerAbilityHandlers(dbMock),
       () => registerStatBlockHandlers(dbMock),
       () => registerCharacterHandlers(dbMock),
+      () => registerFactionHandlers(dbMock),
+      () => registerFactionTypeHandlers(dbMock),
+      () => registerFactionMemberHandlers(dbMock),
     ];
 
     const allRegisteredChannels = allRegisterCalls

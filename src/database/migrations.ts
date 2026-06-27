@@ -18,6 +18,74 @@ export function runMigrations(db: Database.Database): void {
   runStatBlockLinkageSchemaMigration(db);
   runWorldConfigMigration(db);
   runCharactersSchemaMigration(db);
+  runFactionTypesSchemaMigration(db);
+  runFactionsSchemaMigration(db);
+  runFactionMembersSchemaMigration(db);
+}
+
+function runFactionTypesSchemaMigration(db: Database.Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS faction_types (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        world_id   INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+        name       TEXT    NOT NULL,
+        created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(world_id, name)
+      );
+    `);
+  } catch (err) {
+    console.error('[db] Error running faction types schema migration:', err);
+    throw err;
+  }
+}
+
+function runFactionsSchemaMigration(db: Database.Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS factions (
+        id                INTEGER PRIMARY KEY AUTOINCREMENT,
+        world_id          INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+        name              TEXT    NOT NULL,
+        profile           TEXT,
+        image_src         TEXT,
+        sections          TEXT    NOT NULL DEFAULT '{}',
+        wiki_summary      TEXT    NOT NULL DEFAULT '{}',
+        type_id           INTEGER REFERENCES faction_types(id) ON DELETE SET NULL,
+        parent_faction_id INTEGER REFERENCES factions(id) ON DELETE SET NULL,
+        created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_factions_world_id ON factions(world_id);
+      CREATE INDEX IF NOT EXISTS idx_factions_type_id ON factions(type_id);
+      CREATE INDEX IF NOT EXISTS idx_factions_parent_faction_id ON factions(parent_faction_id);
+    `);
+  } catch (err) {
+    console.error('[db] Error running factions schema migration:', err);
+    throw err;
+  }
+}
+
+function runFactionMembersSchemaMigration(db: Database.Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS faction_members (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        faction_id   INTEGER NOT NULL REFERENCES factions(id) ON DELETE CASCADE,
+        character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        role         TEXT    NOT NULL,
+        is_primary   INTEGER NOT NULL DEFAULT 0 CHECK (is_primary IN (0,1)),
+        created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_faction_members_faction_id ON faction_members(faction_id);
+      CREATE INDEX IF NOT EXISTS idx_faction_members_character_id ON faction_members(character_id);
+    `);
+  } catch (err) {
+    console.error('[db] Error running faction members schema migration:', err);
+    throw err;
+  }
 }
 
 function runCharactersSchemaMigration(db: Database.Database): void {

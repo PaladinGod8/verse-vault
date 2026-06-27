@@ -50,7 +50,6 @@ describe('CharactersPage', () => {
       name: 'Ledros Igni',
       wiki_summary: JSON.stringify({
         biographic: { mainEpithet: 'The Brandslayer' },
-        statusDemographics: { primaryFaction: 'Constellation Company' },
       }),
     });
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
@@ -60,7 +59,6 @@ describe('CharactersPage', () => {
 
     expect(await screen.findByText('Ledros Igni')).toBeInTheDocument();
     expect(screen.getByText('The Brandslayer')).toBeInTheDocument();
-    expect(screen.getByText('Constellation Company')).toBeInTheDocument();
   });
 
   it('shows an empty state when the world has no characters', async () => {

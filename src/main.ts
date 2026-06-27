@@ -14,6 +14,9 @@ import { registerArcHandlers } from './main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from './main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from './main/ipc/registerCampaignHandlers';
 import { registerCharacterHandlers } from './main/ipc/registerCharacterHandlers';
+import { registerFactionHandlers } from './main/ipc/registerFactionHandlers';
+import { registerFactionMemberHandlers } from './main/ipc/registerFactionMemberHandlers';
+import { registerFactionTypeHandlers } from './main/ipc/registerFactionTypeHandlers';
 import { registerLevelHandlers } from './main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from './main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from './main/ipc/registerSessionHandlers';
@@ -26,6 +29,7 @@ const TOKEN_IMAGE_PROTOCOL = 'vv-media';
 const TOKEN_IMAGE_HOST = 'token-images';
 const WORLD_IMAGE_HOST = 'world-images';
 const CHARACTER_IMAGE_HOST = 'character-images';
+const FACTION_IMAGE_HOST = 'faction-images';
 const IS_DEV = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
 const SHOULD_INSTALL_REACT_DEVTOOLS = IS_DEV && !process.env.VITEST
@@ -48,6 +52,8 @@ function registerTokenImageProtocol(): void {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'world-images'));
     } else if (requestUrl.hostname === CHARACTER_IMAGE_HOST) {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'character-images'));
+    } else if (requestUrl.hostname === FACTION_IMAGE_HOST) {
+      imagesDir = path.resolve(path.join(app.getPath('userData'), 'faction-images'));
     } else {
       return new Response('Media host not found', { status: 404 });
     }
@@ -125,6 +131,9 @@ function registerIpcHandlers() {
   registerAbilityHandlers(db);
   registerStatBlockHandlers(db);
   registerCharacterHandlers(db);
+  registerFactionHandlers(db);
+  registerFactionTypeHandlers(db);
+  registerFactionMemberHandlers(db);
 }
 
 // This method will be called when Electron has finished

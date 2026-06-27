@@ -36,7 +36,6 @@ export interface CharacterWikiSummary {
   conditions?: string[];
   statusDemographics?: {
     status?: string | null;
-    primaryFaction?: string | null;
     birthPlace?: string | null;
     circumstanceOfBirth?: string | null;
     religiousBelief?: string | null;

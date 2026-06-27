@@ -42,14 +42,14 @@ describe('CharacterForm', () => {
 
     await user.type(screen.getByLabelText('Name *'), 'Ledros Igni');
     await user.type(screen.getByLabelText('Main Epithet'), 'The Brandslayer');
-    await user.type(screen.getByLabelText('Primary Faction'), 'Constellation Company');
+    await user.type(screen.getByLabelText('Status'), 'Active');
     await user.click(screen.getByRole('button', { name: 'Create' }));
 
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({
         wiki_summary: {
           biographic: { mainEpithet: 'The Brandslayer' },
-          statusDemographics: { primaryFaction: 'Constellation Company' },
+          statusDemographics: { status: 'Active' },
         },
       }),
     );

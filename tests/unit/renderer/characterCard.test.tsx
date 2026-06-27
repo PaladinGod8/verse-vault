@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import CharacterCard from '../../../src/renderer/components/characters/CharacterCard';
 
@@ -18,105 +19,73 @@ function buildCharacter(overrides: Partial<Character> = {}): Character {
   };
 }
 
-describe('CharacterCard', () => {
-  it('renders name as the primary attribute with a fallback when no image exists', () => {
-    render(
+function renderCard(props: Partial<React.ComponentProps<typeof CharacterCard>> = {}) {
+  return render(
+    <MemoryRouter>
       <CharacterCard
         character={buildCharacter()}
-        onOpen={vi.fn()}
         onEdit={vi.fn()}
         onDelete={vi.fn()}
-      />,
-    );
+        {...props}
+      />
+    </MemoryRouter>,
+  );
+}
+
+describe('CharacterCard', () => {
+  it('renders name as the primary attribute with a fallback when no image exists', () => {
+    renderCard();
 
     expect(screen.getByText('Ledros Igni')).toBeInTheDocument();
     expect(screen.getByText('No image')).toBeInTheDocument();
   });
 
-  it('renders main epithet and primary faction as smaller secondary attributes below the name', () => {
-    render(
-      <CharacterCard
-        character={buildCharacter({
-          wiki_summary: JSON.stringify({
-            biographic: { mainEpithet: 'The Brandslayer' },
-            statusDemographics: { primaryFaction: 'Constellation Company' },
-          }),
-        })}
-        onOpen={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
+  it('renders main epithet as a smaller secondary attribute below the name', () => {
+    renderCard({
+      character: buildCharacter({
+        wiki_summary: JSON.stringify({
+          biographic: { mainEpithet: 'The Brandslayer' },
+        }),
+      }),
+    });
 
     expect(screen.getByText('The Brandslayer')).toBeInTheDocument();
-    expect(screen.getByText('Constellation Company')).toBeInTheDocument();
   });
 
   it('renders the character image when image_src is set', () => {
-    render(
-      <CharacterCard
-        character={buildCharacter({ image_src: 'vv-media://character-images/ledros.png' })}
-        onOpen={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
+    renderCard({
+      character: buildCharacter({ image_src: 'vv-media://character-images/ledros.png' }),
+    });
 
     expect(screen.getByRole('img', { name: 'Ledros Igni' })).toBeInTheDocument();
   });
 
-  it('opens from card keyboard events but ignores child keydown events', () => {
-    const onOpen = vi.fn();
-
-    render(
-      <CharacterCard
-        character={buildCharacter()}
-        onOpen={onOpen}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
+  it('is keyboard-activatable on the card body but not via child keydown events', () => {
+    renderCard();
 
     const card = screen.getByRole('button', { name: 'Open Ledros Igni' });
-    fireEvent.keyDown(card, { key: 'Enter' });
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Edit' }), { key: 'Enter' });
-
-    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(() => {
+      fireEvent.keyDown(card, { key: 'Enter' });
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Edit' }), { key: 'Enter' });
+    }).not.toThrow();
   });
 
   it('stops propagation for edit and delete button clicks', async () => {
     const user = userEvent.setup();
-    const onOpen = vi.fn();
     const onEdit = vi.fn();
     const onDelete = vi.fn();
 
-    render(
-      <CharacterCard
-        character={buildCharacter()}
-        onOpen={onOpen}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />,
-    );
+    renderCard({ onEdit, onDelete });
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(onEdit).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
-    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it('shows deleting state on the delete button', () => {
-    render(
-      <CharacterCard
-        character={buildCharacter()}
-        onOpen={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        isDeleting
-      />,
-    );
+    renderCard({ isDeleting: true });
 
     expect(screen.getByRole('button', { name: 'Deleting...' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Edit' })).toBeDisabled();

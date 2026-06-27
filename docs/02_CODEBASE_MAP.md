@@ -52,6 +52,9 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/tokens`                                                               | `TokensPage`                | `src/renderer/pages/TokensPage.tsx`                |
 | `/world/:id/statblocks`                                                           | `StatBlocksPage`            | `src/renderer/pages/StatBlocksPage.tsx`            |
 | `/world/:id/characters`                                                           | `CharactersPage`            | `src/renderer/pages/CharactersPage.tsx`            |
+| `/world/:id/characters/:characterId`                                              | `CharacterDetailPage`       | `src/renderer/pages/CharacterDetailPage.tsx`       |
+| `/world/:id/factions`                                                             | `FactionsPage`              | `src/renderer/pages/FactionsPage.tsx`              |
+| `/world/:id/factions/:factionId`                                                  | `FactionDetailPage`         | `src/renderer/pages/FactionDetailPage.tsx`         |
 | `/world/:id/statistics`                                                           | `WorldStatisticsConfigPage` | `src/renderer/pages/WorldStatisticsConfigPage.tsx` |
 | `/world/:id/battlemaps/:battleMapId/runtime`                                      | `BattleMapRuntimePage`      | `src/renderer/pages/BattleMapRuntimePage.tsx`      |
 | `/world/:id/campaign/:campaignId/scenes`                                          | `CampaignScenesPage`        | `src/renderer/pages/CampaignScenesPage.tsx`        |
@@ -66,20 +69,23 @@ This document is a current-state map for agents and maintainers. The tables belo
 
 <!-- BEGIN GENERATED REGISTRARS -->
 
-| Handler                                     | Domains    | Channels |
-| ------------------------------------------- | ---------- | -------- |
-| `src/main/ipc/registerVerseHandlers.ts`     | verses     | 4        |
-| `src/main/ipc/registerWorldHandlers.ts`     | worlds     | 7        |
-| `src/main/ipc/registerLevelHandlers.ts`     | levels     | 5        |
-| `src/main/ipc/registerAbilityHandlers.ts`   | abilities  | 8        |
-| `src/main/ipc/registerCampaignHandlers.ts`  | campaigns  | 5        |
-| `src/main/ipc/registerBattleMapHandlers.ts` | battlemaps | 5        |
-| `src/main/ipc/registerTokenHandlers.ts`     | tokens     | 9        |
-| `src/main/ipc/registerArcHandlers.ts`       | arcs       | 5        |
-| `src/main/ipc/registerActHandlers.ts`       | acts       | 7        |
-| `src/main/ipc/registerSessionHandlers.ts`   | sessions   | 7        |
-| `src/main/ipc/registerSceneHandlers.ts`     | scenes     | 7        |
-| `src/main/ipc/registerStatBlockHandlers.ts` | statblocks | 13       |
-| `src/main/ipc/registerCharacterHandlers.ts` | characters | 6        |
+| Handler                                         | Domains        | Channels |
+| ----------------------------------------------- | -------------- | -------- |
+| `src/main/ipc/registerVerseHandlers.ts`         | verses         | 4        |
+| `src/main/ipc/registerWorldHandlers.ts`         | worlds         | 7        |
+| `src/main/ipc/registerLevelHandlers.ts`         | levels         | 5        |
+| `src/main/ipc/registerAbilityHandlers.ts`       | abilities      | 8        |
+| `src/main/ipc/registerCampaignHandlers.ts`      | campaigns      | 5        |
+| `src/main/ipc/registerBattleMapHandlers.ts`     | battlemaps     | 5        |
+| `src/main/ipc/registerTokenHandlers.ts`         | tokens         | 9        |
+| `src/main/ipc/registerArcHandlers.ts`           | arcs           | 5        |
+| `src/main/ipc/registerActHandlers.ts`           | acts           | 7        |
+| `src/main/ipc/registerSessionHandlers.ts`       | sessions       | 7        |
+| `src/main/ipc/registerSceneHandlers.ts`         | scenes         | 7        |
+| `src/main/ipc/registerStatBlockHandlers.ts`     | statblocks     | 13       |
+| `src/main/ipc/registerCharacterHandlers.ts`     | characters     | 6        |
+| `src/main/ipc/registerFactionHandlers.ts`       | factions       | 6        |
+| `src/main/ipc/registerFactionTypeHandlers.ts`   | factionTypes   | 4        |
+| `src/main/ipc/registerFactionMemberHandlers.ts` | factionMembers | 5        |
 
 <!-- END GENERATED REGISTRARS -->

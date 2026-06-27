@@ -56,6 +56,9 @@ const registerSceneHandlersMock = vi.fn();
 const registerAbilityHandlersMock = vi.fn();
 const registerStatBlockHandlersMock = vi.fn();
 const registerCharacterHandlersMock = vi.fn();
+const registerFactionHandlersMock = vi.fn();
+const registerFactionTypeHandlersMock = vi.fn();
+const registerFactionMemberHandlersMock = vi.fn();
 
 vi.mock('electron-squirrel-startup', () => false);
 vi.mock('electron', () => ({
@@ -114,6 +117,15 @@ vi.mock('../../src/main/ipc/registerStatBlockHandlers', () => ({
 }));
 vi.mock('../../src/main/ipc/registerCharacterHandlers', () => ({
   registerCharacterHandlers: registerCharacterHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerFactionHandlers', () => ({
+  registerFactionHandlers: registerFactionHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerFactionTypeHandlers', () => ({
+  registerFactionTypeHandlers: registerFactionTypeHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerFactionMemberHandlers', () => ({
+  registerFactionMemberHandlers: registerFactionMemberHandlersMock,
 }));
 
 function setForgeGlobals(devServerUrl: string | undefined): void {
@@ -174,6 +186,9 @@ describe('main bootstrap orchestration', () => {
     expect(registerAbilityHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerStatBlockHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerCharacterHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerFactionHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerFactionTypeHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerFactionMemberHandlersMock).toHaveBeenCalledWith(dbMock);
 
     expect(browserWindowCtorMock).toHaveBeenCalledTimes(1);
     expect(loadFileMock).toHaveBeenCalledTimes(1);
@@ -210,6 +225,14 @@ describe('main bootstrap orchestration', () => {
     expect(characterResponse.status).toBe(200);
     expect(netFetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/character-images/character.png'),
+    );
+
+    const factionResponse = await protocolHandler({
+      url: 'vv-media://faction-images/faction.png',
+    });
+    expect(factionResponse.status).toBe(200);
+    expect(netFetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/faction-images/faction.png'),
     );
 
     const unknownHostResponse = await protocolHandler({

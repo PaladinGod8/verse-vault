@@ -1,9 +1,9 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { CharacterWikiSummary } from '../../../shared/contracts/characterTypes';
 
 type CharacterCardProps = {
   character: Character;
-  onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
@@ -19,11 +19,11 @@ function parseWikiSummary(wikiSummaryJson: string): CharacterWikiSummary {
 
 export default function CharacterCard({
   character,
-  onOpen,
   onEdit,
   onDelete,
   isDeleting = false,
 }: CharacterCardProps) {
+  const navigate = useNavigate();
   const imageSrc = character.image_src?.trim() ?? '';
   const [showImage, setShowImage] = useState(imageSrc.length > 0);
 
@@ -35,7 +35,10 @@ export default function CharacterCard({
     character.wiki_summary,
   ]);
   const mainEpithet = wikiSummary.biographic?.mainEpithet?.trim() || null;
-  const primaryFaction = wikiSummary.statusDemographics?.primaryFaction?.trim() || null;
+
+  const handleOpen = () => {
+    navigate(`/world/${character.world_id}/characters/${character.id}`);
+  };
 
   const handleCardKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) {
@@ -44,7 +47,7 @@ export default function CharacterCard({
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onOpen();
+      handleOpen();
     }
   };
 
@@ -64,7 +67,7 @@ export default function CharacterCard({
       tabIndex={0}
       aria-label={`Open ${character.name}`}
       className='overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2'
-      onClick={onOpen}
+      onClick={handleOpen}
       onKeyDown={handleCardKeyDown}
     >
       <div className='h-40 bg-slate-100'>
@@ -90,7 +93,6 @@ export default function CharacterCard({
         </h2>
 
         {mainEpithet ? <p className='text-xs text-slate-500'>{mainEpithet}</p> : null}
-        {primaryFaction ? <p className='text-xs text-slate-400'>{primaryFaction}</p> : null}
 
         <div className='flex gap-2 pt-3'>
           <button

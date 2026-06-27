@@ -159,6 +159,41 @@ const dbApi: DbApi = {
       });
     },
   },
+  factions: {
+    getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTIONS_GET_ALL_BY_WORLD, worldId),
+    getById: (id) => ipcRenderer.invoke(IPC.FACTIONS_GET_BY_ID, id),
+    add: (data) => ipcRenderer.invoke(IPC.FACTIONS_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.FACTIONS_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.FACTIONS_DELETE, id),
+    importImage: (payload) => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('Faction image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.FACTIONS_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: new Uint8Array(payload.bytes),
+      });
+    },
+  },
+  factionTypes: {
+    getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTION_TYPES_GET_ALL_BY_WORLD, worldId),
+    add: (data) => ipcRenderer.invoke(IPC.FACTION_TYPES_ADD, data),
+    rename: (id, name) => ipcRenderer.invoke(IPC.FACTION_TYPES_RENAME, id, name),
+    delete: (id) => ipcRenderer.invoke(IPC.FACTION_TYPES_DELETE, id),
+  },
+  factionMembers: {
+    getAllByFaction: (factionId) =>
+      ipcRenderer.invoke(IPC.FACTION_MEMBERS_GET_ALL_BY_FACTION, factionId),
+    getAllByCharacter: (characterId) =>
+      ipcRenderer.invoke(IPC.FACTION_MEMBERS_GET_ALL_BY_CHARACTER, characterId),
+    getAllPrimaryByWorld: (worldId) =>
+      ipcRenderer.invoke(IPC.FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD, worldId),
+    setForFaction: (factionId, members) =>
+      ipcRenderer.invoke(IPC.FACTION_MEMBERS_SET_FOR_FACTION, factionId, members),
+    setPrimary: (characterId, factionId) =>
+      ipcRenderer.invoke(IPC.FACTION_MEMBERS_SET_PRIMARY, characterId, factionId),
+  },
 };
 
 contextBridge.exposeInMainWorld('db', dbApi);

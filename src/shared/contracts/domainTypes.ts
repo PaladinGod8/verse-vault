@@ -274,3 +274,33 @@ export interface Character {
   created_at: string;
   updated_at: string;
 }
+
+export interface Faction {
+  id: number;
+  world_id: number;
+  name: string;
+  profile: string | null;
+  image_src: string | null;
+  sections: string; // JSON text of FactionSections
+  wiki_summary: string; // JSON text of FactionWikiSummary
+  type_id: number | null;
+  parent_faction_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FactionType {
+  id: number;
+  world_id: number;
+  name: string;
+  created_at: string;
+}
+
+export interface FactionMember {
+  id: number;
+  faction_id: number;
+  character_id: number;
+  role: string;
+  is_primary: number; // 0 | 1
+  created_at: string;
+}

@@ -30,15 +30,32 @@ and any Wiki Summary value), and are listed as cards.
 - Loads the world and its characters via `window.db.characters.getAllByWorld(worldId)`.
 - Shows explicit states for loading, load failure, and empty list (`No characters yet.`).
 - A search input filters the in-memory character list by substring match against any
-  field (e.g. typing a weight value like `90kg` or a faction name like `Constellation
-  Company` narrows the list to matching characters). When characters exist but none
-  match, shows `No characters match your search.`.
+  field (e.g. typing a weight value like `90kg` narrows the list to matching
+  characters). Additively, typing the exact name of a character's _primary_ faction (or
+  any ancestor of that faction) also includes that character, even if the name doesn't
+  appear verbatim in any of the character's own fields — see "Faction-aware search"
+  below. When characters exist but none match, shows `No characters match your search.`.
 - "New Character" opens a modal form. Name is required; everything else is optional.
-- Each card opens the same form pre-filled for editing (clicking the card or its Edit
-  button); Delete requires confirmation (`Delete "<name>"? This cannot be undone.`).
+- Clicking a card's body navigates to its detail page (`/world/:id/characters/:characterId`);
+  the card's own Edit button still opens the form modal directly, and Delete requires
+  confirmation (`Delete "<name>"? This cannot be undone.`).
 - Cards show the character image (or a `No image` placeholder) and name as the primary
-  attributes, with Main Epithet and Primary Faction (pulled from the parsed Wiki
-  Summary) as smaller secondary lines underneath.
+  attributes, with Main Epithet (pulled from the parsed Wiki Summary) as a smaller
+  secondary line underneath.
+
+### Character detail page (`/world/:id/characters/:characterId`)
+
+- Read-first article view: image, profile, the four fixed text sections, and the
+  parsed Main Epithet from Wiki Summary, loaded via `window.db.characters.getById`.
+- A "Factions" section lists every faction membership for this character (role +
+  faction name, loaded via `window.db.factionMembers.getAllByCharacter`), with each
+  faction name as a link to `/world/:id/factions/:factionId`. At most one membership is
+  marked Primary; a "Make primary" button on every non-primary row calls
+  `window.db.factionMembers.setPrimary(characterId, factionId)` — this is the only
+  membership mutation available from the Character side (adding/removing members is
+  faction-side only, see `docs/features/factions.md`).
+- An "Edit" button opens the same `CharacterForm` modal used by the list page,
+  pre-filled.
 
 ### Character image upload
 
@@ -53,6 +70,19 @@ and any Wiki Summary value), and are listed as cards.
   from `userData/character-images/` alongside token/world images, with the same
   basename-only path checks.
 
+### Faction-aware search (additive)
+
+- `characterMatchesQuery(character, query, primaryFactionByCharacterId, allFactions)` first
+  checks the existing substring match; if that fails, it additionally matches when the
+  query is an _exact_ (case-insensitive) match against the name of the character's
+  faction membership marked `is_primary`, or against the name of any ancestor of that
+  faction (via `src/shared/factionHierarchy.ts`'s `getAncestorIds`). This is additive
+  only — it never narrows what the old substring search already matched.
+- `CharactersPage` loads `window.db.factions.getAllByWorld` and
+  `window.db.factionMembers.getAllPrimaryByWorld` alongside the character list to build
+  the `primaryFactionByCharacterId` map passed into the search.
+- See `docs/features/factions.md` for the Faction entity and its membership model.
+
 ## Architecture Notes
 
 - IPC channels (`src/shared/ipcChannels.ts`): `CHARACTERS_GET_ALL_BY_WORLD`,
@@ -64,8 +94,11 @@ and any Wiki Summary value), and are listed as cards.
   `DbApi.characters` in `src/shared/contracts/dbApi.ts`.
 - Renderer:
   - `src/renderer/pages/CharactersPage.tsx` (route `/world/:id/characters`, linked from
-    `WorldSidebar`).
-  - `src/renderer/hooks/useWorldCharactersData.ts`, `useCharacterCrud.ts`.
+    `WorldSidebar`) and `src/renderer/pages/CharacterDetailPage.tsx` (route
+    `/world/:id/characters/:characterId`).
+  - `src/renderer/hooks/useWorldCharactersData.ts`, `useCharacterCrud.ts`,
+    `useCharacterFactionMemberships.ts` (read-only memberships + the `setPrimary`
+    action, used by the detail page).
   - `src/renderer/components/characters/`: `CharacterCard.tsx`,
     `CharacterImageDropzone.tsx`, `CharacterForm.tsx`, `CharacterWikiSummaryEditor.tsx`
     and its group/list sub-editors (`CharacterWikiSummaryGroupFields.tsx`,
@@ -111,17 +144,17 @@ columns additively in `src/database/migrations.ts` (`runCharactersSchemaMigratio
   `mainClass`, `alignment`, `dominantHand`
 - `agesTimeline`: `Array<{ age: string; reference: string }>`
 - `conditions`: `string[]`
-- `statusDemographics`: `status`, `primaryFaction`, `birthPlace`,
+- `statusDemographics`: `status`, `birthPlace`,
   `circumstanceOfBirth`, `religiousBelief`, `currentLocation`, `currentResidence`,
   `currentOccupation`, `currentVehicle`
 - `educationalHistory` / `occupationalHistory`: `string[]`
 - `trivia`: `favouriteThings`, `notablePhysicalCharacteristics`, `physicalQuirks`,
   `mannerisms`, `likes`, `dislikes`, `habitsHobbies`, `apparelAccessories`
 
-The card's epithet/faction lines read directly from
-`wiki_summary.biographic.mainEpithet` and
-`wiki_summary.statusDemographics.primaryFaction` — there is no denormalized duplicate
-column.
+The card's epithet line reads directly from `wiki_summary.biographic.mainEpithet` —
+there is no denormalized duplicate column. A character's faction affiliations are not
+stored in `wiki_summary` at all; they live in the `faction_members` junction table (see
+`docs/features/factions.md`), which is what the additive faction-aware search reads.
 
 ## Validation and Error Rules
 
@@ -148,13 +181,16 @@ calling `onSave`.
   registrar wiring and the `character-images` protocol host.
 - `tests/unit/preload.test.ts` — `window.db.characters` bridge forwarding.
 - `tests/unit/renderer/lib/characterSearch.test.ts` — flatten/match behavior, including
-  matching a field value (e.g. weight) and a faction name.
+  matching a field value (e.g. weight) and the additive primary-faction/ancestor exact-
+  match rule.
 - `tests/unit/renderer/characterCard.test.tsx`, `characterImageDropzone.test.tsx`,
   `characterForm.test.tsx` — component-level behavior.
 - `tests/unit/renderer/components/characters/*.test.tsx` — Wiki Summary group/list
   sub-editors.
 - `tests/unit/renderer/charactersPage.test.tsx` — page-level load, search, create, and
   delete flows against a mocked `window.db`.
+- `tests/unit/renderer/characterDetailPage.test.tsx` — detail-page rendering, faction
+  membership links, the primary-toggle action, and edit-modal save flow.
 
 ## Known Limits and Non-Goals
 

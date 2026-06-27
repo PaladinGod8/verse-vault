@@ -29,6 +29,9 @@ const HANDLERS = {
   scenes: 'src/main/ipc/registerSceneHandlers.ts',
   statblocks: 'src/main/ipc/registerStatBlockHandlers.ts',
   characters: 'src/main/ipc/registerCharacterHandlers.ts',
+  factions: 'src/main/ipc/registerFactionHandlers.ts',
+  factionTypes: 'src/main/ipc/registerFactionTypeHandlers.ts',
+  factionMembers: 'src/main/ipc/registerFactionMemberHandlers.ts',
 } as const;
 
 function entries(
@@ -230,6 +233,59 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'CHARACTERS_IMPORT_IMAGE',
       'window.db.characters.importImage',
       'DbApi.characters.importImage',
+    ],
+  ]),
+  ...entries('factions', HANDLERS.factions, [
+    [
+      'FACTIONS_GET_ALL_BY_WORLD',
+      'window.db.factions.getAllByWorld',
+      'DbApi.factions.getAllByWorld',
+    ],
+    ['FACTIONS_GET_BY_ID', 'window.db.factions.getById', 'DbApi.factions.getById'],
+    ['FACTIONS_ADD', 'window.db.factions.add', 'DbApi.factions.add'],
+    ['FACTIONS_UPDATE', 'window.db.factions.update', 'DbApi.factions.update'],
+    ['FACTIONS_DELETE', 'window.db.factions.delete', 'DbApi.factions.delete'],
+    [
+      'FACTIONS_IMPORT_IMAGE',
+      'window.db.factions.importImage',
+      'DbApi.factions.importImage',
+    ],
+  ]),
+  ...entries('factionTypes', HANDLERS.factionTypes, [
+    [
+      'FACTION_TYPES_GET_ALL_BY_WORLD',
+      'window.db.factionTypes.getAllByWorld',
+      'DbApi.factionTypes.getAllByWorld',
+    ],
+    ['FACTION_TYPES_ADD', 'window.db.factionTypes.add', 'DbApi.factionTypes.add'],
+    ['FACTION_TYPES_RENAME', 'window.db.factionTypes.rename', 'DbApi.factionTypes.rename'],
+    ['FACTION_TYPES_DELETE', 'window.db.factionTypes.delete', 'DbApi.factionTypes.delete'],
+  ]),
+  ...entries('factionMembers', HANDLERS.factionMembers, [
+    [
+      'FACTION_MEMBERS_GET_ALL_BY_FACTION',
+      'window.db.factionMembers.getAllByFaction',
+      'DbApi.factionMembers.getAllByFaction',
+    ],
+    [
+      'FACTION_MEMBERS_GET_ALL_BY_CHARACTER',
+      'window.db.factionMembers.getAllByCharacter',
+      'DbApi.factionMembers.getAllByCharacter',
+    ],
+    [
+      'FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD',
+      'window.db.factionMembers.getAllPrimaryByWorld',
+      'DbApi.factionMembers.getAllPrimaryByWorld',
+    ],
+    [
+      'FACTION_MEMBERS_SET_FOR_FACTION',
+      'window.db.factionMembers.setForFaction',
+      'DbApi.factionMembers.setForFaction',
+    ],
+    [
+      'FACTION_MEMBERS_SET_PRIMARY',
+      'window.db.factionMembers.setPrimary',
+      'DbApi.factionMembers.setPrimary',
     ],
   ]),
 ];

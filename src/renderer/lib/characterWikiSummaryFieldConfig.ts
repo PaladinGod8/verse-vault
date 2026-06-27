@@ -26,7 +26,6 @@ export const PERSONAL_DESCRIPTION_FIELDS: WikiSummaryFieldDef[] = [
 
 export const STATUS_DEMOGRAPHICS_FIELDS: WikiSummaryFieldDef[] = [
   { key: 'status', label: 'Status' },
-  { key: 'primaryFaction', label: 'Primary Faction' },
   { key: 'birthPlace', label: 'Birth Place' },
   { key: 'circumstanceOfBirth', label: 'Circumstance of Birth' },
   { key: 'religiousBelief', label: 'Religious Belief' },

@@ -1,3 +1,5 @@
+import { getAncestorIds } from '../../shared/factionHierarchy';
+
 function collectLeafStrings(value: unknown, out: string[]): void {
   if (value === null || value === undefined) {
     return;
@@ -42,10 +44,38 @@ export function flattenCharacterForSearch(character: Character): string {
   return parts.join(' ').toLowerCase();
 }
 
-export function characterMatchesQuery(character: Character, query: string): boolean {
+export function characterMatchesQuery(
+  character: Character,
+  query: string,
+  primaryFactionByCharacterId: Map<number, number>,
+  allFactions: Faction[],
+): boolean {
   const trimmedQuery = query.trim().toLowerCase();
   if (!trimmedQuery) {
     return true;
   }
-  return flattenCharacterForSearch(character).includes(trimmedQuery);
+
+  if (flattenCharacterForSearch(character).includes(trimmedQuery)) {
+    return true;
+  }
+
+  const primaryFactionId = primaryFactionByCharacterId.get(character.id);
+  if (primaryFactionId === undefined) {
+    return false;
+  }
+
+  const primaryFaction = allFactions.find((faction) => faction.id === primaryFactionId);
+  if (!primaryFaction) {
+    return false;
+  }
+
+  if (primaryFaction.name.trim().toLowerCase() === trimmedQuery) {
+    return true;
+  }
+
+  const ancestorIds = getAncestorIds(primaryFactionId, allFactions);
+  return allFactions.some(
+    (faction) =>
+      ancestorIds.includes(faction.id) && faction.name.trim().toLowerCase() === trimmedQuery,
+  );
 }

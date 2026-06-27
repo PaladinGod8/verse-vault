@@ -13,6 +13,9 @@ import type {
   Campaign,
   CampaignSceneListItem,
   Character,
+  Faction,
+  FactionMember,
+  FactionType,
   Level,
   Scene,
   Session,
@@ -74,7 +77,33 @@ export const DB_API_METHODS = {
     'listAbilities',
   ],
   characters: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage'],
+  factions: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage'],
+  factionTypes: ['getAllByWorld', 'add', 'rename', 'delete'],
+  factionMembers: [
+    'getAllByFaction',
+    'getAllByCharacter',
+    'getAllPrimaryByWorld',
+    'setForFaction',
+    'setPrimary',
+  ],
 } as const;
+
+type CharacterUpsertPayload = {
+  name?: string;
+  profile?: string | null;
+  image_src?: string | null;
+  sections?: string;
+  wiki_summary?: string;
+};
+type FactionUpsertPayload = CharacterUpsertPayload & {
+  type_id?: number | null;
+  parent_faction_id?: number | null;
+};
+type FactionMemberInput = { character_id: number; role: string; };
+type FactionMembershipByFaction = FactionMember & { character_name: string; };
+type FactionMembershipByCharacter = FactionMember & { faction_name: string; };
+type PrimaryFactionMembership = { character_id: number; faction_id: number; };
+type RosterReplaceResult = { faction_id: number; };
 
 export interface DbApi {
   verses: {
@@ -347,27 +376,30 @@ export interface DbApi {
   characters: {
     getAllByWorld(worldId: number): Promise<Character[]>;
     getById(id: number): Promise<Character | null>;
-    add(data: {
-      world_id: number;
-      name: string;
-      profile?: string | null;
-      image_src?: string | null;
-      sections?: string;
-      wiki_summary?: string;
-    }): Promise<Character>;
-    update(
-      id: number,
-      data: {
-        name?: string;
-        profile?: string | null;
-        image_src?: string | null;
-        sections?: string;
-        wiki_summary?: string;
-      },
-    ): Promise<Character>;
+    add(data: CharacterUpsertPayload & { world_id: number; name: string; }): Promise<Character>;
+    update(id: number, data: CharacterUpsertPayload): Promise<Character>;
     delete(id: number): Promise<{ id: number; }>;
-    importImage(
-      payload: TokenImageImportPayload,
-    ): Promise<TokenImageImportResult>;
+    importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+  };
+  factions: {
+    getAllByWorld(worldId: number): Promise<Faction[]>;
+    getById(id: number): Promise<Faction | null>;
+    add(data: FactionUpsertPayload & { world_id: number; name: string; }): Promise<Faction>;
+    update(id: number, data: FactionUpsertPayload): Promise<Faction>;
+    delete(id: number): Promise<{ id: number; }>;
+    importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+  };
+  factionTypes: {
+    getAllByWorld(worldId: number): Promise<FactionType[]>;
+    add(data: { world_id: number; name: string; }): Promise<FactionType>;
+    rename(id: number, name: string): Promise<FactionType>;
+    delete(id: number): Promise<{ id: number; }>;
+  };
+  factionMembers: {
+    getAllByFaction(factionId: number): Promise<FactionMembershipByFaction[]>;
+    getAllByCharacter(characterId: number): Promise<FactionMembershipByCharacter[]>;
+    getAllPrimaryByWorld(worldId: number): Promise<PrimaryFactionMembership[]>;
+    setForFaction(factionId: number, members: FactionMemberInput[]): Promise<RosterReplaceResult>;
+    setPrimary(characterId: number, factionId: number): Promise<PrimaryFactionMembership>;
   };
 }
