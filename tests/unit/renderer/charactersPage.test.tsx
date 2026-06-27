@@ -137,6 +137,33 @@ describe('CharactersPage', () => {
     expect(await screen.findByText('New Hero')).toBeInTheDocument();
   });
 
+  it('keeps the existing image when saving an edited character without touching the image', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1 });
+    const character = buildCharacter({
+      id: 7,
+      world_id: 1,
+      name: 'Ledros Igni',
+      image_src: 'vv-media://character-images/existing.png',
+    });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([character]);
+    (mockDb.characters.update as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+
+    renderPage(1);
+    await screen.findByText('Ledros Igni');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await screen.findByText('Edit Character');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(mockDb.characters.update).toHaveBeenCalled();
+    });
+    const updatePayload = (mockDb.characters.update as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(updatePayload).not.toHaveProperty('image_src');
+  });
+
   it('deletes a character after confirming', async () => {
     const user = userEvent.setup();
     const world = buildWorld({ id: 1 });

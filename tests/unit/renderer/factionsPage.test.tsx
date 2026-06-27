@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,6 +122,33 @@ describe('FactionsPage', () => {
     expect(mockDb.factions.add).toHaveBeenCalledWith(
       expect.objectContaining({ world_id: 1, name: 'New Faction' }),
     );
+  });
+
+  it('keeps the existing image when saving an edited faction without touching the image', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1 });
+    const faction = buildFaction({
+      id: 7,
+      world_id: 1,
+      name: 'Cult of Contagion',
+      image_src: 'vv-media://faction-images/existing.png',
+    });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
+    (mockDb.factions.update as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+
+    renderPage(1);
+    await screen.findByText('Cult of Contagion');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await screen.findByText('Edit Faction');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(mockDb.factions.update).toHaveBeenCalled();
+    });
+    const updatePayload = (mockDb.factions.update as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(updatePayload).not.toHaveProperty('image_src');
   });
 
   it('opens the Manage Types modal', async () => {

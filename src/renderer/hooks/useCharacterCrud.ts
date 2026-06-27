@@ -58,8 +58,6 @@ function buildCharacterUpdatePayload(data: CharacterFormValues): {
 
   if (data.clear_image) {
     updatePayload.image_src = null;
-  } else if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
-    updatePayload.image_src = data.image_src ?? null;
   }
 
   return updatePayload;
