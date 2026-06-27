@@ -5,7 +5,6 @@
  * @calls React Router Route definitions and ToastProvider
  */
 import { Route, Routes } from 'react-router-dom';
-import AppThemeToggle from './components/settings/AppThemeToggle';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { AppSettingsProvider } from './hooks/useAppSettings';
 import AbilitiesPage from './pages/AbilitiesPage';
@@ -34,11 +33,7 @@ export default function App() {
   return (
     <ToastProvider>
       <AppSettingsProvider>
-        <div className='relative min-h-screen'>
-          <div className='fixed top-6 right-6 z-50'>
-            <AppThemeToggle />
-          </div>
-
+        <div className='min-h-screen'>
           <Routes>
             <Route path='/' element={<WorldsHomePage />} />
             <Route path='/settings' element={<SettingsPage />} />

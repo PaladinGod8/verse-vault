@@ -206,19 +206,12 @@ describe('App routes', () => {
       expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-dark');
     });
 
-    expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Switch to .* mode/ })).not.toBeInTheDocument();
   });
 
-  it('toggles theme and persists full settings config', async () => {
-    const user = userEvent.setup();
-
+  it('applies stored light theme without rendering a shell toggle', async () => {
     worldsGetAllMock.mockResolvedValue([]);
-    settingsGetMock.mockResolvedValue(
-      buildSettings({ config: '{"theme":"dark","cardSize":"large"}' }),
-    );
-    settingsUpdateMock.mockResolvedValue(
-      buildSettings({ config: '{"theme":"light","cardSize":"large"}' }),
-    );
+    settingsGetMock.mockResolvedValue(buildSettings({ config: '{"theme":"light"}' }));
 
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -226,18 +219,13 @@ describe('App routes', () => {
       </MemoryRouter>,
     );
 
-    const toggle = await screen.findByRole('button', { name: 'Switch to light mode' });
-    await user.click(toggle);
-
-    await waitFor(() => {
-      expect(settingsUpdateMock).toHaveBeenCalledWith('{"theme":"light","cardSize":"large"}');
-    });
+    await screen.findByText('No worlds yet');
 
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-light');
     });
 
-    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Switch to .* mode/ })).not.toBeInTheDocument();
   });
 
   it('navigates to world page when a world card is opened', async () => {

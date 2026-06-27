@@ -26,7 +26,7 @@ threading them through per-world records.
   - `Card size` select: `Small`, `Medium`, or `Large`
 - Saves immediately on change through `window.db.settings.update(...)`.
 - App boot defaults to dark mode when no theme preference exists yet.
-- App-level toggle flips light/dark immediately and persists through same settings row.
+- Theme changes are managed from Settings page and persist through same settings row.
 - Save failures surface a toast: `Failed to save settings.` plus the thrown error message.
 - UI falls back to `dark` theme and `medium` card size when the stored JSON omits those keys.
 
@@ -36,7 +36,6 @@ threading them through per-world records.
 - Renderer files:
   - `src/renderer/pages/SettingsPage.tsx`
   - `src/renderer/components/settings/DisplaySettingsSection.tsx`
-  - `src/renderer/components/settings/AppThemeToggle.tsx`
   - `src/renderer/hooks/useAppSettings.ts`
 - IPC channels: `SETTINGS_GET`, `SETTINGS_UPDATE` in `src/shared/ipcChannels.ts`.
 - Main handler: `src/main/ipc/registerSettingsHandlers.ts`, registered in `src/main.ts`.
