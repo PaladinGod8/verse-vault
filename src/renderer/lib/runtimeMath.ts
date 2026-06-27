@@ -265,6 +265,102 @@ function pointyHexAxialFromWorld(
   };
 }
 
+const TOKEN_FALLBACK_COLORS = [
+  0x22c55e,
+  0x0ea5e9,
+  0xf59e0b,
+  0xec4899,
+  0xeab308,
+  0x14b8a6,
+  0x8b5cf6,
+];
+
+export function hashTokenColor(seed: string): number {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  return TOKEN_FALLBACK_COLORS[hash % TOKEN_FALLBACK_COLORS.length];
+}
+
+export function roundPointyHexAxial(
+  q: number,
+  r: number,
+): { roundedQ: number; roundedR: number; } {
+  const x = q;
+  const z = r;
+  const y = -x - z;
+
+  let roundedX = Math.round(x);
+  let roundedY = Math.round(y);
+  let roundedZ = Math.round(z);
+
+  const xDiff = Math.abs(roundedX - x);
+  const yDiff = Math.abs(roundedY - y);
+  const zDiff = Math.abs(roundedZ - z);
+
+  if (xDiff > yDiff && xDiff > zDiff) {
+    roundedX = -roundedY - roundedZ;
+  } else if (yDiff > zDiff) {
+    roundedY = -roundedX - roundedZ;
+  } else {
+    roundedZ = -roundedX - roundedY;
+  }
+
+  return { roundedQ: roundedX, roundedR: roundedZ };
+}
+
+export function snapSquareTokenPosition(
+  x: number,
+  y: number,
+  gridConfig: BattleMapRuntimeGridConfig,
+): Point2d {
+  const cellSize = clampGridCellSize(gridConfig.cellSize);
+  return {
+    x: gridConfig.originX
+      + (Math.floor((x - gridConfig.originX) / cellSize) + 0.5) * cellSize,
+    y: gridConfig.originY
+      + (Math.floor((y - gridConfig.originY) / cellSize) + 0.5) * cellSize,
+  };
+}
+
+export function snapHexTokenPosition(
+  x: number,
+  y: number,
+  gridConfig: BattleMapRuntimeGridConfig,
+): Point2d {
+  const cellSize = clampGridCellSize(gridConfig.cellSize);
+  const radius = cellSize * 0.5;
+  const shiftedX = x - gridConfig.originX;
+  const shiftedY = y - gridConfig.originY;
+  const q = ((SQRT_3 / 3) * shiftedX - shiftedY / 3) / radius;
+  const r = ((2 / 3) * shiftedY) / radius;
+  const { roundedQ, roundedR } = roundPointyHexAxial(q, r);
+  return pointyHexCenterFromAxial(
+    roundedQ,
+    roundedR,
+    gridConfig.originX,
+    gridConfig.originY,
+    cellSize,
+  );
+}
+
+export function snapTokenPositionToGrid(
+  x: number,
+  y: number,
+  gridConfig: BattleMapRuntimeGridConfig,
+): Point2d {
+  if (gridConfig.mode === 'none') {
+    return { x, y };
+  }
+
+  if (gridConfig.mode === 'square') {
+    return snapSquareTokenPosition(x, y, gridConfig);
+  }
+
+  return snapHexTokenPosition(x, y, gridConfig);
+}
+
 export function getPointyHexRangeForBounds(
   bounds: WorldViewportBounds,
   originX: number,
