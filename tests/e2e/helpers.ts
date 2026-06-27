@@ -7,9 +7,12 @@ export interface E2EAppContext {
   userDataDir: string;
 }
 
+function findMainWindow(app: ElectronApplication): Page | null {
+  return app.windows().find((candidate) => !candidate.url().startsWith('devtools://')) ?? null;
+}
+
 export async function launchElectronApp(): Promise<E2EAppContext> {
   const { app, userDataDir } = await launchApp();
-  const firstWindow = await app.firstWindow();
 
   await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows().find((candidate) => {
@@ -24,29 +27,20 @@ export async function launchElectronApp(): Promise<E2EAppContext> {
     win.focus();
   });
 
-  const start = Date.now();
-  let page: Page | null = null;
-  while (Date.now() - start < 5000) {
-    const windows = app.windows();
-    for (const candidate of windows) {
-      const url = candidate.url();
-      if (!url.startsWith('devtools://')) {
-        page = candidate;
-        break;
-      }
-    }
-    if (page) {
-      break;
-    }
-    await firstWindow.waitForTimeout(100);
-  }
+  await expect
+    .poll(() => Boolean(findMainWindow(app)), { timeout: 5000 })
+    .toBe(true);
 
-  if (!page) {
-    page = firstWindow;
-  }
+  const page = findMainWindow(app) ?? await app.firstWindow();
 
   await page.bringToFront();
   await page.waitForLoadState('domcontentloaded');
+  await expect(
+    page.getByRole('heading', { name: 'Worlds', level: 1 }),
+  ).toBeVisible({ timeout: 15000 });
+  await expect(
+    page.getByRole('button', { name: 'Create world' }),
+  ).toBeVisible({ timeout: 15000 });
 
   return { app, page, userDataDir };
 }
@@ -55,6 +49,19 @@ export async function cleanupElectronApp(
   context: E2EAppContext,
 ): Promise<void> {
   await closeApp(context.app, context.userDataDir);
+}
+
+export async function waitForAnimationFrames(
+  page: Page,
+  frameCount = 2,
+): Promise<void> {
+  await page.evaluate(async (count) => {
+    for (let frame = 0; frame < count; frame += 1) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+    }
+  }, frameCount);
 }
 
 export async function ensureWorldsLanding(page: Page): Promise<void> {
