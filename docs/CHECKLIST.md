@@ -2,82 +2,47 @@
 
 ## Every Time You Add or Change a Feature
 
-Command reference: use `README.md` -> **Developer Workflow Commands** for the canonical command list.
+Command reference: see `README.md` and `docs/04_DEVELOPMENT.md` for the full command list.
 
 ### 1. Code
 
-- [ ] Implement feature (UI component, Zustand store, IPC handler, DB schema changes)
-- [ ] If new IPC channel: add constant to `src/shared/ipcChannels.ts` first
-- [ ] If adding a new IPC entity/domain, create `src/main/ipc/register<Domain>Handlers.ts` and wire it from `src/main.ts` (keep `src/main.ts` bootstrap-only; no inline `ipcMain.handle` blocks)
-- [ ] Run `yarn verify:rapid` during implementation for fast local feedback
-- [ ] Run `yarn lint` (full lint gate: code + tracked markdown) and `yarn format:check` before committing code changes
-- [ ] Use `yarn lint:code:full` when debugging suspected ESLint cache anomalies (uncached code-lint run)
-- [ ] Use `yarn lint:docs` and partition scripts (`yarn lint:docs:list-partitions`) for targeted Markdown lint troubleshooting
-- [ ] If you touch a file that has an ESLint override in `.eslintrc.cjs` (annotated with `// TODO: remove override after <feature>`), check whether your changes now bring it within budget — if so, remove the override entry and verify `yarn lint` still passes
+- [ ] Build the feature or refactor with architecture boundaries intact.
+- [ ] New IPC? Update `src/shared/ipcChannels.ts` first, then main handlers, preload, shared contract types.
+- [ ] Run `yarn verify:rapid` while iterating.
+- [ ] Remove stale ESLint override entries when a file is back within budget.
 
-### 2. Docs (mandatory)
+### 2. Docs
 
-- [ ] `docs/02_CODEBASE_MAP.md` - add/update the Feature Map entry:
-  - UI file | store file | IPC channels used | main handler | storage location
-- [ ] `docs/03_IPC_CONTRACT.md` - add/update any channels touched:
-  - constant name, string value, direction, request payload, response payload, handler file
-- [ ] Run `yarn guard:docs` to verify architecture/map docs were updated when required
-- [ ] Run `yarn guard:ipc-docs` to verify IPC changes are paired with contract doc updates
-- [ ] Update scope language if needed so docs still reflect platform direction:
-  - centralized + offline-first TTRPG campaign management + creative writing/worldbuilding
+- [ ] Run `yarn docs:generate` when shared contracts, routes, registrars, or IPC mappings change.
+- [ ] Do not hand-edit generated rows in `docs/02_CODEBASE_MAP.md` or `docs/03_IPC_CONTRACT.md`.
+- [ ] Feature-specific behavior goes in `docs/features/<feature>.md`, use `docs/features/_TEMPLATE.md`.
+- [ ] Run `yarn guard:docs`, `yarn guard:ipc-docs`, `yarn guard:contracts`.
 
 ### 3. Local Quality Gate
 
-- [ ] Run `yarn verify:all` before push/PR (strict ordered gate: rebuild -> format/type/lint -> unit coverage -> package -> e2e)
-- [ ] If `verify:all` fails, fix only reported failures and rerun until green
+- [ ] Run `yarn verify:all` before push/PR.
+- [ ] If the gate fails, fix only the reported failures and rerun until green.
 
-### Test Helper Conventions (for new or updated tests)
+### 4. Test Helper Conventions
 
-- [ ] Prefer shared entity factories from `tests/helpers/factories.ts` (for example `buildWorld()`, `buildToken()`) when tests need repeated or full-shape entity fixtures
-- [ ] If deterministic factory IDs matter for assertions, call `resetFactoryIds()` in `beforeEach`
-- [ ] Prefer `setupWindowDb()` from `tests/helpers/ipcMock.ts` when tests require substantial `window.db` mocking; keep tiny one-off inline mocks when they are clearer
-- [ ] After `setupWindowDb()`, override only the specific mocked methods needed by the test
-- [ ] Call `resetWindowDb()` in `beforeEach` when using the IPC mock harness
+- [ ] Use shared fixtures from `tests/helpers/factories.ts` when tests need repeated full-shape data.
+- [ ] Use `setupWindowDb()` / `resetWindowDb()` from `tests/helpers/ipcMock.ts` for substantial `window.db` mocking.
+- [ ] Await all async work fully; avoid raw timing waits.
 
-### 4. Remote CI Paper Trail
+### 5. ADR
 
-- [ ] Push branch and open PR to `main`
-- [ ] Confirm GitHub Actions CI is green (`fast-checks`, `package`, `e2e`, `ci-summary`)
-- [ ] If CI fails, use workflow/job/step logs and artifacts (`coverage-report`, `packaged-app`, `playwright-report`) as debugging paper trail
-- [ ] If a run is queued/stuck, cancel by run ID (not UI `#number`) and rerun; if still queued, force-cancel with `gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/<run-id>/force-cancel`
-- [ ] Stop/restart self-hosted runners only when runner health is the problem (not as the first cancellation step)
-
-### 5. ADR (only if an architectural decision was made)
-
-Write a short ADR in `docs/adr/` if you:
-
-- Added a new storage layer
-- Changed the IPC pattern (for example switched to `send`/`on` for one-way messages)
-- Changed a security rule (for example modified context isolation settings)
-- Made a significant dependency or tech choice
-
-Otherwise, skip the ADR.
+- [ ] Add an ADR only for real architecture decisions: IPC pattern changes, security boundary changes, or major storage/technology changes.
 
 ### 6. Never
 
-- Do not create new doc files outside `docs/` or outside the files listed in `docs/00_INDEX.md`
-- Do not hardcode IPC channel strings; always use `src/shared/ipcChannels.ts`
-- Do not import `ipcRenderer` directly in renderer code; use `window.db`
-- Do not import `electron` in renderer files — ESLint `no-restricted-imports` will error; route all IPC through `window.db`
-- Do not import from `src/main.ts`, `src/main/**`, or `src/database/**` in renderer files — ESLint `import/no-restricted-paths` enforces process-layer isolation; `src/shared/**` and `forge.env.d.ts` are unrestricted
-- Do not import from `src/renderer/**` in `src/preload.ts` — same boundary rule applies
-- Do not ship cloud-only flows for core features; preserve offline-first behavior
-- Do not commit generated artifacts — `dist/`, `out/`, `.vite/`, and `coverage/` are enforced by `.gitignore` and must never be staged or committed
-- Do not let new `src/**` files exceed 400 lines or new `tests/**` files exceed 600 lines — ESLint `max-lines` will error; split the file instead
-- Do not write functions (outside React components and test callbacks) exceeding 80 lines — ESLint `max-lines-per-function` will error; extract helpers instead
-- Do not write functions with cyclomatic complexity > 15 — ESLint `complexity` will error; simplify branching logic or extract sub-functions
+- [ ] Do not hardcode IPC channel strings.
+- [ ] Do not import Node/Electron APIs directly in renderer code.
+- [ ] Do not hand-edit generated artifacts or commit ignored build outputs.
+- [ ] Do not let new source/test files bypass lint budgets without a deliberate override and follow-up.
 
----
+## Weekly Sanity Ritual
 
-## Weekly Sanity Ritual (5 minutes)
-
-1. Skim `docs/02_CODEBASE_MAP.md` and confirm it reflects current code.
-2. Skim `docs/03_IPC_CONTRACT.md` for missing channel updates.
-3. Scan `.eslintrc.cjs` overrides for `// TODO: remove override after` entries — if the referenced feature has landed, remove the override and verify `yarn lint` passes.
-4. Resolve or delete TODO items that are no longer relevant.
-5. Verify current priorities still align with the platform direction in `README.md` and `docs/TODO.md`.
+1. Run `yarn docs:check` and `yarn guard:contracts`.
+2. Skim `docs/02_CODEBASE_MAP.md` and `docs/03_IPC_CONTRACT.md` for drift.
+3. Remove dead TODOs and stale ESLint override entries.
+4. Check that priorities still match `README.md` and `docs/TODO.md`.

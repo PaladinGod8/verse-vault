@@ -24,7 +24,7 @@ worldbuilding, and writing workflows in one local workspace.
 
 ### Prerequisites
 
-- Node.js 22 LTS (recommended)
+- Node.js 20 LTS (matches CI)
 - Yarn 1.22.x
 - Windows, macOS, or Linux
 
@@ -49,7 +49,16 @@ yarn start
 ```bash
 yarn lint
 yarn format:check
+yarn docs:check
+yarn guard:contracts
 yarn test:unit:run
+```
+
+### Keep Generated Docs Current
+
+```bash
+yarn docs:generate
+yarn docs:check
 ```
 
 ## Project Scripts
@@ -68,8 +77,8 @@ For the complete script catalog and workflows, see [docs/04_DEVELOPMENT.md](docs
 
 - [docs/00_INDEX.md](docs/00_INDEX.md) - documentation entry point
 - [docs/01_ARCHITECTURE.md](docs/01_ARCHITECTURE.md) - process boundaries and security rules
-- [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md) - living map of where to change code
-- [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md) - living IPC channel and payload contract
+- [docs/02_CODEBASE_MAP.md](docs/02_CODEBASE_MAP.md) - generated seam map of where to change code
+- [docs/03_IPC_CONTRACT.md](docs/03_IPC_CONTRACT.md) - generated IPC channel and bridge contract
 - [docs/04_DEVELOPMENT.md](docs/04_DEVELOPMENT.md) - local setup, workflow, validation, troubleshooting
 - [docs/05_BUILD_RELEASE.md](docs/05_BUILD_RELEASE.md) - packaging and release details
 - [AGENTS.md](AGENTS.md) - coding agent rules for this repository

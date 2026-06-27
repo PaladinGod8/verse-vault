@@ -1,165 +1,58 @@
-# Verse Vault - Re-entry Index
+# Verse Vault Docs Index
 
-Test Me!
+This repo uses two doc classes:
 
-## Quick Start
+- Generated current-state docs: `docs/02_CODEBASE_MAP.md`, `docs/03_IPC_CONTRACT.md`
+- Human-written guidance: architecture, development workflow, feature docs, and ADRs
 
-```bash
-yarn install
-yarn start
-yarn verify:rapid
-```
+When generated docs are stale, update code-adjacent sources and run `yarn docs:generate`.
 
-For complete setup, command reference, and troubleshooting, see [04_DEVELOPMENT.md](04_DEVELOPMENT.md).
+Prefer generated docs for routes, registrars, seams, and channel lookup. Prefer human-written docs for durable rules and behavior.
 
-## Workflow Gates
+## Read In This Order (first time)
 
-```bash
-yarn verify:rapid      # fast local preflight (parallel checks)
-yarn verify:all        # strict local gate (sequential full checks)
-yarn verify:all:dev    # strict gate + launches dev app at the end
-yarn test:e2e          # local e2e (packages first, then runs Playwright)
-yarn test:e2e:local    # local alias of test:e2e
-yarn test:e2e:local:8  # local-only e2e with PLAYWRIGHT_WORKERS=8
-```
+1. `README.md` - setup and daily commands
+2. `AGENTS.md` - repository rules and task-based doc routing (see "Orientation By Task")
 
-Use `verify:rapid` during iteration, then `verify:all` before push/PR.
+## Task-Based Routing
 
-## One-off Git Hook Bypass (use sparingly)
+For "what do I read for task X", see `AGENTS.md` > Orientation By Task. That table is canonical; this file does not duplicate it.
 
-```bash
-git commit --no-verify -m "<message>"
-git push --no-verify origin
-```
+## All Docs (reference catalog)
 
-## GitHub Actions Paper Trail
+- `docs/01_ARCHITECTURE.md` - architecture, security boundaries, current schema summary
+- `docs/02_CODEBASE_MAP.md` - generated seam map, routes, and IPC registrar inventory
+- `docs/03_IPC_CONTRACT.md` - generated IPC channel catalog aligned to `window.db` and handler files
+- `docs/04_DEVELOPMENT.md` - validation workflow, hooks, and troubleshooting
+- `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` - strict final gate ordering for agent-driven validation
+- `docs/CHECKLIST.md` - feature workflow checklist
+- `docs/CI_INCIDENTS.md` - GitHub Actions run-control commands for stuck/queued CI runs
+- `docs/features/` - short human-written feature docs (see `docs/features/_TEMPLATE.md` for shape)
+- `docs/adr/` - architecture decisions only
 
-On push/PR/manual runs targeting `main`, `.github/workflows/ci.yml` runs CI on the self-hosted runner:
+### Feature Docs Index
 
-- `fast-checks` matrix (`format`, `typecheck`, `lint`, `unit`) — up to 4 parallel runners, label `ci`
-  - Lint mode selection:
-    - `pull_request`: runs `yarn lint:changed` (PR diff-aware lint for faster feedback)
-    - `push`/`workflow_dispatch`: runs `yarn lint` (full strict lint gate, includes markdown linting)
-- `package` — dedicated runner, label `ci` + `package`
-- `e2e` — 5-shard matrix, starts after both `fast-checks` and `package` pass, label `ci`
-- `ci-summary` — final status gate; fails if any job or shard fails
+Update this table when adding or removing a `docs/features/*.md` file — it is hand-maintained,
+not generated.
 
-> After `bootstrap`, 5 jobs become eligible simultaneously (4 fast-checks + 1 package).
-> Register at least 5 `ci`-labeled runners so all 5 start immediately.
+| File                                  | Scope                                                       |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `abilities.md`                        | World-scoped abilities CRUD with parent-child links         |
+| `campaign-session-scene-backbone.md`  | Campaign/Arc/Act/Session/Scene hierarchy with ordering      |
+| `levels.md`                           | Categorized level records scoped to worlds                  |
+| `modal-light-mode.md`                 | Light-theme modal dialog fix across CRUD surfaces           |
+| `battlemaps.md`                       | World-scoped battlemaps with PixiJS grid/token runtime      |
+| `casting.md`                          | Ability casting range/AoE overlays on battlemaps            |
+| `worlds.md`                           | World records with thumbnail image uploads                  |
+| `statistics.md`                       | World/statblock-level TTRPG statistics framework            |
+| `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped   |
+| `ipc-domain-split.md`                 | IPC handlers split into per-domain registrar modules        |
+| `optimization.md`                     | Test-suite speed and packaged app size reductions           |
+| `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting            |
+| `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates          |
+| `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links |
 
-CI optimizations (applied to all jobs):
+## Notes
 
-- `fetch-depth: 1` on all checkout steps (tip commit only; no full history fetch)
-- no markdown/docs path-ignore: docs-only changes still run lint/test gates for
-  standardized documentation quality
-- Yarn download cache: `actions/cache@v4` keyed by `runner.os + yarn.lock hash`;
-  `node_modules` is NOT cached (native module safety)
-
-Primary debugging paper trail:
-
-- GitHub Actions workflow/job/step logs
-- `coverage-report` artifact
-- `packaged-app` artifact
-- `playwright-report-shard-<n>` artifacts (one per e2e shard, 5 total, retained 10 days)
-
-### Runner Operations (Windows PowerShell)
-
-From repository root (`c:\code\personal\verse-vault`):
-
-```bash
-cmd /c yarn runner:status
-cmd /c yarn runner:start
-cmd /c yarn runner:stop
-cmd /c yarn runner:restart
-```
-
-Direct PowerShell equivalent:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action status
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action start
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action stop
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-services.ps1 -Action restart
-```
-
-Notes:
-
-- `start` / `stop` / `restart` auto-request elevation (UAC) when needed.
-- If PowerShell execution policy blocks `yarn.ps1`, use `cmd /c yarn ...`.
-
-### Watch Current CI Run (Terminal)
-
-```bash
-gh run list -R PaladinGod8/verse-vault --limit 10
-gh run watch -R PaladinGod8/verse-vault --compact --exit-status
-
-# cancel a specific run (queued or in_progress; replace <run-id>)
-gh run cancel <run-id> -R PaladinGod8/verse-vault
-
-# cancel the latest queued run
-gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s queued -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
-
-# cancel the latest in-progress run
-gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault
-
-# map UI run number (e.g. #37) to run ID, then cancel
-$runId = gh run list -R PaladinGod8/verse-vault --json databaseId,number --limit 200 --jq ".[] | select(.number==37) | .databaseId"
-gh run cancel $runId -R PaladinGod8/verse-vault
-
-# force-cancel fallback when queued run does not transition to cancelled
-gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/$runId/force-cancel
-
-# verify final state
-gh run view $runId -R PaladinGod8/verse-vault --json status,conclusion,number
-```
-
-Queue note: you do not need to stop self-hosted runners before canceling a queued run. Cancel first; stop runners only if you are intentionally draining/maintaining runner services.
-
-## Product Direction
-
-Verse Vault is being built as a centralized, offline-first desktop platform for:
-
-- TTRPG campaign management
-- Creative writing workflows
-- Worldbuilding knowledge systems
-
-Core design intent:
-
-- One local workspace for campaign operations, lore, notes, and manuscript drafting
-- Local-first data ownership with no cloud dependency for core workflows
-- Expandable entity model for campaign, world, manuscript, and session domains
-
-## Where to Start Reading
-
-| Question                          | File                                                             |
-| --------------------------------- | ---------------------------------------------------------------- |
-| How does the app boot?            | [src/main.ts](../src/main.ts)                                    |
-| What APIs does the renderer have? | [src/preload.ts](../src/preload.ts) -> `window.db`               |
-| What routes/pages exist?          | [src/renderer/App.tsx](../src/renderer/App.tsx)                  |
-| What's in the database?           | [src/database/db.ts](../src/database/db.ts)                      |
-| What IPC channel names exist?     | [src/shared/ipcChannels.ts](../src/shared/ipcChannels.ts)        |
-| Global TS types                   | [forge.env.d.ts](../forge.env.d.ts) (`Verse` scaffold + `DbApi`) |
-
-## Docs
-
-- [01_ARCHITECTURE.md](01_ARCHITECTURE.md) - data-flow diagram + security rules
-- [02_CODEBASE_MAP.md](02_CODEBASE_MAP.md) **(LIVING)** - where to change things
-- [03_IPC_CONTRACT.md](03_IPC_CONTRACT.md) **(LIVING)** - all IPC channels and payloads
-- [04_DEVELOPMENT.md](04_DEVELOPMENT.md) - local setup, command reference, troubleshooting
-- [05_BUILD_RELEASE.md](05_BUILD_RELEASE.md) - packaging and release
-- [06_AGENTIC_TESTING_QUALITY_GATE.md](06_AGENTIC_TESTING_QUALITY_GATE.md) -
-  cross-agent final testing prompt
-- [CHECKLIST.md](CHECKLIST.md) - feature workflow
-- [TODO.md](TODO.md) - roadmap and backlog
-- [adr/](adr/) - architectural decision records
-
-## Key Facts
-
-- **Stack**: Electron 35 / React 19 / Vite 6 / TypeScript / better-sqlite3 12 /
-  Tailwind CSS v4 / Zustand 5 / React Router 7
-- **DB file location**: `%APPDATA%\\Verse Vault\\verse-vault.db` (Windows userData)
-- **Routing**: HashRouter (no web server needed)
-- **Client state**: Zustand stores in `src/store/` (pattern exists, not yet wired to feature domains)
-- **Package manager**: Yarn 1.22
-- **Offline-first baseline**: SQLite + IPC architecture keeps core capabilities
-  local by default
+- Do not hand-edit generated rows in `docs/02_CODEBASE_MAP.md` or `docs/03_IPC_CONTRACT.md`.
+- Keep feature docs short: purpose, behavior, seams touched, tests, follow-ups.

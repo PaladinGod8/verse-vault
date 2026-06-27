@@ -1,18 +1,17 @@
 # Development Guide
 
-This guide covers local setup, daily development commands, validation gates,
-and common troubleshooting steps.
+Guide for local setup, daily dev commands, validation gates, and common troubleshooting.
 
 ## Environment Requirements
 
-- Node.js 22 LTS (recommended)
+- Node.js 20 LTS (matches CI)
 - Yarn 1.22.x (`yarn --version`)
 - Git
-- Optional for docs linting: Vale CLI available on `PATH`
+- Optional for docs lint: Vale CLI on `PATH`
 
 ## First-Time Setup
 
-1. Clone the repository.
+1. Clone repo.
 2. Install dependencies:
 
 ```bash
@@ -44,6 +43,10 @@ yarn dev
 yarn lint
 yarn lint:code
 yarn lint:docs
+yarn docs:generate
+yarn docs:check
+yarn guard:contracts
+yarn guard:e2e-timing
 yarn format:check
 yarn format
 ```
@@ -105,9 +108,19 @@ yarn hooks:install
 Guard scripts:
 
 ```bash
+yarn docs:generate
+yarn docs:check
 yarn guard:docs
 yarn guard:ipc-docs
+yarn guard:contracts
+yarn guard:e2e-timing
 ```
+
+Generated docs:
+
+- `docs/02_CODEBASE_MAP.md` and `docs/03_IPC_CONTRACT.md` are generated current-state docs.
+- Update source files, then run `yarn docs:generate`.
+- Do not hand-edit generated rows.
 
 Bypass only when intentional (for example docs-only formatting commits):
 
@@ -156,7 +169,7 @@ If rebuild fails:
 
 1. Ensure Electron is not running.
 2. Re-run `yarn install`.
-3. Confirm Node/Electron versions are compatible with repository lockfile.
+3. Confirm Node/Electron versions are compatible with the repository lockfile.
 
 ### Deep Clean Baseline (Slow)
 

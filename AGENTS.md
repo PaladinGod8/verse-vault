@@ -1,6 +1,6 @@
 # Verse Vault Agent Guide
 
-This file is the shared instruction contract for coding agents working in this repository (Codex, GitHub Copilot, Claude, and similar tools).
+Shared repo contract for coding agents. Keep this file short; route detail into task-matched docs.
 
 ## Priority
 
@@ -27,90 +27,69 @@ If instructions conflict, follow the highest-priority item and call out the conf
   - `better-sqlite3` only in main process
   - schema updates in `src/database/db.ts`
 
-Use these docs for orientation before major changes:
+## Orientation By Task
 
-- `docs/00_INDEX.md`
-- `docs/01_ARCHITECTURE.md`
-- `docs/02_CODEBASE_MAP.md`
-- `docs/03_IPC_CONTRACT.md`
-- `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`
-- `docs/features/`
-- `docs/CHECKLIST.md`
+Read only the docs that match the task. Prefer generated current-state docs for seams, routes, and IPC contracts.
+
+- IPC change: `docs/03_IPC_CONTRACT.md`, `docs/01_ARCHITECTURE.md` Rules 1-5, relevant `docs/features/<feature>.md`
+- Renderer page/route: `docs/02_CODEBASE_MAP.md` Routes, relevant `docs/features/<feature>.md`
+- Schema/migration: `docs/01_ARCHITECTURE.md` Current Schema Summary, `src/database/db.ts`
+- Tests: `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`
+- Feature docs: `docs/features/_TEMPLATE.md`
+- Broad architecture/orientation: `docs/00_INDEX.md`, `docs/01_ARCHITECTURE.md`, `docs/02_CODEBASE_MAP.md`
+- Full delivery workflow: `docs/CHECKLIST.md`
+- CI incident: `docs/CI_INCIDENTS.md`
+
+Default entrypoint: `docs/00_INDEX.md`.
 
 ## Standard Development Loop (Agent + Human)
 
-The repository uses a strict 3-phase workflow. Do not merge phases unless the user explicitly asks.
+The repository uses a 2-step workflow. Do not skip the docs step unless the user explicitly asks.
 
-1. Phase 1 - Code
-2. Phase 2 - Tests
-3. Phase 3 - Docs
+1. TDD - Code + Tests (test-first)
+2. Docs
 
 Exception:
 
-- githook-required living docs updates are part of the same small commit for Phase 1/2 when those files are touched.
+- githook-required living docs updates are part of the same small commit as the TDD step when those files are touched.
+- generated updates to `docs/02_CODEBASE_MAP.md` and `docs/03_IPC_CONTRACT.md` are allowed in the TDD step when the underlying code-adjacent sources changed
 
 Default ownership:
 
-- Agent implements requested phase
+- Agent implements the requested step
 - Human runs full local validation and product verification manually
 
-### Phase 1 - Code
+### TDD - Code + Tests
 
-- Implement only the requested feature/refactor.
-- Do not modify tests in this phase.
-- Keep githook-required living docs updated in the same small commit when touched files require it.
+Follow the repo-specific TDD skill for your agent surface: Claude Code uses `.claude/skills/tdd/SKILL.md`; Codex uses `$verse-vault-tdd` from `~/.codex/skills/verse-vault-tdd` (or `$CODEX_HOME/skills/verse-vault-tdd`). This file stays canonical for repo rules.
+
+- Work red-green-refactor in vertical slices.
+- Unit tests: `tests/unit/` (Vitest + `@testing-library/react`, jsdom). Mock `window.db`; never import main-process code.
+- E2E tests: `tests/e2e/` (Playwright; requires `yarn package` first).
+- Follow existing patterns in `tests/unit/App.test.tsx` and `tests/e2e/app.test.ts`.
+- Run `yarn docs:generate` when shared contracts, routes, registrars, or IPC mappings change.
 - Keep changes scoped and architecture-compliant.
 - If IPC changes are needed, update in this order:
   1. `src/shared/ipcChannels.ts`
   2. `src/main.ts` handlers
   3. `src/preload.ts` bridge
   4. `forge.env.d.ts` shared types
-
-### Phase 2 - Tests
-
-- Add or update tests for changed behavior.
-- Unit tests: `tests/unit/`
-- E2E tests: `tests/e2e/`
-- Prefer minimal, behavior-focused tests.
-- Follow existing patterns in:
-  - `tests/unit/App.test.tsx`
-  - `tests/e2e/app.test.ts`
 - For final pre-merge validation, run the strict ordered quality gate in `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`.
+- Async/race-condition rules for unit and E2E tests: see the Gate 2 and Gate 4 checklists in `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`.
 
-#### Async and Race-Condition Rules
-
-Unit tests (Vitest + React Testing Library):
-
-- Always `await` every async mock call and every async user interaction.
-- Use `findBy*` queries (not `getBy*`) when an element appears after an async operation — `findBy*` retries automatically and will not cause a hanging test.
-- Use shared test helpers where they improve clarity and reduce duplication:
-  - use entity factories from `tests/helpers/factories.ts` (for example `buildWorld`, `buildToken`) for repeated/full-shape entity fixtures
-  - call `resetFactoryIds()` in `beforeEach` when deterministic IDs matter
-  - use `setupWindowDb()` from `tests/helpers/ipcMock.ts` when a test needs substantial `window.db` mocking
-  - call `resetWindowDb()` in `beforeEach` when using the harness to clear mock state between tests
-  - small one-off inline literals/mocks are acceptable when they are clearer than factory or harness setup
-- Instantiate `userEvent.setup()` inside each test or in `beforeEach` — never share a user-event instance across tests.
-- Wrap async state updates that happen outside React's event system in `act(async () => { ... })`.
-- Never use `setTimeout`, `sleep`, or raw delays — replace with proper async queries or mock resolution.
-
-E2E tests (Playwright + Electron):
-
-- Call `launchApp()` per test, not per file — each test must own its isolated temporary SQLite database directory.
-- Always call `closeApp(app, userDataDir)` in a `finally` block so the app and temp dir are cleaned up even on failure.
-- Use `waitForFunction`, `waitForSelector`, or `expect(locator).toBeVisible()` for deterministic waits; never use `page.waitForTimeout`.
-- After `launchApp()`, wait for a known stable UI state (a heading, landmark, or specific element) before making any assertion.
-- Never share file-system paths, database files, or in-process state between parallel workers.
+Codex note: the repo-local source for the Codex skill lives in this checkout at `.codex/skills/verse-vault-tdd/SKILL.md`. Run `yarn skills:sync` to install it to `~/.codex/skills/verse-vault-tdd` (or `$CODEX_HOME/skills/verse-vault-tdd`); keep it aligned with `.claude/skills/tdd/SKILL.md`, and treat this `AGENTS.md` section as the source of truth for repo rules.
 
 ### Prompt-Splitting Requirement
 
 When an agent creates sequential implementation prompts under `docs/prompts/`, include a final step named `Final Quality Gate` that references `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` and requires all gates to pass in order.
 
-### Phase 3 - Docs
+### Docs
 
-For normal feature updates, use this phase for feature-specific documentation:
+For normal feature updates:
 
 - create or update `docs/features/<feature-slug>.md`
-- do not do broad final reconciliation of living docs in this phase; those updates should already be done in earlier small commits
+- keep feature docs short and behavior-oriented; use `docs/features/_TEMPLATE.md`
+- do not do broad final reconciliation here; living-doc updates should already be done in earlier small commits
 
 Add an ADR in `docs/adr/` only for real architecture decisions:
 
@@ -125,6 +104,8 @@ Primary local checks:
 
 - `yarn lint`
 - `yarn format:check`
+- `yarn docs:check`
+- `yarn guard:contracts`
 - `yarn test:unit:run`
 - `yarn package`
 - `yarn test:e2e`
@@ -139,19 +120,28 @@ One-off hook bypass commands (use sparingly):
 - `git commit --no-verify -m "<message>"`
 - `git push --no-verify origin`
 
-GitHub Actions run control (terminal):
+CI incidents: use `docs/CI_INCIDENTS.md`. Unless the user asks otherwise, do not rerun long pipelines when targeted checks are enough.
 
-- `gh run list -R PaladinGod8/verse-vault --limit 10`
-- `gh run watch -R PaladinGod8/verse-vault --compact --exit-status`
-- `gh run cancel <run-id> -R PaladinGod8/verse-vault`
-- `gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s queued -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault`
-- `gh run cancel "$(gh run list -R PaladinGod8/verse-vault -s in_progress -L 1 --json databaseId --jq '.[0].databaseId')" -R PaladinGod8/verse-vault`
-- `# UI #<number> is not run ID; map number -> databaseId first: $runId = gh run list -R PaladinGod8/verse-vault --json databaseId,number --limit 200 --jq ".[] | select(.number==37) | .databaseId"`
-- `gh api -X POST repos/PaladinGod8/verse-vault/actions/runs/$runId/force-cancel`
-- `gh run view $runId -R PaladinGod8/verse-vault --json status,conclusion,number`
-- Queue incidents: cancel queued runs first; do not stop runners first unless doing maintenance.
+## Agent Setup: Codex and Claude
 
-Unless the user asks otherwise, do not run long/full pipelines repeatedly when targeted checks are enough.
+Both agents must be able to set up from this repo alone, with no tribal knowledge.
+
+- Claude Code reads `.claude/skills/tdd/SKILL.md` and `.claude/skills/docs/SKILL.md` directly from the checkout (project-local, auto-loaded).
+- Codex has no project-local skill discovery, so its skill source lives in the repo at `.codex/skills/verse-vault-tdd/SKILL.md` and must be installed into a global path.
+- Run `yarn skills:sync` to copy `.codex/skills/verse-vault-tdd` to `~/.codex/skills/verse-vault-tdd` (or `$CODEX_HOME/skills/verse-vault-tdd`) and `.claude/skills/tdd` to `~/.claude/skills/verse-vault-tdd`, so the same TDD conventions are available globally for either agent on this machine.
+- When the TDD workflow changes, update `.claude/skills/tdd/SKILL.md` and `.codex/skills/verse-vault-tdd/SKILL.md` together, then rerun `yarn skills:sync`.
+
+Required vs optional skills:
+
+- Required (repo-process-critical): the TDD skill (`tdd` for Claude, `verse-vault-tdd` for Codex) and the Claude `docs` skill — these encode this repo's actual workflow contract.
+- Optional (general productivity, not enforced by guards or hooks): things like `caveman`, `caveman-compress`, `grill-me`, `codebase-design`. Use them if already configured on the machine; do not require another agent to install them to work on this repo.
+
+Token-saving expectations:
+
+- Prefer targeted reads/greps over loading whole files or directories when a path or symbol is already known.
+- Run targeted test files (`npx vitest <file>`) while iterating; reserve `yarn test:unit:run` / `yarn verify:all` for pre-merge gates.
+- Use `yarn guard:contracts` and `yarn docs:check` (cheap, fast) before reaching for the full `yarn verify:all` pipeline.
+- These are defaults, not hard rules — a full pipeline run is still required before declaring merge-ready, per `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`.
 
 ## Output Contract for Agents
 
@@ -174,4 +164,5 @@ When finishing a task, report:
 - Do not invent architecture that is not present in the code.
 - Do not bypass security boundaries to "make it work".
 - Do not create random new docs files outside `docs/features/` and `docs/adr/`.
+- Do not hand-edit generated rows in `docs/02_CODEBASE_MAP.md` or `docs/03_IPC_CONTRACT.md`.
 - Do not silently skip tests when behavior changed.

@@ -10,6 +10,7 @@ Run a final testing and quality-gate pass on the currently pushed feature change
 Context and constraints:
 
 - Follow repository rules in `AGENTS.md` and docs guardrails.
+- Treat `docs/02_CODEBASE_MAP.md` and `docs/03_IPC_CONTRACT.md` as generated current-state docs; regenerate them from source changes instead of hand-editing generated rows.
 - Keep Electron security boundary intact (`contextIsolation: true`, `nodeIntegration: false`, no Node APIs in renderer).
 - Use IPC constants from `src/shared/ipcChannels.ts`; no magic channel strings.
 - Prefer fixing production code first when tests reveal behavior bugs.
@@ -55,6 +56,7 @@ Async and isolation checklist (fix before moving to Gate 3):
   - keep concise one-off inline literals/mocks when they are clearer
 - `userEvent.setup()` is called per-test or in `beforeEach`, never shared across tests.
 - No `setTimeout`, `sleep`, or fixed delays — only async queries and mock resolution.
+- Wrap async state updates that happen outside React's event system in `act(async () => { ... })`.
 - Flag any test that hangs or has a flaky timing window and treat it as a bug.
 
 ## Gate 3: Coverage (Minimum 80%)
@@ -94,6 +96,7 @@ Execution behavior:
 - Stop hiding failures: surface failing files/tests and root cause.
 - Make minimal diffs and keep architecture boundaries intact.
 - Update hook-required living docs in the same commit step when touched files require it.
+- Re-run `yarn docs:check` and `yarn guard:contracts` after changes that affect shared contracts or generated docs.
 
 Output format (required):
 
