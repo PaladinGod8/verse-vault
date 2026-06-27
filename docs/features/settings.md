@@ -11,8 +11,8 @@ threading them through per-world records.
 - Single global Settings page at `/settings`.
 - Singleton SQLite row in `app_settings` with one JSON `config` blob.
 - Current editable preferences: `theme` and `cardSize`.
-- Out of scope: per-world overrides, sync/import-export, and global visual application
-  of every stored preference.
+- Out of scope: per-world overrides, sync/import-export, and app-wide visual application
+  of preferences other than theme.
 
 ## User-Facing Behavior
 
@@ -25,8 +25,10 @@ threading them through per-world records.
   - `Theme` select: `Light` or `Dark`
   - `Card size` select: `Small`, `Medium`, or `Large`
 - Saves immediately on change through `window.db.settings.update(...)`.
+- App boot defaults to dark mode when no theme preference exists yet.
+- App-level toggle flips light/dark immediately and persists through same settings row.
 - Save failures surface a toast: `Failed to save settings.` plus the thrown error message.
-- UI falls back to `light` theme and `medium` card size when the stored JSON omits those keys.
+- UI falls back to `dark` theme and `medium` card size when the stored JSON omits those keys.
 
 ## Architecture Notes
 
@@ -34,6 +36,7 @@ threading them through per-world records.
 - Renderer files:
   - `src/renderer/pages/SettingsPage.tsx`
   - `src/renderer/components/settings/DisplaySettingsSection.tsx`
+  - `src/renderer/components/settings/AppThemeToggle.tsx`
   - `src/renderer/hooks/useAppSettings.ts`
 - IPC channels: `SETTINGS_GET`, `SETTINGS_UPDATE` in `src/shared/ipcChannels.ts`.
 - Main handler: `src/main/ipc/registerSettingsHandlers.ts`, registered in `src/main.ts`.
@@ -86,6 +89,6 @@ interface AppSettingsConfig {
 ## Known Limits and Non-Goals
 
 - Stored `theme` and `cardSize` preferences are persisted now, but not every renderer
-  surface consumes them yet.
+  surface consumes `cardSize` yet.
 - No debounce/batching; every select change writes immediately.
 - No settings search, grouping beyond `Display`, or reset-to-default action yet.

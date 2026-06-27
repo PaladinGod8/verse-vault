@@ -31,7 +31,7 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
       <div>
         <h2 className='text-lg font-semibold text-slate-900'>Display</h2>
         <p className='mt-1 text-sm text-slate-600'>
-          Visual preferences for the app. Some options may not take visible effect yet.
+          Visual preferences for app. Theme changes apply across renderer immediately.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
         <select
           id='settings-theme'
           className='select select-bordered w-full max-w-xs'
-          value={config.theme ?? 'light'}
+          value={config.theme ?? 'dark'}
           onChange={(event) => onChange({ theme: event.target.value as AppThemePreference })}
         >
           {THEME_OPTIONS.map((option) => (

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../../../src/renderer/components/ui/ToastProvider';
+import { AppSettingsProvider } from '../../../../src/renderer/hooks/useAppSettings';
 import SettingsPage from '../../../../src/renderer/pages/SettingsPage';
 import { setupWindowDb } from '../../../helpers/ipcMock';
 
@@ -10,7 +11,9 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <ToastProvider>
-        <SettingsPage />
+        <AppSettingsProvider>
+          <SettingsPage />
+        </AppSettingsProvider>
       </ToastProvider>
     </MemoryRouter>,
   );
@@ -26,7 +29,7 @@ describe('SettingsPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(window.db.settings.get).toHaveBeenCalled();
-    expect(screen.getByLabelText('Theme')).toHaveValue('light');
+    expect(screen.getByLabelText('Theme')).toHaveValue('dark');
     expect(screen.getByLabelText('Card size')).toHaveValue('medium');
   });
 
@@ -34,10 +37,10 @@ describe('SettingsPage', () => {
     renderPage();
     await screen.findByLabelText('Theme');
 
-    await userEvent.selectOptions(screen.getByLabelText('Theme'), 'dark');
+    await userEvent.selectOptions(screen.getByLabelText('Theme'), 'light');
 
     await waitFor(() => {
-      expect(window.db.settings.update).toHaveBeenCalledWith('{"theme":"dark"}');
+      expect(window.db.settings.update).toHaveBeenCalledWith('{"theme":"light"}');
     });
   });
 

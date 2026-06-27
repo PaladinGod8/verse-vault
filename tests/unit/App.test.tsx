@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +18,8 @@ const sessionsGetAllByActMock = vi.fn();
 const sessionsGetByIdMock = vi.fn();
 const scenesGetAllByCampaignMock = vi.fn();
 const scenesGetAllBySessionMock = vi.fn();
+const settingsGetMock = vi.fn();
+const settingsUpdateMock = vi.fn();
 
 function buildWorld(overrides: Partial<World> = {}): World {
   return {
@@ -72,9 +74,21 @@ function buildSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+function buildSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+  return {
+    id: 1,
+    config: '{}',
+    created_at: '2026-02-26 00:00:00',
+    updated_at: '2026-02-26 00:00:00',
+    ...overrides,
+  };
+}
+
 describe('App routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    settingsGetMock.mockResolvedValue(buildSettings());
+    settingsUpdateMock.mockResolvedValue(buildSettings());
 
     window.db = {
       verses: {
@@ -155,6 +169,10 @@ describe('App routes', () => {
         delete: vi.fn(),
         moveTo: vi.fn(),
       },
+      settings: {
+        get: settingsGetMock,
+        update: settingsUpdateMock,
+      },
     } as unknown as DbApi;
   });
 
@@ -171,6 +189,55 @@ describe('App routes', () => {
     expect(
       screen.getByText('Create your first world to get started.'),
     ).toBeInTheDocument();
+  });
+
+  it('applies dark theme by default when stored settings omit theme', async () => {
+    worldsGetAllMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('No worlds yet');
+
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-dark');
+    });
+
+    expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+  });
+
+  it('toggles theme and persists full settings config', async () => {
+    const user = userEvent.setup();
+
+    worldsGetAllMock.mockResolvedValue([]);
+    settingsGetMock.mockResolvedValue(
+      buildSettings({ config: '{"theme":"dark","cardSize":"large"}' }),
+    );
+    settingsUpdateMock.mockResolvedValue(
+      buildSettings({ config: '{"theme":"light","cardSize":"large"}' }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const toggle = await screen.findByRole('button', { name: 'Switch to light mode' });
+    await user.click(toggle);
+
+    await waitFor(() => {
+      expect(settingsUpdateMock).toHaveBeenCalledWith('{"theme":"light","cardSize":"large"}');
+    });
+
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-light');
+    });
+
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
   });
 
   it('navigates to world page when a world card is opened', async () => {
