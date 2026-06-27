@@ -58,13 +58,13 @@ export function factionMatchesQuery(
     return true;
   }
 
-  const exactMatchFaction = allFactions.find(
-    (candidate) => candidate.name.trim().toLowerCase() === trimmedQuery,
-  );
-  if (!exactMatchFaction) {
+  const matchingFactionIds = allFactions
+    .filter((candidate) => candidate.name.trim().toLowerCase().includes(trimmedQuery))
+    .map((candidate) => candidate.id);
+  if (matchingFactionIds.length === 0) {
     return false;
   }
 
   const ancestorIds = getAncestorIds(faction.id, allFactions);
-  return ancestorIds.includes(exactMatchFaction.id);
+  return ancestorIds.some((ancestorId) => matchingFactionIds.includes(ancestorId));
 }

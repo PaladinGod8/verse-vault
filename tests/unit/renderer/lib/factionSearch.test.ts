@@ -78,7 +78,7 @@ describe('factionMatchesQuery', () => {
     expect(factionMatchesQuery(child, 'CULT OF CONTAGION', allFactions)).toBe(true);
   });
 
-  it('does not expand to descendants on a partial (non-exact) name match', () => {
+  it('expands to descendants on a partial (substring) ancestor name match', () => {
     const parent = buildFaction({ id: 1, name: 'Cult of Contagion' });
     const child = buildFaction({
       id: 2,
@@ -90,8 +90,9 @@ describe('factionMatchesQuery', () => {
     });
     const allFactions = [parent, child];
 
-    // "Cult" is a substring of the parent's name but not an exact match, so the child
-    // (which has no "Cult" substring anywhere in its own fields) should not match.
-    expect(factionMatchesQuery(child, 'Cult', allFactions)).toBe(false);
+    // "Cult" is a substring of the parent's name, so the child (which has no "Cult"
+    // substring anywhere in its own fields) should still match via the ancestor.
+    expect(factionMatchesQuery(child, 'Cult', allFactions)).toBe(true);
+    expect(factionMatchesQuery(child, 'nonexistent-xyz', allFactions)).toBe(false);
   });
 });
