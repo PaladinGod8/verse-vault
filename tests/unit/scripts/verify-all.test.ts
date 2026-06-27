@@ -236,4 +236,23 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     expect(latestLog).toBe(secondRunLog);
     expect(latestLog).not.toBe(firstRunLog);
   }, 30_000);
+
+  it('runs the secret scan step before formatting and linting', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace);
+
+    expect(result.status).toBe(0);
+
+    const latestMeta = readLatestMeta(workspace);
+    const stepNames = latestMeta.steps.map((step) => step.name);
+    expect(stepNames).toContain('Scan secrets (working tree + git history)');
+
+    const secretStepIndex = stepNames.indexOf('Scan secrets (working tree + git history)');
+    const formatStepIndex = stepNames.indexOf('Check formatting and auto-fix if needed');
+    const lintStepIndex = stepNames.indexOf('Run lint (strict, no warnings)');
+
+    expect(secretStepIndex).toBeGreaterThanOrEqual(0);
+    expect(secretStepIndex).toBeLessThan(formatStepIndex);
+    expect(secretStepIndex).toBeLessThan(lintStepIndex);
+  }, 30_000);
 });

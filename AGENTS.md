@@ -54,6 +54,7 @@ Read only the docs that match the task. Prefer generated current-state docs for 
 - Tests: `docs/06_AGENTIC_TESTING_QUALITY_GATE.md`
 - Feature docs: `docs/features/_TEMPLATE.md`
 - Broad architecture/orientation: `docs/00_INDEX.md`, `docs/01_ARCHITECTURE.md`, `docs/02_CODEBASE_MAP.md`
+- New dependency/tool/framework/platform added by your change: `docs/07_TECH_STACK.md`
 - Full delivery workflow: `docs/CHECKLIST.md`
 - CI incident: `docs/CI_INCIDENTS.md`
 
@@ -113,6 +114,8 @@ For normal feature updates:
 - create or update `docs/features/<feature-slug>.md`
 - keep feature docs short and behavior-oriented; use `docs/features/_TEMPLATE.md`
 - do not do broad final reconciliation here; living-doc updates should already be done in earlier small commits
+- if your change introduces a new technology, library, framework, build tool, test tool, lint/doc tool, security tool, or platform dependency, update `docs/07_TECH_STACK.md` in same change
+- do not update `docs/07_TECH_STACK.md` for routine version bumps or changes that stay within existing stack
 
 Add an ADR in `docs/adr/` only for real architecture decisions:
 

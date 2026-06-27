@@ -563,6 +563,14 @@ function maybeRunLint(summary) {
   }
 }
 
+function maybeRunSecretScan(summary) {
+  if (summary.changedFiles.length === 0) {
+    return;
+  }
+
+  runTask('Scan secrets in working tree', ['security:secrets:working-tree']);
+}
+
 function maybeRunUnit(summary) {
   const unitMode = chooseUnitMode(summary);
 
@@ -691,6 +699,7 @@ function main() {
 
   maybeRunFormat(summary);
   maybeRunTypecheck(summary);
+  maybeRunSecretScan(summary);
   maybeRunLint(summary);
   maybeRunUnit(summary);
   maybeRunE2E(summary);

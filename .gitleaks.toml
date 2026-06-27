@@ -1,0 +1,17 @@
+title = "Verse Vault gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore generated local artifacts and pipeline logs"
+paths = [
+  '''(^|/)\.cache/verify-(rapid|smart)/''',
+  '''(^|/)\.vite/''',
+  '''(^|/)coverage/''',
+  '''(^|/)out/''',
+  '''(^|/)playwright-report/''',
+  '''(^|/)scripts/logs/pipeline/''',
+  '''(^|/)test-results/''',
+]
+

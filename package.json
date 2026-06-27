@@ -62,6 +62,8 @@
     "guard:ipc-docs:staged": "node scripts/guard-ipc-docs.cjs --staged",
     "guard:contracts": "node scripts/guard-contracts.cjs",
     "guard:e2e-timing": "node scripts/guard-e2e-timing.cjs",
+    "security:secrets": "node scripts/secret-scan.cjs",
+    "security:secrets:working-tree": "node scripts/secret-scan.cjs --working-tree-only",
     "skills:sync": "node scripts/sync-agent-skills.cjs",
     "hooks:install": "git config core.hooksPath .githooks",
     "verify:all": "node scripts/verify-all.cjs --no-dev",

@@ -182,6 +182,7 @@ CI runs `yarn test:e2e:ci` so it reuses the packaged artifact from the `package`
 
 - `yarn format:check`
 - `yarn type-check`
+- `yarn security:secrets:working-tree`
 - `yarn lint:cache`
 - `yarn test:unit:quick`
 

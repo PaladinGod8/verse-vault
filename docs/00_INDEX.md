@@ -25,6 +25,7 @@ For "what do I read for task X", see `AGENTS.md` > Orientation By Task. That tab
 - `docs/03_IPC_CONTRACT.md` - generated IPC channel catalog aligned to `window.db` and handler files
 - `docs/04_DEVELOPMENT.md` - validation workflow, hooks, and troubleshooting
 - `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` - strict final gate ordering for agent-driven validation
+- `docs/07_TECH_STACK.md` - hand-maintained inventory of repo technologies, tooling, and libraries
 - `docs/CHECKLIST.md` - feature workflow checklist
 - `docs/CI_INCIDENTS.md` - GitHub Actions run-control commands for stuck/queued CI runs
 - `docs/features/` - short human-written feature docs (see `docs/features/_TEMPLATE.md` for shape)
@@ -50,6 +51,7 @@ not generated.
 | `optimization.md`                     | Test-suite speed and packaged app size reductions            |
 | `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting             |
 | `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates           |
+| `secret-scanning.md`                  | Local gitleaks secret-scan lanes and ignored artifact rules  |
 | `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links  |
 | `characters.md`                       | World-scoped character wiki entries with search and image    |
 | `settings.md`                         | App-wide user preferences stored in a singleton settings row |
@@ -58,3 +60,4 @@ not generated.
 
 - Do not hand-edit generated rows in `docs/02_CODEBASE_MAP.md` or `docs/03_IPC_CONTRACT.md`.
 - Keep feature docs short: purpose, behavior, seams touched, tests, follow-ups.
+- `docs/07_TECH_STACK.md` is manual, not generated. Update it only when repo introduces a new technology or external tool.

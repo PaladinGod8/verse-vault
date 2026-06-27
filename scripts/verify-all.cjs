@@ -350,6 +350,10 @@ steps.push(
     run: () => runCommand(yarnCmd, ['postinstall']),
   },
   {
+    name: 'Scan secrets (working tree + git history)',
+    run: () => runCommand(yarnCmd, ['security:secrets']),
+  },
+  {
     name: 'Check formatting and auto-fix if needed',
     run: () => {
       const formatIsClean = runCommand(yarnCmd, ['format:check'], {

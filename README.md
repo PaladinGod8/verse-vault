@@ -32,6 +32,10 @@ Optional (docs linting only):
 
 - [Vale CLI](https://vale.sh/)
 
+Required for secret-scanning lanes:
+
+- `gitleaks` CLI on `PATH`
+
 ### Install
 
 ```bash
@@ -68,6 +72,7 @@ Common scripts:
 - `yarn start` - start Electron in development mode
 - `yarn package` - package app to `out/`
 - `yarn test:e2e` - package + run Playwright E2E
+- `yarn security:secrets` - gitleaks scan for working tree + git history
 - `yarn verify:rapid` - fast local preflight
 - `yarn verify:all` - full local verification gate
 

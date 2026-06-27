@@ -7,6 +7,7 @@ Guide for local setup, daily dev commands, validation gates, and common troubles
 - Node.js 20 LTS (matches CI)
 - Yarn 1.22.x (`yarn --version`)
 - Git
+- Gitleaks CLI on `PATH` for secret scanning in `verify:*`
 - Optional for docs lint: Vale CLI on `PATH`
 
 ## First-Time Setup
@@ -66,6 +67,7 @@ yarn test:e2e:ci
 yarn verify:rapid
 yarn verify:all
 yarn verify:all:dev
+yarn security:secrets
 ```
 
 Fresh install variants:
@@ -79,6 +81,12 @@ Recommended cadence:
 
 1. `yarn verify:rapid` while iterating.
 2. `yarn verify:all` before push/PR.
+
+Secret-scan scope:
+
+- `yarn verify:rapid` and `yarn verify:smart` run a working-tree-only gitleaks pass.
+- `yarn verify:all` runs working tree plus full git history.
+- Ignore rules live in `.gitleaks.toml` for generated local artifacts like `out/` and `playwright-report/`.
 
 ## Targeted Test Runs
 
