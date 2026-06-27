@@ -9,6 +9,21 @@ export function createCoreTables(db: Database.Database): void {
   createWorldScopedTables(db);
   createCampaignScopedTables(db);
   createAbilityAndCharacterTables(db);
+  createSettingsTable(db);
+}
+
+function createSettingsTable(db: Database.Database): void {
+  // Singleton row (id = 1) holding a JSON `config` blob for app-wide user
+  // preferences (e.g. theme, card size). New preference fields are added
+  // inside the JSON shape, not as new columns, so this table never needs schema migrations.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      id         INTEGER PRIMARY KEY CHECK (id = 1),
+      config     TEXT    NOT NULL DEFAULT '{}',
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 function createWorldScopedTables(db: Database.Database): void {

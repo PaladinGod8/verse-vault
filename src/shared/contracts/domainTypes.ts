@@ -304,3 +304,10 @@ export interface FactionMember {
   is_primary: number; // 0 | 1
   created_at: string;
 }
+
+export interface AppSettings {
+  id: number;
+  config: string; // JSON text of AppSettingsConfig
+  created_at: string;
+  updated_at: string;
+}

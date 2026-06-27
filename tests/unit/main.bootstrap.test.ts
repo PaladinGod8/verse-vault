@@ -59,6 +59,7 @@ const registerCharacterHandlersMock = vi.fn();
 const registerFactionHandlersMock = vi.fn();
 const registerFactionTypeHandlersMock = vi.fn();
 const registerFactionMemberHandlersMock = vi.fn();
+const registerSettingsHandlersMock = vi.fn();
 
 vi.mock('electron-squirrel-startup', () => false);
 vi.mock('electron', () => ({
@@ -73,6 +74,9 @@ vi.mock('electron', () => ({
   },
   net: {
     fetch: netFetchMock,
+  },
+  ipcMain: {
+    handle: vi.fn(),
   },
 }));
 vi.mock('../../src/database/db', () => ({
@@ -126,6 +130,9 @@ vi.mock('../../src/main/ipc/registerFactionTypeHandlers', () => ({
 }));
 vi.mock('../../src/main/ipc/registerFactionMemberHandlers', () => ({
   registerFactionMemberHandlers: registerFactionMemberHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerSettingsHandlers', () => ({
+  registerSettingsHandlers: registerSettingsHandlersMock,
 }));
 
 function setForgeGlobals(devServerUrl: string | undefined): void {
@@ -189,6 +196,7 @@ describe('main bootstrap orchestration', () => {
     expect(registerFactionHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerFactionTypeHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerFactionMemberHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerSettingsHandlersMock).toHaveBeenCalledWith(dbMock);
 
     expect(browserWindowCtorMock).toHaveBeenCalledTimes(1);
     expect(loadFileMock).toHaveBeenCalledTimes(1);

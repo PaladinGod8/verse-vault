@@ -145,6 +145,20 @@ export function createMockDb(): DbApi {
       setForFaction: vi.fn().mockResolvedValue({ faction_id: 1 }),
       setPrimary: vi.fn().mockResolvedValue({ character_id: 1, faction_id: 1 }),
     },
+    settings: {
+      get: vi.fn().mockResolvedValue({
+        id: 1,
+        config: '{}',
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-01 00:00:00',
+      } as AppSettings),
+      update: vi.fn().mockResolvedValue({
+        id: 1,
+        config: '{}',
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-01 00:00:00',
+      } as AppSettings),
+    },
   };
 
   return mockDb;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
@@ -139,13 +139,21 @@ export default function WorldsHomePage() {
             </p>
           </div>
 
-          <button
-            type='button'
-            className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
-            onClick={() => setIsCreateOpen(true)}
-          >
-            Create world
-          </button>
+          <div className='flex shrink-0 items-center gap-2'>
+            <Link
+              to='/settings'
+              className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
+            >
+              Settings
+            </Link>
+            <button
+              type='button'
+              className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+              onClick={() => setIsCreateOpen(true)}
+            >
+              Create world
+            </button>
+          </div>
         </header>
 
         {isLoading

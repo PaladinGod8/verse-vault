@@ -12,6 +12,7 @@ import { registerFactionTypeHandlers } from '../../../src/main/ipc/registerFacti
 import { registerLevelHandlers } from '../../../src/main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from '../../../src/main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from '../../../src/main/ipc/registerSessionHandlers';
+import { registerSettingsHandlers } from '../../../src/main/ipc/registerSettingsHandlers';
 import { registerStatBlockHandlers } from '../../../src/main/ipc/registerStatBlockHandlers';
 import { registerTokenHandlers } from '../../../src/main/ipc/registerTokenHandlers';
 import { registerVerseHandlers } from '../../../src/main/ipc/registerVerseHandlers';
@@ -277,6 +278,14 @@ describe('IPC registrar channel wiring', () => {
           IPC.FACTION_MEMBERS_SET_PRIMARY,
         ],
       },
+      {
+        name: 'settings',
+        register: () => registerSettingsHandlers(dbMock),
+        expected: [
+          IPC.SETTINGS_GET,
+          IPC.SETTINGS_UPDATE,
+        ],
+      },
     ];
 
     for (const { name, register, expected } of channelsByRegistrar) {
@@ -307,6 +316,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerFactionHandlers(dbMock),
       () => registerFactionTypeHandlers(dbMock),
       () => registerFactionMemberHandlers(dbMock),
+      () => registerSettingsHandlers(dbMock),
     ];
 
     const allRegisteredChannels = allRegisterCalls

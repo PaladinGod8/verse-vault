@@ -5,16 +5,25 @@
  * @calls Shared domain row and payload types only
  */
 import type {
+  CharacterUpsertPayload,
+  FactionMemberInput,
+  FactionMembershipByCharacter,
+  FactionMembershipByFaction,
+  FactionUpsertPayload,
+  PrimaryFactionMembership,
+  RosterReplaceResult,
+} from './dbApiPayloads';
+import type {
   Ability,
   AbilityChild,
   Act,
+  AppSettings,
   Arc,
   BattleMap,
   Campaign,
   CampaignSceneListItem,
   Character,
   Faction,
-  FactionMember,
   FactionType,
   Level,
   Scene,
@@ -86,33 +95,13 @@ export const DB_API_METHODS = {
     'setForFaction',
     'setPrimary',
   ],
+  settings: ['get', 'update'],
 } as const;
-
-type CharacterUpsertPayload = {
-  name?: string;
-  profile?: string | null;
-  image_src?: string | null;
-  sections?: string;
-  wiki_summary?: string;
-};
-type FactionUpsertPayload = CharacterUpsertPayload & {
-  type_id?: number | null;
-  parent_faction_id?: number | null;
-};
-type FactionMemberInput = { character_id: number; role: string; };
-type FactionMembershipByFaction = FactionMember & { character_name: string; };
-type FactionMembershipByCharacter = FactionMember & { faction_name: string; };
-type PrimaryFactionMembership = { character_id: number; faction_id: number; };
-type RosterReplaceResult = { faction_id: number; };
 
 export interface DbApi {
   verses: {
     getAll(): Promise<Verse[]>;
-    add(data: {
-      text: string;
-      reference?: string;
-      tags?: string;
-    }): Promise<Verse>;
+    add(data: { text: string; reference?: string; tags?: string; }): Promise<Verse>;
     update(
       id: number,
       data: { text?: string; reference?: string; tags?: string; },
@@ -122,12 +111,14 @@ export interface DbApi {
   worlds: {
     getAll(): Promise<World[]>;
     getById(id: number): Promise<World | null>;
-    add(data: {
-      name: string;
-      thumbnail?: string | null;
-      short_description?: string | null;
-      config?: string;
-    }): Promise<World>;
+    add(
+      data: {
+        name: string;
+        thumbnail?: string | null;
+        short_description?: string | null;
+        config?: string;
+      },
+    ): Promise<World>;
     update(
       id: number,
       data: {
@@ -139,19 +130,14 @@ export interface DbApi {
     ): Promise<World>;
     delete(id: number): Promise<{ id: number; }>;
     markViewed(id: number): Promise<World>;
-    importImage(
-      payload: TokenImageImportPayload,
-    ): Promise<TokenImageImportResult>;
+    importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
   };
   levels: {
     getAllByWorld(worldId: number): Promise<Level[]>;
     getById(id: number): Promise<Level | null>;
-    add(data: {
-      world_id: number;
-      name: string;
-      category: string;
-      description?: string | null;
-    }): Promise<Level>;
+    add(
+      data: { world_id: number; name: string; category: string; description?: string | null; },
+    ): Promise<Level>;
     update(
       id: number,
       data: { name?: string; category?: string; description?: string | null; },
@@ -401,5 +387,9 @@ export interface DbApi {
     getAllPrimaryByWorld(worldId: number): Promise<PrimaryFactionMembership[]>;
     setForFaction(factionId: number, members: FactionMemberInput[]): Promise<RosterReplaceResult>;
     setPrimary(characterId: number, factionId: number): Promise<PrimaryFactionMembership>;
+  };
+  settings: {
+    get(): Promise<AppSettings>;
+    update(config: string): Promise<AppSettings>;
   };
 }

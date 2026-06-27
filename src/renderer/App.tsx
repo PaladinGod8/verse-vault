@@ -20,6 +20,7 @@ import FactionsPage from './pages/FactionsPage';
 import LevelsPage from './pages/LevelsPage';
 import ScenesPage from './pages/ScenesPage';
 import SessionsPage from './pages/SessionsPage';
+import SettingsPage from './pages/SettingsPage';
 import StatBlocksPage from './pages/StatBlocksPage';
 import TokensPage from './pages/TokensPage';
 import WorldPage from './pages/WorldPage';
@@ -32,6 +33,7 @@ export default function App() {
     <ToastProvider>
       <Routes>
         <Route path='/' element={<WorldsHomePage />} />
+        <Route path='/settings' element={<SettingsPage />} />
         <Route path='/world/:id' element={<WorldPage />} />
         <Route path='/world/:id/levels' element={<LevelsPage />} />
         <Route path='/world/:id/abilities' element={<AbilitiesPage />} />

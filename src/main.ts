@@ -20,6 +20,7 @@ import { registerFactionTypeHandlers } from './main/ipc/registerFactionTypeHandl
 import { registerLevelHandlers } from './main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from './main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from './main/ipc/registerSessionHandlers';
+import { registerSettingsHandlers } from './main/ipc/registerSettingsHandlers';
 import { registerStatBlockHandlers } from './main/ipc/registerStatBlockHandlers';
 import { registerTokenHandlers } from './main/ipc/registerTokenHandlers';
 import { registerVerseHandlers } from './main/ipc/registerVerseHandlers';
@@ -134,6 +135,7 @@ function registerIpcHandlers() {
   registerFactionHandlers(db);
   registerFactionTypeHandlers(db);
   registerFactionMemberHandlers(db);
+  registerSettingsHandlers(db);
 }
 
 // This method will be called when Electron has finished

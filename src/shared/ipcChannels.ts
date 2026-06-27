@@ -109,4 +109,6 @@ export const IPC = {
   FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD: 'db:factionMembers:getAllPrimaryByWorld',
   FACTION_MEMBERS_SET_FOR_FACTION: 'db:factionMembers:setForFaction',
   FACTION_MEMBERS_SET_PRIMARY: 'db:factionMembers:setPrimary',
+  SETTINGS_GET: 'db:settings:get',
+  SETTINGS_UPDATE: 'db:settings:update',
 } as const;

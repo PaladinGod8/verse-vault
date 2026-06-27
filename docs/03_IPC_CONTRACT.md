@@ -30,6 +30,7 @@ This document is a current-state contract index. It is generated from `src/share
 | factions       | 6        | `src/main/ipc/registerFactionHandlers.ts`       |
 | factionTypes   | 4        | `src/main/ipc/registerFactionTypeHandlers.ts`   |
 | factionMembers | 5        | `src/main/ipc/registerFactionMemberHandlers.ts` |
+| settings       | 2        | `src/main/ipc/registerSettingsHandlers.ts`      |
 
 <!-- END GENERATED IPC SUMMARY -->
 
@@ -142,5 +143,7 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD` | `db:factionMembers:getAllPrimaryByWorld` | `window.db.factionMembers.getAllPrimaryByWorld` | `src/main/ipc/registerFactionMemberHandlers.ts` | `DbApi.factionMembers.getAllPrimaryByWorld` |
 | `IPC.FACTION_MEMBERS_SET_FOR_FACTION`          | `db:factionMembers:setForFaction`        | `window.db.factionMembers.setForFaction`        | `src/main/ipc/registerFactionMemberHandlers.ts` | `DbApi.factionMembers.setForFaction`        |
 | `IPC.FACTION_MEMBERS_SET_PRIMARY`              | `db:factionMembers:setPrimary`           | `window.db.factionMembers.setPrimary`           | `src/main/ipc/registerFactionMemberHandlers.ts` | `DbApi.factionMembers.setPrimary`           |
+| `IPC.SETTINGS_GET`                             | `db:settings:get`                        | `window.db.settings.get`                        | `src/main/ipc/registerSettingsHandlers.ts`      | `DbApi.settings.get`                        |
+| `IPC.SETTINGS_UPDATE`                          | `db:settings:update`                     | `window.db.settings.update`                     | `src/main/ipc/registerSettingsHandlers.ts`      | `DbApi.settings.update`                     |
 
 <!-- END GENERATED IPC TABLE -->

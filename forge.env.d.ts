@@ -5,6 +5,7 @@
  * @calls Shared contract type modules and Forge/Vite ambient declarations
  */
 import type * as DomainTypes from './src/shared/contracts/domainTypes';
+import type * as SettingsTypes from './src/shared/contracts/settingsTypes';
 
 export {};
 
@@ -47,6 +48,10 @@ declare global {
   type Faction = DomainTypes.Faction;
   type FactionType = DomainTypes.FactionType;
   type FactionMember = DomainTypes.FactionMember;
+  type AppSettings = DomainTypes.AppSettings;
+  type AppThemePreference = SettingsTypes.AppThemePreference;
+  type AppCardSize = SettingsTypes.AppCardSize;
+  type AppSettingsConfig = SettingsTypes.AppSettingsConfig;
   type DbApi = import('./src/shared/contracts/dbApi').DbApi;
 
   interface Window {

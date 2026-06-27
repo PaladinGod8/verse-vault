@@ -194,6 +194,10 @@ const dbApi: DbApi = {
     setPrimary: (characterId, factionId) =>
       ipcRenderer.invoke(IPC.FACTION_MEMBERS_SET_PRIMARY, characterId, factionId),
   },
+  settings: {
+    get: () => ipcRenderer.invoke(IPC.SETTINGS_GET),
+    update: (config) => ipcRenderer.invoke(IPC.SETTINGS_UPDATE, config),
+  },
 };
 
 contextBridge.exposeInMainWorld('db', dbApi);

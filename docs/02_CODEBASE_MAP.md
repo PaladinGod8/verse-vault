@@ -44,6 +44,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | Route                                                                             | Page                        | File                                               |
 | --------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------- |
 | `/`                                                                               | `WorldsHomePage`            | `src/renderer/pages/WorldsHomePage.tsx`            |
+| `/settings`                                                                       | `SettingsPage`              | `src/renderer/pages/SettingsPage.tsx`              |
 | `/world/:id`                                                                      | `WorldPage`                 | `src/renderer/pages/WorldPage.tsx`                 |
 | `/world/:id/levels`                                                               | `LevelsPage`                | `src/renderer/pages/LevelsPage.tsx`                |
 | `/world/:id/abilities`                                                            | `AbilitiesPage`             | `src/renderer/pages/AbilitiesPage.tsx`             |
@@ -87,5 +88,6 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerFactionHandlers.ts`       | factions       | 6        |
 | `src/main/ipc/registerFactionTypeHandlers.ts`   | factionTypes   | 4        |
 | `src/main/ipc/registerFactionMemberHandlers.ts` | factionMembers | 5        |
+| `src/main/ipc/registerSettingsHandlers.ts`      | settings       | 2        |
 
 <!-- END GENERATED REGISTRARS -->

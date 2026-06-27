@@ -32,6 +32,7 @@ const HANDLERS = {
   factions: 'src/main/ipc/registerFactionHandlers.ts',
   factionTypes: 'src/main/ipc/registerFactionTypeHandlers.ts',
   factionMembers: 'src/main/ipc/registerFactionMemberHandlers.ts',
+  settings: 'src/main/ipc/registerSettingsHandlers.ts',
 } as const;
 
 function entries(
@@ -287,6 +288,10 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'window.db.factionMembers.setPrimary',
       'DbApi.factionMembers.setPrimary',
     ],
+  ]),
+  ...entries('settings', HANDLERS.settings, [
+    ['SETTINGS_GET', 'window.db.settings.get', 'DbApi.settings.get'],
+    ['SETTINGS_UPDATE', 'window.db.settings.update', 'DbApi.settings.update'],
   ]),
 ];
 

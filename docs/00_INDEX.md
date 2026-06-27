@@ -35,23 +35,24 @@ For "what do I read for task X", see `AGENTS.md` > Orientation By Task. That tab
 Update this table when adding or removing a `docs/features/*.md` file — it is hand-maintained,
 not generated.
 
-| File                                  | Scope                                                       |
-| ------------------------------------- | ----------------------------------------------------------- |
-| `abilities.md`                        | World-scoped abilities CRUD with parent-child links         |
-| `campaign-session-scene-backbone.md`  | Campaign/Arc/Act/Session/Scene hierarchy with ordering      |
-| `levels.md`                           | Categorized level records scoped to worlds                  |
-| `modal-light-mode.md`                 | Light-theme modal dialog fix across CRUD surfaces           |
-| `battlemaps.md`                       | World-scoped battlemaps with PixiJS grid/token runtime      |
-| `casting.md`                          | Ability casting range/AoE overlays on battlemaps            |
-| `worlds.md`                           | World records with thumbnail image uploads                  |
-| `statistics.md`                       | World/statblock-level TTRPG statistics framework            |
-| `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped   |
-| `ipc-domain-split.md`                 | IPC handlers split into per-domain registrar modules        |
-| `optimization.md`                     | Test-suite speed and packaged app size reductions           |
-| `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting            |
-| `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates          |
-| `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links |
-| `characters.md`                       | World-scoped character wiki entries with search and image   |
+| File                                  | Scope                                                        |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `abilities.md`                        | World-scoped abilities CRUD with parent-child links          |
+| `campaign-session-scene-backbone.md`  | Campaign/Arc/Act/Session/Scene hierarchy with ordering       |
+| `levels.md`                           | Categorized level records scoped to worlds                   |
+| `modal-light-mode.md`                 | Light-theme modal dialog fix across CRUD surfaces            |
+| `battlemaps.md`                       | World-scoped battlemaps with PixiJS grid/token runtime       |
+| `casting.md`                          | Ability casting range/AoE overlays on battlemaps             |
+| `worlds.md`                           | World records with thumbnail image uploads                   |
+| `statistics.md`                       | World/statblock-level TTRPG statistics framework             |
+| `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped    |
+| `ipc-domain-split.md`                 | IPC handlers split into per-domain registrar modules         |
+| `optimization.md`                     | Test-suite speed and packaged app size reductions            |
+| `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting             |
+| `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates           |
+| `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links  |
+| `characters.md`                       | World-scoped character wiki entries with search and image    |
+| `settings.md`                         | App-wide user preferences stored in a singleton settings row |
 
 ## Notes
 
