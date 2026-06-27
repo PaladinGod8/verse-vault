@@ -1,551 +1,59 @@
-export {}; // Make this a module
+/**
+ * @role Ambient type adapter
+ * @owns Global compatibility aliases and Window.db ambient declarations
+ * @seam Renderer TypeScript ambient bridge to the shared contract modules
+ * @calls Shared contract type modules and Forge/Vite ambient declarations
+ */
+import type * as DomainTypes from './src/shared/contracts/domainTypes';
+
+export {};
 
 declare global {
-  interface Verse {
-    id: number;
-    text: string;
-    reference: string | null;
-    tags: string | null;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface World {
-    id: number;
-    name: string;
-    thumbnail: string | null;
-    short_description: string | null;
-    last_viewed_at: string | null;
-    config: string;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface Level {
-    id: number;
-    world_id: number;
-    name: string;
-    category: string;
-    description: string | null;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface Ability {
-    id: number;
-    world_id: number;
-    name: string;
-    description: string | null;
-    type: string;
-    passive_subtype: string | null;
-    level_id: number | null;
-    effects: string;
-    conditions: string;
-    cast_cost: string;
-    trigger: string | null;
-    pick_count: number | null;
-    pick_timing: string | null;
-    pick_is_permanent: number;
-    range_cells: number | null;
-    aoe_shape: 'circle' | 'rectangle' | 'cone' | 'line' | null;
-    aoe_size_cells: number | null;
-    target_type: 'tile' | 'token' | null;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface AbilityChild {
-    parent_id: number;
-    child_id: number;
-  }
-
-  interface Campaign {
-    id: number;
-    world_id: number;
-    name: string;
-    summary: string | null;
-    config: string;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface BattleMap {
-    id: number;
-    world_id: number;
-    name: string;
-    config: string;
-    created_at: string;
-    updated_at: string;
-  }
-
-  type BattleMapGridMode = 'square' | 'hex' | 'none';
-
-  interface BattleMapRuntimeGridConfig {
-    mode: BattleMapGridMode;
-    cellSize: number;
-    originX: number;
-    originY: number;
-  }
-
-  interface BattleMapRuntimeMapConfig {
-    imageSrc: string | null;
-    backgroundColor: string;
-  }
-
-  interface BattleMapRuntimeCameraConfig {
-    x: number;
-    y: number;
-    zoom: number;
-  }
-
-  interface BattleMapRuntimeConfig {
-    grid: BattleMapRuntimeGridConfig;
-    map: BattleMapRuntimeMapConfig;
-    camera: BattleMapRuntimeCameraConfig;
-    [key: string]: unknown;
-  }
-
-  interface BattleMapConfig {
-    runtime?: BattleMapRuntimeConfig;
-    [key: string]: unknown;
-  }
-
-  interface ScenePayloadRuntime {
-    battlemap_id?: number | null;
-    [key: string]: unknown;
-  }
-
-  interface ScenePayload {
-    runtime?: ScenePayloadRuntime;
-    [key: string]: unknown;
-  }
-
-  interface TokenImageImportPayload {
-    fileName: string;
-    mimeType: string;
-    bytes: Uint8Array;
-  }
-
-  interface TokenImageImportResult {
-    image_src: string;
-  }
-
-  type TokenGridType = 'square' | 'hex';
-
-  interface TokenSquareFootprintCell {
-    col: number;
-    row: number;
-  }
-
-  interface TokenHexFootprintCell {
-    q: number;
-    r: number;
-  }
-
-  interface TokenFootprintConfig {
-    version?: 1;
-    grid_type?: TokenGridType;
-    square_cells?: TokenSquareFootprintCell[];
-    hex_cells?: TokenHexFootprintCell[];
-    width_cells?: number;
-    height_cells?: number;
-    radius_cells?: number;
-    [key: string]: unknown;
-  }
-
-  interface TokenFramingConfig {
-    center_x_cells?: number;
-    center_y_cells?: number;
-    extent_x_cells?: number;
-    extent_y_cells?: number;
-    max_extent_cells?: number;
-    anchor_x?: number;
-    anchor_y?: number;
-    offset_x_px?: number;
-    offset_y_px?: number;
-    [key: string]: unknown;
-  }
-
-  interface TokenConfigShape {
-    footprint?: TokenFootprintConfig;
-    framing?: TokenFramingConfig;
-    [key: string]: unknown;
-  }
-
-  interface Token {
-    id: number;
-    world_id: number;
-    campaign_id: number | null;
-    grid_type: TokenGridType;
-    name: string;
-    image_src: string | null;
-    config: string;
-    is_visible: number;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface Arc {
-    id: number;
-    campaign_id: number;
-    name: string;
-    sort_order: number;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface Act {
-    id: number;
-    arc_id: number;
-    name: string;
-    sort_order: number;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface Session {
-    id: number;
-    act_id: number;
-    name: string;
-    notes: string | null;
-    planned_at: string | null;
-    sort_order: number;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface Scene {
-    id: number;
-    session_id: number;
-    name: string;
-    notes: string | null;
-    payload: string;
-    sort_order: number;
-    created_at: string;
-    updated_at: string;
-  }
-
-  interface CampaignSceneListItem extends Scene {
-    session_name: string;
-    act_id: number;
-    act_name: string;
-    arc_id: number;
-    arc_name: string;
-  }
-
-  interface StatBlockTokenLink {
-    statblock_id: number;
-    token_id: number;
-  }
-
-  interface StatBlockAbilityAssignment {
-    statblock_id: number;
-    ability_id: number;
-  }
-
-  interface StatBlockSkillValue {
-    key: string;
-    rank: number;
-  }
-
-  interface StatBlockConfig {
-    skills?: StatBlockSkillValue[];
-    [key: string]: unknown;
-  }
-
-  interface DbApi {
-    verses: {
-      getAll(): Promise<Verse[]>;
-      add(data: {
-        text: string;
-        reference?: string;
-        tags?: string;
-      }): Promise<Verse>;
-      update(
-        id: number,
-        data: { text?: string; reference?: string; tags?: string; },
-      ): Promise<Verse>;
-      delete(id: number): Promise<{ id: number; }>;
-    };
-    worlds: {
-      getAll(): Promise<World[]>;
-      getById(id: number): Promise<World | null>;
-      add(data: {
-        name: string;
-        thumbnail?: string | null;
-        short_description?: string | null;
-        config?: string;
-      }): Promise<World>;
-      update(
-        id: number,
-        data: {
-          name?: string;
-          thumbnail?: string | null;
-          short_description?: string | null;
-          config?: string;
-        },
-      ): Promise<World>;
-      delete(id: number): Promise<{ id: number; }>;
-      markViewed(id: number): Promise<World>;
-      importImage(
-        payload: TokenImageImportPayload,
-      ): Promise<TokenImageImportResult>;
-    };
-    levels: {
-      getAllByWorld(worldId: number): Promise<Level[]>;
-      getById(id: number): Promise<Level | null>;
-      add(data: {
-        world_id: number;
-        name: string;
-        category: string;
-        description?: string | null;
-      }): Promise<Level>;
-      update(
-        id: number,
-        data: { name?: string; category?: string; description?: string | null; },
-      ): Promise<Level>;
-      delete(id: number): Promise<{ id: number; }>;
-    };
-    abilities: {
-      getAllByWorld(worldId: number): Promise<Ability[]>;
-      getById(id: number): Promise<Ability | null>;
-      add(data: {
-        world_id: number;
-        name: string;
-        description?: string | null;
-        type: string;
-        passive_subtype?: string | null;
-        level_id?: number | null;
-        effects?: string;
-        conditions?: string;
-        cast_cost?: string;
-        trigger?: string | null;
-        pick_count?: number | null;
-        pick_timing?: string | null;
-        pick_is_permanent?: number;
-        range_cells?: number | null;
-        aoe_shape?: 'circle' | 'rectangle' | 'cone' | 'line' | null;
-        aoe_size_cells?: number | null;
-        target_type?: 'tile' | 'token' | null;
-      }): Promise<Ability>;
-      update(
-        id: number,
-        data: {
-          name?: string;
-          description?: string | null;
-          type?: string;
-          passive_subtype?: string | null;
-          level_id?: number | null;
-          effects?: string;
-          conditions?: string;
-          cast_cost?: string;
-          trigger?: string | null;
-          pick_count?: number | null;
-          pick_timing?: string | null;
-          pick_is_permanent?: number;
-          range_cells?: number | null;
-          aoe_shape?: 'circle' | 'rectangle' | 'cone' | 'line' | null;
-          aoe_size_cells?: number | null;
-          target_type?: 'tile' | 'token' | null;
-        },
-      ): Promise<Ability>;
-      delete(id: number): Promise<{ id: number; }>;
-      addChild(data: AbilityChild): Promise<AbilityChild>;
-      removeChild(data: AbilityChild): Promise<AbilityChild>;
-      getChildren(abilityId: number): Promise<Ability[]>;
-    };
-    campaigns: {
-      getAllByWorld(worldId: number): Promise<Campaign[]>;
-      getById(id: number): Promise<Campaign | null>;
-      add(data: {
-        world_id: number;
-        name: string;
-        summary?: string | null;
-        config?: string;
-      }): Promise<Campaign>;
-      update(
-        id: number,
-        data: { name?: string; summary?: string | null; config?: string; },
-      ): Promise<Campaign>;
-      delete(id: number): Promise<{ id: number; }>;
-    };
-    battlemaps: {
-      getAllByWorld(worldId: number): Promise<BattleMap[]>;
-      getById(id: number): Promise<BattleMap | null>;
-      add(data: {
-        world_id: number;
-        name: string;
-        config?: string;
-      }): Promise<BattleMap>;
-      update(
-        id: number,
-        data: { name?: string; config?: string; },
-      ): Promise<BattleMap>;
-      delete(id: number): Promise<{ id: number; }>;
-    };
-    tokens: {
-      getAllByWorld(worldId: number): Promise<Token[]>;
-      getAllByCampaign(campaignId: number): Promise<Token[]>;
-      getById(id: number): Promise<Token | null>;
-      importImage(
-        payload: TokenImageImportPayload,
-      ): Promise<TokenImageImportResult>;
-      add(data: {
-        world_id: number;
-        campaign_id?: number | null;
-        grid_type?: TokenGridType;
-        name: string;
-        image_src?: string | null;
-        config?: string;
-        is_visible?: number;
-      }): Promise<Token>;
-      update(
-        id: number,
-        data: {
-          name?: string;
-          image_src?: string | null;
-          config?: string;
-          is_visible?: number;
-        },
-      ): Promise<Token>;
-      moveToWorld(tokenId: number): Promise<Token>;
-      moveToCampaign(tokenId: number, targetCampaignId: number): Promise<Token>;
-      delete(id: number): Promise<{ id: number; }>;
-    };
-    arcs: {
-      getAllByCampaign(campaignId: number): Promise<Arc[]>;
-      getById(id: number): Promise<Arc | null>;
-      add(data: {
-        campaign_id: number;
-        name: string;
-        sort_order?: number;
-      }): Promise<Arc>;
-      update(
-        id: number,
-        data: { name?: string; sort_order?: number; },
-      ): Promise<Arc>;
-      delete(id: number): Promise<{ id: number; }>;
-    };
-    acts: {
-      getAllByArc(arcId: number): Promise<Act[]>;
-      getAllByCampaign(campaignId: number): Promise<Act[]>;
-      getById(id: number): Promise<Act | null>;
-      add(data: {
-        arc_id: number;
-        name: string;
-        sort_order?: number;
-      }): Promise<Act>;
-      update(
-        id: number,
-        data: { name?: string; sort_order?: number; },
-      ): Promise<Act>;
-      delete(id: number): Promise<{ id: number; }>;
-      moveTo(actId: number, newArcId: number): Promise<Act>;
-    };
-    sessions: {
-      getAllByAct(actId: number): Promise<Session[]>;
-      getById(id: number): Promise<Session | null>;
-      add(data: {
-        act_id: number;
-        name: string;
-        notes?: string | null;
-        planned_at?: string | null;
-        sort_order?: number;
-      }): Promise<Session>;
-      update(
-        id: number,
-        data: {
-          name?: string;
-          notes?: string | null;
-          planned_at?: string | null;
-          sort_order?: number;
-        },
-      ): Promise<Session>;
-      delete(id: number): Promise<{ id: number; }>;
-      moveTo(sessionId: number, newActId: number): Promise<Session>;
-    };
-    scenes: {
-      getAllByCampaign(campaignId: number): Promise<CampaignSceneListItem[]>;
-      getAllBySession(sessionId: number): Promise<Scene[]>;
-      getById(id: number): Promise<Scene | null>;
-      add(data: {
-        session_id: number;
-        name: string;
-        notes?: string | null;
-        payload?: string;
-        sort_order?: number;
-      }): Promise<Scene>;
-      update(
-        id: number,
-        data: {
-          name?: string;
-          notes?: string | null;
-          payload?: string;
-          sort_order?: number;
-        },
-      ): Promise<Scene>;
-      delete(id: number): Promise<{ id: number; }>;
-      moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
-    };
-    statblocks: {
-      getAllByWorld(worldId: number): Promise<StatBlock[]>;
-      getAllByCampaign(campaignId: number): Promise<StatBlock[]>;
-      getById(id: number): Promise<StatBlock | null>;
-      add(data: {
-        world_id: number;
-        campaign_id?: number;
-        name: string;
-        description?: string;
-        config?: string;
-      }): Promise<StatBlock>;
-      update(
-        id: number,
-        data: {
-          name?: string;
-          description?: string;
-          config?: string;
-        },
-      ): Promise<StatBlock>;
-      delete(id: number): Promise<{ id: number; }>;
-      linkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
-      unlinkToken(data: StatBlockTokenLink): Promise<StatBlockTokenLink>;
-      getLinkedTokens(statblockId: number): Promise<Token[]>;
-      getLinkedStatblock(tokenId: number): Promise<StatBlock | null>;
-      attachAbility(
-        data: StatBlockAbilityAssignment,
-      ): Promise<StatBlockAbilityAssignment>;
-      detachAbility(
-        data: StatBlockAbilityAssignment,
-      ): Promise<StatBlockAbilityAssignment>;
-      listAbilities(statblockId: number): Promise<Ability[]>;
-    };
-  }
-
-  interface StatBlock {
-    id: number;
-    world_id: number;
-    campaign_id: number | null;
-    character_id: number | null;
-    name: string;
-    default_token_id: number | null;
-    description: string | null;
-    config: string; // JSON string; optional `skills: StatBlockSkillValue[]` (MVP)
-    created_at: string;
-    updated_at: string;
-  }
+  type Verse = DomainTypes.Verse;
+  type World = DomainTypes.World;
+  type Level = DomainTypes.Level;
+  type Ability = DomainTypes.Ability;
+  type AbilityChild = DomainTypes.AbilityChild;
+  type Campaign = DomainTypes.Campaign;
+  type BattleMap = DomainTypes.BattleMap;
+  type BattleMapGridMode = DomainTypes.BattleMapGridMode;
+  type BattleMapRuntimeGridConfig = DomainTypes.BattleMapRuntimeGridConfig;
+  type BattleMapRuntimeMapConfig = DomainTypes.BattleMapRuntimeMapConfig;
+  type BattleMapRuntimeCameraConfig = DomainTypes.BattleMapRuntimeCameraConfig;
+  type BattleMapRuntimeConfig = DomainTypes.BattleMapRuntimeConfig;
+  type BattleMapConfig = DomainTypes.BattleMapConfig;
+  type ScenePayloadRuntime = DomainTypes.ScenePayloadRuntime;
+  type ScenePayload = DomainTypes.ScenePayload;
+  type TokenImageImportPayload = DomainTypes.TokenImageImportPayload;
+  type TokenImageImportResult = DomainTypes.TokenImageImportResult;
+  type TokenGridType = DomainTypes.TokenGridType;
+  type TokenSquareFootprintCell = DomainTypes.TokenSquareFootprintCell;
+  type TokenHexFootprintCell = DomainTypes.TokenHexFootprintCell;
+  type TokenFootprintConfig = DomainTypes.TokenFootprintConfig;
+  type TokenFramingConfig = DomainTypes.TokenFramingConfig;
+  type TokenConfigShape = DomainTypes.TokenConfigShape;
+  type Token = DomainTypes.Token;
+  type Arc = DomainTypes.Arc;
+  type Act = DomainTypes.Act;
+  type Session = DomainTypes.Session;
+  type Scene = DomainTypes.Scene;
+  type CampaignSceneListItem = DomainTypes.CampaignSceneListItem;
+  type StatBlockTokenLink = DomainTypes.StatBlockTokenLink;
+  type StatBlockAbilityAssignment = DomainTypes.StatBlockAbilityAssignment;
+  type StatBlockSkillValue = DomainTypes.StatBlockSkillValue;
+  type StatBlockConfig = DomainTypes.StatBlockConfig;
+  type StatBlock = DomainTypes.StatBlock;
+  type DbApi = import('./src/shared/contracts/dbApi').DbApi;
 
   interface Window {
     db: DbApi;
   }
-  // This allows TypeScript to pick up the magic constants that's auto-generated by Forge's Vite
-  // plugin that tells the Electron app where to look for the Vite-bundled app code (depending on
-  // whether you're running in development or production).
+
   const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
   const MAIN_WINDOW_VITE_NAME: string;
 
   namespace NodeJS {
     interface Process {
-      // Used for hot reload after preload scripts.
       viteDevServers: Record<string, import('vite').ViteDevServer>;
     }
   }

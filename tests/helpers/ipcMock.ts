@@ -80,6 +80,7 @@ export function createMockDb(): DbApi {
       moveTo: vi.fn().mockResolvedValue(undefined),
     },
     sessions: {
+      getAllByCampaign: vi.fn().mockResolvedValue([]),
       getAllByAct: vi.fn().mockResolvedValue([]),
       getById: vi.fn().mockResolvedValue(undefined),
       add: vi.fn().mockResolvedValue({ id: 1 } as Session),

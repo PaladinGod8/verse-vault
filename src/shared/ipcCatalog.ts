@@ -1,0 +1,222 @@
+/**
+ * @role IPC metadata catalog
+ * @owns Doc-generation and guard metadata for every registered IPC channel
+ * @seam Shared mapping between IPC constants, preload bridges, and handler files
+ * @calls Shared IPC constants only
+ */
+import { IPC } from './ipcChannels';
+
+export interface IpcCatalogEntry {
+  key: keyof typeof IPC;
+  domain: string;
+  bridge: `window.db.${string}`;
+  handler: string;
+  typeSource: `DbApi.${string}`;
+  note?: string;
+}
+
+const HANDLERS = {
+  verses: 'src/main/ipc/registerVerseHandlers.ts',
+  worlds: 'src/main/ipc/registerWorldHandlers.ts',
+  levels: 'src/main/ipc/registerLevelHandlers.ts',
+  abilities: 'src/main/ipc/registerAbilityHandlers.ts',
+  campaigns: 'src/main/ipc/registerCampaignHandlers.ts',
+  battlemaps: 'src/main/ipc/registerBattleMapHandlers.ts',
+  tokens: 'src/main/ipc/registerTokenHandlers.ts',
+  arcs: 'src/main/ipc/registerArcHandlers.ts',
+  acts: 'src/main/ipc/registerActHandlers.ts',
+  sessions: 'src/main/ipc/registerSessionHandlers.ts',
+  scenes: 'src/main/ipc/registerSceneHandlers.ts',
+  statblocks: 'src/main/ipc/registerStatBlockHandlers.ts',
+} as const;
+
+function entries(
+  domain: IpcCatalogEntry['domain'],
+  handler: string,
+  items: Array<
+    [
+      key: IpcCatalogEntry['key'],
+      bridge: IpcCatalogEntry['bridge'],
+      typeSource: IpcCatalogEntry['typeSource'],
+      note?: string,
+    ]
+  >,
+): IpcCatalogEntry[] {
+  return items.map(([key, bridge, typeSource, note]) => ({
+    key,
+    domain,
+    bridge,
+    handler,
+    typeSource,
+    note,
+  }));
+}
+
+export const IPC_CATALOG: IpcCatalogEntry[] = [
+  ...entries('verses', HANDLERS.verses, [
+    ['VERSES_GET_ALL', 'window.db.verses.getAll', 'DbApi.verses.getAll'],
+    ['VERSES_ADD', 'window.db.verses.add', 'DbApi.verses.add'],
+    ['VERSES_UPDATE', 'window.db.verses.update', 'DbApi.verses.update'],
+    ['VERSES_DELETE', 'window.db.verses.delete', 'DbApi.verses.delete'],
+  ]),
+  ...entries('worlds', HANDLERS.worlds, [
+    ['WORLDS_GET_ALL', 'window.db.worlds.getAll', 'DbApi.worlds.getAll'],
+    ['WORLDS_GET_BY_ID', 'window.db.worlds.getById', 'DbApi.worlds.getById'],
+    ['WORLDS_ADD', 'window.db.worlds.add', 'DbApi.worlds.add'],
+    ['WORLDS_UPDATE', 'window.db.worlds.update', 'DbApi.worlds.update'],
+    ['WORLDS_DELETE', 'window.db.worlds.delete', 'DbApi.worlds.delete'],
+    ['WORLDS_MARK_VIEWED', 'window.db.worlds.markViewed', 'DbApi.worlds.markViewed'],
+    ['WORLDS_IMPORT_IMAGE', 'window.db.worlds.importImage', 'DbApi.worlds.importImage'],
+  ]),
+  ...entries('levels', HANDLERS.levels, [
+    ['LEVELS_GET_ALL_BY_WORLD', 'window.db.levels.getAllByWorld', 'DbApi.levels.getAllByWorld'],
+    ['LEVELS_GET_BY_ID', 'window.db.levels.getById', 'DbApi.levels.getById'],
+    ['LEVELS_ADD', 'window.db.levels.add', 'DbApi.levels.add'],
+    ['LEVELS_UPDATE', 'window.db.levels.update', 'DbApi.levels.update'],
+    ['LEVELS_DELETE', 'window.db.levels.delete', 'DbApi.levels.delete'],
+  ]),
+  ...entries('abilities', HANDLERS.abilities, [
+    [
+      'ABILITIES_GET_ALL_BY_WORLD',
+      'window.db.abilities.getAllByWorld',
+      'DbApi.abilities.getAllByWorld',
+    ],
+    ['ABILITIES_GET_BY_ID', 'window.db.abilities.getById', 'DbApi.abilities.getById'],
+    ['ABILITIES_ADD', 'window.db.abilities.add', 'DbApi.abilities.add'],
+    ['ABILITIES_UPDATE', 'window.db.abilities.update', 'DbApi.abilities.update'],
+    ['ABILITIES_DELETE', 'window.db.abilities.delete', 'DbApi.abilities.delete'],
+    ['ABILITIES_ADD_CHILD', 'window.db.abilities.addChild', 'DbApi.abilities.addChild'],
+    ['ABILITIES_REMOVE_CHILD', 'window.db.abilities.removeChild', 'DbApi.abilities.removeChild'],
+    ['ABILITIES_GET_CHILDREN', 'window.db.abilities.getChildren', 'DbApi.abilities.getChildren'],
+  ]),
+  ...entries('campaigns', HANDLERS.campaigns, [
+    [
+      'CAMPAIGNS_GET_ALL_BY_WORLD',
+      'window.db.campaigns.getAllByWorld',
+      'DbApi.campaigns.getAllByWorld',
+    ],
+    ['CAMPAIGNS_GET_BY_ID', 'window.db.campaigns.getById', 'DbApi.campaigns.getById'],
+    ['CAMPAIGNS_ADD', 'window.db.campaigns.add', 'DbApi.campaigns.add'],
+    ['CAMPAIGNS_UPDATE', 'window.db.campaigns.update', 'DbApi.campaigns.update'],
+    ['CAMPAIGNS_DELETE', 'window.db.campaigns.delete', 'DbApi.campaigns.delete'],
+  ]),
+  ...entries('battlemaps', HANDLERS.battlemaps, [
+    [
+      'BATTLEMAPS_GET_ALL_BY_WORLD',
+      'window.db.battlemaps.getAllByWorld',
+      'DbApi.battlemaps.getAllByWorld',
+    ],
+    ['BATTLEMAPS_GET_BY_ID', 'window.db.battlemaps.getById', 'DbApi.battlemaps.getById'],
+    ['BATTLEMAPS_ADD', 'window.db.battlemaps.add', 'DbApi.battlemaps.add'],
+    ['BATTLEMAPS_UPDATE', 'window.db.battlemaps.update', 'DbApi.battlemaps.update'],
+    ['BATTLEMAPS_DELETE', 'window.db.battlemaps.delete', 'DbApi.battlemaps.delete'],
+  ]),
+  ...entries('tokens', HANDLERS.tokens, [
+    [
+      'TOKENS_GET_ALL_BY_CAMPAIGN',
+      'window.db.tokens.getAllByCampaign',
+      'DbApi.tokens.getAllByCampaign',
+    ],
+    ['TOKENS_GET_BY_ID', 'window.db.tokens.getById', 'DbApi.tokens.getById'],
+    ['TOKENS_ADD', 'window.db.tokens.add', 'DbApi.tokens.add'],
+    ['TOKENS_UPDATE', 'window.db.tokens.update', 'DbApi.tokens.update'],
+    ['TOKENS_DELETE', 'window.db.tokens.delete', 'DbApi.tokens.delete'],
+    ['TOKENS_GET_ALL_BY_WORLD', 'window.db.tokens.getAllByWorld', 'DbApi.tokens.getAllByWorld'],
+    ['TOKENS_IMPORT_IMAGE', 'window.db.tokens.importImage', 'DbApi.tokens.importImage'],
+    ['TOKENS_MOVE_TO_WORLD', 'window.db.tokens.moveToWorld', 'DbApi.tokens.moveToWorld'],
+    ['TOKENS_MOVE_TO_CAMPAIGN', 'window.db.tokens.moveToCampaign', 'DbApi.tokens.moveToCampaign'],
+  ]),
+  ...entries('arcs', HANDLERS.arcs, [
+    ['ARCS_GET_ALL_BY_CAMPAIGN', 'window.db.arcs.getAllByCampaign', 'DbApi.arcs.getAllByCampaign'],
+    ['ARCS_GET_BY_ID', 'window.db.arcs.getById', 'DbApi.arcs.getById'],
+    ['ARCS_ADD', 'window.db.arcs.add', 'DbApi.arcs.add'],
+    ['ARCS_UPDATE', 'window.db.arcs.update', 'DbApi.arcs.update'],
+    ['ARCS_DELETE', 'window.db.arcs.delete', 'DbApi.arcs.delete'],
+  ]),
+  ...entries('acts', HANDLERS.acts, [
+    ['ACTS_GET_ALL_BY_ARC', 'window.db.acts.getAllByArc', 'DbApi.acts.getAllByArc'],
+    ['ACTS_GET_ALL_BY_CAMPAIGN', 'window.db.acts.getAllByCampaign', 'DbApi.acts.getAllByCampaign'],
+    ['ACTS_GET_BY_ID', 'window.db.acts.getById', 'DbApi.acts.getById'],
+    ['ACTS_ADD', 'window.db.acts.add', 'DbApi.acts.add'],
+    ['ACTS_UPDATE', 'window.db.acts.update', 'DbApi.acts.update'],
+    ['ACTS_DELETE', 'window.db.acts.delete', 'DbApi.acts.delete'],
+    ['ACTS_MOVE_TO_ARC', 'window.db.acts.moveTo', 'DbApi.acts.moveTo'],
+  ]),
+  ...entries('sessions', HANDLERS.sessions, [
+    [
+      'SESSIONS_GET_ALL_BY_CAMPAIGN',
+      'window.db.sessions.getAllByCampaign',
+      'DbApi.sessions.getAllByCampaign',
+    ],
+    ['SESSIONS_GET_ALL_BY_ACT', 'window.db.sessions.getAllByAct', 'DbApi.sessions.getAllByAct'],
+    ['SESSIONS_GET_BY_ID', 'window.db.sessions.getById', 'DbApi.sessions.getById'],
+    ['SESSIONS_ADD', 'window.db.sessions.add', 'DbApi.sessions.add'],
+    ['SESSIONS_UPDATE', 'window.db.sessions.update', 'DbApi.sessions.update'],
+    ['SESSIONS_DELETE', 'window.db.sessions.delete', 'DbApi.sessions.delete'],
+    ['SESSIONS_MOVE_TO_ACT', 'window.db.sessions.moveTo', 'DbApi.sessions.moveTo'],
+  ]),
+  ...entries('scenes', HANDLERS.scenes, [
+    [
+      'SCENES_GET_ALL_BY_CAMPAIGN',
+      'window.db.scenes.getAllByCampaign',
+      'DbApi.scenes.getAllByCampaign',
+    ],
+    [
+      'SCENES_GET_ALL_BY_SESSION',
+      'window.db.scenes.getAllBySession',
+      'DbApi.scenes.getAllBySession',
+    ],
+    ['SCENES_GET_BY_ID', 'window.db.scenes.getById', 'DbApi.scenes.getById'],
+    ['SCENES_ADD', 'window.db.scenes.add', 'DbApi.scenes.add'],
+    ['SCENES_UPDATE', 'window.db.scenes.update', 'DbApi.scenes.update'],
+    ['SCENES_DELETE', 'window.db.scenes.delete', 'DbApi.scenes.delete'],
+    ['SCENES_MOVE_TO_SESSION', 'window.db.scenes.moveTo', 'DbApi.scenes.moveTo'],
+  ]),
+  ...entries('statblocks', HANDLERS.statblocks, [
+    [
+      'STATBLOCKS_GET_ALL_BY_WORLD',
+      'window.db.statblocks.getAllByWorld',
+      'DbApi.statblocks.getAllByWorld',
+    ],
+    [
+      'STATBLOCKS_GET_ALL_BY_CAMPAIGN',
+      'window.db.statblocks.getAllByCampaign',
+      'DbApi.statblocks.getAllByCampaign',
+    ],
+    ['STATBLOCKS_GET_BY_ID', 'window.db.statblocks.getById', 'DbApi.statblocks.getById'],
+    ['STATBLOCKS_ADD', 'window.db.statblocks.add', 'DbApi.statblocks.add'],
+    ['STATBLOCKS_UPDATE', 'window.db.statblocks.update', 'DbApi.statblocks.update'],
+    ['STATBLOCKS_DELETE', 'window.db.statblocks.delete', 'DbApi.statblocks.delete'],
+    ['STATBLOCKS_LINK_TOKEN', 'window.db.statblocks.linkToken', 'DbApi.statblocks.linkToken'],
+    ['STATBLOCKS_UNLINK_TOKEN', 'window.db.statblocks.unlinkToken', 'DbApi.statblocks.unlinkToken'],
+    [
+      'STATBLOCKS_GET_LINKED_TOKENS',
+      'window.db.statblocks.getLinkedTokens',
+      'DbApi.statblocks.getLinkedTokens',
+    ],
+    [
+      'STATBLOCKS_GET_LINKED_STATBLOCK',
+      'window.db.statblocks.getLinkedStatblock',
+      'DbApi.statblocks.getLinkedStatblock',
+    ],
+    [
+      'STATBLOCKS_ATTACH_ABILITY',
+      'window.db.statblocks.attachAbility',
+      'DbApi.statblocks.attachAbility',
+    ],
+    [
+      'STATBLOCKS_DETACH_ABILITY',
+      'window.db.statblocks.detachAbility',
+      'DbApi.statblocks.detachAbility',
+    ],
+    [
+      'STATBLOCKS_LIST_ABILITIES',
+      'window.db.statblocks.listAbilities',
+      'DbApi.statblocks.listAbilities',
+    ],
+  ]),
+];
+
+export const IPC_CATALOG_BY_KEY = Object.fromEntries(
+  IPC_CATALOG.map((entry) => [entry.key, entry]),
+) as Record<IpcCatalogEntry['key'], IpcCatalogEntry>;

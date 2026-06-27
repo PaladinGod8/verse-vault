@@ -370,4 +370,39 @@ describe('preload', () => {
       );
     }
   });
+
+  it('forwards sessions.getAllByCampaign to SESSIONS_GET_ALL_BY_CAMPAIGN', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    expect(api.sessions.getAllByCampaign).toBeTypeOf('function');
+    await api.sessions.getAllByCampaign?.(27);
+
+    expect(invokeMock).toHaveBeenCalledWith(
+      IPC.SESSIONS_GET_ALL_BY_CAMPAIGN,
+      27,
+    );
+  });
+
+  it('forwards tokens.update grid_type through the shared contract', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.tokens.update(12, { grid_type: 'hex' });
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.TOKENS_UPDATE, 12, {
+      grid_type: 'hex',
+    });
+  });
+
+  it('forwards worlds.update config through the shared contract', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.worlds.update(6, { config: '{"resources":[]}' });
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.WORLDS_UPDATE, 6, {
+      config: '{"resources":[]}',
+    });
+  });
 });
