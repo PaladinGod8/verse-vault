@@ -78,13 +78,13 @@ interface AppSettingsConfig {
   theme?: 'light' | 'dark' | 'custom';
   cardSize?: 'small' | 'medium' | 'large';
   cardDisplays?: {
-    characterCard?: { width?: number; height?: number; lockAspectRatio?: boolean };
-    factionCard?: { width?: number; height?: number; lockAspectRatio?: boolean };
-    characterDetail?: { width?: number; height?: number; lockAspectRatio?: boolean };
-    factionDetail?: { width?: number; height?: number; lockAspectRatio?: boolean };
+    characterCard?: { width?: number; height?: number; lockAspectRatio?: boolean; };
+    factionCard?: { width?: number; height?: number; lockAspectRatio?: boolean; };
+    characterDetail?: { width?: number; height?: number; lockAspectRatio?: boolean; };
+    factionDetail?: { width?: number; height?: number; lockAspectRatio?: boolean; };
   };
   themeColors?: {
-    primary?: { palette: string; customHex?: string };
+    primary?: { palette: string; customHex?: string; };
   };
 }
 ```

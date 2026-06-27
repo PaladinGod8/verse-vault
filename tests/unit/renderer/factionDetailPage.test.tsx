@@ -65,6 +65,35 @@ describe('FactionDetailPage', () => {
     expect(screen.getByText('Fort Fabalta, Occult')).toBeInTheDocument();
   });
 
+  it('keeps all faction wiki sections and field labels visible even when values are empty', async () => {
+    const faction = buildFaction({
+      id: 5,
+      world_id: 1,
+      name: 'Cult of Contagion',
+      wiki_summary: JSON.stringify({}),
+    });
+    (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
+    (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (mockDb.factionTypes.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Cult of Contagion' })).toBeInTheDocument();
+    expect(screen.getByText('Basic Information')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.queryByText('Category')).not.toBeInTheDocument();
+    expect(screen.queryByText('Information')).not.toBeInTheDocument();
+    expect(screen.getByText('IPA Pronunciation')).toBeInTheDocument();
+    expect(screen.getByText('Headquarters')).toBeInTheDocument();
+    expect(screen.getByText('Current Total Members')).toBeInTheDocument();
+    expect(screen.getByText('Founded')).toBeInTheDocument();
+    expect(screen.getByText('Disbanded')).toBeInTheDocument();
+    expect(screen.getByText('Aliases')).toBeInTheDocument();
+    expect(screen.getByText('Locations')).toBeInTheDocument();
+  });
+
   it('renders parent organization and children as clickable links', async () => {
     const parent = buildFaction({
       id: 1,

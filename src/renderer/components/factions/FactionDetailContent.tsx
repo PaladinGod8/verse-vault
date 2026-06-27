@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { FactionSections, FactionWikiSummary } from '../../../shared/contracts/factionTypes';
-import { FACTION_BASIC_INFO_FIELDS } from '../../lib/factionWikiSummaryFieldConfig';
 import { buildDetailImageStyle } from '../../lib/cardDisplaySettings';
+import { FACTION_BASIC_INFO_FIELDS } from '../../lib/factionWikiSummaryFieldConfig';
+import { WikiDetailListSection, WikiDetailTableSection } from '../wiki/WikiDetailSections';
 
 type FactionMemberWithCharacterName = FactionMember & { character_name: string; };
 
@@ -47,6 +48,26 @@ export default function FactionDetailContent({
   imageDimensions = { width: 96, height: 96 },
 }: FactionDetailContentProps) {
   const wikiSummaryRecord = wikiSummary as Record<string, string | null | undefined>;
+  const basicInfoRows = [
+    { label: 'Type', value: typeName },
+    {
+      label: 'Parent Organization',
+      value: parentFaction
+        ? (
+          <Link
+            to={`/world/${worldId}/factions/${parentFaction.id}`}
+            className='font-medium text-slate-900 hover:underline'
+          >
+            {parentFaction.name}
+          </Link>
+        )
+        : 'None (top-level)',
+    },
+    ...FACTION_BASIC_INFO_FIELDS.map(({ key, label }) => ({
+      label,
+      value: wikiSummaryRecord[key] ?? '',
+    })),
+  ];
 
   return (
     <section className='space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm'>
@@ -80,41 +101,15 @@ export default function FactionDetailContent({
         </button>
       </div>
 
-      <div>
-        <h2 className='text-sm font-semibold text-slate-900'>Basic Information</h2>
-        <dl className='mt-2 grid grid-cols-1 gap-2 text-sm text-slate-600 sm:grid-cols-2'>
-          <div>
-            <dt className='font-medium text-slate-700'>Type</dt>
-            <dd>{typeName}</dd>
-          </div>
-          <div>
-            <dt className='font-medium text-slate-700'>Parent Organization</dt>
-            <dd>
-              {parentFaction
-                ? (
-                  <Link
-                    to={`/world/${worldId}/factions/${parentFaction.id}`}
-                    className='font-medium text-slate-900 hover:underline'
-                  >
-                    {parentFaction.name}
-                  </Link>
-                )
-                : 'None (top-level)'}
-            </dd>
-          </div>
-          {FACTION_BASIC_INFO_FIELDS.filter(({ key }) => wikiSummaryRecord[key]).map(
-            ({ key, label }) => (
-              <div key={key}>
-                <dt className='font-medium text-slate-700'>{label}</dt>
-                <dd>{wikiSummaryRecord[key]}</dd>
-              </div>
-            ),
-          )}
-        </dl>
-      </div>
-
-      <StringListSection title='Aliases' items={wikiSummary.aliases} />
-      <StringListSection title='Locations' items={wikiSummary.locations} />
+      <WikiDetailTableSection title='Basic Information' rows={basicInfoRows} />
+      <WikiDetailListSection
+        title='Aliases'
+        items={(wikiSummary.aliases ?? []).map((item) => item)}
+      />
+      <WikiDetailListSection
+        title='Locations'
+        items={(wikiSummary.locations ?? []).map((item) => item)}
+      />
 
       <div className='space-y-3'>
         {SECTION_LABELS.filter(({ key }) => sections[key]).map(({ key, label }) => (
@@ -149,20 +144,6 @@ export default function FactionDetailContent({
         )
         : null}
     </section>
-  );
-}
-
-function StringListSection({ title, items }: { title: string; items?: string[]; }) {
-  if (!items || items.length === 0) {
-    return null;
-  }
-  return (
-    <div>
-      <h2 className='text-sm font-semibold text-slate-900'>{title}</h2>
-      <ul className='mt-1 list-inside list-disc text-sm text-slate-600'>
-        {items.map((item, index) => <li key={index}>{item}</li>)}
-      </ul>
-    </div>
   );
 }
 

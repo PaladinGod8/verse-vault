@@ -379,7 +379,9 @@ function hslToHex({ hue, saturation, lightness }: HslColor): string {
 }
 
 function rgbToHex(red: number, green: number, blue: number): string {
-  return `#${[red, green, blue]
-    .map((channel) => Math.round(clamp(channel * 255, 0, 255)).toString(16).padStart(2, '0'))
-    .join('')}`;
+  return `#${
+    [red, green, blue]
+      .map((channel) => Math.round(clamp(channel * 255, 0, 255)).toString(16).padStart(2, '0'))
+      .join('')
+  }`;
 }

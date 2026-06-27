@@ -93,7 +93,9 @@ export function buildCardMediaStyle(dimensions: Pick<ResolvedCardDisplayDimensio
   } as const;
 }
 
-export function buildDetailImageStyle(dimensions: Pick<ResolvedCardDisplayDimensions, 'width' | 'height'>) {
+export function buildDetailImageStyle(
+  dimensions: Pick<ResolvedCardDisplayDimensions, 'width' | 'height'>,
+) {
   return {
     width: `${dimensions.width}px`,
     height: `${dimensions.height}px`,

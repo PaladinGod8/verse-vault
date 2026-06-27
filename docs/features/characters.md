@@ -46,7 +46,9 @@ and any Wiki Summary value), and are listed as cards.
 ### Character detail page (`/world/:id/characters/:characterId`)
 
 - Read-first article view: image, profile, the four fixed text sections, and the
-  parsed Main Epithet from Wiki Summary, loaded via `window.db.characters.getById`.
+  full Wiki Summary groups loaded via `window.db.characters.getById`.
+- Every standard Wiki Summary group stays visible on the detail page even when some or
+  all values are empty; table cells remain blank instead of the field disappearing.
 - A "Factions" section lists every faction membership for this character (role +
   faction name, loaded via `window.db.factionMembers.getAllByCharacter`), with each
   faction name as a link to `/world/:id/factions/:factionId`. At most one membership is

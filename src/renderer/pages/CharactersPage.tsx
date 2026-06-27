@@ -9,8 +9,8 @@ import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useCharacterCrud } from '../hooks/useCharacterCrud';
 import { useWorldCharactersData } from '../hooks/useWorldCharactersData';
-import { characterMatchesQuery } from '../lib/characterSearch';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
+import { characterMatchesQuery } from '../lib/characterSearch';
 import { parsePositiveIntParam } from '../lib/routeParams';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 

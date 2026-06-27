@@ -1,16 +1,13 @@
 import {
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
-import type {
-  AppSettingsConfig,
-  AppThemePreference,
-} from '../../shared/contracts/settingsTypes';
+import type { AppSettingsConfig, AppThemePreference } from '../../shared/contracts/settingsTypes';
 import {
   applyThemeToDocument,
   mergeAppSettingsConfig,

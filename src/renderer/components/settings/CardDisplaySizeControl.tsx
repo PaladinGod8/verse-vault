@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  type ChangeEvent,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { AppCardDisplaySurface } from '../../../shared/contracts/settingsTypes';
 import {
   applyAspectRatio,
@@ -34,12 +40,14 @@ export default function CardDisplaySizeControl({
 }: CardDisplaySizeControlProps) {
   const [draft, setDraft] = useState<DraftDimensions>({ width, height, lockAspectRatio });
   const latestDraftRef = useRef(draft);
-  const dragStateRef = useRef<{
-    startX: number;
-    startY: number;
-    startWidth: number;
-    startHeight: number;
-  } | null>(null);
+  const dragStateRef = useRef<
+    {
+      startX: number;
+      startY: number;
+      startWidth: number;
+      startHeight: number;
+    } | null
+  >(null);
 
   useEffect(() => {
     latestDraftRef.current = draft;
@@ -177,7 +185,10 @@ export default function CardDisplaySizeControl({
       <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr),220px]'>
         <div className='grid gap-4 sm:grid-cols-2'>
           <div className='space-y-1'>
-            <label htmlFor={`${titleSlug}-width`} className='block text-sm font-medium text-slate-700'>
+            <label
+              htmlFor={`${titleSlug}-width`}
+              className='block text-sm font-medium text-slate-700'
+            >
               {`${title} width`}
             </label>
             <input
@@ -193,7 +204,10 @@ export default function CardDisplaySizeControl({
           </div>
 
           <div className='space-y-1'>
-            <label htmlFor={`${titleSlug}-height`} className='block text-sm font-medium text-slate-700'>
+            <label
+              htmlFor={`${titleSlug}-height`}
+              className='block text-sm font-medium text-slate-700'
+            >
               {`${title} height`}
             </label>
             <input

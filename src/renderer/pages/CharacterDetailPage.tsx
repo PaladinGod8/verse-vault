@@ -5,6 +5,7 @@ import type {
   CharacterWikiSummary,
 } from '../../shared/contracts/characterTypes';
 import CharacterForm from '../components/characters/CharacterForm';
+import CharacterWikiSummaryDetail from '../components/characters/CharacterWikiSummaryDetail';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -163,17 +164,7 @@ export default function CharacterDetailPage() {
                     : null
                 )}
               </div>
-
-              {wikiSummary.biographic?.mainEpithet
-                ? (
-                  <div>
-                    <h2 className='text-sm font-semibold text-slate-900'>Main Epithet</h2>
-                    <p className='mt-1 text-sm text-slate-600'>
-                      {wikiSummary.biographic.mainEpithet}
-                    </p>
-                  </div>
-                )
-                : null}
+              <CharacterWikiSummaryDetail wikiSummary={wikiSummary} />
 
               <div>
                 <h2 className='text-sm font-semibold text-slate-900'>Factions</h2>

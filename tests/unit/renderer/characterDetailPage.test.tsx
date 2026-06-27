@@ -62,6 +62,37 @@ describe('CharacterDetailPage', () => {
     expect(screen.getByText('Outcasted from the Igni tribe.')).toBeInTheDocument();
   });
 
+  it('keeps all wiki summary groups and field labels visible even when values are empty', async () => {
+    const character = buildCharacter({
+      id: 5,
+      world_id: 1,
+      name: 'Ledros Igni',
+      wiki_summary: JSON.stringify({}),
+    });
+    (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Ledros Igni' })).toBeInTheDocument();
+    expect(screen.getByText('Biographic Information')).toBeInTheDocument();
+    expect(screen.getByText('Birth Name')).toBeInTheDocument();
+    expect(screen.queryByText('Category')).not.toBeInTheDocument();
+    expect(screen.queryByText('Information')).not.toBeInTheDocument();
+    expect(screen.getByText('Aliases')).toBeInTheDocument();
+    expect(screen.getByText('Titles')).toBeInTheDocument();
+    expect(screen.getByText('Personal Description')).toBeInTheDocument();
+    expect(screen.getByText('Birth Date')).toBeInTheDocument();
+    expect(screen.getByText('Ages & Timeline')).toBeInTheDocument();
+    expect(screen.getByText('Conditions')).toBeInTheDocument();
+    expect(screen.getByText('Status & Demographics')).toBeInTheDocument();
+    expect(screen.getByText('Current Vehicle')).toBeInTheDocument();
+    expect(screen.getByText('Educational History')).toBeInTheDocument();
+    expect(screen.getByText('Occupational History')).toBeInTheDocument();
+    expect(screen.getByText('Trivia')).toBeInTheDocument();
+    expect(screen.getByText('Apparel & Accessories')).toBeInTheDocument();
+  });
+
   it('shows faction memberships with a link to each faction, and lets you set the primary one', async () => {
     const character = buildCharacter({ id: 5, world_id: 1, name: 'Ledros Igni' });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);

@@ -1,6 +1,6 @@
 import type {
-  AppCardSize,
   AppCardDisplaySurface,
+  AppCardSize,
   AppSettingsConfig,
   AppThemePreference,
 } from '../../../shared/contracts/settingsTypes';
@@ -8,10 +8,7 @@ import {
   resolveCardDisplayDimensions,
   updateCardDisplaySettings,
 } from '../../lib/cardDisplaySettings';
-import {
-  buildCustomThemeCssVariables,
-  resolveThemeColorHex,
-} from '../../lib/themeCustomization';
+import { buildCustomThemeCssVariables, resolveThemeColorHex } from '../../lib/themeCustomization';
 import CardDisplaySizeControl from './CardDisplaySizeControl';
 import ThemeColorRoleControl from './ThemeColorRoleControl';
 
@@ -125,8 +122,8 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
         <div className='space-y-1'>
           <h3 className='text-base font-semibold text-slate-900'>Card image sizing</h3>
           <p className='text-sm text-slate-600'>
-            Fine-tune image framing for cards and detail pages. Drag preview handle or enter
-            exact dimensions.
+            Fine-tune image framing for cards and detail pages. Drag preview handle or enter exact
+            dimensions.
           </p>
         </div>
 
@@ -160,8 +157,8 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
               <div className='space-y-1'>
                 <h3 className='text-base font-semibold text-slate-900'>Theme preview</h3>
                 <p className='text-sm text-slate-600'>
-                  Pick one color. Verse Vault keeps dark background and derives matching support
-                  and accent shades around it.
+                  Pick one color. Verse Vault keeps dark background and derives matching support and
+                  accent shades around it.
                 </p>
               </div>
 
@@ -202,22 +199,18 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
                   <div className='space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4'>
                     <h4 className='text-sm font-semibold text-slate-900'>Component sample</h4>
                     <p className='text-sm text-slate-700'>
-                      Preview body copy with
-                      {' '}
+                      Preview body copy with{' '}
                       <span style={{ color: previewPrimary }} className='font-semibold'>
                         primary
                       </span>
-                      ,
-                      {' '}
+                      ,{' '}
                       <span style={{ color: previewSecondary }} className='font-semibold'>
                         secondary
                       </span>
-                      , and
-                      {' '}
+                      , and{' '}
                       <span style={{ color: previewAccent }} className='font-semibold'>
                         accent
-                      </span>
-                      {' '}
+                      </span>{' '}
                       emphasis.
                     </p>
                   </div>
@@ -253,8 +246,8 @@ export default function DisplaySettingsSection({ config, onChange }: DisplaySett
               <div className='space-y-1'>
                 <h3 className='text-base font-semibold text-slate-900'>Theme color</h3>
                 <p className='text-sm text-slate-600'>
-                  Choose preset palette or custom hex. Other component colors derive from this
-                  seed automatically.
+                  Choose preset palette or custom hex. Other component colors derive from this seed
+                  automatically.
                 </p>
               </div>
 

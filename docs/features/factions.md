@@ -64,6 +64,8 @@ characters.
   faction members (joined with character names).
 - Basic Information: Type (resolved name), Parent Organization (clickable link to the
   parent's detail page, or "None (top-level)"), and the Wiki Summary fields.
+- Every standard Wiki Summary field/group stays visible on the detail page even when
+  values are empty; rows remain with blank values instead of disappearing.
 - Aliases / Locations lists, then the four text sections (only rendered when non-empty).
 - Founders / Leadership / Members are rendered as three separate grouped lists, derived
   from `faction_members.role`: literal `'founder'` rows under Founders, literal

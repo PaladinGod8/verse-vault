@@ -8,8 +8,8 @@ import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useFactionCrud } from '../hooks/useFactionCrud';
-import { parsePositiveIntParam } from '../lib/routeParams';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
+import { parsePositiveIntParam } from '../lib/routeParams';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 type FactionMemberWithCharacterName = FactionMember & { character_name: string; };
