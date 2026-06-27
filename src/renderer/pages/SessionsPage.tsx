@@ -1,217 +1,35 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import MoveSessionDialog from '../components/sessions/MoveSessionDialog';
 import SessionForm from '../components/sessions/SessionForm';
+import SessionsListSection from '../components/sessions/SessionsListSection';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { sortSessionsByOrder, useActSessionsData } from '../hooks/useActSessionsData';
+import { parsePositiveIntParam } from '../lib/routeParams';
 
 type AddSessionInput = Parameters<DbApi['sessions']['add']>[0];
-
-const sortSessionsByOrder = (sessions: Session[]) =>
-  [...sessions].sort(
-    (left, right) => left.sort_order - right.sort_order || left.id - right.id,
-  );
-
-const formatPlannedAt = (plannedAt: string | null): string => {
-  if (!plannedAt) {
-    return '-';
-  }
-
-  const normalized = plannedAt.includes('T')
-    ? plannedAt
-    : `${plannedAt.replace(' ', 'T')}Z`;
-  const parsed = new Date(normalized);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return plannedAt;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(parsed);
-};
-
-type SortableSessionRowProps = {
-  session: Session;
-  sequence: number;
-  worldId: number | null;
-  campaignId: number | null;
-  arcId: number | null;
-  actId: number | null;
-  deletingId: number | null;
-  isPersistingOrder: boolean;
-  onEdit: (session: Session) => void;
-  onDelete: (session: Session) => void;
-  onMove: (session: Session) => void;
-};
-
-function SortableSessionRow({
-  session,
-  sequence,
-  worldId,
-  campaignId,
-  arcId,
-  actId,
-  deletingId,
-  isPersistingOrder,
-  onEdit,
-  onDelete,
-  onMove,
-}: SortableSessionRowProps) {
-  const isDeleting = deletingId === session.id;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: session.id,
-    disabled: isDeleting || isPersistingOrder,
-  });
-
-  return (
-    <tr
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={`border-b border-slate-100 last:border-0 ${isDragging ? 'bg-slate-50' : ''}`}
-    >
-      <td className='w-28 px-4 py-3 text-slate-600'>
-        <div className='flex items-center gap-2'>
-          <button
-            type='button'
-            ref={setActivatorNodeRef}
-            {...attributes}
-            {...listeners}
-            className='inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60'
-            aria-label={`Reorder session ${session.name}`}
-            disabled={isDeleting || isPersistingOrder}
-          >
-            ::
-          </button>
-          <span className='tabular-nums'>{sequence}</span>
-        </div>
-      </td>
-      <td className='px-4 py-3 font-medium'>{session.name}</td>
-      <td className='px-4 py-3 text-slate-500'>{session.notes ?? '-'}</td>
-      <td className='px-4 py-3 text-slate-500'>
-        {formatPlannedAt(session.planned_at)}
-      </td>
-      <td className='px-4 py-3'>
-        <div className='flex gap-3'>
-          <Link
-            to={`/world/${worldId}/campaign/${campaignId}/arc/${arcId}/act/${actId}/session/${session.id}/scenes`}
-            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
-          >
-            Scenes
-          </Link>
-          <button
-            type='button'
-            onClick={() => onEdit(session)}
-            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
-            disabled={isDeleting}
-          >
-            Edit
-          </button>
-          <button
-            type='button'
-            onClick={() => onMove(session)}
-            disabled={isDeleting || isPersistingOrder}
-            className='text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            Move
-          </button>
-          <button
-            type='button'
-            onClick={() => onDelete(session)}
-            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-}
 
 export default function SessionsPage() {
   const toast = useToast();
   const { id, campaignId, arcId, actId } = useParams();
 
-  const worldId = useMemo(() => {
-    if (!id) {
-      return null;
-    }
-    const parsed = Number(id);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [id]);
+  const worldId = useMemo(() => parsePositiveIntParam(id), [id]);
+  const parsedCampaignId = useMemo(() => parsePositiveIntParam(campaignId), [campaignId]);
+  const parsedArcId = useMemo(() => parsePositiveIntParam(arcId), [arcId]);
+  const parsedActId = useMemo(() => parsePositiveIntParam(actId), [actId]);
 
-  const parsedCampaignId = useMemo(() => {
-    if (!campaignId) {
-      return null;
-    }
-    const parsed = Number(campaignId);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [campaignId]);
-
-  const parsedArcId = useMemo(() => {
-    if (!arcId) {
-      return null;
-    }
-    const parsed = Number(arcId);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [arcId]);
-
-  const parsedActId = useMemo(() => {
-    if (!actId) {
-      return null;
-    }
-    const parsed = Number(actId);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [actId]);
-
-  const [act, setAct] = useState<Act | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { act, sessions, isLoading, error, setSessions } = useActSessionsData(
+    worldId,
+    parsedCampaignId,
+    parsedArcId,
+    parsedActId,
+  );
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
@@ -235,62 +53,7 @@ export default function SessionsPage() {
   );
 
   useEffect(() => {
-    let isMounted = true;
-
-    if (
-      worldId === null
-      || parsedCampaignId === null
-      || parsedArcId === null
-      || parsedActId === null
-    ) {
-      setAct(null);
-      setSessions([]);
-      setError('Invalid world, campaign, arc, or act id.');
-      setReorderError(null);
-      setIsLoading(false);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setReorderError(null);
-
-      try {
-        const existingAct = await window.db.acts.getById(parsedActId);
-        if (!existingAct) {
-          if (isMounted) {
-            setAct(null);
-            setError('Act not found.');
-          }
-          return;
-        }
-
-        const sessionsList = await window.db.sessions.getAllByAct(parsedActId);
-        if (isMounted) {
-          setAct(existingAct);
-          setSessions(sortSessionsByOrder(sessionsList));
-        }
-      } catch {
-        if (isMounted) {
-          setAct(null);
-          setSessions([]);
-          setError('Unable to load sessions right now.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadData();
-
-    return () => {
-      isMounted = false;
-    };
+    setReorderError(null);
   }, [worldId, parsedCampaignId, parsedArcId, parsedActId]);
 
   const handleCreateSession = async (data: AddSessionInput) => {
@@ -324,14 +87,11 @@ export default function SessionsPage() {
     const { name, notes, planned_at } = data;
 
     try {
-      const updatedSession = await window.db.sessions.update(
-        editingSession.id,
-        {
-          name,
-          notes,
-          planned_at,
-        },
-      );
+      const updatedSession = await window.db.sessions.update(editingSession.id, {
+        name,
+        notes,
+        planned_at,
+      });
       setReorderError(null);
       setSessions((prev) =>
         sortSessionsByOrder(
@@ -430,12 +190,8 @@ export default function SessionsPage() {
       return;
     }
 
-    const oldIndex = sortedSessions.findIndex(
-      (session) => session.id === activeId,
-    );
-    const newIndex = sortedSessions.findIndex(
-      (session) => session.id === overId,
-    );
+    const oldIndex = sortedSessions.findIndex((session) => session.id === activeId);
+    const newIndex = sortedSessions.findIndex((session) => session.id === overId);
     if (oldIndex < 0 || newIndex < 0) {
       return;
     }
@@ -444,14 +200,9 @@ export default function SessionsPage() {
     const previousSortOrderById = new Map(
       previousSessions.map((session) => [session.id, session.sort_order]),
     );
-    const reorderedSessions = arrayMove(
-      previousSessions,
-      oldIndex,
-      newIndex,
-    ).map((session, index) => ({
-      ...session,
-      sort_order: index,
-    }));
+    const reorderedSessions = arrayMove(previousSessions, oldIndex, newIndex).map(
+      (session, index) => ({ ...session, sort_order: index }),
+    );
     const sessionsWithSortOrderChanges = reorderedSessions.filter(
       (session) => previousSortOrderById.get(session.id) !== session.sort_order,
     );
@@ -534,103 +285,29 @@ export default function SessionsPage() {
             : null}
         </header>
 
-        {isLoading
-          ? (
-            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
-              Loading sessions...
-            </section>
-          )
-          : null}
-
-        {!isLoading && error
-          ? (
-            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
-              {error}
-            </section>
-          )
-          : null}
-
-        {!isLoading && !error && reorderError
-          ? (
-            <section className='rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm'>
-              {reorderError}
-            </section>
-          )
-          : null}
-
-        {!isLoading && !error && sessions.length === 0
-          ? (
-            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
-              <p className='text-sm text-slate-600'>No sessions yet.</p>
-            </section>
-          )
-          : null}
-
-        {!isLoading && !error && sessions.length > 0
-          ? (
-            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={(event) => {
-                  void handleReorderSessions(event);
-                }}
-              >
-                <table className='w-full text-sm text-slate-700'>
-                  <thead>
-                    <tr className='border-b border-slate-200'>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Order
-                      </th>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Name
-                      </th>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Notes
-                      </th>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Planned
-                      </th>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <SortableContext
-                    items={sortedSessions.map((session) => session.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <tbody>
-                      {sortedSessions.map((session, index) => (
-                        <SortableSessionRow
-                          key={session.id}
-                          session={session}
-                          sequence={index + 1}
-                          worldId={worldId}
-                          campaignId={parsedCampaignId}
-                          arcId={parsedArcId}
-                          actId={parsedActId}
-                          deletingId={deletingId}
-                          isPersistingOrder={isPersistingOrder}
-                          onEdit={(selectedSession) => {
-                            setIsCreateOpen(false);
-                            setEditingSession(selectedSession);
-                          }}
-                          onDelete={(selectedSession) => {
-                            handleRequestDeleteSession(selectedSession);
-                          }}
-                          onMove={(selectedSession) => {
-                            setMovingSession(selectedSession);
-                          }}
-                        />
-                      ))}
-                    </tbody>
-                  </SortableContext>
-                </table>
-              </DndContext>
-            </section>
-          )
-          : null}
+        <SessionsListSection
+          isLoading={isLoading}
+          error={error}
+          reorderError={reorderError}
+          sessions={sessions}
+          sortedSessions={sortedSessions}
+          sensors={sensors}
+          worldId={worldId}
+          campaignId={parsedCampaignId}
+          arcId={parsedArcId}
+          actId={parsedActId}
+          deletingId={deletingId}
+          isPersistingOrder={isPersistingOrder}
+          onDragEnd={(event) => {
+            void handleReorderSessions(event);
+          }}
+          onEdit={(selectedSession) => {
+            setIsCreateOpen(false);
+            setEditingSession(selectedSession);
+          }}
+          onDelete={handleRequestDeleteSession}
+          onMove={setMovingSession}
+        />
       </main>
 
       {isCreateOpen && parsedActId !== null

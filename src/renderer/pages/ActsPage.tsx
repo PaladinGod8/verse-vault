@@ -1,178 +1,31 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ActForm from '../components/acts/ActForm';
+import ActsListSection from '../components/acts/ActsListSection';
 import MoveActDialog from '../components/acts/MoveActDialog';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
-
-const sortActsByOrder = (acts: Act[]) =>
-  [...acts].sort(
-    (left, right) => left.sort_order - right.sort_order || left.id - right.id,
-  );
-
-type SortableActRowProps = {
-  act: Act;
-  sequence: number;
-  worldId: number | null;
-  campaignId: number | null;
-  arcId: number | null;
-  deletingId: number | null;
-  isPersistingOrder: boolean;
-  onEdit: (act: Act) => void;
-  onDelete: (act: Act) => void;
-  onMove: (act: Act) => void;
-};
-
-function SortableActRow({
-  act,
-  sequence,
-  worldId,
-  campaignId,
-  arcId,
-  deletingId,
-  isPersistingOrder,
-  onEdit,
-  onDelete,
-  onMove,
-}: SortableActRowProps) {
-  const isDeleting = deletingId === act.id;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: act.id,
-    disabled: isDeleting || isPersistingOrder,
-  });
-
-  return (
-    <tr
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={`border-b border-slate-100 last:border-0 ${isDragging ? 'bg-slate-50' : ''}`}
-    >
-      <td className='w-28 px-4 py-3 text-slate-600'>
-        <div className='flex items-center gap-2'>
-          <button
-            type='button'
-            ref={setActivatorNodeRef}
-            {...attributes}
-            {...listeners}
-            className='inline-flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded border border-slate-300 text-xs text-slate-500 transition hover:border-slate-400 hover:text-slate-700 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60'
-            aria-label={`Reorder act ${act.name}`}
-            disabled={isDeleting || isPersistingOrder}
-          >
-            ::
-          </button>
-          <span className='tabular-nums'>{sequence}</span>
-        </div>
-      </td>
-      <td className='px-4 py-3 font-medium'>{act.name}</td>
-      <td className='px-4 py-3'>
-        <div className='flex gap-3'>
-          <Link
-            to={`/world/${worldId}/campaign/${campaignId}/arc/${arcId}/act/${act.id}/sessions`}
-            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
-          >
-            Sessions
-          </Link>
-          <button
-            type='button'
-            onClick={() => onEdit(act)}
-            className='text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
-            disabled={isDeleting}
-          >
-            Edit
-          </button>
-          <button
-            type='button'
-            onClick={() => onMove(act)}
-            className='text-sm font-medium text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50'
-            disabled={isDeleting || isPersistingOrder}
-          >
-            Move
-          </button>
-          <button
-            type='button'
-            onClick={() => onDelete(act)}
-            className='text-sm font-medium text-rose-600 transition hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-60'
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-}
+import { sortActsByOrder, useArcActsData } from '../hooks/useArcActsData';
+import { parsePositiveIntParam } from '../lib/routeParams';
 
 export default function ActsPage() {
   const toast = useToast();
   const { id, campaignId, arcId } = useParams();
 
-  const worldId = useMemo(() => {
-    if (!id) {
-      return null;
-    }
-    const parsed = Number(id);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [id]);
+  const worldId = useMemo(() => parsePositiveIntParam(id), [id]);
+  const parsedCampaignId = useMemo(() => parsePositiveIntParam(campaignId), [campaignId]);
+  const parsedArcId = useMemo(() => parsePositiveIntParam(arcId), [arcId]);
 
-  const parsedCampaignId = useMemo(() => {
-    if (!campaignId) {
-      return null;
-    }
-    const parsed = Number(campaignId);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [campaignId]);
-
-  const parsedArcId = useMemo(() => {
-    if (!arcId) {
-      return null;
-    }
-    const parsed = Number(arcId);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
-    return parsed;
-  }, [arcId]);
-
-  const [arc, setArc] = useState<Arc | null>(null);
-  const [acts, setActs] = useState<Act[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { arc, acts, isLoading, error, setActs } = useArcActsData(
+    worldId,
+    parsedCampaignId,
+    parsedArcId,
+  );
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAct, setEditingAct] = useState<Act | null>(null);
@@ -193,57 +46,7 @@ export default function ActsPage() {
   const sortedActs = useMemo(() => sortActsByOrder(acts), [acts]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    if (worldId === null || parsedCampaignId === null || parsedArcId === null) {
-      setArc(null);
-      setActs([]);
-      setError('Invalid world, campaign, or arc id.');
-      setReorderError(null);
-      setIsLoading(false);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setReorderError(null);
-
-      try {
-        const existingArc = await window.db.arcs.getById(parsedArcId);
-        if (!existingArc) {
-          if (isMounted) {
-            setArc(null);
-            setError('Arc not found.');
-          }
-          return;
-        }
-
-        const actsList = await window.db.acts.getAllByArc(parsedArcId);
-        if (isMounted) {
-          setArc(existingArc);
-          setActs(sortActsByOrder(actsList));
-        }
-      } catch {
-        if (isMounted) {
-          setArc(null);
-          setActs([]);
-          setError('Unable to load acts right now.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadData();
-
-    return () => {
-      isMounted = false;
-    };
+    setReorderError(null);
   }, [worldId, parsedCampaignId, parsedArcId]);
 
   const handleCreateAct = async (data: { name: string; }) => {
@@ -467,96 +270,28 @@ export default function ActsPage() {
             : null}
         </header>
 
-        {isLoading
-          ? (
-            <section className='rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm'>
-              Loading acts...
-            </section>
-          )
-          : null}
-
-        {!isLoading && error
-          ? (
-            <section className='rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm'>
-              {error}
-            </section>
-          )
-          : null}
-
-        {!isLoading && !error && reorderError
-          ? (
-            <section className='rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm'>
-              {reorderError}
-            </section>
-          )
-          : null}
-
-        {!isLoading && !error && acts.length === 0
-          ? (
-            <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
-              <p className='text-sm text-slate-600'>No acts yet.</p>
-            </section>
-          )
-          : null}
-
-        {!isLoading && !error && acts.length > 0
-          ? (
-            <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={(event) => {
-                  void handleReorderActs(event);
-                }}
-              >
-                <table className='w-full text-sm text-slate-700'>
-                  <thead>
-                    <tr className='border-b border-slate-200'>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Order
-                      </th>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Name
-                      </th>
-                      <th className='px-4 py-3 text-left font-medium text-slate-500'>
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <SortableContext
-                    items={sortedActs.map((act) => act.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <tbody>
-                      {sortedActs.map((act, index) => (
-                        <SortableActRow
-                          key={act.id}
-                          act={act}
-                          sequence={index + 1}
-                          worldId={worldId}
-                          campaignId={parsedCampaignId}
-                          arcId={parsedArcId}
-                          deletingId={deletingId}
-                          isPersistingOrder={isPersistingOrder}
-                          onEdit={(selectedAct) => {
-                            setIsCreateOpen(false);
-                            setEditingAct(selectedAct);
-                          }}
-                          onDelete={(selectedAct) => {
-                            handleRequestDeleteAct(selectedAct);
-                          }}
-                          onMove={(selectedAct) => {
-                            setMovingAct(selectedAct);
-                          }}
-                        />
-                      ))}
-                    </tbody>
-                  </SortableContext>
-                </table>
-              </DndContext>
-            </section>
-          )
-          : null}
+        <ActsListSection
+          isLoading={isLoading}
+          error={error}
+          reorderError={reorderError}
+          acts={acts}
+          sortedActs={sortedActs}
+          sensors={sensors}
+          worldId={worldId}
+          campaignId={parsedCampaignId}
+          arcId={parsedArcId}
+          deletingId={deletingId}
+          isPersistingOrder={isPersistingOrder}
+          onDragEnd={(event) => {
+            void handleReorderActs(event);
+          }}
+          onEdit={(selectedAct) => {
+            setIsCreateOpen(false);
+            setEditingAct(selectedAct);
+          }}
+          onDelete={handleRequestDeleteAct}
+          onMove={setMovingAct}
+        />
       </main>
 
       {isCreateOpen && parsedArcId !== null
