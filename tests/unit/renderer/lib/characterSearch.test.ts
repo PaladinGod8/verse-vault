@@ -99,7 +99,7 @@ describe('characterMatchesQuery', () => {
     ).toBe(true);
   });
 
-  it('does not match on a partial (non-exact) primary faction name', () => {
+  it('matches on a partial (substring) primary faction name', () => {
     const character = buildCharacter();
     const primaryFaction = buildFaction({ id: 5, name: 'Constellation Company' });
     const primaryFactionByCharacterId = new Map([[character.id, 5]]);
@@ -108,10 +108,15 @@ describe('characterMatchesQuery', () => {
       characterMatchesQuery(character, 'Constellation', primaryFactionByCharacterId, [
         primaryFaction,
       ]),
+    ).toBe(true);
+    expect(
+      characterMatchesQuery(character, 'cult', primaryFactionByCharacterId, [
+        primaryFaction,
+      ]),
     ).toBe(false);
   });
 
-  it('matches when the query is an ancestor of the primary faction', () => {
+  it('matches when the query is a substring of an ancestor faction name', () => {
     const character = buildCharacter();
     const parentFaction = buildFaction({ id: 1, name: 'Cult of Contagion' });
     const primaryFaction = buildFaction({ id: 5, name: 'Inner Cell', parent_faction_id: 1 });
@@ -119,6 +124,12 @@ describe('characterMatchesQuery', () => {
 
     expect(
       characterMatchesQuery(character, 'Cult of Contagion', primaryFactionByCharacterId, [
+        parentFaction,
+        primaryFaction,
+      ]),
+    ).toBe(true);
+    expect(
+      characterMatchesQuery(character, 'cult', primaryFactionByCharacterId, [
         parentFaction,
         primaryFaction,
       ]),

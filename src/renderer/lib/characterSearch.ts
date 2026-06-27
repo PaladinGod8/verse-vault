@@ -69,13 +69,13 @@ export function characterMatchesQuery(
     return false;
   }
 
-  if (primaryFaction.name.trim().toLowerCase() === trimmedQuery) {
+  if (primaryFaction.name.trim().toLowerCase().includes(trimmedQuery)) {
     return true;
   }
 
   const ancestorIds = getAncestorIds(primaryFactionId, allFactions);
   return allFactions.some(
     (faction) =>
-      ancestorIds.includes(faction.id) && faction.name.trim().toLowerCase() === trimmedQuery,
+      ancestorIds.includes(faction.id) && faction.name.trim().toLowerCase().includes(trimmedQuery),
   );
 }
