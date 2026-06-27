@@ -210,3 +210,4 @@ const abilities = linked ? await window.db.statblocks.listAbilities(linked.id) :
 - No dedicated renderer UI yet for link/unlink token operations (API is available and tested through integration flows).
 - Runtime popup is read-first; it does not edit statblocks in place.
 - No combat state machine or rule resolution built into statblocks.
+- `characters` is currently a stub table (`id`/timestamps only) so `statblocks.character_id` has a valid FK target; full character CRUD is deferred.
