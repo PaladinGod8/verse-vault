@@ -95,8 +95,9 @@ export const DB_API_METHODS = {
     'delete',
     'importImage',
     'searchByWorld',
+    'markViewed',
   ],
-  factions: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage'],
+  factions: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
   factionTypes: ['getAllByWorld', 'add', 'rename', 'delete'],
   factionMembers: [
     'getAllByFaction',
@@ -225,10 +226,7 @@ export interface DbApi {
       name: string;
       config?: string;
     }): Promise<BattleMap>;
-    update(
-      id: number,
-      data: { name?: string; config?: string; },
-    ): Promise<BattleMap>;
+    update(id: number, data: { name?: string; config?: string; }): Promise<BattleMap>;
     delete(id: number): Promise<{ id: number; }>;
   };
   tokens: {
@@ -377,6 +375,7 @@ export interface DbApi {
     delete(id: number): Promise<{ id: number; }>;
     importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
     searchByWorld(query: CharacterSearchByWorldQuery): Promise<CharacterSearchByWorldResult>;
+    markViewed(id: number): Promise<Character>;
   };
   factions: {
     getAllByWorld(worldId: number): Promise<Faction[]>;
@@ -385,6 +384,7 @@ export interface DbApi {
     update(id: number, data: FactionUpsertPayload): Promise<Faction>;
     delete(id: number): Promise<{ id: number; }>;
     importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+    markViewed(id: number): Promise<Faction>;
   };
   factionTypes: {
     getAllByWorld(worldId: number): Promise<FactionType[]>;

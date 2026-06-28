@@ -78,6 +78,38 @@ describe('FactionsPage', () => {
     );
   });
 
+  it('switches to recently-viewed order and persists the choice via app settings', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([
+      buildFaction({
+        id: 1,
+        world_id: 1,
+        name: 'Zealots',
+        last_viewed_at: '2026-02-01 00:00:00',
+      }),
+      buildFaction({
+        id: 2,
+        world_id: 1,
+        name: 'Aegis',
+        last_viewed_at: '2026-03-01 00:00:00',
+      }),
+    ]);
+
+    renderPage(1);
+
+    await screen.findByText('Zealots');
+    await user.click(screen.getByRole('button', { name: 'Recently Viewed' }));
+
+    expect(
+      screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel),
+    ).toEqual(['Open Aegis', 'Open Zealots']);
+    expect(mockDb.settings.update).toHaveBeenCalledWith(
+      JSON.stringify({ cardSortPreferences: { factions: 'recentlyViewed' } }),
+    );
+  });
+
   it('shows an empty state when the world has no factions', async () => {
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(buildWorld({ id: 1 }));
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);

@@ -2,17 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CharacterCard from '../components/characters/CharacterCard';
 import CharacterForm from '../components/characters/CharacterForm';
+import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
+import { useCardSortPreference } from '../hooks/useCardSortPreference';
 import { useCharacterCrud } from '../hooks/useCharacterCrud';
 import { useWorldCharactersData } from '../hooks/useWorldCharactersData';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { characterMatchesQuery } from '../lib/characterSearch';
 import { parsePositiveIntParam } from '../lib/routeParams';
-import { sortNamedRecords } from '../lib/sortNamedRecords';
+import { sortCardRecords } from '../lib/sortCardRecords';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 function parseCharacterJson<T>(jsonText: string): T {
@@ -32,6 +34,7 @@ export default function CharactersPage() {
     () => resolveCardDisplayDimensions(config, 'characterCard'),
     [config],
   );
+  const { method: sortMethod, setMethod: setSortMethod } = useCardSortPreference('characters');
 
   const { world, characters, isLoading, error, reload: reloadCharacters } = useWorldCharactersData(
     worldId,
@@ -80,12 +83,13 @@ export default function CharactersPage() {
 
   const visibleCharacters = useMemo(
     () =>
-      sortNamedRecords(
+      sortCardRecords(
         characters.filter((character) =>
           characterMatchesQuery(character, searchQuery, primaryFactionByCharacterId, allFactions)
         ),
+        sortMethod,
       ),
-    [characters, searchQuery, primaryFactionByCharacterId, allFactions],
+    [characters, searchQuery, primaryFactionByCharacterId, allFactions, sortMethod],
   );
 
   return (
@@ -105,20 +109,23 @@ export default function CharactersPage() {
             </h1>
           </div>
 
-          {worldId !== null
-            ? (
-              <button
-                type='button'
-                className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
-                onClick={() => {
-                  setEditingCharacter(null);
-                  setIsCreateOpen(true);
-                }}
-              >
-                New Character
-              </button>
-            )
-            : null}
+          <div className='flex items-start gap-3'>
+            <CardSortToggle value={sortMethod} onChange={setSortMethod} />
+            {worldId !== null
+              ? (
+                <button
+                  type='button'
+                  className='shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                  onClick={() => {
+                    setEditingCharacter(null);
+                    setIsCreateOpen(true);
+                  }}
+                >
+                  New Character
+                </button>
+              )
+              : null}
+          </div>
         </header>
 
         <input

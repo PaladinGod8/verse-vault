@@ -240,6 +240,7 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'window.db.characters.searchByWorld',
       'DbApi.characters.searchByWorld',
     ],
+    ['CHARACTERS_MARK_VIEWED', 'window.db.characters.markViewed', 'DbApi.characters.markViewed'],
   ]),
   ...entries('factions', HANDLERS.factions, [
     [
@@ -256,6 +257,7 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'window.db.factions.importImage',
       'DbApi.factions.importImage',
     ],
+    ['FACTIONS_MARK_VIEWED', 'window.db.factions.markViewed', 'DbApi.factions.markViewed'],
   ]),
   ...entries('factionTypes', HANDLERS.factionTypes, [
     [

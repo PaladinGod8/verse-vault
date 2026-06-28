@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
-import { sortNamedRecords } from '../lib/sortNamedRecords';
+import { useCardSortPreference } from '../hooks/useCardSortPreference';
+import { sortCardRecords } from '../lib/sortCardRecords';
 
 export default function WorldsHomePage() {
   type WorldInput = Parameters<DbApi['worlds']['add']>[0];
   const navigate = useNavigate();
   const toast = useToast();
+  const { method: sortMethod, setMethod: setSortMethod } = useCardSortPreference('worlds');
 
   const [worlds, setWorlds] = useState<World[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +24,7 @@ export default function WorldsHomePage() {
   const [pendingDeleteWorld, setPendingDeleteWorld] = useState<World | null>(
     null,
   );
-  const sortedWorlds = useMemo(() => sortNamedRecords(worlds), [worlds]);
+  const sortedWorlds = useMemo(() => sortCardRecords(worlds, sortMethod), [worlds, sortMethod]);
 
   useEffect(() => {
     let isMounted = true;
@@ -142,6 +145,7 @@ export default function WorldsHomePage() {
           </div>
 
           <div className='flex shrink-0 items-center gap-2'>
+            <CardSortToggle value={sortMethod} onChange={setSortMethod} />
             <Link
               to='/settings'
               className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'

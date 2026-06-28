@@ -17,6 +17,7 @@ function buildCharacter(overrides: Partial<Character> = {}): Character {
     image_src: null,
     sections: '{}',
     wiki_summary: '{}',
+    last_viewed_at: null,
     created_at: '',
     updated_at: '',
     ...overrides,

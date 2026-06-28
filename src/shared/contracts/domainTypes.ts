@@ -274,6 +274,7 @@ export interface Character {
   image_src: string | null;
   sections: string; // JSON text of CharacterSections
   wiki_summary: string; // JSON text of CharacterWikiSummary
+  last_viewed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -288,6 +289,7 @@ export interface Faction {
   wiki_summary: string; // JSON text of FactionWikiSummary
   type_id: number | null;
   parent_faction_id: number | null;
+  last_viewed_at: string | null;
   created_at: string;
   updated_at: string;
 }

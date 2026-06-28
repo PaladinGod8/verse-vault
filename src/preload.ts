@@ -159,6 +159,7 @@ const dbApi: DbApi = {
       });
     },
     searchByWorld: (query) => ipcRenderer.invoke(IPC.CHARACTERS_SEARCH_BY_WORLD, query),
+    markViewed: (id) => ipcRenderer.invoke(IPC.CHARACTERS_MARK_VIEWED, id),
   },
   factions: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTIONS_GET_ALL_BY_WORLD, worldId),
@@ -176,6 +177,7 @@ const dbApi: DbApi = {
         bytes: new Uint8Array(payload.bytes),
       });
     },
+    markViewed: (id) => ipcRenderer.invoke(IPC.FACTIONS_MARK_VIEWED, id),
   },
   factionTypes: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTION_TYPES_GET_ALL_BY_WORLD, worldId),

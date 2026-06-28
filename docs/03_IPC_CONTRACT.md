@@ -26,8 +26,8 @@ This document is a current-state contract index. It is generated from `src/share
 | sessions       | 7        | `src/main/ipc/registerSessionHandlers.ts`       |
 | scenes         | 7        | `src/main/ipc/registerSceneHandlers.ts`         |
 | statblocks     | 13       | `src/main/ipc/registerStatBlockHandlers.ts`     |
-| characters     | 7        | `src/main/ipc/registerCharacterHandlers.ts`     |
-| factions       | 6        | `src/main/ipc/registerFactionHandlers.ts`       |
+| characters     | 8        | `src/main/ipc/registerCharacterHandlers.ts`     |
+| factions       | 7        | `src/main/ipc/registerFactionHandlers.ts`       |
 | factionTypes   | 4        | `src/main/ipc/registerFactionTypeHandlers.ts`   |
 | factionMembers | 5        | `src/main/ipc/registerFactionMemberHandlers.ts` |
 | settings       | 2        | `src/main/ipc/registerSettingsHandlers.ts`      |
@@ -129,12 +129,14 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.CHARACTERS_DELETE`                        | `db:characters:delete`                   | `window.db.characters.delete`                   | `src/main/ipc/registerCharacterHandlers.ts`     | `DbApi.characters.delete`                   |
 | `IPC.CHARACTERS_IMPORT_IMAGE`                  | `db:characters:importImage`              | `window.db.characters.importImage`              | `src/main/ipc/registerCharacterHandlers.ts`     | `DbApi.characters.importImage`              |
 | `IPC.CHARACTERS_SEARCH_BY_WORLD`               | `db:characters:searchByWorld`            | `window.db.characters.searchByWorld`            | `src/main/ipc/registerCharacterHandlers.ts`     | `DbApi.characters.searchByWorld`            |
+| `IPC.CHARACTERS_MARK_VIEWED`                   | `db:characters:markViewed`               | `window.db.characters.markViewed`               | `src/main/ipc/registerCharacterHandlers.ts`     | `DbApi.characters.markViewed`               |
 | `IPC.FACTIONS_GET_ALL_BY_WORLD`                | `db:factions:getAllByWorld`              | `window.db.factions.getAllByWorld`              | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.getAllByWorld`              |
 | `IPC.FACTIONS_GET_BY_ID`                       | `db:factions:getById`                    | `window.db.factions.getById`                    | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.getById`                    |
 | `IPC.FACTIONS_ADD`                             | `db:factions:add`                        | `window.db.factions.add`                        | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.add`                        |
 | `IPC.FACTIONS_UPDATE`                          | `db:factions:update`                     | `window.db.factions.update`                     | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.update`                     |
 | `IPC.FACTIONS_DELETE`                          | `db:factions:delete`                     | `window.db.factions.delete`                     | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.delete`                     |
 | `IPC.FACTIONS_IMPORT_IMAGE`                    | `db:factions:importImage`                | `window.db.factions.importImage`                | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.importImage`                |
+| `IPC.FACTIONS_MARK_VIEWED`                     | `db:factions:markViewed`                 | `window.db.factions.markViewed`                 | `src/main/ipc/registerFactionHandlers.ts`       | `DbApi.factions.markViewed`                 |
 | `IPC.FACTION_TYPES_GET_ALL_BY_WORLD`           | `db:factionTypes:getAllByWorld`          | `window.db.factionTypes.getAllByWorld`          | `src/main/ipc/registerFactionTypeHandlers.ts`   | `DbApi.factionTypes.getAllByWorld`          |
 | `IPC.FACTION_TYPES_ADD`                        | `db:factionTypes:add`                    | `window.db.factionTypes.add`                    | `src/main/ipc/registerFactionTypeHandlers.ts`   | `DbApi.factionTypes.add`                    |
 | `IPC.FACTION_TYPES_RENAME`                     | `db:factionTypes:rename`                 | `window.db.factionTypes.rename`                 | `src/main/ipc/registerFactionTypeHandlers.ts`   | `DbApi.factionTypes.rename`                 |

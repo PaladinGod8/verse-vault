@@ -4,18 +4,20 @@ import type { FactionSections, FactionWikiSummary } from '../../shared/contracts
 import FactionCard from '../components/factions/FactionCard';
 import FactionForm, { type FactionFormValues } from '../components/factions/FactionForm';
 import ManageFactionTypesModal from '../components/factions/ManageFactionTypesModal';
+import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
+import { useCardSortPreference } from '../hooks/useCardSortPreference';
 import { useFactionCrud } from '../hooks/useFactionCrud';
 import { useFactionTypes } from '../hooks/useFactionTypes';
 import { useWorldFactionsData } from '../hooks/useWorldFactionsData';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { factionMatchesQuery } from '../lib/factionSearch';
 import { parsePositiveIntParam } from '../lib/routeParams';
-import { sortNamedRecords } from '../lib/sortNamedRecords';
+import { sortCardRecords } from '../lib/sortCardRecords';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 function parseFactionJson<T>(jsonText: string): T {
@@ -35,6 +37,7 @@ export default function FactionsPage() {
     () => resolveCardDisplayDimensions(config, 'factionCard'),
     [config],
   );
+  const { method: sortMethod, setMethod: setSortMethod } = useCardSortPreference('factions');
 
   const { world, factions, factionTypes, isLoading, error, reload: reloadFactions } =
     useWorldFactionsData(worldId);
@@ -66,15 +69,16 @@ export default function FactionsPage() {
 
   const visibleFactions = useMemo(
     () =>
-      sortNamedRecords(
+      sortCardRecords(
         factions.filter((faction) => {
           if (typeFilter && String(faction.type_id ?? '') !== typeFilter) {
             return false;
           }
           return factionMatchesQuery(faction, searchQuery, factions);
         }),
+        sortMethod,
       ),
-    [factions, searchQuery, typeFilter],
+    [factions, searchQuery, typeFilter, sortMethod],
   );
 
   return (
@@ -94,29 +98,32 @@ export default function FactionsPage() {
             </h1>
           </div>
 
-          {worldId !== null
-            ? (
-              <div className='flex shrink-0 gap-2'>
-                <button
-                  type='button'
-                  className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
-                  onClick={() => setIsManageTypesOpen(true)}
-                >
-                  Manage Types
-                </button>
-                <button
-                  type='button'
-                  className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
-                  onClick={() => {
-                    setEditingFaction(null);
-                    setIsCreateOpen(true);
-                  }}
-                >
-                  New Faction
-                </button>
-              </div>
-            )
-            : null}
+          <div className='flex shrink-0 items-start gap-2'>
+            <CardSortToggle value={sortMethod} onChange={setSortMethod} />
+            {worldId !== null
+              ? (
+                <div className='flex shrink-0 gap-2'>
+                  <button
+                    type='button'
+                    className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
+                    onClick={() => setIsManageTypesOpen(true)}
+                  >
+                    Manage Types
+                  </button>
+                  <button
+                    type='button'
+                    className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
+                    onClick={() => {
+                      setEditingFaction(null);
+                      setIsCreateOpen(true);
+                    }}
+                  >
+                    New Faction
+                  </button>
+                </div>
+              )
+              : null}
+          </div>
         </header>
 
         <div className='flex gap-3'>

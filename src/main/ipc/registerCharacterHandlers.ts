@@ -67,6 +67,13 @@ function registerCharacterReadHandlers(db: Database.Database): void {
     return db.prepare('SELECT * FROM characters WHERE id = ?').get(id) ?? null;
   });
 
+  ipcMain.handle(IPC.CHARACTERS_MARK_VIEWED, (_event, id: number) => {
+    db.prepare(
+      "UPDATE characters SET last_viewed_at = datetime('now') WHERE id = ?",
+    ).run(id);
+    return db.prepare('SELECT * FROM characters WHERE id = ?').get(id) ?? null;
+  });
+
   ipcMain.handle(
     IPC.CHARACTERS_SEARCH_BY_WORLD,
     (_event, query: CharacterSearchByWorldQuery): CharacterSearchByWorldResult => {

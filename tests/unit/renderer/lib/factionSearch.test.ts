@@ -19,6 +19,7 @@ function buildFaction(overrides?: Partial<Faction>): Faction {
     }),
     type_id: null,
     parent_faction_id: null,
+    last_viewed_at: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,

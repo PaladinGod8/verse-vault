@@ -56,6 +56,7 @@ describe('CharacterDetailPage', () => {
       sections: JSON.stringify({ background: 'Outcasted from the Igni tribe.' }),
     });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.characters.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(character);
     (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     renderPage();
@@ -76,6 +77,7 @@ describe('CharacterDetailPage', () => {
       wiki_summary: JSON.stringify({}),
     });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.characters.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(character);
     (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     renderPage();
@@ -102,6 +104,7 @@ describe('CharacterDetailPage', () => {
   it('shows faction memberships with a link to each faction, and lets you set the primary one', async () => {
     const character = buildCharacter({ id: 5, world_id: 1, name: 'Ledros Igni' });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.characters.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(character);
     (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
         id: 1,
@@ -144,6 +147,7 @@ describe('CharacterDetailPage', () => {
       author: 'GamingGator',
     });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.characters.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(character);
     (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (mockDb.characters.update as ReturnType<typeof vi.fn>).mockResolvedValue(
       buildCharacter({ id: 5, world_id: 1, name: 'Updated Name', author: 'AnotherWriter' }),
@@ -198,6 +202,7 @@ describe('CharacterDetailPage', () => {
       updated_at: '',
     });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
+    (mockDb.characters.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(character);
     (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     renderPage();

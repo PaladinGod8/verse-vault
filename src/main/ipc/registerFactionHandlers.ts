@@ -43,6 +43,13 @@ function registerFactionReadHandlers(db: Database.Database): void {
   ipcMain.handle(IPC.FACTIONS_GET_BY_ID, (_event, id: number) => {
     return db.prepare('SELECT * FROM factions WHERE id = ?').get(id) ?? null;
   });
+
+  ipcMain.handle(IPC.FACTIONS_MARK_VIEWED, (_event, id: number) => {
+    db.prepare(
+      "UPDATE factions SET last_viewed_at = datetime('now') WHERE id = ?",
+    ).run(id);
+    return db.prepare('SELECT * FROM factions WHERE id = ?').get(id) ?? null;
+  });
 }
 
 function ensureCycleFree(

@@ -429,6 +429,9 @@ describe('preload', () => {
 
     await api.characters.delete(2);
     expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_DELETE, 2);
+
+    await api.characters.markViewed(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.CHARACTERS_MARK_VIEWED, 2);
   });
 
   it('forwards characters.importImage to CHARACTERS_IMPORT_IMAGE', async () => {
@@ -493,6 +496,9 @@ describe('preload', () => {
 
     await api.factions.delete(2);
     expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_DELETE, 2);
+
+    await api.factions.markViewed(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_MARK_VIEWED, 2);
   });
 
   it('forwards factions.importImage to FACTIONS_IMPORT_IMAGE', async () => {

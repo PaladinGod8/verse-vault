@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppSettingsProvider } from '../../../src/renderer/hooks/useAppSettings';
 import WorldsHomePage from '../../../src/renderer/pages/WorldsHomePage';
 
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
@@ -43,7 +44,9 @@ function buildWorld(overrides: Partial<World> = {}): World {
 function renderWorldsHomePage() {
   return render(
     <MemoryRouter>
-      <WorldsHomePage />
+      <AppSettingsProvider>
+        <WorldsHomePage />
+      </AppSettingsProvider>
     </MemoryRouter>,
   );
 }
@@ -73,6 +76,20 @@ describe('WorldsHomePage renderer behaviors', () => {
         update: worldsUpdateMock,
         delete: worldsDeleteMock,
         markViewed: vi.fn(),
+      },
+      settings: {
+        get: vi.fn().mockResolvedValue({
+          id: 1,
+          config: '{}',
+          created_at: '2026-01-01 00:00:00',
+          updated_at: '2026-01-01 00:00:00',
+        }),
+        update: vi.fn(async (config: string) => ({
+          id: 1,
+          config,
+          created_at: '2026-01-01 00:00:00',
+          updated_at: '2026-01-01 00:00:00',
+        })),
       },
     } as unknown as DbApi;
   });
@@ -115,6 +132,26 @@ describe('WorldsHomePage renderer behaviors', () => {
         'Open Beta',
         'Open Zeta',
       ],
+    );
+  });
+
+  it('switches to recently-viewed order and persists the choice via app settings', async () => {
+    const user = userEvent.setup();
+    worldsGetAllMock.mockResolvedValue([
+      buildWorld({ id: 1, name: 'Zeta', last_viewed_at: '2026-02-01 00:00:00' }),
+      buildWorld({ id: 2, name: 'Alpha', last_viewed_at: '2026-03-01 00:00:00' }),
+    ]);
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Zeta' });
+    await user.click(screen.getByRole('button', { name: 'Recently Viewed' }));
+
+    expect(
+      screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel),
+    ).toEqual(['Open Alpha', 'Open Zeta']);
+    expect(window.db.settings.update).toHaveBeenCalledWith(
+      JSON.stringify({ cardSortPreferences: { worlds: 'recentlyViewed' } }),
     );
   });
 

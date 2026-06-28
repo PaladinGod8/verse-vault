@@ -62,7 +62,8 @@ export default function CharacterDetailPage() {
         setCharacter(null);
         return;
       }
-      setCharacter(result);
+      const viewedCharacter = await window.db.characters.markViewed(parsedCharacterId);
+      setCharacter(viewedCharacter);
     } catch {
       setError('Unable to load this character right now.');
       setCharacter(null);

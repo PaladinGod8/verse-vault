@@ -14,6 +14,7 @@ function buildFaction(overrides: Partial<Faction> = {}): Faction {
     wiki_summary: '{}',
     type_id: null,
     parent_faction_id: null,
+    last_viewed_at: null,
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     ...overrides,

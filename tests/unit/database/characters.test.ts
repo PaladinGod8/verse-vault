@@ -90,6 +90,7 @@ describe('Characters schema migration', () => {
     expect(executedSql).toContain(
       "ALTER TABLE characters ADD COLUMN wiki_summary TEXT NOT NULL DEFAULT '{}'",
     );
+    expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN last_viewed_at TEXT');
     expect(executedSql).toContain(
       'CREATE INDEX IF NOT EXISTS idx_characters_world_id ON characters(world_id)',
     );
@@ -110,6 +111,7 @@ describe('Characters schema migration', () => {
         { name: 'image_src' },
         { name: 'sections' },
         { name: 'wiki_summary' },
+        { name: 'last_viewed_at' },
       ],
     });
 

@@ -122,6 +122,7 @@ export function createMockDb(): DbApi {
         image_src: 'vv-media://character-images/mock.png',
       }),
       searchByWorld: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
+      markViewed: vi.fn().mockResolvedValue(undefined),
     },
     factions: {
       getAllByWorld: vi.fn().mockResolvedValue([]),
@@ -132,6 +133,7 @@ export function createMockDb(): DbApi {
       importImage: vi.fn().mockResolvedValue({
         image_src: 'vv-media://faction-images/mock.png',
       }),
+      markViewed: vi.fn().mockResolvedValue(undefined),
     },
     factionTypes: {
       getAllByWorld: vi.fn().mockResolvedValue([]),

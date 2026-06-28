@@ -20,6 +20,7 @@ export function runMigrations(db: Database.Database): void {
   runCharactersSchemaMigration(db);
   runFactionTypesSchemaMigration(db);
   runFactionsSchemaMigration(db);
+  runFactionsLastViewedMigration(db);
   runFactionMembersSchemaMigration(db);
   ensureCharacterNameIndex(db);
 }
@@ -54,6 +55,7 @@ function runFactionsSchemaMigration(db: Database.Database): void {
         wiki_summary      TEXT    NOT NULL DEFAULT '{}',
         type_id           INTEGER REFERENCES faction_types(id) ON DELETE SET NULL,
         parent_faction_id INTEGER REFERENCES factions(id) ON DELETE SET NULL,
+        last_viewed_at    TEXT,
         created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
         updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
       );
@@ -65,6 +67,13 @@ function runFactionsSchemaMigration(db: Database.Database): void {
   } catch (err) {
     console.error('[db] Error running factions schema migration:', err);
     throw err;
+  }
+}
+
+function runFactionsLastViewedMigration(db: Database.Database): void {
+  const cols = db.pragma('table_info(factions)') as Array<{ name: string; }>;
+  if (Array.isArray(cols) && cols.length > 0 && !cols.some((c) => c.name === 'last_viewed_at')) {
+    db.exec('ALTER TABLE factions ADD COLUMN last_viewed_at TEXT');
   }
 }
 
@@ -105,10 +114,7 @@ function runCharactersSchemaMigration(db: Database.Database): void {
     'world_id',
     'ALTER TABLE characters ADD COLUMN world_id INTEGER REFERENCES worlds(id) ON DELETE CASCADE',
   );
-  addColumn(
-    'name',
-    "ALTER TABLE characters ADD COLUMN name TEXT NOT NULL DEFAULT ''",
-  );
+  addColumn('name', "ALTER TABLE characters ADD COLUMN name TEXT NOT NULL DEFAULT ''");
   addColumn('profile', 'ALTER TABLE characters ADD COLUMN profile TEXT');
   addColumn(
     'is_player_character',
@@ -117,14 +123,12 @@ function runCharactersSchemaMigration(db: Database.Database): void {
   addColumn('owner', 'ALTER TABLE characters ADD COLUMN owner TEXT');
   addColumn('author', 'ALTER TABLE characters ADD COLUMN author TEXT');
   addColumn('image_src', 'ALTER TABLE characters ADD COLUMN image_src TEXT');
-  addColumn(
-    'sections',
-    "ALTER TABLE characters ADD COLUMN sections TEXT NOT NULL DEFAULT '{}'",
-  );
+  addColumn('sections', "ALTER TABLE characters ADD COLUMN sections TEXT NOT NULL DEFAULT '{}'");
   addColumn(
     'wiki_summary',
     "ALTER TABLE characters ADD COLUMN wiki_summary TEXT NOT NULL DEFAULT '{}'",
   );
+  addColumn('last_viewed_at', 'ALTER TABLE characters ADD COLUMN last_viewed_at TEXT');
 
   db.exec('CREATE INDEX IF NOT EXISTS idx_characters_world_id ON characters(world_id)');
 }
@@ -407,15 +411,13 @@ function runTokenGridTypeMigration(db: Database.Database): void {
 }
 
 function ensureTokenCampaignIdIndex(db: Database.Database): void {
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id ON tokens(campaign_id)
-  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id ON tokens(campaign_id)');
 }
 
 function ensureCharacterNameIndex(db: Database.Database): void {
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_characters_world_id_name ON characters(world_id, name COLLATE NOCASE)
-  `);
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_characters_world_id_name ON characters(world_id, name COLLATE NOCASE)',
+  );
 }
 
 function ensureTokenWorldIdIndex(db: Database.Database): void {

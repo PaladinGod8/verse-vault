@@ -186,6 +186,7 @@ function createAbilityAndCharacterTables(db: Database.Database): void {
       image_src           TEXT,
       sections            TEXT    NOT NULL DEFAULT '{}',
       wiki_summary        TEXT    NOT NULL DEFAULT '{}',
+      last_viewed_at      TEXT,
       created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
     )

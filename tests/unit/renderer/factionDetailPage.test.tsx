@@ -54,6 +54,7 @@ describe('FactionDetailPage', () => {
       wiki_summary: JSON.stringify({ headquarters: 'Fort Fabalta, Occult' }),
     });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
     (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -73,6 +74,7 @@ describe('FactionDetailPage', () => {
       wiki_summary: JSON.stringify({}),
     });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
     (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (mockDb.factionTypes.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -97,6 +99,7 @@ describe('FactionDetailPage', () => {
   it('does not eagerly load the full character list for the world', async () => {
     const faction = buildFaction({ id: 5, world_id: 1, name: 'Cult of Contagion' });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
     (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -121,6 +124,7 @@ describe('FactionDetailPage', () => {
     });
     const child = buildFaction({ id: 9, world_id: 1, name: 'Inner Cell', parent_faction_id: 5 });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([
       parent,
       faction,
@@ -140,6 +144,7 @@ describe('FactionDetailPage', () => {
   it('groups members into Founders, Leadership, and Members with character links', async () => {
     const faction = buildFaction({ id: 5, world_id: 1, name: 'Cult of Contagion' });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
     (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
@@ -185,6 +190,7 @@ describe('FactionDetailPage', () => {
   it('opens the edit form pre-filled and saves via window.db.factions.update', async () => {
     const faction = buildFaction({ id: 5, world_id: 1, name: 'Cult of Contagion' });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
     (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (mockDb.factionTypes.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -232,6 +238,7 @@ describe('FactionDetailPage', () => {
       updated_at: '',
     });
     (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
     (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 

@@ -87,7 +87,8 @@ export default function FactionDetailPage() {
         setFaction(null);
         return;
       }
-      setFaction(result);
+      const viewedFaction = await window.db.factions.markViewed(parsedFactionId);
+      setFaction(viewedFaction);
       setAllFactions(factionsList);
       setFactionTypes(typesList);
       setMembers(membersList);
