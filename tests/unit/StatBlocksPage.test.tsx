@@ -99,6 +99,15 @@ function renderPage(worldId: number | string | null = 1) {
   );
 }
 
+function getCardForStatBlock(name: string) {
+  const heading = screen.getByRole('heading', { name });
+  const card = heading.closest('div.rounded-xl');
+
+  expect(card).not.toBeNull();
+
+  return card as HTMLDivElement;
+}
+
 async function waitForLoadingToSettle() {
   await waitFor(() => {
     expect(screen.queryAllByText('Loading statblocks...')).toHaveLength(0);
@@ -595,8 +604,8 @@ describe('StatBlocksPage', () => {
       expect(await screen.findByText('Paladin')).toBeInTheDocument();
       expect(screen.getByText('Cleric')).toBeInTheDocument();
 
-      const deleteButtons = screen.getAllByRole('button', { name: /Delete/i });
-      await user.click(deleteButtons[0]);
+      const paladinCard = getCardForStatBlock('Paladin');
+      await user.click(within(paladinCard).getByRole('button', { name: /Delete/i }));
 
       const dialog = await screen.findByRole('dialog', {
         name: /Delete "Paladin"\?/i,
@@ -657,8 +666,8 @@ describe('StatBlocksPage', () => {
       renderPage(1);
       expect(await screen.findByText('Paladin')).toBeInTheDocument();
 
-      const deleteButtons = screen.getAllByRole('button', { name: /Delete/i });
-      await user.click(deleteButtons[0]);
+      const paladinCard = getCardForStatBlock('Paladin');
+      await user.click(within(paladinCard).getByRole('button', { name: /Delete/i }));
 
       const dialog = await screen.findByRole('dialog', {
         name: /Delete "Paladin"\?/i,
