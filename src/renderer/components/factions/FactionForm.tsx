@@ -50,7 +50,7 @@ type FactionFormProps = {
   factionId?: number;
   allFactionsInWorld: Faction[];
   factionTypes: FactionType[];
-  charactersInWorld: Character[];
+  worldId: number;
   onManageTypes: () => void;
   onSave: (data: FactionFormValues) => Promise<void> | void;
   onClose: () => void;
@@ -76,7 +76,7 @@ export default function FactionForm({
   factionId,
   allFactionsInWorld,
   factionTypes,
-  charactersInWorld,
+  worldId,
   onManageTypes,
   onSave,
   onClose,
@@ -181,7 +181,8 @@ export default function FactionForm({
       wiki_summary: wikiSummary,
       type_id: typeId,
       parent_faction_id: parentFactionId,
-      members,
+      // Drop incomplete rows (character_id 0 - "Select a character..." never finished).
+      members: members.filter((member) => member.character_id !== 0),
     });
   };
 
@@ -301,7 +302,7 @@ export default function FactionForm({
 
       <FactionMembersEditor
         members={members}
-        charactersInWorld={charactersInWorld}
+        worldId={worldId}
         onChange={setMembers}
         disabled={isSaving}
       />

@@ -101,14 +101,23 @@ characters.
 ### Faction membership management
 
 - Managed only from `FactionForm`'s "Members, Founders & Leadership" section: a
-  repeatable list of `[character select] [role text input] [remove]` rows, plus an "Add
-  Member" button. The character picker is scoped to `charactersInWorld` (the form
-  receives this list as a prop; it does not call IPC itself).
+  repeatable list of `[character combobox] [role text input] [remove]` rows, plus an
+  "Add Member" button.
+- The character picker (`CharacterCombobox.tsx`, used by `FactionMembersEditor.tsx`) is
+  a searchable, server-side combobox rather than a plain `<select>` over a fully-loaded
+  character list — the world's character list is no longer eagerly loaded for this
+  form. It searches via `CHARACTERS_SEARCH_BY_WORLD` (case-insensitive **prefix** match
+  on `name` only — distinct from the page-level substring search described in
+  `docs/features/characters.md`), debounced 200ms, paginated via infinite scroll in
+  fixed batches of 50, and excludes characters already added as members of the same
+  faction from each row's results.
 - On save, `useFactionCrud` calls `window.db.factions.add`/`update` and then
   `window.db.factionMembers.setForFaction(factionId, members)`, which transactionally
   replaces the faction's entire roster while preserving any existing `is_primary` flag
   for characters who remain in the new set (primary status is owned by the Character
-  side, not reset by a faction-form save).
+  side, not reset by a faction-form save). A character who had no faction membership
+  anywhere before being added is automatically made primary in the faction they're
+  newly assigned to.
 - The character-side primary toggle (`window.db.factionMembers.setPrimary`) is
   documented in `docs/features/characters.md`'s Character detail page section.
 
@@ -122,6 +131,8 @@ characters.
   - `FACTION_MEMBERS_GET_ALL_BY_FACTION`, `FACTION_MEMBERS_GET_ALL_BY_CHARACTER`,
     `FACTION_MEMBERS_GET_ALL_PRIMARY_BY_WORLD`, `FACTION_MEMBERS_SET_FOR_FACTION`,
     `FACTION_MEMBERS_SET_PRIMARY`.
+  - `CHARACTERS_SEARCH_BY_WORLD` (owned by the Characters domain, documented in
+    `docs/features/characters.md`) is used here by the member-picker combobox.
 - Main handlers: `src/main/ipc/registerFactionHandlers.ts`,
   `registerFactionTypeHandlers.ts`, `registerFactionMemberHandlers.ts` — three separate
   files (one per preload namespace), all registered in `src/main.ts`.
@@ -140,10 +151,13 @@ characters.
     `WorldSidebar`) and `src/renderer/pages/FactionDetailPage.tsx` (route
     `/world/:id/factions/:factionId`).
   - `src/renderer/hooks/useWorldFactionsData.ts`, `useFactionCrud.ts`,
-    `useFactionTypes.ts`.
+    `useFactionTypes.ts`, `useCharacterSearch.ts` (debounced, paginated search backing
+    the member-picker combobox; documented alongside `CHARACTERS_SEARCH_BY_WORLD` in
+    `docs/features/characters.md`).
   - `src/renderer/components/factions/`: `FactionCard.tsx`, `FactionImageDropzone.tsx`,
-    `FactionForm.tsx`, `ManageFactionTypesModal.tsx`. Aliases/Locations list editing and
-    the flat Basic Information fields reuse Character's existing
+    `FactionForm.tsx`, `FactionMembersEditor.tsx`, `CharacterCombobox.tsx`,
+    `ManageFactionTypesModal.tsx`. Aliases/Locations list editing and the flat Basic
+    Information fields reuse Character's existing
     `CharacterWikiSummaryListEditor`/`CharacterWikiSummaryGroupFields` components
     directly (both are already generic over field keys/labels, not Character-specific).
   - `src/renderer/lib/factionSearch.ts` (`flattenFactionForSearch`,
@@ -241,7 +255,11 @@ selected), and re-validates with `wouldCreateCycle` on submit as a final guard.
   ancestor-subtree expansion, and the no-false-positive-on-partial-match guard.
 - `tests/unit/renderer/factionCard.test.tsx`, `factionForm.test.tsx`,
   `manageFactionTypesModal.test.tsx` — component-level behavior, including the
-  cycle-rejection inline error and the member add/remove rows.
+  cycle-rejection inline error and the member add/remove rows (driven via the
+  `CharacterCombobox`, with member-exclusion coverage).
+- `tests/unit/renderer/characterCombobox.test.tsx`,
+  `tests/unit/renderer/hooks/useCharacterSearch.test.ts` — combobox selection,
+  exclusion, debounce, and infinite-scroll behavior.
 - `tests/unit/renderer/factionsPage.test.tsx`, `factionDetailPage.test.tsx` — page-level
   load, search, type filter, create flow, and detail-page rendering/grouping/linking.
 - `tests/unit/renderer/lib/characterSearch.test.ts` — the additive primary-faction
@@ -249,8 +267,11 @@ selected), and re-validates with `wouldCreateCycle` on submit as a final guard.
 
 ## Known Limits and Non-Goals
 
-- Search is a simple case-insensitive substring match over a flattened in-memory blob,
-  not SQLite FTS5, matching the same accepted limitation as Characters.
+- Page-level search (`FactionsPage`) is a simple case-insensitive substring match over a
+  flattened in-memory blob, not SQLite FTS5, matching the same accepted limitation as
+  Characters. The member-picker combobox is a _separate_ mechanism: server-side,
+  name-only, prefix-match (`LIKE 'query%'`), backed by `CHARACTERS_SEARCH_BY_WORLD` —
+  do not confuse the two.
 - The four text sections (History, Goals/Motives, Relationships, Notes) are fixed, not
   user-defined/arbitrary blocks.
 - Leadership/Founder/Member grouping on the detail page is a UI convention over the

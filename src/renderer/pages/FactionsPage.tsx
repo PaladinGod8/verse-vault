@@ -193,7 +193,7 @@ export default function FactionsPage() {
             <FactionForm
               allFactionsInWorld={factions}
               factionTypes={factionTypes}
-              charactersInWorld={[]}
+              worldId={worldId}
               onManageTypes={() => setIsManageTypesOpen(true)}
               onSave={(data: FactionFormValues) => void handleCreate(data)}
               onClose={() => setIsCreateOpen(false)}
@@ -203,7 +203,7 @@ export default function FactionsPage() {
         )
         : null}
 
-      {editingFaction !== null
+      {editingFaction !== null && worldId !== null
         ? (
           <ModalShell
             isOpen={editingFaction !== null}
@@ -228,7 +228,7 @@ export default function FactionsPage() {
               factionId={editingFaction.id}
               allFactionsInWorld={factions}
               factionTypes={factionTypes}
-              charactersInWorld={[]}
+              worldId={worldId}
               onManageTypes={() => setIsManageTypesOpen(true)}
               onSave={(data: FactionFormValues) => void handleUpdate(data)}
               onClose={() => setEditingFaction(null)}

@@ -94,6 +94,18 @@ describe('FactionDetailPage', () => {
     expect(screen.getByText('Locations')).toBeInTheDocument();
   });
 
+  it('does not eagerly load the full character list for the world', async () => {
+    const faction = buildFaction({ id: 5, world_id: 1, name: 'Cult of Contagion' });
+    (mockDb.factions.getById as ReturnType<typeof vi.fn>).mockResolvedValue(faction);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([faction]);
+    (mockDb.factionMembers.getAllByFaction as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Cult of Contagion' })).toBeInTheDocument();
+    expect(mockDb.characters.getAllByWorld).not.toHaveBeenCalled();
+  });
+
   it('renders parent organization and children as clickable links', async () => {
     const parent = buildFaction({
       id: 1,

@@ -62,7 +62,6 @@ export default function FactionDetailPage() {
   const [faction, setFaction] = useState<Faction | null>(null);
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
   const [factionTypes, setFactionTypes] = useState<FactionType[]>([]);
-  const [charactersInWorld, setCharactersInWorld] = useState<Character[]>([]);
   const [members, setMembers] = useState<FactionMemberWithCharacterName[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,12 +76,11 @@ export default function FactionDetailPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [result, factionsList, typesList, membersList, charactersList] = await Promise.all([
+      const [result, factionsList, typesList, membersList] = await Promise.all([
         window.db.factions.getById(parsedFactionId),
         window.db.factions.getAllByWorld(worldId),
         window.db.factionTypes.getAllByWorld(worldId),
         window.db.factionMembers.getAllByFaction(parsedFactionId),
-        window.db.characters.getAllByWorld(worldId),
       ]);
       if (!result) {
         setError('Faction not found.');
@@ -93,7 +91,6 @@ export default function FactionDetailPage() {
       setAllFactions(factionsList);
       setFactionTypes(typesList);
       setMembers(membersList);
-      setCharactersInWorld(charactersList);
     } catch {
       setError('Unable to load this faction right now.');
       setFaction(null);
@@ -163,7 +160,7 @@ export default function FactionDetailPage() {
           : null}
       </main>
 
-      {isEditOpen && faction
+      {isEditOpen && faction && worldId !== null
         ? (
           <ModalShell
             isOpen={isEditOpen}
@@ -191,7 +188,7 @@ export default function FactionDetailPage() {
               factionId={faction.id}
               allFactionsInWorld={allFactions}
               factionTypes={factionTypes}
-              charactersInWorld={charactersInWorld}
+              worldId={worldId}
               onManageTypes={() => undefined}
               onSave={(data: FactionFormValues) => void handleUpdate(data)}
               onClose={() => setIsEditOpen(false)}

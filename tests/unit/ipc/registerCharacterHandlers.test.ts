@@ -257,6 +257,68 @@ describe('registerCharacterHandlers', () => {
     });
   });
 
+  describe(IPC.CHARACTERS_SEARCH_BY_WORLD, () => {
+    it('matches names by prefix only, not substring', () => {
+      const lando = buildCharacter({ id: 2, name: 'Lando' });
+      const allMock = vi.fn(() => [lando]);
+      (dbMock.prepare as ReturnType<typeof vi.fn>).mockReturnValueOnce({ all: allMock });
+
+      const result = handlers[IPC.CHARACTERS_SEARCH_BY_WORLD](
+        {},
+        { worldId: 10, query: 'lan', offset: 0, limit: 50 },
+      );
+
+      expect(allMock).toHaveBeenCalledWith(10, 'lan%', 51, 0);
+      expect(result).toEqual({ items: [lando], hasMore: false });
+    });
+
+    it('reports hasMore when more rows exist than limit', () => {
+      const rows = [
+        buildCharacter({ id: 1 }),
+        buildCharacter({ id: 2 }),
+        buildCharacter({ id: 3 }),
+      ];
+      const allMock = vi.fn(() => rows);
+      (dbMock.prepare as ReturnType<typeof vi.fn>).mockReturnValueOnce({ all: allMock });
+
+      const result = handlers[IPC.CHARACTERS_SEARCH_BY_WORLD](
+        {},
+        { worldId: 10, query: '', offset: 0, limit: 2 },
+      );
+
+      expect(result).toEqual({ items: rows.slice(0, 2), hasMore: true });
+    });
+
+    it('excludes character ids passed in excludeCharacterIds', () => {
+      const allMock = vi.fn(() => []);
+      const prepareMock = vi.fn((sql: string) => {
+        void sql;
+        return { all: allMock };
+      });
+      (dbMock.prepare as ReturnType<typeof vi.fn>).mockImplementationOnce(prepareMock);
+
+      handlers[IPC.CHARACTERS_SEARCH_BY_WORLD](
+        {},
+        { worldId: 10, query: '', offset: 0, limit: 50, excludeCharacterIds: [3, 4] },
+      );
+
+      expect(prepareMock.mock.calls[0][0]).toContain('AND id NOT IN (?, ?)');
+      expect(allMock).toHaveBeenCalledWith(10, '%', 3, 4, 51, 0);
+    });
+
+    it('falls back to defaults for malformed limit/offset', () => {
+      const allMock = vi.fn(() => []);
+      (dbMock.prepare as ReturnType<typeof vi.fn>).mockReturnValueOnce({ all: allMock });
+
+      handlers[IPC.CHARACTERS_SEARCH_BY_WORLD](
+        {},
+        { worldId: 10, query: '', offset: -5, limit: 0 },
+      );
+
+      expect(allMock).toHaveBeenCalledWith(10, '%', 51, 0);
+    });
+  });
+
   describe(IPC.CHARACTERS_IMPORT_IMAGE, () => {
     it('saves image and returns media URL', async () => {
       const payload = {
