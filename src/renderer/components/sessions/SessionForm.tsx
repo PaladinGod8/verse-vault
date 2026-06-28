@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import EditorActionBar from '../ui/EditorActionBar';
 
 type AddSessionInput = Parameters<DbApi['sessions']['add']>[0];
 
@@ -66,6 +67,30 @@ export default function SessionForm({
 
   return (
     <form className='space-y-4' onSubmit={handleSubmit}>
+      <EditorActionBar>
+        <button
+          type='button'
+          onClick={onCancel}
+          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
+          disabled={isSubmitting}
+        >
+          Cancel
+        </button>
+        <button
+          type='submit'
+          className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? isEditMode
+              ? 'Saving...'
+              : 'Creating...'
+            : isEditMode
+            ? 'Save changes'
+            : 'Create session'}
+        </button>
+      </EditorActionBar>
+
       <div className='space-y-1'>
         <label
           htmlFor='session-name'
@@ -127,30 +152,6 @@ export default function SessionForm({
           </p>
         )
         : null}
-
-      <div className='flex justify-end gap-2'>
-        <button
-          type='button'
-          onClick={onCancel}
-          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
-          disabled={isSubmitting}
-        >
-          Cancel
-        </button>
-        <button
-          type='submit'
-          className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? isEditMode
-              ? 'Saving...'
-              : 'Creating...'
-            : isEditMode
-            ? 'Save changes'
-            : 'Create session'}
-        </button>
-      </div>
     </form>
   );
 }

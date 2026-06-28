@@ -109,11 +109,13 @@ describe('WorldsHomePage renderer behaviors', () => {
     renderWorldsHomePage();
 
     await screen.findByRole('button', { name: 'Open Alpha' });
-    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual([
-      'Open Alpha',
-      'Open Beta',
-      'Open Zeta',
-    ]);
+    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual(
+      [
+        'Open Alpha',
+        'Open Beta',
+        'Open Zeta',
+      ],
+    );
   });
 
   it('creates a world through the create dialog', async () => {

@@ -4,6 +4,7 @@ import {
   buildSquareFootprintConfig,
 } from '../../lib/tokenFootprintGeometry';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
+import EditorActionBar from '../ui/EditorActionBar';
 import FootprintPainterModal, { type FootprintPainterResult } from './FootprintPainterModal';
 import TokenImageDropzone from './TokenImageDropzone';
 
@@ -179,6 +180,21 @@ export default function TokenForm({
 
   return (
     <form onSubmit={handleSubmit} className='space-y-4'>
+      <EditorActionBar>
+        <button
+          type='button'
+          className='btn btn-ghost'
+          onClick={onClose}
+          disabled={isSaving}
+        >
+          Cancel
+        </button>
+        <button type='submit' className='btn btn-primary' disabled={isSaving}>
+          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
+          <span>{initialValues ? 'Save' : 'Create'}</span>
+        </button>
+      </EditorActionBar>
+
       <div>
         <label
           htmlFor='token-name'
@@ -296,21 +312,6 @@ export default function TokenForm({
         >
           Visible
         </label>
-      </div>
-
-      <div className='flex justify-end gap-2 pt-2'>
-        <button
-          type='button'
-          className='btn btn-ghost'
-          onClick={onClose}
-          disabled={isSaving}
-        >
-          Cancel
-        </button>
-        <button type='submit' className='btn btn-primary' disabled={isSaving}>
-          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
-          <span>{initialValues ? 'Save' : 'Create'}</span>
-        </button>
       </div>
 
       {painterModalOpen && pendingImageFile && pendingImagePreviewUrl

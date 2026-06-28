@@ -5,6 +5,7 @@ import {
   normalizeJsonForEditor,
   optionalNumberToFieldString,
 } from '../../lib/abilityFormHelpers';
+import EditorActionBar from '../ui/EditorActionBar';
 import ActiveAbilityFields from './ActiveAbilityFields';
 import PassiveAbilityFields from './PassiveAbilityFields';
 
@@ -214,6 +215,30 @@ export default function AbilityForm({
 
   return (
     <form className='space-y-4' onSubmit={handleSubmit}>
+      <EditorActionBar>
+        <button
+          type='button'
+          onClick={onCancel}
+          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
+          disabled={isSubmitting}
+        >
+          Cancel
+        </button>
+        <button
+          type='submit'
+          className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? isEditMode
+              ? 'Saving...'
+              : 'Creating...'
+            : isEditMode
+            ? 'Save changes'
+            : 'Create ability'}
+        </button>
+      </EditorActionBar>
+
       <div className='space-y-1'>
         <label
           htmlFor='ability-name'
@@ -355,30 +380,6 @@ export default function AbilityForm({
           </p>
         )
         : null}
-
-      <div className='flex justify-end gap-2'>
-        <button
-          type='button'
-          onClick={onCancel}
-          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
-          disabled={isSubmitting}
-        >
-          Cancel
-        </button>
-        <button
-          type='submit'
-          className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? isEditMode
-              ? 'Saving...'
-              : 'Creating...'
-            : isEditMode
-            ? 'Save changes'
-            : 'Create ability'}
-        </button>
-      </div>
     </form>
   );
 }

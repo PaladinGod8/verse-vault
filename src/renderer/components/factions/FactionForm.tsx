@@ -5,6 +5,7 @@ import { FACTION_BASIC_INFO_FIELDS } from '../../lib/factionWikiSummaryFieldConf
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 import CharacterWikiSummaryGroupFields from '../characters/CharacterWikiSummaryGroupFields';
 import CharacterWikiSummaryListEditor from '../characters/CharacterWikiSummaryListEditor';
+import EditorActionBar from '../ui/EditorActionBar';
 import FactionCurrentImagePreview from './FactionCurrentImagePreview';
 import FactionImageDropzone from './FactionImageDropzone';
 import FactionMembersEditor from './FactionMembersEditor';
@@ -186,6 +187,16 @@ export default function FactionForm({
 
   return (
     <form onSubmit={handleSubmit} className='space-y-4'>
+      <EditorActionBar>
+        <button type='button' className='btn btn-ghost' onClick={onClose} disabled={isSaving}>
+          Cancel
+        </button>
+        <button type='submit' className='btn btn-primary' disabled={isSaving}>
+          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
+          <span>{initialValues ? 'Save' : 'Create'}</span>
+        </button>
+      </EditorActionBar>
+
       <FactionNameField
         name={name}
         onChange={(value) => {
@@ -294,16 +305,6 @@ export default function FactionForm({
         onChange={setMembers}
         disabled={isSaving}
       />
-
-      <div className='flex justify-end gap-2 pt-2'>
-        <button type='button' className='btn btn-ghost' onClick={onClose} disabled={isSaving}>
-          Cancel
-        </button>
-        <button type='submit' className='btn btn-primary' disabled={isSaving}>
-          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
-          <span>{initialValues ? 'Save' : 'Create'}</span>
-        </button>
-      </div>
     </form>
   );
 }

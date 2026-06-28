@@ -74,6 +74,9 @@ describe('CharacterForm', () => {
     expect(screen.getByLabelText('Background')).toHaveValue('Outcasted.');
     expect(screen.getByLabelText('Main Epithet')).toHaveValue('The Brandslayer');
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(screen.getByTestId('editor-action-bar')).toContainElement(
+      screen.getByRole('button', { name: 'Save' }),
+    );
   });
 
   it('calls onClose when Cancel is clicked', async () => {

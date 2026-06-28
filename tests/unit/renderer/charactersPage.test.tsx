@@ -76,11 +76,13 @@ describe('CharactersPage', () => {
     renderPage(1);
 
     await screen.findByText('A-LIVE');
-    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual([
-      'Open A-LIVE',
-      'Open Beta',
-      'Open Zed',
-    ]);
+    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual(
+      [
+        'Open A-LIVE',
+        'Open Beta',
+        'Open Zed',
+      ],
+    );
   });
 
   it('shows an empty state when the world has no characters', async () => {

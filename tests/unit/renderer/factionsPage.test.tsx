@@ -69,11 +69,13 @@ describe('FactionsPage', () => {
     renderPage(1);
 
     await screen.findByText('Aegis');
-    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual([
-      'Open Aegis',
-      'Open Brotherhood',
-      'Open Zealots',
-    ]);
+    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual(
+      [
+        'Open Aegis',
+        'Open Brotherhood',
+        'Open Zealots',
+      ],
+    );
   });
 
   it('shows an empty state when the world has no factions', async () => {

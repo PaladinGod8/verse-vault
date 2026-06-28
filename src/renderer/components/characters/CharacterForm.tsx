@@ -4,6 +4,7 @@ import type {
   CharacterWikiSummary,
 } from '../../../shared/contracts/characterTypes';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
+import EditorActionBar from '../ui/EditorActionBar';
 import CharacterImageDropzone from './CharacterImageDropzone';
 import CharacterWikiSummaryEditor from './CharacterWikiSummaryEditor';
 
@@ -138,6 +139,21 @@ export default function CharacterForm({
 
   return (
     <form onSubmit={handleSubmit} className='space-y-4'>
+      <EditorActionBar>
+        <button
+          type='button'
+          className='btn btn-ghost'
+          onClick={onClose}
+          disabled={isSaving}
+        >
+          Cancel
+        </button>
+        <button type='submit' className='btn btn-primary' disabled={isSaving}>
+          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
+          <span>{initialValues ? 'Save' : 'Create'}</span>
+        </button>
+      </EditorActionBar>
+
       <div>
         <label
           htmlFor='character-name'
@@ -263,21 +279,6 @@ export default function CharacterForm({
           onChange={setWikiSummary}
           disabled={isSaving}
         />
-      </div>
-
-      <div className='flex justify-end gap-2 pt-2'>
-        <button
-          type='button'
-          className='btn btn-ghost'
-          onClick={onClose}
-          disabled={isSaving}
-        >
-          Cancel
-        </button>
-        <button type='submit' className='btn btn-primary' disabled={isSaving}>
-          {isSaving ? <span className='loading loading-spinner loading-xs' /> : null}
-          <span>{initialValues ? 'Save' : 'Create'}</span>
-        </button>
       </div>
     </form>
   );

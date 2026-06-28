@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PassiveScoreDefinition, PassiveScoreType } from '../../../shared/statisticsTypes';
+import EditorActionBar from '../ui/EditorActionBar';
 
 type Props = {
   mode: 'create' | 'edit';
@@ -86,6 +87,24 @@ export default function PassiveScoreDefinitionForm({
 
   return (
     <form onSubmit={handleSubmit} className='space-y-4'>
+      <EditorActionBar>
+        <button
+          type='button'
+          onClick={onCancel}
+          disabled={isPending}
+          className='rounded-md bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 disabled:opacity-50'
+        >
+          Cancel
+        </button>
+        <button
+          type='submit'
+          disabled={isPending}
+          className='rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50'
+        >
+          {isPending ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
+        </button>
+      </EditorActionBar>
+
       {error
         ? (
           <div className='rounded-md bg-red-50 p-3 text-sm text-red-800'>
@@ -211,24 +230,6 @@ export default function PassiveScoreDefinitionForm({
         >
           Include in new statblocks by default
         </label>
-      </div>
-
-      <div className='flex justify-end gap-2 pt-2'>
-        <button
-          type='button'
-          onClick={onCancel}
-          disabled={isPending}
-          className='rounded-md bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 disabled:opacity-50'
-        >
-          Cancel
-        </button>
-        <button
-          type='submit'
-          disabled={isPending}
-          className='rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50'
-        >
-          {isPending ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
-        </button>
       </div>
     </form>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EditorActionBar from '../ui/EditorActionBar';
 
 type Props = {
   initialValues?: { name: string; };
@@ -34,6 +35,22 @@ export default function ArcForm({
 
   return (
     <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+      <EditorActionBar>
+        <button
+          type='button'
+          onClick={onCancel}
+          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
+        >
+          Cancel
+        </button>
+        <button
+          type='submit'
+          className='rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700'
+        >
+          {submitLabel}
+        </button>
+      </EditorActionBar>
+
       <div className='flex flex-col gap-1'>
         <label
           htmlFor='arc-name'
@@ -51,21 +68,6 @@ export default function ArcForm({
           autoFocus
         />
         {error && <p className='text-xs text-red-600'>{error}</p>}
-      </div>
-      <div className='flex justify-end gap-2'>
-        <button
-          type='button'
-          onClick={onCancel}
-          className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50'
-        >
-          Cancel
-        </button>
-        <button
-          type='submit'
-          className='rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700'
-        >
-          {submitLabel}
-        </button>
       </div>
     </form>
   );
