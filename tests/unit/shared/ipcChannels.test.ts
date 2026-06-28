@@ -92,6 +92,7 @@ describe('IPC channels', () => {
       CHARACTERS_UPDATE: 'db:characters:update',
       CHARACTERS_DELETE: 'db:characters:delete',
       CHARACTERS_IMPORT_IMAGE: 'db:characters:importImage',
+      CHARACTERS_SEARCH_BY_WORLD: 'db:characters:searchByWorld',
       FACTIONS_GET_ALL_BY_WORLD: 'db:factions:getAllByWorld',
       FACTIONS_GET_BY_ID: 'db:factions:getById',
       FACTIONS_ADD: 'db:factions:add',

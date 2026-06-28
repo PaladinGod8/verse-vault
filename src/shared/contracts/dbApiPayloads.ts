@@ -1,6 +1,6 @@
 // Inline payload/result shapes used only by DbApi method signatures, kept out of
 // dbApi.ts to stay within the file-size budget enforced by .eslintrc.cjs.
-import type { FactionMember } from './domainTypes';
+import type { Character, FactionMember } from './domainTypes';
 
 type RichEntityUpsertPayload = {
   profile?: string | null;
@@ -27,3 +27,12 @@ export type FactionMembershipByFaction = FactionMember & { character_name: strin
 export type FactionMembershipByCharacter = FactionMember & { faction_name: string; };
 export type PrimaryFactionMembership = { character_id: number; faction_id: number; };
 export type RosterReplaceResult = { faction_id: number; };
+
+export type CharacterSearchByWorldQuery = {
+  worldId: number;
+  query: string;
+  offset: number;
+  limit: number;
+  excludeCharacterIds?: number[];
+};
+export type CharacterSearchByWorldResult = { items: Character[]; hasMore: boolean; };

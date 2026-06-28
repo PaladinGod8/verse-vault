@@ -9,6 +9,10 @@ import { app, ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
+import type {
+  CharacterSearchByWorldQuery,
+  CharacterSearchByWorldResult,
+} from '../../shared/contracts/dbApiPayloads';
 import { IPC } from '../../shared/ipcChannels';
 
 const CHARACTER_IMAGE_MIME_TO_EXTENSION = {
@@ -62,6 +66,41 @@ function registerCharacterReadHandlers(db: Database.Database): void {
   ipcMain.handle(IPC.CHARACTERS_GET_BY_ID, (_event, id: number) => {
     return db.prepare('SELECT * FROM characters WHERE id = ?').get(id) ?? null;
   });
+
+  ipcMain.handle(
+    IPC.CHARACTERS_SEARCH_BY_WORLD,
+    (_event, query: CharacterSearchByWorldQuery): CharacterSearchByWorldResult => {
+      return searchCharactersByWorld(db, query);
+    },
+  );
+}
+
+function searchCharactersByWorld(
+  db: Database.Database,
+  query: CharacterSearchByWorldQuery,
+): CharacterSearchByWorldResult {
+  const trimmedQuery = typeof query.query === 'string' ? query.query.trim() : '';
+  const limit = Number.isInteger(query.limit) && query.limit > 0 ? query.limit : 50;
+  const offset = Number.isInteger(query.offset) && query.offset >= 0 ? query.offset : 0;
+  const excludeIds = Array.isArray(query.excludeCharacterIds)
+    ? query.excludeCharacterIds.filter((id): id is number => Number.isInteger(id))
+    : [];
+
+  const excludeClause = excludeIds.length > 0
+    ? `AND id NOT IN (${excludeIds.map(() => '?').join(', ')})`
+    : '';
+
+  const rows = db
+    .prepare(
+      `SELECT * FROM characters
+       WHERE world_id = ? AND name LIKE ? COLLATE NOCASE ${excludeClause}
+       ORDER BY name COLLATE NOCASE ASC
+       LIMIT ? OFFSET ?`,
+    )
+    .all(query.worldId, `${trimmedQuery}%`, ...excludeIds, limit + 1, offset) as Character[];
+
+  const hasMore = rows.length > limit;
+  return { items: rows.slice(0, limit), hasMore };
 }
 
 function registerCharacterMutationHandlers(db: Database.Database): void {

@@ -21,6 +21,7 @@ export function runMigrations(db: Database.Database): void {
   runFactionTypesSchemaMigration(db);
   runFactionsSchemaMigration(db);
   runFactionMembersSchemaMigration(db);
+  ensureCharacterNameIndex(db);
 }
 
 function runFactionTypesSchemaMigration(db: Database.Database): void {
@@ -408,6 +409,12 @@ function runTokenGridTypeMigration(db: Database.Database): void {
 function ensureTokenCampaignIdIndex(db: Database.Database): void {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id ON tokens(campaign_id)
+  `);
+}
+
+function ensureCharacterNameIndex(db: Database.Database): void {
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_characters_world_id_name ON characters(world_id, name COLLATE NOCASE)
   `);
 }
 

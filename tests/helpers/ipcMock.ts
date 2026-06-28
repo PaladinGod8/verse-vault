@@ -121,6 +121,7 @@ export function createMockDb(): DbApi {
       importImage: vi.fn().mockResolvedValue({
         image_src: 'vv-media://character-images/mock.png',
       }),
+      searchByWorld: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
     },
     factions: {
       getAllByWorld: vi.fn().mockResolvedValue([]),

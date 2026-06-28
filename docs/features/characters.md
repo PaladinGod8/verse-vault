@@ -98,9 +98,15 @@ and any Wiki Summary value), and are listed as cards.
 
 - IPC channels (`src/shared/ipcChannels.ts`): `CHARACTERS_GET_ALL_BY_WORLD`,
   `CHARACTERS_GET_BY_ID`, `CHARACTERS_ADD`, `CHARACTERS_UPDATE`, `CHARACTERS_DELETE`,
-  `CHARACTERS_IMPORT_IMAGE`.
+  `CHARACTERS_IMPORT_IMAGE`, `CHARACTERS_SEARCH_BY_WORLD`.
 - Main handler: `src/main/ipc/registerCharacterHandlers.ts`, registered in
-  `src/main.ts`.
+  `src/main.ts`. `CHARACTERS_SEARCH_BY_WORLD` does a case-insensitive **prefix** match
+  on `name` only (`LIKE 'query%' COLLATE NOCASE`), paginated via `offset`/`limit`, with
+  an optional `excludeCharacterIds` list. Backed by the
+  `idx_characters_world_id_name` index (`world_id, name COLLATE NOCASE`). This is a
+  separate, narrower mechanism from `characterSearch.ts` below — it exists solely for
+  the faction member-picker combobox (`docs/features/factions.md`), not as a
+  replacement for the page-level full-text search.
 - Preload bridge: `window.db.characters` in `src/preload.ts`, typed via
   `DbApi.characters` in `src/shared/contracts/dbApi.ts`.
 - Renderer:

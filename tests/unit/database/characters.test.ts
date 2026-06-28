@@ -119,4 +119,16 @@ describe('Characters schema migration', () => {
     const executedSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
     expect(executedSql).not.toContain('ALTER TABLE characters ADD COLUMN');
   });
+
+  it('creates a covering index on (world_id, name) for prefix search', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+
+    getDatabase();
+    closeDatabase();
+
+    const executedSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    expect(executedSql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_characters_world_id_name ON characters(world_id, name COLLATE NOCASE)',
+    );
+  });
 });

@@ -239,6 +239,7 @@ describe('IPC registrar channel wiring', () => {
         expected: [
           IPC.CHARACTERS_GET_ALL_BY_WORLD,
           IPC.CHARACTERS_GET_BY_ID,
+          IPC.CHARACTERS_SEARCH_BY_WORLD,
           IPC.CHARACTERS_ADD,
           IPC.CHARACTERS_UPDATE,
           IPC.CHARACTERS_DELETE,

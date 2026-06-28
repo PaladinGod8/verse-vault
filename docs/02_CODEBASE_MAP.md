@@ -84,7 +84,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerSessionHandlers.ts`       | sessions       | 7        |
 | `src/main/ipc/registerSceneHandlers.ts`         | scenes         | 7        |
 | `src/main/ipc/registerStatBlockHandlers.ts`     | statblocks     | 13       |
-| `src/main/ipc/registerCharacterHandlers.ts`     | characters     | 6        |
+| `src/main/ipc/registerCharacterHandlers.ts`     | characters     | 7        |
 | `src/main/ipc/registerFactionHandlers.ts`       | factions       | 6        |
 | `src/main/ipc/registerFactionTypeHandlers.ts`   | factionTypes   | 4        |
 | `src/main/ipc/registerFactionMemberHandlers.ts` | factionMembers | 5        |

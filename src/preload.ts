@@ -158,6 +158,7 @@ const dbApi: DbApi = {
         bytes: new Uint8Array(payload.bytes),
       });
     },
+    searchByWorld: (query) => ipcRenderer.invoke(IPC.CHARACTERS_SEARCH_BY_WORLD, query),
   },
   factions: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTIONS_GET_ALL_BY_WORLD, worldId),

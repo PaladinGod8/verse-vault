@@ -5,6 +5,8 @@
  * @calls Shared domain row and payload types only
  */
 import type {
+  CharacterSearchByWorldQuery,
+  CharacterSearchByWorldResult,
   CharacterUpsertPayload,
   FactionMemberInput,
   FactionMembershipByCharacter,
@@ -85,7 +87,15 @@ export const DB_API_METHODS = {
     'detachAbility',
     'listAbilities',
   ],
-  characters: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage'],
+  characters: [
+    'getAllByWorld',
+    'getById',
+    'add',
+    'update',
+    'delete',
+    'importImage',
+    'searchByWorld',
+  ],
   factions: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage'],
   factionTypes: ['getAllByWorld', 'add', 'rename', 'delete'],
   factionMembers: [
@@ -366,6 +376,7 @@ export interface DbApi {
     update(id: number, data: CharacterUpsertPayload): Promise<Character>;
     delete(id: number): Promise<{ id: number; }>;
     importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+    searchByWorld(query: CharacterSearchByWorldQuery): Promise<CharacterSearchByWorldResult>;
   };
   factions: {
     getAllByWorld(worldId: number): Promise<Faction[]>;

@@ -235,6 +235,11 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'window.db.characters.importImage',
       'DbApi.characters.importImage',
     ],
+    [
+      'CHARACTERS_SEARCH_BY_WORLD',
+      'window.db.characters.searchByWorld',
+      'DbApi.characters.searchByWorld',
+    ],
   ]),
   ...entries('factions', HANDLERS.factions, [
     [
