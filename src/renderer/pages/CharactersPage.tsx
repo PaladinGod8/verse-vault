@@ -4,6 +4,7 @@ import CharacterCard from '../components/characters/CharacterCard';
 import CharacterForm from '../components/characters/CharacterForm';
 import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import EntityCountBadge from '../components/ui/EntityCountBadge';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -110,6 +111,7 @@ export default function CharactersPage() {
           </div>
 
           <div className='flex items-start gap-3'>
+            <EntityCountBadge count={characters.length} singularLabel='character' />
             <CardSortToggle value={sortMethod} onChange={setSortMethod} />
             {worldId !== null
               ? (

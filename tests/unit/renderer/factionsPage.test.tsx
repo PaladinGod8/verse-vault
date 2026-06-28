@@ -110,6 +110,29 @@ describe('FactionsPage', () => {
     );
   });
 
+  it('shows the total faction count and keeps it unchanged while filtering', async () => {
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([
+      buildFaction({ id: 1, world_id: 1, name: 'Acme Corp' }),
+      buildFaction({ id: 2, world_id: 1, name: 'Cult of Contagion' }),
+    ]);
+
+    const user = userEvent.setup();
+    renderPage(1);
+
+    await screen.findByText('Acme Corp');
+    expect(screen.getByRole('status', { name: 'Total factions' })).toHaveTextContent(
+      '2 factions',
+    );
+
+    await user.type(screen.getByPlaceholderText(/search factions/i), 'Acme');
+    expect(screen.queryByText('Cult of Contagion')).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Total factions' })).toHaveTextContent(
+      '2 factions',
+    );
+  });
+
   it('shows an empty state when the world has no factions', async () => {
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(buildWorld({ id: 1 }));
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);

@@ -6,6 +6,7 @@ import FactionForm, { type FactionFormValues } from '../components/factions/Fact
 import ManageFactionTypesModal from '../components/factions/ManageFactionTypesModal';
 import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import EntityCountBadge from '../components/ui/EntityCountBadge';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -99,6 +100,7 @@ export default function FactionsPage() {
           </div>
 
           <div className='flex shrink-0 items-start gap-2'>
+            <EntityCountBadge count={factions.length} singularLabel='faction' />
             <CardSortToggle value={sortMethod} onChange={setSortMethod} />
             {worldId !== null
               ? (

@@ -117,6 +117,29 @@ describe('CharactersPage', () => {
     );
   });
 
+  it('shows the total character count and keeps it unchanged while filtering', async () => {
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([
+      buildCharacter({ id: 1, world_id: 1, name: 'Ledros Igni' }),
+      buildCharacter({ id: 2, world_id: 1, name: 'Someone Else' }),
+    ]);
+
+    const user = userEvent.setup();
+    renderPage(1);
+
+    await screen.findByText('Ledros Igni');
+    expect(screen.getByRole('status', { name: 'Total characters' })).toHaveTextContent(
+      '2 characters',
+    );
+
+    await user.type(screen.getByPlaceholderText(/search characters/i), 'Ledros');
+    expect(screen.queryByText('Someone Else')).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Total characters' })).toHaveTextContent(
+      '2 characters',
+    );
+  });
+
   it('shows an empty state when the world has no characters', async () => {
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(buildWorld({ id: 1 }));
     (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);
