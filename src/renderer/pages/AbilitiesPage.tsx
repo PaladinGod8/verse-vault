@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 
 type AddAbilityInput = Parameters<DbApi['abilities']['add']>[0];
 
@@ -46,6 +47,7 @@ export default function AbilitiesPage() {
   >(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [pendingDeleteAbility, setPendingDeleteAbility] = useState<Ability | null>(null);
+  const sortedAbilities = useMemo(() => sortNamedRecords(abilities), [abilities]);
   const managingChildrenAbility = useMemo(
     () =>
       managingChildrenAbilityId === null
@@ -251,7 +253,7 @@ export default function AbilitiesPage() {
           )
           : null}
 
-        {!isLoading && !error && abilities.length === 0
+        {!isLoading && !error && sortedAbilities.length === 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
               <p className='text-sm text-slate-600'>No abilities yet.</p>
@@ -259,7 +261,7 @@ export default function AbilitiesPage() {
           )
           : null}
 
-        {!isLoading && !error && abilities.length > 0
+        {!isLoading && !error && sortedAbilities.length > 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
               <table className='w-full text-sm text-slate-700'>
@@ -283,7 +285,7 @@ export default function AbilitiesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {abilities.map((ability) => (
+                  {sortedAbilities.map((ability) => (
                     <tr
                       key={ability.id}
                       className='border-b border-slate-100 last:border-0'

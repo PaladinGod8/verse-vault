@@ -12,6 +12,7 @@ import { useWorldCharactersData } from '../hooks/useWorldCharactersData';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { characterMatchesQuery } from '../lib/characterSearch';
 import { parsePositiveIntParam } from '../lib/routeParams';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 function parseCharacterJson<T>(jsonText: string): T {
@@ -79,8 +80,10 @@ export default function CharactersPage() {
 
   const visibleCharacters = useMemo(
     () =>
-      characters.filter((character) =>
-        characterMatchesQuery(character, searchQuery, primaryFactionByCharacterId, allFactions)
+      sortNamedRecords(
+        characters.filter((character) =>
+          characterMatchesQuery(character, searchQuery, primaryFactionByCharacterId, allFactions)
+        ),
       ),
     [characters, searchQuery, primaryFactionByCharacterId, allFactions],
   );

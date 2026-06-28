@@ -9,6 +9,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 
 const CLOSE_DIALOG_DELAY_MS = 30;
 
@@ -43,6 +44,7 @@ export default function StatBlocksPage() {
   );
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<StatBlock | null>(null);
+  const sortedStatblocks = useMemo(() => sortNamedRecords(statblocks), [statblocks]);
 
   const closeCreateModal = useCallback(() => {
     window.setTimeout(() => {
@@ -375,7 +377,7 @@ export default function StatBlocksPage() {
           )
           : null}
 
-        {!isLoading && !error && statblocks.length === 0
+        {!isLoading && !error && sortedStatblocks.length === 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
               <p className='text-sm text-slate-600'>No statblocks yet.</p>
@@ -383,10 +385,10 @@ export default function StatBlocksPage() {
           )
           : null}
 
-        {!isLoading && !error && statblocks.length > 0
+        {!isLoading && !error && sortedStatblocks.length > 0
           ? (
             <section className='grid grid-cols-1 gap-4'>
-              {statblocks.map((sb) => (
+              {sortedStatblocks.map((sb) => (
                 <StatBlockCard
                   key={sb.id}
                   statBlock={sb}

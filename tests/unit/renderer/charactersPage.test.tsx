@@ -64,6 +64,25 @@ describe('CharactersPage', () => {
     expect(screen.getByText('The Brandslayer')).toBeInTheDocument();
   });
 
+  it('renders character cards in alphabetical order', async () => {
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([
+      buildCharacter({ id: 3, world_id: 1, name: 'Zed' }),
+      buildCharacter({ id: 1, world_id: 1, name: 'A-LIVE' }),
+      buildCharacter({ id: 2, world_id: 1, name: 'Beta' }),
+    ]);
+
+    renderPage(1);
+
+    await screen.findByText('A-LIVE');
+    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual([
+      'Open A-LIVE',
+      'Open Beta',
+      'Open Zed',
+    ]);
+  });
+
   it('shows an empty state when the world has no characters', async () => {
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(buildWorld({ id: 1 }));
     (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);

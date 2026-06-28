@@ -15,6 +15,7 @@ import { useWorldFactionsData } from '../hooks/useWorldFactionsData';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { factionMatchesQuery } from '../lib/factionSearch';
 import { parsePositiveIntParam } from '../lib/routeParams';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 function parseFactionJson<T>(jsonText: string): T {
@@ -65,12 +66,14 @@ export default function FactionsPage() {
 
   const visibleFactions = useMemo(
     () =>
-      factions.filter((faction) => {
-        if (typeFilter && String(faction.type_id ?? '') !== typeFilter) {
-          return false;
-        }
-        return factionMatchesQuery(faction, searchQuery, factions);
-      }),
+      sortNamedRecords(
+        factions.filter((faction) => {
+          if (typeFilter && String(faction.type_id ?? '') !== typeFilter) {
+            return false;
+          }
+          return factionMatchesQuery(faction, searchQuery, factions);
+        }),
+      ),
     [factions, searchQuery, typeFilter],
   );
 

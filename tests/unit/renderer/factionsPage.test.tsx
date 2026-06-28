@@ -57,6 +57,25 @@ describe('FactionsPage', () => {
     expect(screen.getByText('Uncategorized')).toBeInTheDocument();
   });
 
+  it('renders faction cards in alphabetical order', async () => {
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([
+      buildFaction({ id: 3, world_id: 1, name: 'Zealots' }),
+      buildFaction({ id: 1, world_id: 1, name: 'Aegis' }),
+      buildFaction({ id: 2, world_id: 1, name: 'Brotherhood' }),
+    ]);
+
+    renderPage(1);
+
+    await screen.findByText('Aegis');
+    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual([
+      'Open Aegis',
+      'Open Brotherhood',
+      'Open Zealots',
+    ]);
+  });
+
   it('shows an empty state when the world has no factions', async () => {
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(buildWorld({ id: 1 }));
     (mockDb.factions.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue([]);

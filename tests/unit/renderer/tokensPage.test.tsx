@@ -251,6 +251,26 @@ describe('TokensPage', () => {
     ).toHaveLength(1);
   });
 
+  it('renders tokens in alphabetical order', async () => {
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([]);
+    tokensGetAllByWorldMock.mockResolvedValue([
+      buildToken({ id: 3, name: 'Zed' }),
+      buildToken({ id: 1, name: 'Aegis' }),
+      buildToken({ id: 2, name: 'Beta' }),
+    ]);
+
+    renderTokensPage();
+
+    await screen.findByText('Aegis');
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(rows.map((row) => within(row).getAllByRole('cell')[1].textContent)).toEqual([
+      'Aegis',
+      'Beta',
+      'Zed',
+    ]);
+  });
+
   it('renders empty state when no tokens exist', async () => {
     worldsGetByIdMock.mockResolvedValue(buildWorld());
     campaignsGetAllByWorldMock.mockResolvedValue([]);

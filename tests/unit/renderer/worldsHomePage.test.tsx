@@ -99,6 +99,23 @@ describe('WorldsHomePage renderer behaviors', () => {
     expect(screen.getByText('No description yet.')).toBeInTheDocument();
   });
 
+  it('renders world cards in alphabetical order', async () => {
+    worldsGetAllMock.mockResolvedValue([
+      buildWorld({ id: 3, name: 'Zeta' }),
+      buildWorld({ id: 1, name: 'Alpha' }),
+      buildWorld({ id: 2, name: 'Beta' }),
+    ]);
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    expect(screen.getAllByRole('button', { name: /^Open / }).map((card) => card.ariaLabel)).toEqual([
+      'Open Alpha',
+      'Open Beta',
+      'Open Zeta',
+    ]);
+  });
+
   it('creates a world through the create dialog', async () => {
     const user = userEvent.setup();
     const createdWorld = buildWorld({

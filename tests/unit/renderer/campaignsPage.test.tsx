@@ -183,6 +183,25 @@ describe('CampaignsPage', () => {
     expect(screen.getByText('Shattered Realms')).toBeInTheDocument();
   });
 
+  it('renders campaigns in alphabetical order', async () => {
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([
+      buildCampaign({ id: 3, name: 'Zeta Campaign' }),
+      buildCampaign({ id: 1, name: 'Alpha Campaign' }),
+      buildCampaign({ id: 2, name: 'Beta Campaign' }),
+    ]);
+
+    renderCampaignsPage('/world/1/campaigns');
+
+    await screen.findByText('Alpha Campaign');
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(rows.map((row) => within(row).getAllByRole('cell')[0].textContent)).toEqual([
+      'Alpha Campaign',
+      'Beta Campaign',
+      'Zeta Campaign',
+    ]);
+  });
+
   it('creates a campaign through the create dialog', async () => {
     const user = userEvent.setup();
     const newCampaign = buildCampaign({

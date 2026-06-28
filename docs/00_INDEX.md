@@ -44,6 +44,7 @@ not generated.
 | `modal-light-mode.md`                 | Light-theme modal dialog fix across CRUD surfaces            |
 | `battlemaps.md`                       | World-scoped battlemaps with PixiJS grid/token runtime       |
 | `casting.md`                          | Ability casting range/AoE overlays on battlemaps             |
+| `alphabetical-list-ordering.md`       | Shared alphabetical ordering for card grids and name tables  |
 | `worlds.md`                           | World records with thumbnail image uploads                   |
 | `statistics.md`                       | World/statblock-level TTRPG statistics framework             |
 | `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped    |

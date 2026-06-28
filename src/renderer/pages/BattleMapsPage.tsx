@@ -5,6 +5,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 
 type AddBattleMapInput = Parameters<DbApi['battlemaps']['add']>[0];
 
@@ -54,6 +55,7 @@ export default function BattleMapsPage() {
   );
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [pendingDeleteBattleMap, setPendingDeleteBattleMap] = useState<BattleMap | null>(null);
+  const sortedBattleMaps = useMemo(() => sortNamedRecords(battleMaps), [battleMaps]);
 
   useEffect(() => {
     let isMounted = true;
@@ -244,7 +246,7 @@ export default function BattleMapsPage() {
           )
           : null}
 
-        {!isLoading && !error && battleMaps.length === 0
+        {!isLoading && !error && sortedBattleMaps.length === 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
               <p className='text-sm text-slate-600'>No BattleMaps yet.</p>
@@ -252,7 +254,7 @@ export default function BattleMapsPage() {
           )
           : null}
 
-        {!isLoading && !error && battleMaps.length > 0
+        {!isLoading && !error && sortedBattleMaps.length > 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
               <table className='w-full text-sm text-slate-700'>
@@ -273,7 +275,7 @@ export default function BattleMapsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {battleMaps.map((battleMap) => (
+                  {sortedBattleMaps.map((battleMap) => (
                     <tr
                       key={battleMap.id}
                       className='border-b border-slate-100 last:border-0'

@@ -5,6 +5,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 
 type AddLevelInput = Parameters<DbApi['levels']['add']>[0];
 
@@ -34,6 +35,7 @@ export default function LevelsPage() {
   const [pendingDeleteLevel, setPendingDeleteLevel] = useState<Level | null>(
     null,
   );
+  const sortedLevels = useMemo(() => sortNamedRecords(levels), [levels]);
 
   useEffect(() => {
     let isMounted = true;
@@ -209,7 +211,7 @@ export default function LevelsPage() {
           )
           : null}
 
-        {!isLoading && !error && levels.length === 0
+        {!isLoading && !error && sortedLevels.length === 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
               <p className='text-sm text-slate-600'>No levels yet.</p>
@@ -217,7 +219,7 @@ export default function LevelsPage() {
           )
           : null}
 
-        {!isLoading && !error && levels.length > 0
+        {!isLoading && !error && sortedLevels.length > 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white shadow-sm'>
               <table className='w-full text-sm text-slate-700'>
@@ -238,7 +240,7 @@ export default function LevelsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {levels.map((level) => (
+                  {sortedLevels.map((level) => (
                     <tr
                       key={level.id}
                       className='border-b border-slate-100 last:border-0'

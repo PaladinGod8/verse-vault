@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldCard from '../components/worlds/WorldCard';
 import WorldForm from '../components/worlds/WorldForm';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 
 export default function WorldsHomePage() {
   type WorldInput = Parameters<DbApi['worlds']['add']>[0];
@@ -20,6 +21,7 @@ export default function WorldsHomePage() {
   const [pendingDeleteWorld, setPendingDeleteWorld] = useState<World | null>(
     null,
   );
+  const sortedWorlds = useMemo(() => sortNamedRecords(worlds), [worlds]);
 
   useEffect(() => {
     let isMounted = true;
@@ -172,7 +174,7 @@ export default function WorldsHomePage() {
           )
           : null}
 
-        {!isLoading && !loadError && worlds.length === 0
+        {!isLoading && !loadError && sortedWorlds.length === 0
           ? (
             <section className='rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm'>
               <h2 className='text-lg font-semibold text-slate-900'>
@@ -185,10 +187,10 @@ export default function WorldsHomePage() {
           )
           : null}
 
-        {!isLoading && !loadError && worlds.length > 0
+        {!isLoading && !loadError && sortedWorlds.length > 0
           ? (
             <section className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
-              {worlds.map((world) => (
+              {sortedWorlds.map((world) => (
                 <WorldCard
                   key={world.id}
                   world={world}

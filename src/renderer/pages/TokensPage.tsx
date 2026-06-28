@@ -13,6 +13,7 @@ import { useTokenDialogs } from '../hooks/useTokenDialogs';
 import { useTokenMoveCopy } from '../hooks/useTokenMoveCopy';
 import { useWorldTokensData } from '../hooks/useWorldTokensData';
 import { parsePositiveIntParam } from '../lib/routeParams';
+import { sortNamedRecords } from '../lib/sortNamedRecords';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
 export default function TokensPage() {
@@ -76,6 +77,7 @@ export default function TokensPage() {
     onMoveSaved: closeMoveDialog,
   });
   const isMutationPending = isSaving || isCopySaving;
+  const sortedTokens = useMemo(() => sortNamedRecords(tokens), [tokens]);
 
   return (
     <div className='flex min-h-screen'>
@@ -110,7 +112,7 @@ export default function TokensPage() {
         <TokensListSection
           isLoading={isLoading}
           error={error}
-          tokens={tokens}
+          tokens={sortedTokens}
           campaigns={campaigns}
           deletingTokenId={deletingTokenId}
           isMoveDialogPending={isMoveDialogPending}
