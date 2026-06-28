@@ -229,6 +229,69 @@ function ensureCharacterJson(
   return value;
 }
 
+function hasOwnCharacterField<Key extends keyof CharacterUpsertData>(
+  data: CharacterUpsertData,
+  key: Key,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(data, key);
+}
+
+function pushCharacterUpdate(
+  setClauses: string[],
+  values: Array<string | number | null>,
+  clause: string,
+  value: string | number | null,
+): void {
+  setClauses.push(clause);
+  values.push(value);
+}
+
+function appendOptionalTrimmedNameUpdate(
+  data: CharacterUpsertData,
+  setClauses: string[],
+  values: Array<string | number | null>,
+): void {
+  if (!hasOwnCharacterField(data, 'name')) {
+    return;
+  }
+
+  const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
+  if (!trimmedName) {
+    throw new Error('Character name is required');
+  }
+
+  pushCharacterUpdate(setClauses, values, 'name = ?', trimmedName);
+}
+
+function appendOptionalNullableStringUpdate(
+  data: CharacterUpsertData,
+  key: 'profile' | 'author' | 'image_src',
+  clause: string,
+  normalize: (value: CharacterUpsertData['profile' | 'author' | 'image_src']) => string | null,
+  setClauses: string[],
+  values: Array<string | number | null>,
+): void {
+  if (!hasOwnCharacterField(data, key)) {
+    return;
+  }
+
+  pushCharacterUpdate(setClauses, values, clause, normalize(data[key]));
+}
+
+function appendOptionalCharacterJsonUpdate(
+  data: CharacterUpsertData,
+  key: 'sections' | 'wiki_summary',
+  clause: string,
+  setClauses: string[],
+  values: Array<string | number | null>,
+): void {
+  if (!hasOwnCharacterField(data, key)) {
+    return;
+  }
+
+  pushCharacterUpdate(setClauses, values, clause, ensureCharacterJson(data[key], key));
+}
+
 function buildCharacterUpdateStatement(
   data: CharacterUpsertData,
   existingCharacter: Character,
@@ -239,22 +302,18 @@ function buildCharacterUpdateStatement(
   const setClauses: string[] = [];
   const values: Array<string | number | null> = [];
 
-  if (Object.prototype.hasOwnProperty.call(data, 'name')) {
-    const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
-    if (!trimmedName) {
-      throw new Error('Character name is required');
-    }
-    setClauses.push('name = ?');
-    values.push(trimmedName);
-  }
+  appendOptionalTrimmedNameUpdate(data, setClauses, values);
+  appendOptionalNullableStringUpdate(
+    data,
+    'profile',
+    'profile = ?',
+    (value) => typeof value === 'string' ? value : null,
+    setClauses,
+    values,
+  );
 
-  if (Object.prototype.hasOwnProperty.call(data, 'profile')) {
-    setClauses.push('profile = ?');
-    values.push(typeof data.profile === 'string' ? data.profile : null);
-  }
-
-  const hasPlayerCharacterFlag = Object.prototype.hasOwnProperty.call(data, 'is_player_character');
-  const hasOwner = Object.prototype.hasOwnProperty.call(data, 'owner');
+  const hasPlayerCharacterFlag = hasOwnCharacterField(data, 'is_player_character');
+  const hasOwner = hasOwnCharacterField(data, 'owner');
   const nextIsPlayerCharacter = hasPlayerCharacterFlag
     ? normalizePlayerCharacterFlag(data.is_player_character)
     : normalizePlayerCharacterFlag(existingCharacter.is_player_character);
@@ -264,34 +323,31 @@ function buildCharacterUpdateStatement(
   const nextOwner = ensurePlayerCharacterOwner(nextIsPlayerCharacter, requestedOwner);
 
   if (hasPlayerCharacterFlag) {
-    setClauses.push('is_player_character = ?');
-    values.push(nextIsPlayerCharacter);
+    pushCharacterUpdate(setClauses, values, 'is_player_character = ?', nextIsPlayerCharacter);
   }
 
   if (hasOwner || (hasPlayerCharacterFlag && nextIsPlayerCharacter === 0)) {
-    setClauses.push('owner = ?');
-    values.push(nextOwner);
+    pushCharacterUpdate(setClauses, values, 'owner = ?', nextOwner);
   }
 
-  if (Object.prototype.hasOwnProperty.call(data, 'author')) {
-    setClauses.push('author = ?');
-    values.push(typeof data.author === 'string' ? data.author.trim() || null : null);
-  }
-
-  if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
-    setClauses.push('image_src = ?');
-    values.push(typeof data.image_src === 'string' ? data.image_src : null);
-  }
-
-  if (Object.prototype.hasOwnProperty.call(data, 'sections')) {
-    setClauses.push('sections = ?');
-    values.push(ensureCharacterJson(data.sections, 'sections'));
-  }
-
-  if (Object.prototype.hasOwnProperty.call(data, 'wiki_summary')) {
-    setClauses.push('wiki_summary = ?');
-    values.push(ensureCharacterJson(data.wiki_summary, 'wiki_summary'));
-  }
+  appendOptionalNullableStringUpdate(
+    data,
+    'author',
+    'author = ?',
+    (value) => typeof value === 'string' ? value.trim() || null : null,
+    setClauses,
+    values,
+  );
+  appendOptionalNullableStringUpdate(
+    data,
+    'image_src',
+    'image_src = ?',
+    (value) => typeof value === 'string' ? value : null,
+    setClauses,
+    values,
+  );
+  appendOptionalCharacterJsonUpdate(data, 'sections', 'sections = ?', setClauses, values);
+  appendOptionalCharacterJsonUpdate(data, 'wiki_summary', 'wiki_summary = ?', setClauses, values);
 
   return { setClauses, values };
 }

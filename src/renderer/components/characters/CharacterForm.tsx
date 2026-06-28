@@ -63,6 +63,117 @@ function validateCharacterImageFile(file: File): string | null {
   return null;
 }
 
+async function readCharacterImageUpload(
+  selectedImageFile: File | null,
+): Promise<{
+  imageUpload?: CharacterImageUploadPayload;
+  error?: string;
+}> {
+  if (!selectedImageFile) {
+    return {};
+  }
+
+  const validationError = validateCharacterImageFile(selectedImageFile);
+  if (validationError) {
+    return { error: validationError };
+  }
+
+  try {
+    const buffer = await selectedImageFile.arrayBuffer();
+    return {
+      imageUpload: {
+        fileName: selectedImageFile.name,
+        mimeType: selectedImageFile.type.toLowerCase(),
+        bytes: new Uint8Array(buffer),
+      },
+    };
+  } catch {
+    return {
+      error: 'Unable to read the selected image file. Try a different image.',
+    };
+  }
+}
+
+type CharacterCurrentImageSectionProps = {
+  initialImageSrc: string;
+  previewUrl?: string;
+  clearImage: boolean;
+  isSaving: boolean;
+  onClear: () => void;
+};
+
+function CharacterCurrentImageSection({
+  initialImageSrc,
+  previewUrl,
+  clearImage,
+  isSaving,
+  onClear,
+}: CharacterCurrentImageSectionProps) {
+  return (
+    <div className='space-y-2'>
+      <label className='block text-sm font-medium text-slate-700'>Current Image</label>
+      {clearImage
+        ? (
+          <div className='rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800'>
+            Image will be cleared when you save.
+          </div>
+        )
+        : (
+          <div className='rounded-md border border-slate-200 bg-slate-50 p-3'>
+            <img
+              src={previewUrl ?? initialImageSrc}
+              alt='Current character'
+              className='h-20 w-20 rounded object-cover'
+            />
+          </div>
+        )}
+      <button
+        type='button'
+        className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+        onClick={onClear}
+        disabled={isSaving}
+      >
+        Clear image on save
+      </button>
+    </div>
+  );
+}
+
+type CharacterOwnerFieldProps = {
+  owner: string;
+  ownerError: string | null;
+  isSaving: boolean;
+  onChange: (value: string) => void;
+};
+
+function CharacterOwnerField({
+  owner,
+  ownerError,
+  isSaving,
+  onChange,
+}: CharacterOwnerFieldProps) {
+  return (
+    <div>
+      <label
+        htmlFor='character-owner'
+        className='mb-1 block text-sm font-medium text-slate-700'
+      >
+        Owner <span className='text-rose-500'>*</span>
+      </label>
+      <input
+        id='character-owner'
+        type='text'
+        value={owner}
+        onChange={(e) => onChange(e.target.value)}
+        className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
+        placeholder='Who owns this player character?'
+        disabled={isSaving}
+      />
+      {ownerError ? <p className='mt-1 text-xs text-rose-600'>{ownerError}</p> : null}
+    </div>
+  );
+}
+
 export default function CharacterForm({
   initialValues,
   onSave,
@@ -114,27 +225,10 @@ export default function CharacterForm({
       return;
     }
 
-    let imageUpload: CharacterImageUploadPayload | undefined;
-    if (selectedImageFile) {
-      const validationError = validateCharacterImageFile(selectedImageFile);
-      if (validationError) {
-        setImageUploadError(validationError);
-        return;
-      }
-
-      try {
-        const buffer = await selectedImageFile.arrayBuffer();
-        imageUpload = {
-          fileName: selectedImageFile.name,
-          mimeType: selectedImageFile.type.toLowerCase(),
-          bytes: new Uint8Array(buffer),
-        };
-      } catch {
-        setImageUploadError(
-          'Unable to read the selected image file. Try a different image.',
-        );
-        return;
-      }
+    const { imageUpload, error } = await readCharacterImageUpload(selectedImageFile);
+    if (error) {
+      setImageUploadError(error);
+      return;
     }
 
     setNameError(null);
@@ -233,27 +327,15 @@ export default function CharacterForm({
 
       {isPlayerCharacter === 1
         ? (
-          <div>
-            <label
-              htmlFor='character-owner'
-              className='mb-1 block text-sm font-medium text-slate-700'
-            >
-              Owner <span className='text-rose-500'>*</span>
-            </label>
-            <input
-              id='character-owner'
-              type='text'
-              value={owner}
-              onChange={(e) => {
-                setOwner(e.target.value);
-                if (ownerError) setOwnerError(null);
-              }}
-              className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-              placeholder='Who owns this player character?'
-              disabled={isSaving}
-            />
-            {ownerError ? <p className='mt-1 text-xs text-rose-600'>{ownerError}</p> : null}
-          </div>
+          <CharacterOwnerField
+            owner={owner}
+            ownerError={ownerError}
+            isSaving={isSaving}
+            onChange={(value) => {
+              setOwner(value);
+              if (ownerError) setOwnerError(null);
+            }}
+          />
         )
         : null}
 
@@ -277,36 +359,17 @@ export default function CharacterForm({
 
       {!isCreateMode && initialImageSrc
         ? (
-          <div className='space-y-2'>
-            <label className='block text-sm font-medium text-slate-700'>Current Image</label>
-            {clearImage
-              ? (
-                <div className='rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800'>
-                  Image will be cleared when you save.
-                </div>
-              )
-              : (
-                <div className='rounded-md border border-slate-200 bg-slate-50 p-3'>
-                  <img
-                    src={selectedImagePreviewUrl ?? initialImageSrc}
-                    alt='Current character'
-                    className='h-20 w-20 rounded object-cover'
-                  />
-                </div>
-              )}
-            <button
-              type='button'
-              className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
-              onClick={() => {
-                setClearImage(true);
-                setSelectedImageFile(null);
-                setImageUploadError(null);
-              }}
-              disabled={isSaving}
-            >
-              Clear image on save
-            </button>
-          </div>
+          <CharacterCurrentImageSection
+            initialImageSrc={initialImageSrc}
+            previewUrl={selectedImagePreviewUrl}
+            clearImage={clearImage}
+            isSaving={isSaving}
+            onClear={() => {
+              setClearImage(true);
+              setSelectedImageFile(null);
+              setImageUploadError(null);
+            }}
+          />
         )
         : null}
 

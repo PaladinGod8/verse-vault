@@ -17,6 +17,7 @@ export type CharacterUpsertPayload = RichEntityUpsertPayload & {
 };
 
 export type FactionUpsertPayload = RichEntityUpsertPayload & {
+  name?: string;
   type_id?: number | null;
   parent_faction_id?: number | null;
 };
