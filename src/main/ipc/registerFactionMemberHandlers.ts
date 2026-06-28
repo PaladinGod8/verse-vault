@@ -13,6 +13,28 @@ type FactionMemberInput = {
   role: string;
 };
 
+// A character with no prior faction membership anywhere defaults to making
+// their next faction assignment their primary faction.
+function findCharactersWithNoFaction(
+  db: Database.Database,
+  characterIds: number[],
+): Set<number> {
+  const charactersWithNoFaction = new Set(characterIds);
+  if (characterIds.length === 0) {
+    return charactersWithNoFaction;
+  }
+  const placeholders = characterIds.map(() => '?').join(', ');
+  const existingMemberships = db
+    .prepare(
+      `SELECT DISTINCT character_id FROM faction_members WHERE character_id IN (${placeholders})`,
+    )
+    .all(...characterIds) as Array<{ character_id: number; }>;
+  for (const row of existingMemberships) {
+    charactersWithNoFaction.delete(row.character_id);
+  }
+  return charactersWithNoFaction;
+}
+
 export function registerFactionMemberHandlers(db: Database.Database): void {
   ipcMain.handle(IPC.FACTION_MEMBERS_GET_ALL_BY_FACTION, (_event, factionId: number) => {
     return db
@@ -58,13 +80,26 @@ export function registerFactionMemberHandlers(db: Database.Database): void {
           .all(factionId) as Array<{ character_id: number; is_primary: number; }>;
         const primaryCharacterIds = new Set(existingPrimaryRows.map((row) => row.character_id));
 
+        const characterIds = members
+          .map((member) => member.character_id)
+          .filter((id) => Number.isInteger(id) && id > 0);
+        const charactersWithNoFaction = findCharactersWithNoFaction(db, characterIds);
+
         db.prepare('DELETE FROM faction_members WHERE faction_id = ?').run(factionId);
 
         const insertStmt = db.prepare(
           'INSERT INTO faction_members (faction_id, character_id, role, is_primary) VALUES (?, ?, ?, ?)',
         );
         for (const member of members) {
-          const isPrimary = primaryCharacterIds.has(member.character_id) ? 1 : 0;
+          // character_id 0 is the "no character picked yet" sentinel used by the
+          // member-picker combobox for an incomplete row - never persist it.
+          if (!Number.isInteger(member.character_id) || member.character_id <= 0) {
+            continue;
+          }
+          const isPrimary = primaryCharacterIds.has(member.character_id)
+              || charactersWithNoFaction.has(member.character_id)
+            ? 1
+            : 0;
           insertStmt.run(factionId, member.character_id, member.role, isPrimary);
         }
       });

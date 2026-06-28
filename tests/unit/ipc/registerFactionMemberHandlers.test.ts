@@ -136,6 +136,72 @@ describe('registerFactionMemberHandlers', () => {
       );
       expect(insertCallWithPreservedPrimary).toBe(true);
     });
+
+    it('auto-makes the new faction primary for a member who had no prior faction, but not for one who already had one', () => {
+      const runMock = vi.fn<(...args: unknown[]) => { changes: number; lastInsertRowid: number; }>(
+        () => ({ changes: 1, lastInsertRowid: 1 }),
+      );
+      const getMock = vi.fn(() => buildMember());
+      const noPrimaryRowsMock = vi.fn(() => []);
+      // character 2 already has a row in some other faction; character 1 has none.
+      const existingMembershipsMock = vi.fn(() => [{ character_id: 2 }]);
+      const prepareMock = vi
+        .fn()
+        .mockReturnValueOnce({ all: noPrimaryRowsMock })
+        .mockReturnValueOnce({ all: existingMembershipsMock })
+        .mockReturnValue({ run: runMock, get: getMock, all: vi.fn(() => []) });
+      const transactionMock = vi.fn(
+        (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
+      );
+      const db = {
+        prepare: prepareMock,
+        transaction: transactionMock,
+      } as unknown as Database.Database;
+      registerFactionMemberHandlers(db);
+      const h = getHandlers();
+
+      h[IPC.FACTION_MEMBERS_SET_FOR_FACTION]({}, 1, [
+        { character_id: 1, role: 'member' },
+        { character_id: 2, role: 'member' },
+      ]);
+
+      // INSERT signature: (faction_id, character_id, role, is_primary)
+      const char1Insert = runMock.mock.calls.find((call) => call[1] === 1);
+      const char2Insert = runMock.mock.calls.find((call) => call[1] === 2);
+      expect(char1Insert?.[3]).toBe(1);
+      expect(char2Insert?.[3]).toBe(0);
+    });
+
+    it('skips incomplete rows (character_id 0, the "no character picked yet" sentinel) instead of violating the FK constraint', () => {
+      const runMock = vi.fn((...args: unknown[]) => {
+        void args;
+        return { changes: 1, lastInsertRowid: 1 };
+      });
+      const getMock = vi.fn(() => buildMember());
+      const allMock = vi.fn(() => []);
+      const prepareMock = vi.fn(() => ({ run: runMock, get: getMock, all: allMock }));
+      const transactionMock = vi.fn(
+        (callback: (...args: unknown[]) => unknown) => (...args: unknown[]) => callback(...args),
+      );
+      const db = {
+        prepare: prepareMock,
+        transaction: transactionMock,
+      } as unknown as Database.Database;
+      registerFactionMemberHandlers(db);
+      const h = getHandlers();
+
+      expect(() =>
+        h[IPC.FACTION_MEMBERS_SET_FOR_FACTION]({}, 1, [
+          { character_id: 1, role: 'founder' },
+          { character_id: 0, role: 'member' },
+        ])
+      ).not.toThrow();
+
+      // INSERT signature is (faction_id, character_id, role, is_primary) - character_id is
+      // argument index 1. It must never be 0 (the "no character picked yet" sentinel).
+      const insertCallsWithZeroCharacterId = runMock.mock.calls.filter((call) => call[1] === 0);
+      expect(insertCallsWithZeroCharacterId).toHaveLength(0);
+    });
   });
 
   describe(IPC.FACTION_MEMBERS_SET_PRIMARY, () => {
