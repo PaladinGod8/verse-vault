@@ -174,13 +174,20 @@ function createAbilityAndCharacterTables(db: Database.Database): void {
     )
   `);
 
-  // `statblocks.character_id` references `characters(id)`. Keep this table
-  // present even before character features are implemented to avoid FK errors.
   db.exec(`
     CREATE TABLE IF NOT EXISTS characters (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      world_id            INTEGER REFERENCES worlds(id) ON DELETE CASCADE,
+      name                TEXT    NOT NULL DEFAULT '',
+      profile             TEXT,
+      is_player_character INTEGER NOT NULL DEFAULT 0 CHECK (is_player_character IN (0, 1)),
+      owner               TEXT,
+      author              TEXT,
+      image_src           TEXT,
+      sections            TEXT    NOT NULL DEFAULT '{}',
+      wiki_summary        TEXT    NOT NULL DEFAULT '{}',
+      created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
     )
   `);
 }

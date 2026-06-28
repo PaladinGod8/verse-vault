@@ -216,6 +216,9 @@ export default function CharactersPage() {
               initialValues={{
                 name: editingCharacter.name,
                 profile: editingCharacter.profile,
+                is_player_character: editingCharacter.is_player_character,
+                owner: editingCharacter.owner,
+                author: editingCharacter.author,
                 image_src: normalizeTokenImageSrc(editingCharacter.image_src),
                 sections: parseCharacterJson(editingCharacter.sections),
                 wiki_summary: parseCharacterJson(editingCharacter.wiki_summary),

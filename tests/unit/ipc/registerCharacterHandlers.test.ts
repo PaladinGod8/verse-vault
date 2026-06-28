@@ -37,6 +37,8 @@ function buildCharacter(overrides?: Record<string, unknown>) {
     world_id: 10,
     name: 'Ledros Igni',
     profile: null as null,
+    is_player_character: 0,
+    owner: null as null,
     author: null as null,
     image_src: null as null,
     sections: '{}',
@@ -98,7 +100,12 @@ describe('registerCharacterHandlers', () => {
   describe(IPC.CHARACTERS_ADD, () => {
     it('creates character with all fields', () => {
       const db = createDbMock({
-        insertedCharacter: buildCharacter({ name: 'New Character', author: 'GamingGator' }),
+        insertedCharacter: buildCharacter({
+          name: 'New Character',
+          is_player_character: 1,
+          owner: 'GamingGator',
+          author: 'GamingGator',
+        }),
       });
       vi.clearAllMocks();
       registerCharacterHandlers(db);
@@ -107,12 +114,19 @@ describe('registerCharacterHandlers', () => {
         world_id: 10,
         name: 'New Character',
         profile: 'A short profile',
+        is_player_character: 1,
+        owner: 'GamingGator',
         author: 'GamingGator',
         image_src: 'vv-media://character-images/test.png',
         sections: '{}',
         wiki_summary: '{}',
       });
-      expect(result).toMatchObject({ name: 'New Character', author: 'GamingGator' });
+      expect(result).toMatchObject({
+        name: 'New Character',
+        is_player_character: 1,
+        owner: 'GamingGator',
+        author: 'GamingGator',
+      });
     });
 
     it('throws when world_id is missing', () => {
@@ -135,6 +149,12 @@ describe('registerCharacterHandlers', () => {
         .toThrowError('Character sections must be valid JSON');
     });
 
+    it('throws when player character owner is missing', () => {
+      expect(() =>
+        handlers[IPC.CHARACTERS_ADD]({}, { world_id: 10, name: 'X', is_player_character: 1 })
+      ).toThrowError('Character owner is required for player characters');
+    });
+
     it('throws when wiki_summary is not valid JSON', () => {
       expect(() =>
         handlers[IPC.CHARACTERS_ADD]({}, { world_id: 10, name: 'X', wiki_summary: '{bad}' })
@@ -154,7 +174,12 @@ describe('registerCharacterHandlers', () => {
   describe(IPC.CHARACTERS_UPDATE, () => {
     it('updates name, profile, author, image_src, sections, wiki_summary', () => {
       const db = createDbMock({
-        insertedCharacter: buildCharacter({ name: 'Updated', author: 'GamingGator' }),
+        insertedCharacter: buildCharacter({
+          name: 'Updated',
+          is_player_character: 1,
+          owner: 'GamingGator',
+          author: 'GamingGator',
+        }),
       });
       vi.clearAllMocks();
       registerCharacterHandlers(db);
@@ -162,12 +187,19 @@ describe('registerCharacterHandlers', () => {
       const result = h[IPC.CHARACTERS_UPDATE]({}, 1, {
         name: 'Updated',
         profile: 'Desc',
+        is_player_character: 1,
+        owner: 'GamingGator',
         author: 'GamingGator',
         image_src: 'vv-media://character-images/test.png',
         sections: '{}',
         wiki_summary: '{}',
       });
-      expect(result).toMatchObject({ name: 'Updated', author: 'GamingGator' });
+      expect(result).toMatchObject({
+        name: 'Updated',
+        is_player_character: 1,
+        owner: 'GamingGator',
+        author: 'GamingGator',
+      });
     });
 
     it('touch-only update (no fields)', () => {
@@ -185,6 +217,11 @@ describe('registerCharacterHandlers', () => {
       const h = getHandlers();
       h[IPC.CHARACTERS_UPDATE]({}, 1, { image_src: null });
       expect(true).toBe(true);
+    });
+
+    it('throws when player character owner is blank on update', () => {
+      expect(() => handlers[IPC.CHARACTERS_UPDATE]({}, 1, { is_player_character: 1, owner: '   ' }))
+        .toThrowError('Character owner is required for player characters');
     });
 
     it('throws when name is empty', () => {

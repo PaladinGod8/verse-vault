@@ -50,6 +50,8 @@ describe('CharacterDetailPage', () => {
       world_id: 1,
       name: 'Ledros Igni',
       profile: 'A bitter dragonborn.',
+      is_player_character: 1,
+      owner: 'Gator',
       author: 'GamingGator',
       sections: JSON.stringify({ background: 'Outcasted from the Igni tribe.' }),
     });
@@ -60,6 +62,8 @@ describe('CharacterDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Ledros Igni' })).toBeInTheDocument();
     expect(screen.getByText('A bitter dragonborn.')).toBeInTheDocument();
+    expect(screen.getByText('Player Character')).toBeInTheDocument();
+    expect(screen.getByText('Owner: Gator')).toBeInTheDocument();
     expect(screen.getByText('Author: GamingGator')).toBeInTheDocument();
     expect(screen.getByText('Outcasted from the Igni tribe.')).toBeInTheDocument();
   });
@@ -135,6 +139,8 @@ describe('CharacterDetailPage', () => {
       id: 5,
       world_id: 1,
       name: 'Ledros Igni',
+      is_player_character: 1,
+      owner: 'Gator',
       author: 'GamingGator',
     });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
@@ -150,6 +156,8 @@ describe('CharacterDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Edit' }));
 
     const nameInput = screen.getByLabelText('Name *');
+    expect(screen.getByLabelText('Player Character')).toBeChecked();
+    expect(screen.getByLabelText('Owner *')).toHaveValue('Gator');
     expect(screen.getByLabelText('Author')).toHaveValue('GamingGator');
     await user.clear(nameInput);
     await user.type(nameInput, 'Updated Name');
@@ -159,7 +167,12 @@ describe('CharacterDetailPage', () => {
 
     expect(mockDb.characters.update).toHaveBeenCalledWith(
       5,
-      expect.objectContaining({ name: 'Updated Name', author: 'AnotherWriter' }),
+      expect.objectContaining({
+        name: 'Updated Name',
+        is_player_character: 1,
+        owner: 'Gator',
+        author: 'AnotherWriter',
+      }),
     );
   });
 

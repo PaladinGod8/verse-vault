@@ -33,6 +33,7 @@ export default defineConfig({
       name: 'smoke',
       testMatch: [
         'app.test.ts',
+        'characters.test.ts',
         'statblocks-crud.test.ts',
         'statblocks.test.ts',
       ],

@@ -11,6 +11,8 @@ type RichEntityUpsertPayload = {
 
 export type CharacterUpsertPayload = RichEntityUpsertPayload & {
   name?: string;
+  is_player_character?: number;
+  owner?: string | null;
   author?: string | null;
 };
 

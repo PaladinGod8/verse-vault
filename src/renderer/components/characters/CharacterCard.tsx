@@ -107,6 +107,14 @@ export default function CharacterCard({
 
         {mainEpithet ? <p className='text-xs text-slate-500'>{mainEpithet}</p> : null}
 
+        {character.is_player_character
+          ? <p className='text-xs font-medium text-sky-700'>Player Character</p>
+          : null}
+
+        {character.is_player_character && character.owner
+          ? <p className='text-xs text-slate-500'>{`Owner: ${character.owner}`}</p>
+          : null}
+
         {primaryFactionName
           ? <p className='text-xs text-slate-500'>{primaryFactionName}</p>
           : null}

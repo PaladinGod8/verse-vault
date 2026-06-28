@@ -25,6 +25,8 @@ export type CharacterImageUploadPayload = {
 export type CharacterFormValues = {
   name: string;
   profile?: string | null;
+  is_player_character: number;
+  owner?: string | null;
   author?: string | null;
   image_src?: string | null;
   image_upload?: CharacterImageUploadPayload;
@@ -71,12 +73,17 @@ export default function CharacterForm({
   const initialImageSrc = normalizeTokenImageSrc(initialValues?.image_src);
   const [name, setName] = useState(initialValues?.name ?? '');
   const [profile, setProfile] = useState(initialValues?.profile ?? '');
+  const [isPlayerCharacter, setIsPlayerCharacter] = useState(
+    initialValues?.is_player_character ?? 0,
+  );
+  const [owner, setOwner] = useState(initialValues?.owner ?? '');
   const [author, setAuthor] = useState(initialValues?.author ?? '');
   const [sections, setSections] = useState<CharacterSections>(initialValues?.sections ?? {});
   const [wikiSummary, setWikiSummary] = useState<CharacterWikiSummary>(
     initialValues?.wiki_summary ?? {},
   );
   const [nameError, setNameError] = useState<string | null>(null);
+  const [ownerError, setOwnerError] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [clearImage, setClearImage] = useState(false);
@@ -99,6 +106,11 @@ export default function CharacterForm({
     const trimmedName = name.trim();
     if (!trimmedName) {
       setNameError('Name is required.');
+      return;
+    }
+    const trimmedOwner = owner.trim();
+    if (isPlayerCharacter === 1 && !trimmedOwner) {
+      setOwnerError('Owner is required for player characters.');
       return;
     }
 
@@ -126,11 +138,14 @@ export default function CharacterForm({
     }
 
     setNameError(null);
+    setOwnerError(null);
     setImageUploadError(null);
 
     await onSave({
       name: trimmedName,
       profile: profile.trim() ? profile : null,
+      is_player_character: isPlayerCharacter,
+      owner: isPlayerCharacter === 1 ? trimmedOwner : null,
       author: author.trim() ? author.trim() : null,
       image_src: clearImage ? null : undefined,
       image_upload: imageUpload,
@@ -196,6 +211,51 @@ export default function CharacterForm({
           disabled={isSaving}
         />
       </div>
+
+      <div>
+        <label className='flex items-center gap-2 text-sm font-medium text-slate-700'>
+          <input
+            type='checkbox'
+            checked={isPlayerCharacter === 1}
+            onChange={(e) => {
+              const nextValue = e.target.checked ? 1 : 0;
+              setIsPlayerCharacter(nextValue);
+              if (nextValue === 0) {
+                setOwner('');
+                setOwnerError(null);
+              }
+            }}
+            disabled={isSaving}
+          />
+          <span>Player Character</span>
+        </label>
+      </div>
+
+      {isPlayerCharacter === 1
+        ? (
+          <div>
+            <label
+              htmlFor='character-owner'
+              className='mb-1 block text-sm font-medium text-slate-700'
+            >
+              Owner <span className='text-rose-500'>*</span>
+            </label>
+            <input
+              id='character-owner'
+              type='text'
+              value={owner}
+              onChange={(e) => {
+                setOwner(e.target.value);
+                if (ownerError) setOwnerError(null);
+              }}
+              className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
+              placeholder='Who owns this player character?'
+              disabled={isSaving}
+            />
+            {ownerError ? <p className='mt-1 text-xs text-rose-600'>{ownerError}</p> : null}
+          </div>
+        )
+        : null}
 
       <div>
         <label

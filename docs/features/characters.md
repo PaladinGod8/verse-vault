@@ -3,7 +3,8 @@
 ## Purpose
 
 Characters are a world-scoped wiki entry for each person/creature in a world: a short
-profile, optional freeform author credit, a fixed set of editable long-text sections, an optional image, and a large
+profile, optional freeform author credit, optional player-character ownership metadata,
+a fixed set of editable long-text sections, an optional image, and a large
 standardized "Wiki Summary" of mostly-optional fields. Characters are searchable from a
 single search bar by substring match against any stored field value (including faction
 and any Wiki Summary value), and are listed as cards.
@@ -12,13 +13,15 @@ and any Wiki Summary value), and are listed as cards.
 
 - World-scoped character CRUD (`world_id` required on create).
 - Optional freeform `author` field for writer credit.
+- Optional player-character flag (`is_player_character`) plus required `owner` text when
+  that flag is set.
 - Fixed long-text sections: Background, Personality, Relationships, Notes.
 - Standardized Wiki Summary groups: Biographic Information, Aliases, Titles, Personal
   Description, Ages & Timeline, Conditions, Status & Demographics, Educational History,
   Occupational History, Trivia. All fields are optional.
 - Optional character image upload via the shared `vv-media://` media protocol.
-- Client-side substring search across name, profile, sections, and every Wiki Summary
-  value (including faction).
+- Client-side substring search across name, profile, player-character label, owner,
+  sections, and every Wiki Summary value (including faction).
 - Out of scope: SQLite full-text search (FTS5), per-field structured search UI,
   user-defined/arbitrary text sections (the four sections above are fixed), and
   campaign-scoping (characters are world-scoped only, matching the existing
@@ -32,13 +35,15 @@ and any Wiki Summary value), and are listed as cards.
 - Shows explicit states for loading, load failure, and empty list (`No characters yet.`).
 - A search input filters the in-memory character list by substring match against any
   field (e.g. typing a weight value like `90kg` narrows the list to matching
-  characters). This includes `author`. Additively, typing the exact name of a
-  character's _primary_ faction (or
+  characters). This includes `author`, `owner`, and `Player Character` for rows with
+  player-character mode enabled. Additively, typing the exact name of a character's
+  _primary_ faction (or
   any ancestor of that faction) also includes that character, even if the name doesn't
   appear verbatim in any of the character's own fields — see "Faction-aware search"
   below. When characters exist but none match, shows `No characters match your search.`.
 - "New Character" opens a modal form. Name is required; everything else, including
-  Author, is optional.
+  Author, is optional except `Owner`, which becomes required when `Player Character` is
+  checked.
 - Clicking a card's body navigates to its detail page (`/world/:id/characters/:characterId`);
   the card's own Edit button still opens the form modal directly, and Delete requires
   confirmation (`Delete "<name>"? This cannot be undone.`).
@@ -48,9 +53,9 @@ and any Wiki Summary value), and are listed as cards.
 
 ### Character detail page (`/world/:id/characters/:characterId`)
 
-- Read-first article view: image, profile, optional `Author: <name>` credit, the four
-  fixed text sections, and the full Wiki Summary groups loaded via
-  `window.db.characters.getById`.
+- Read-first article view: image, profile, optional `Player Character` / `Owner: <name>`
+  metadata, optional `Author: <name>` credit, the four fixed text sections, and the
+  full Wiki Summary groups loaded via `window.db.characters.getById`.
 - Every standard Wiki Summary group stays visible on the detail page even when some or
   all values are empty; table cells remain blank instead of the field disappearing.
 - A "Factions" section lists every faction membership for this character (role +
@@ -124,6 +129,8 @@ interface Character {
   world_id: number;
   name: string;
   profile: string | null;
+  is_player_character: number; // 0 | 1
+  owner: string | null;
   author: string | null;
   image_src: string | null;
   sections: string; // JSON text of CharacterSections
@@ -169,6 +176,9 @@ Main-process rules (`registerCharacterHandlers.ts`):
 
 - `world_id` is required on create (`Character world_id is required`).
 - `name` is required and trimmed for create/update (`Character name is required`).
+- `is_player_character` is stored as `0 | 1`; when it is `1`, `owner` is required
+  (`Character owner is required for player characters`).
+- When `is_player_character` is `0`, `owner` is normalized to `NULL`.
 - `author` is optional freeform text; whitespace-only values are normalized to `NULL`.
 - `sections` and `wiki_summary` must be valid JSON text when provided
   (`Character sections must be valid JSON` / `Character wiki_summary must be valid
@@ -177,7 +187,8 @@ Main-process rules (`registerCharacterHandlers.ts`):
   the world/token image import handlers.
 
 Renderer-side: `CharacterForm` requires a non-empty name (`Name is required.`) before
-calling `onSave`.
+calling `onSave`, and requires `Owner` when `Player Character` is checked (`Owner is
+required for player characters.`).
 
 ## Tests
 
@@ -199,6 +210,13 @@ calling `onSave`.
   delete flows against a mocked `window.db`.
 - `tests/unit/renderer/characterDetailPage.test.tsx` — detail-page rendering, faction
   membership links, the primary-toggle action, and edit-modal save flow.
+
+Additional player-character coverage:
+
+- `tests/unit/renderer/lib/characterSearch.test.ts` covers `player character` and owner-name search.
+- `tests/unit/renderer/charactersPage.test.tsx` covers player-character create payloads and search.
+- `tests/unit/renderer/characterDetailPage.test.tsx` covers player-character metadata rendering/editing.
+- `tests/e2e/characters.test.ts` covers real app create + search flow.
 
 ## Known Limits and Non-Goals
 

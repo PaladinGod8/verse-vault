@@ -25,11 +25,32 @@ type CharacterUpsertData = {
   world_id?: number;
   name?: string;
   profile?: string | null;
+  is_player_character?: number;
+  owner?: string | null;
   author?: string | null;
   image_src?: string | null;
   sections?: string;
   wiki_summary?: string;
 };
+
+function normalizePlayerCharacterFlag(value: number | undefined): 0 | 1 {
+  return value === 1 ? 1 : 0;
+}
+
+function normalizeCharacterOwner(value: string | null | undefined): string | null {
+  return typeof value === 'string' ? value.trim() || null : null;
+}
+
+function ensurePlayerCharacterOwner(
+  isPlayerCharacter: 0 | 1,
+  owner: string | null,
+): string | null {
+  if (isPlayerCharacter === 1 && !owner) {
+    throw new Error('Character owner is required for player characters');
+  }
+
+  return isPlayerCharacter === 1 ? owner : null;
+}
 
 function registerCharacterReadHandlers(db: Database.Database): void {
   ipcMain.handle(IPC.CHARACTERS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
@@ -56,15 +77,30 @@ function registerCharacterMutationHandlers(db: Database.Database): void {
     }
 
     const profile = typeof data.profile === 'string' ? data.profile : null;
+    const isPlayerCharacter = normalizePlayerCharacterFlag(data.is_player_character);
+    const owner = ensurePlayerCharacterOwner(
+      isPlayerCharacter,
+      normalizeCharacterOwner(data.owner),
+    );
     const author = typeof data.author === 'string' ? data.author.trim() || null : null;
     const imageSrc = typeof data.image_src === 'string' ? data.image_src : null;
     const sections = ensureCharacterJson(data.sections, 'sections');
     const wikiSummary = ensureCharacterJson(data.wiki_summary, 'wiki_summary');
 
     const stmt = db.prepare(
-      'INSERT INTO characters (world_id, name, profile, author, image_src, sections, wiki_summary) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO characters (world_id, name, profile, is_player_character, owner, author, image_src, sections, wiki_summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    const result = stmt.run(worldId, name, profile, author, imageSrc, sections, wikiSummary);
+    const result = stmt.run(
+      worldId,
+      name,
+      profile,
+      isPlayerCharacter,
+      owner,
+      author,
+      imageSrc,
+      sections,
+      wikiSummary,
+    );
 
     const character = db
       .prepare('SELECT * FROM characters WHERE id = ?')
@@ -76,7 +112,14 @@ function registerCharacterMutationHandlers(db: Database.Database): void {
   });
 
   ipcMain.handle(IPC.CHARACTERS_UPDATE, (_event, id: number, data: CharacterUpsertData) => {
-    const { setClauses, values } = buildCharacterUpdateStatement(data);
+    const existingCharacter = db.prepare('SELECT * FROM characters WHERE id = ?').get(id) as
+      | Character
+      | undefined;
+    if (!existingCharacter) {
+      throw new Error('Character not found');
+    }
+
+    const { setClauses, values } = buildCharacterUpdateStatement(data, existingCharacter);
 
     const updateSql = setClauses.length > 0
       ? `UPDATE characters SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
@@ -186,7 +229,10 @@ function ensureCharacterJson(
   return value;
 }
 
-function buildCharacterUpdateStatement(data: CharacterUpsertData): {
+function buildCharacterUpdateStatement(
+  data: CharacterUpsertData,
+  existingCharacter: Character,
+): {
   setClauses: string[];
   values: Array<string | number | null>;
 } {
@@ -205,6 +251,26 @@ function buildCharacterUpdateStatement(data: CharacterUpsertData): {
   if (Object.prototype.hasOwnProperty.call(data, 'profile')) {
     setClauses.push('profile = ?');
     values.push(typeof data.profile === 'string' ? data.profile : null);
+  }
+
+  const hasPlayerCharacterFlag = Object.prototype.hasOwnProperty.call(data, 'is_player_character');
+  const hasOwner = Object.prototype.hasOwnProperty.call(data, 'owner');
+  const nextIsPlayerCharacter = hasPlayerCharacterFlag
+    ? normalizePlayerCharacterFlag(data.is_player_character)
+    : normalizePlayerCharacterFlag(existingCharacter.is_player_character);
+  const requestedOwner = hasOwner
+    ? normalizeCharacterOwner(data.owner)
+    : normalizeCharacterOwner(existingCharacter.owner);
+  const nextOwner = ensurePlayerCharacterOwner(nextIsPlayerCharacter, requestedOwner);
+
+  if (hasPlayerCharacterFlag) {
+    setClauses.push('is_player_character = ?');
+    values.push(nextIsPlayerCharacter);
+  }
+
+  if (hasOwner || (hasPlayerCharacterFlag && nextIsPlayerCharacter === 0)) {
+    setClauses.push('owner = ?');
+    values.push(nextOwner);
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'author')) {

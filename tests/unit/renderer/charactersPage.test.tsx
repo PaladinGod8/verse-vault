@@ -100,6 +100,8 @@ describe('CharactersPage', () => {
       id: 1,
       world_id: 1,
       name: 'Ledros Igni',
+      is_player_character: 1,
+      owner: 'Gator',
       wiki_summary: JSON.stringify({
         personalDescription: { weight: '90kg' },
         statusDemographics: { primaryFaction: 'Constellation Company' },
@@ -134,6 +136,54 @@ describe('CharactersPage', () => {
 
     expect(screen.getByText('Ledros Igni')).toBeInTheDocument();
     expect(screen.queryByText('Someone Else')).not.toBeInTheDocument();
+
+    await user.clear(screen.getByPlaceholderText(/search characters/i));
+    await user.type(screen.getByPlaceholderText(/search characters/i), 'player character');
+
+    expect(screen.getByText('Ledros Igni')).toBeInTheDocument();
+    expect(screen.queryByText('Someone Else')).not.toBeInTheDocument();
+
+    await user.clear(screen.getByPlaceholderText(/search characters/i));
+    await user.type(screen.getByPlaceholderText(/search characters/i), 'Gator');
+
+    expect(screen.getByText('Ledros Igni')).toBeInTheDocument();
+    expect(screen.queryByText('Someone Else')).not.toBeInTheDocument();
+  });
+
+  it('includes player character flag and owner in create payload', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1 });
+    const createdCharacter = buildCharacter({
+      id: 9,
+      world_id: 1,
+      name: 'New Hero',
+      is_player_character: 1,
+      owner: 'Gator',
+    });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValueOnce([])
+      .mockResolvedValueOnce([createdCharacter]);
+    (mockDb.characters.add as ReturnType<typeof vi.fn>).mockResolvedValue(createdCharacter);
+
+    renderPage(1);
+    await screen.findByText('No characters yet.');
+
+    await user.click(screen.getByRole('button', { name: 'New Character' }));
+    await user.type(screen.getByLabelText('Name *'), 'New Hero');
+    await user.click(screen.getByLabelText('Player Character'));
+    await user.type(screen.getByLabelText('Owner *'), 'Gator');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      expect(mockDb.characters.add).toHaveBeenCalledWith(
+        expect.objectContaining({
+          world_id: 1,
+          name: 'New Hero',
+          is_player_character: 1,
+          owner: 'Gator',
+        }),
+      );
+    });
   });
 
   it('includes author in create payload and search matches it', async () => {

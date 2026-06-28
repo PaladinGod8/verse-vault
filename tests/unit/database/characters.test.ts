@@ -78,6 +78,10 @@ describe('Characters schema migration', () => {
       "ALTER TABLE characters ADD COLUMN name TEXT NOT NULL DEFAULT ''",
     );
     expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN profile TEXT');
+    expect(executedSql).toContain(
+      'ALTER TABLE characters ADD COLUMN is_player_character INTEGER NOT NULL DEFAULT 0 CHECK (is_player_character IN (0, 1))',
+    );
+    expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN owner TEXT');
     expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN author TEXT');
     expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN image_src TEXT');
     expect(executedSql).toContain(
@@ -100,6 +104,8 @@ describe('Characters schema migration', () => {
         { name: 'world_id' },
         { name: 'name' },
         { name: 'profile' },
+        { name: 'is_player_character' },
+        { name: 'owner' },
         { name: 'author' },
         { name: 'image_src' },
         { name: 'sections' },

@@ -139,8 +139,18 @@ export default function CharacterDetailPage() {
                     {character.profile
                       ? <p className='mt-1 text-sm text-slate-600'>{character.profile}</p>
                       : null}
+                    {character.is_player_character
+                      ? <p className='mt-1 text-sm font-medium text-sky-700'>Player Character</p>
+                      : null}
+                    {character.is_player_character && character.owner
+                      ? <p className='mt-1 text-sm text-slate-500'>{`Owner: ${character.owner}`}</p>
+                      : null}
                     {character.author
-                      ? <p className='mt-1 text-sm text-slate-500'>{`Author: ${character.author}`}</p>
+                      ? (
+                        <p className='mt-1 text-sm text-slate-500'>
+                          {`Author: ${character.author}`}
+                        </p>
+                      )
                       : null}
                   </div>
                 </div>
@@ -231,6 +241,8 @@ export default function CharacterDetailPage() {
               initialValues={{
                 name: character.name,
                 profile: character.profile,
+                is_player_character: character.is_player_character,
+                owner: character.owner,
                 author: character.author,
                 image_src: imageSrc,
                 sections: parseJson<CharacterSections>(character.sections),

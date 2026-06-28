@@ -30,9 +30,42 @@ describe('CharacterForm', () => {
       expect.objectContaining({
         name: 'Ledros Igni',
         profile: 'A bitter dragonborn.',
+        is_player_character: 0,
+        owner: null,
         author: 'GamingGator',
         sections: expect.objectContaining({ background: 'Outcasted.' }),
         wiki_summary: {},
+      }),
+    );
+  });
+
+  it('requires owner when player character is checked', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<CharacterForm onSave={onSave} onClose={vi.fn()} isSaving={false} />);
+
+    await user.type(screen.getByLabelText('Name *'), 'Ledros Igni');
+    await user.click(screen.getByLabelText('Player Character'));
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(screen.getByText('Owner is required for player characters.')).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('submits owner when player character is checked', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<CharacterForm onSave={onSave} onClose={vi.fn()} isSaving={false} />);
+
+    await user.type(screen.getByLabelText('Name *'), 'Ledros Igni');
+    await user.click(screen.getByLabelText('Player Character'));
+    await user.type(screen.getByLabelText('Owner *'), 'Gator');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        is_player_character: 1,
+        owner: 'Gator',
       }),
     );
   });
@@ -63,6 +96,8 @@ describe('CharacterForm', () => {
         initialValues={{
           name: 'Ledros Igni',
           profile: 'A bitter dragonborn.',
+          is_player_character: 1,
+          owner: 'Gator',
           author: 'GamingGator',
           sections: { background: 'Outcasted.' },
           wiki_summary: { biographic: { mainEpithet: 'The Brandslayer' } },
@@ -74,6 +109,8 @@ describe('CharacterForm', () => {
     );
 
     expect(screen.getByLabelText('Name *')).toHaveValue('Ledros Igni');
+    expect(screen.getByLabelText('Player Character')).toBeChecked();
+    expect(screen.getByLabelText('Owner *')).toHaveValue('Gator');
     expect(screen.getByLabelText('Author')).toHaveValue('GamingGator');
     expect(screen.getByLabelText('Background')).toHaveValue('Outcasted.');
     expect(screen.getByLabelText('Main Epithet')).toHaveValue('The Brandslayer');

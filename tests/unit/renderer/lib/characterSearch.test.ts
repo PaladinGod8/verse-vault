@@ -10,6 +10,8 @@ function buildCharacter(overrides?: Partial<Character>): Character {
     world_id: 1,
     name: 'Ledros Igni',
     profile: 'A bitter dragonborn seeking vengeance.',
+    is_player_character: 1,
+    owner: 'Gator',
     author: 'GamingGator',
     image_src: null,
     sections: JSON.stringify({ background: 'Outcasted from the Igni tribe.' }),
@@ -30,6 +32,8 @@ describe('flattenCharacterForSearch', () => {
     const flattened = flattenCharacterForSearch(buildCharacter());
 
     expect(flattened).toContain('ledros igni');
+    expect(flattened).toContain('player character');
+    expect(flattened).toContain('gator');
     expect(flattened).toContain('a bitter dragonborn seeking vengeance');
     expect(flattened).toContain('gaminggator');
     expect(flattened).toContain('outcasted from the igni tribe');
@@ -82,6 +86,11 @@ describe('characterMatchesQuery', () => {
     expect(characterMatchesQuery(buildCharacter(), 'nonexistent-value-xyz', new Map(), [])).toBe(
       false,
     );
+  });
+
+  it('matches player character pseudo-label and owner name', () => {
+    expect(characterMatchesQuery(buildCharacter(), 'player character', new Map(), [])).toBe(true);
+    expect(characterMatchesQuery(buildCharacter(), 'gator', new Map(), [])).toBe(true);
   });
 
   it('matches exactly on the character primary faction name, additively', () => {

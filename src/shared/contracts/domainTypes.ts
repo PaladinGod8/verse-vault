@@ -268,6 +268,8 @@ export interface Character {
   world_id: number;
   name: string;
   profile: string | null;
+  is_player_character: number;
+  owner: string | null;
   author: string | null;
   image_src: string | null;
   sections: string; // JSON text of CharacterSections

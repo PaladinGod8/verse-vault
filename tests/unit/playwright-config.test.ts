@@ -32,6 +32,7 @@ describe('playwright project worker grouping', () => {
     const expected = [
       'abilities.test.ts',
       'app.test.ts',
+      'characters.test.ts',
       'arc-act.test.ts',
       'battlemap-runtime-play.test.ts',
       'battlemap-runtime-statblock-popup.test.ts',
