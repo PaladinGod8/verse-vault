@@ -139,6 +139,9 @@ export default function CharacterDetailPage() {
                     {character.profile
                       ? <p className='mt-1 text-sm text-slate-600'>{character.profile}</p>
                       : null}
+                    {character.author
+                      ? <p className='mt-1 text-sm text-slate-500'>{`Author: ${character.author}`}</p>
+                      : null}
                   </div>
                 </div>
                 <button
@@ -228,6 +231,7 @@ export default function CharacterDetailPage() {
               initialValues={{
                 name: character.name,
                 profile: character.profile,
+                author: character.author,
                 image_src: imageSrc,
                 sections: parseJson<CharacterSections>(character.sections),
                 wiki_summary: parseJson<CharacterWikiSummary>(character.wiki_summary),

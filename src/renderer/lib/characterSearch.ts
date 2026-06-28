@@ -39,6 +39,7 @@ export function flattenCharacterForSearch(character: Character): string {
   const parts: string[] = [];
   collectLeafStrings(character.name, parts);
   collectLeafStrings(character.profile, parts);
+  collectLeafStrings(character.author, parts);
   collectLeafStrings(parseJsonSafely(character.sections), parts);
   collectLeafStrings(parseJsonSafely(character.wiki_summary), parts);
   return parts.join(' ').toLowerCase();

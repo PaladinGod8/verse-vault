@@ -2,15 +2,19 @@
 // dbApi.ts to stay within the file-size budget enforced by .eslintrc.cjs.
 import type { FactionMember } from './domainTypes';
 
-export type CharacterUpsertPayload = {
-  name?: string;
+type RichEntityUpsertPayload = {
   profile?: string | null;
   image_src?: string | null;
   sections?: string;
   wiki_summary?: string;
 };
 
-export type FactionUpsertPayload = CharacterUpsertPayload & {
+export type CharacterUpsertPayload = RichEntityUpsertPayload & {
+  name?: string;
+  author?: string | null;
+};
+
+export type FactionUpsertPayload = RichEntityUpsertPayload & {
   type_id?: number | null;
   parent_faction_id?: number | null;
 };

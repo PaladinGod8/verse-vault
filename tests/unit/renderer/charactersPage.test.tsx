@@ -136,6 +136,38 @@ describe('CharactersPage', () => {
     expect(screen.queryByText('Someone Else')).not.toBeInTheDocument();
   });
 
+  it('includes author in create payload and search matches it', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1 });
+    const createdCharacter = buildCharacter({
+      id: 9,
+      world_id: 1,
+      name: 'New Hero',
+      author: 'GamingGator',
+    });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValueOnce([])
+      .mockResolvedValueOnce([createdCharacter]);
+    (mockDb.characters.add as ReturnType<typeof vi.fn>).mockResolvedValue(createdCharacter);
+
+    renderPage(1);
+    await screen.findByText('No characters yet.');
+
+    await user.click(screen.getByRole('button', { name: 'New Character' }));
+    await user.type(screen.getByLabelText('Name *'), 'New Hero');
+    await user.type(screen.getByLabelText('Author'), 'GamingGator');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      expect(mockDb.characters.add).toHaveBeenCalledWith(
+        expect.objectContaining({ world_id: 1, name: 'New Hero', author: 'GamingGator' }),
+      );
+    });
+
+    await user.type(screen.getByPlaceholderText(/search characters/i), 'GamingGator');
+    expect(await screen.findByText('New Hero')).toBeInTheDocument();
+  });
+
   it('creates a character through the New Character form', async () => {
     const user = userEvent.setup();
     const world = buildWorld({ id: 1 });

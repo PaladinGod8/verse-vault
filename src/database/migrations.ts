@@ -109,6 +109,7 @@ function runCharactersSchemaMigration(db: Database.Database): void {
     "ALTER TABLE characters ADD COLUMN name TEXT NOT NULL DEFAULT ''",
   );
   addColumn('profile', 'ALTER TABLE characters ADD COLUMN profile TEXT');
+  addColumn('author', 'ALTER TABLE characters ADD COLUMN author TEXT');
   addColumn('image_src', 'ALTER TABLE characters ADD COLUMN image_src TEXT');
   addColumn(
     'sections',

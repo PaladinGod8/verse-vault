@@ -15,13 +15,14 @@ describe('CharacterForm', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('submits name, profile, sections, and an empty wiki summary on create', async () => {
+  it('submits name, profile, author, sections, and an empty wiki summary on create', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<CharacterForm onSave={onSave} onClose={vi.fn()} isSaving={false} />);
 
     await user.type(screen.getByLabelText('Name *'), 'Ledros Igni');
     await user.type(screen.getByLabelText('Profile'), 'A bitter dragonborn.');
+    await user.type(screen.getByLabelText('Author'), 'GamingGator');
     await user.type(screen.getByLabelText('Background'), 'Outcasted.');
     await user.click(screen.getByRole('button', { name: 'Create' }));
 
@@ -29,6 +30,7 @@ describe('CharacterForm', () => {
       expect.objectContaining({
         name: 'Ledros Igni',
         profile: 'A bitter dragonborn.',
+        author: 'GamingGator',
         sections: expect.objectContaining({ background: 'Outcasted.' }),
         wiki_summary: {},
       }),
@@ -61,6 +63,7 @@ describe('CharacterForm', () => {
         initialValues={{
           name: 'Ledros Igni',
           profile: 'A bitter dragonborn.',
+          author: 'GamingGator',
           sections: { background: 'Outcasted.' },
           wiki_summary: { biographic: { mainEpithet: 'The Brandslayer' } },
         }}
@@ -71,6 +74,7 @@ describe('CharacterForm', () => {
     );
 
     expect(screen.getByLabelText('Name *')).toHaveValue('Ledros Igni');
+    expect(screen.getByLabelText('Author')).toHaveValue('GamingGator');
     expect(screen.getByLabelText('Background')).toHaveValue('Outcasted.');
     expect(screen.getByLabelText('Main Epithet')).toHaveValue('The Brandslayer');
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();

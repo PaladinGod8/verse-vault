@@ -220,6 +220,7 @@ export function buildCharacter(overrides: Partial<Character> = {}): Character {
     world_id: getNextId(),
     name: 'Test Character',
     profile: 'A test character profile',
+    author: null,
     image_src: null,
     sections: '{}',
     wiki_summary: '{}',

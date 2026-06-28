@@ -25,6 +25,7 @@ type CharacterUpsertData = {
   world_id?: number;
   name?: string;
   profile?: string | null;
+  author?: string | null;
   image_src?: string | null;
   sections?: string;
   wiki_summary?: string;
@@ -55,14 +56,15 @@ function registerCharacterMutationHandlers(db: Database.Database): void {
     }
 
     const profile = typeof data.profile === 'string' ? data.profile : null;
+    const author = typeof data.author === 'string' ? data.author.trim() || null : null;
     const imageSrc = typeof data.image_src === 'string' ? data.image_src : null;
     const sections = ensureCharacterJson(data.sections, 'sections');
     const wikiSummary = ensureCharacterJson(data.wiki_summary, 'wiki_summary');
 
     const stmt = db.prepare(
-      'INSERT INTO characters (world_id, name, profile, image_src, sections, wiki_summary) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO characters (world_id, name, profile, author, image_src, sections, wiki_summary) VALUES (?, ?, ?, ?, ?, ?, ?)',
     );
-    const result = stmt.run(worldId, name, profile, imageSrc, sections, wikiSummary);
+    const result = stmt.run(worldId, name, profile, author, imageSrc, sections, wikiSummary);
 
     const character = db
       .prepare('SELECT * FROM characters WHERE id = ?')
@@ -203,6 +205,11 @@ function buildCharacterUpdateStatement(data: CharacterUpsertData): {
   if (Object.prototype.hasOwnProperty.call(data, 'profile')) {
     setClauses.push('profile = ?');
     values.push(typeof data.profile === 'string' ? data.profile : null);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'author')) {
+    setClauses.push('author = ?');
+    values.push(typeof data.author === 'string' ? data.author.trim() || null : null);
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {

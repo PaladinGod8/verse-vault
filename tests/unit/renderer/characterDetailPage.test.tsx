@@ -50,6 +50,7 @@ describe('CharacterDetailPage', () => {
       world_id: 1,
       name: 'Ledros Igni',
       profile: 'A bitter dragonborn.',
+      author: 'GamingGator',
       sections: JSON.stringify({ background: 'Outcasted from the Igni tribe.' }),
     });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
@@ -59,6 +60,7 @@ describe('CharacterDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Ledros Igni' })).toBeInTheDocument();
     expect(screen.getByText('A bitter dragonborn.')).toBeInTheDocument();
+    expect(screen.getByText('Author: GamingGator')).toBeInTheDocument();
     expect(screen.getByText('Outcasted from the Igni tribe.')).toBeInTheDocument();
   });
 
@@ -129,11 +131,16 @@ describe('CharacterDetailPage', () => {
   });
 
   it('opens the edit form pre-filled and saves via window.db.characters.update', async () => {
-    const character = buildCharacter({ id: 5, world_id: 1, name: 'Ledros Igni' });
+    const character = buildCharacter({
+      id: 5,
+      world_id: 1,
+      name: 'Ledros Igni',
+      author: 'GamingGator',
+    });
     (mockDb.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(character);
     (mockDb.factionMembers.getAllByCharacter as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (mockDb.characters.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildCharacter({ id: 5, world_id: 1, name: 'Updated Name' }),
+      buildCharacter({ id: 5, world_id: 1, name: 'Updated Name', author: 'AnotherWriter' }),
     );
 
     const user = userEvent.setup();
@@ -143,13 +150,16 @@ describe('CharacterDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Edit' }));
 
     const nameInput = screen.getByLabelText('Name *');
+    expect(screen.getByLabelText('Author')).toHaveValue('GamingGator');
     await user.clear(nameInput);
     await user.type(nameInput, 'Updated Name');
+    await user.clear(screen.getByLabelText('Author'));
+    await user.type(screen.getByLabelText('Author'), 'AnotherWriter');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(mockDb.characters.update).toHaveBeenCalledWith(
       5,
-      expect.objectContaining({ name: 'Updated Name' }),
+      expect.objectContaining({ name: 'Updated Name', author: 'AnotherWriter' }),
     );
   });
 

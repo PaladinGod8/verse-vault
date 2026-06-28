@@ -78,6 +78,7 @@ describe('Characters schema migration', () => {
       "ALTER TABLE characters ADD COLUMN name TEXT NOT NULL DEFAULT ''",
     );
     expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN profile TEXT');
+    expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN author TEXT');
     expect(executedSql).toContain('ALTER TABLE characters ADD COLUMN image_src TEXT');
     expect(executedSql).toContain(
       "ALTER TABLE characters ADD COLUMN sections TEXT NOT NULL DEFAULT '{}'",
@@ -99,6 +100,7 @@ describe('Characters schema migration', () => {
         { name: 'world_id' },
         { name: 'name' },
         { name: 'profile' },
+        { name: 'author' },
         { name: 'image_src' },
         { name: 'sections' },
         { name: 'wiki_summary' },

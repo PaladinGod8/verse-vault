@@ -3,7 +3,7 @@
 ## Purpose
 
 Characters are a world-scoped wiki entry for each person/creature in a world: a short
-profile, a fixed set of editable long-text sections, an optional image, and a large
+profile, optional freeform author credit, a fixed set of editable long-text sections, an optional image, and a large
 standardized "Wiki Summary" of mostly-optional fields. Characters are searchable from a
 single search bar by substring match against any stored field value (including faction
 and any Wiki Summary value), and are listed as cards.
@@ -11,6 +11,7 @@ and any Wiki Summary value), and are listed as cards.
 ## Scope (Current Implementation)
 
 - World-scoped character CRUD (`world_id` required on create).
+- Optional freeform `author` field for writer credit.
 - Fixed long-text sections: Background, Personality, Relationships, Notes.
 - Standardized Wiki Summary groups: Biographic Information, Aliases, Titles, Personal
   Description, Ages & Timeline, Conditions, Status & Demographics, Educational History,
@@ -31,11 +32,13 @@ and any Wiki Summary value), and are listed as cards.
 - Shows explicit states for loading, load failure, and empty list (`No characters yet.`).
 - A search input filters the in-memory character list by substring match against any
   field (e.g. typing a weight value like `90kg` narrows the list to matching
-  characters). Additively, typing the exact name of a character's _primary_ faction (or
+  characters). This includes `author`. Additively, typing the exact name of a
+  character's _primary_ faction (or
   any ancestor of that faction) also includes that character, even if the name doesn't
   appear verbatim in any of the character's own fields — see "Faction-aware search"
   below. When characters exist but none match, shows `No characters match your search.`.
-- "New Character" opens a modal form. Name is required; everything else is optional.
+- "New Character" opens a modal form. Name is required; everything else, including
+  Author, is optional.
 - Clicking a card's body navigates to its detail page (`/world/:id/characters/:characterId`);
   the card's own Edit button still opens the form modal directly, and Delete requires
   confirmation (`Delete "<name>"? This cannot be undone.`).
@@ -45,8 +48,9 @@ and any Wiki Summary value), and are listed as cards.
 
 ### Character detail page (`/world/:id/characters/:characterId`)
 
-- Read-first article view: image, profile, the four fixed text sections, and the
-  full Wiki Summary groups loaded via `window.db.characters.getById`.
+- Read-first article view: image, profile, optional `Author: <name>` credit, the four
+  fixed text sections, and the full Wiki Summary groups loaded via
+  `window.db.characters.getById`.
 - Every standard Wiki Summary group stays visible on the detail page even when some or
   all values are empty; table cells remain blank instead of the field disappearing.
 - A "Factions" section lists every faction membership for this character (role +
@@ -120,6 +124,7 @@ interface Character {
   world_id: number;
   name: string;
   profile: string | null;
+  author: string | null;
   image_src: string | null;
   sections: string; // JSON text of CharacterSections
   wiki_summary: string; // JSON text of CharacterWikiSummary
@@ -164,6 +169,7 @@ Main-process rules (`registerCharacterHandlers.ts`):
 
 - `world_id` is required on create (`Character world_id is required`).
 - `name` is required and trimmed for create/update (`Character name is required`).
+- `author` is optional freeform text; whitespace-only values are normalized to `NULL`.
 - `sections` and `wiki_summary` must be valid JSON text when provided
   (`Character sections must be valid JSON` / `Character wiki_summary must be valid
   JSON`); they default to `'{}'`.

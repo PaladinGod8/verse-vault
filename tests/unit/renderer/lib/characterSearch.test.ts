@@ -10,6 +10,7 @@ function buildCharacter(overrides?: Partial<Character>): Character {
     world_id: 1,
     name: 'Ledros Igni',
     profile: 'A bitter dragonborn seeking vengeance.',
+    author: 'GamingGator',
     image_src: null,
     sections: JSON.stringify({ background: 'Outcasted from the Igni tribe.' }),
     wiki_summary: JSON.stringify({
@@ -30,6 +31,7 @@ describe('flattenCharacterForSearch', () => {
 
     expect(flattened).toContain('ledros igni');
     expect(flattened).toContain('a bitter dragonborn seeking vengeance');
+    expect(flattened).toContain('gaminggator');
     expect(flattened).toContain('outcasted from the igni tribe');
     expect(flattened).toContain('the brandslayer');
     expect(flattened).toContain('90kg (199lbs)');

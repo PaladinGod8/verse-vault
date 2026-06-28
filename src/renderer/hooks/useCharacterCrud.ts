@@ -39,6 +39,7 @@ async function resolveCharacterImageSrc(
 function buildCharacterUpdatePayload(data: CharacterFormValues): {
   name: string;
   profile: string | null;
+  author: string | null;
   image_src?: string | null;
   sections: string;
   wiki_summary: string;
@@ -46,12 +47,14 @@ function buildCharacterUpdatePayload(data: CharacterFormValues): {
   const updatePayload: {
     name: string;
     profile: string | null;
+    author: string | null;
     image_src?: string | null;
     sections: string;
     wiki_summary: string;
   } = {
     name: data.name,
     profile: data.profile ?? null,
+    author: data.author ?? null,
     sections: JSON.stringify(data.sections),
     wiki_summary: JSON.stringify(data.wiki_summary),
   };
@@ -82,6 +85,7 @@ function createHandleCreate(params: {
         world_id: params.worldId,
         name: data.name,
         profile: data.profile ?? null,
+        author: data.author ?? null,
         image_src: imageSrc,
         sections: JSON.stringify(data.sections),
         wiki_summary: JSON.stringify(data.wiki_summary),

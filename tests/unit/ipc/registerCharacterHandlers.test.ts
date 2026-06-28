@@ -37,6 +37,7 @@ function buildCharacter(overrides?: Record<string, unknown>) {
     world_id: 10,
     name: 'Ledros Igni',
     profile: null as null,
+    author: null as null,
     image_src: null as null,
     sections: '{}',
     wiki_summary: '{}',
@@ -96,7 +97,9 @@ describe('registerCharacterHandlers', () => {
 
   describe(IPC.CHARACTERS_ADD, () => {
     it('creates character with all fields', () => {
-      const db = createDbMock({ insertedCharacter: buildCharacter({ name: 'New Character' }) });
+      const db = createDbMock({
+        insertedCharacter: buildCharacter({ name: 'New Character', author: 'GamingGator' }),
+      });
       vi.clearAllMocks();
       registerCharacterHandlers(db);
       const h = getHandlers();
@@ -104,11 +107,12 @@ describe('registerCharacterHandlers', () => {
         world_id: 10,
         name: 'New Character',
         profile: 'A short profile',
+        author: 'GamingGator',
         image_src: 'vv-media://character-images/test.png',
         sections: '{}',
         wiki_summary: '{}',
       });
-      expect(result).toMatchObject({ name: 'New Character' });
+      expect(result).toMatchObject({ name: 'New Character', author: 'GamingGator' });
     });
 
     it('throws when world_id is missing', () => {
@@ -148,19 +152,22 @@ describe('registerCharacterHandlers', () => {
   });
 
   describe(IPC.CHARACTERS_UPDATE, () => {
-    it('updates name, profile, image_src, sections, wiki_summary', () => {
-      const db = createDbMock({ insertedCharacter: buildCharacter({ name: 'Updated' }) });
+    it('updates name, profile, author, image_src, sections, wiki_summary', () => {
+      const db = createDbMock({
+        insertedCharacter: buildCharacter({ name: 'Updated', author: 'GamingGator' }),
+      });
       vi.clearAllMocks();
       registerCharacterHandlers(db);
       const h = getHandlers();
       const result = h[IPC.CHARACTERS_UPDATE]({}, 1, {
         name: 'Updated',
         profile: 'Desc',
+        author: 'GamingGator',
         image_src: 'vv-media://character-images/test.png',
         sections: '{}',
         wiki_summary: '{}',
       });
-      expect(result).toMatchObject({ name: 'Updated' });
+      expect(result).toMatchObject({ name: 'Updated', author: 'GamingGator' });
     });
 
     it('touch-only update (no fields)', () => {

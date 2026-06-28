@@ -25,6 +25,7 @@ export type CharacterImageUploadPayload = {
 export type CharacterFormValues = {
   name: string;
   profile?: string | null;
+  author?: string | null;
   image_src?: string | null;
   image_upload?: CharacterImageUploadPayload;
   clear_image?: boolean;
@@ -70,6 +71,7 @@ export default function CharacterForm({
   const initialImageSrc = normalizeTokenImageSrc(initialValues?.image_src);
   const [name, setName] = useState(initialValues?.name ?? '');
   const [profile, setProfile] = useState(initialValues?.profile ?? '');
+  const [author, setAuthor] = useState(initialValues?.author ?? '');
   const [sections, setSections] = useState<CharacterSections>(initialValues?.sections ?? {});
   const [wikiSummary, setWikiSummary] = useState<CharacterWikiSummary>(
     initialValues?.wiki_summary ?? {},
@@ -129,6 +131,7 @@ export default function CharacterForm({
     await onSave({
       name: trimmedName,
       profile: profile.trim() ? profile : null,
+      author: author.trim() ? author.trim() : null,
       image_src: clearImage ? null : undefined,
       image_upload: imageUpload,
       clear_image: clearImage,
@@ -190,6 +193,24 @@ export default function CharacterForm({
           className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
           rows={4}
           placeholder='A short description of this character'
+          disabled={isSaving}
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor='character-author'
+          className='mb-1 block text-sm font-medium text-slate-700'
+        >
+          Author
+        </label>
+        <input
+          id='character-author'
+          type='text'
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
+          placeholder='Who wrote this character?'
           disabled={isSaving}
         />
       </div>
