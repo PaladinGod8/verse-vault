@@ -159,6 +159,23 @@ html[data-theme='versevault-dark'] .hover\:text-slate-800:hover {
   color: #f8fafc !important;
 }
 
+html[data-theme] select {
+  background-color: var(--vv-native-select-surface) !important;
+  color: var(--vv-native-select-content) !important;
+  border-color: var(--vv-native-select-border) !important;
+}
+
+html[data-theme] select option,
+html[data-theme] select optgroup {
+  background-color: var(--vv-native-select-popup-surface) !important;
+  color: var(--vv-native-select-popup-content) !important;
+}
+
+html[data-theme] select option:checked {
+  background-color: var(--color-accent) !important;
+  color: var(--color-accent-content) !important;
+}
+
 html[data-theme] .btn-primary,
 html[data-theme] .bg-slate-900,
 html[data-theme] .bg-slate-800 {

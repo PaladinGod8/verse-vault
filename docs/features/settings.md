@@ -41,6 +41,9 @@ threading them through per-world records.
 - Theme changes are managed from Settings page and persist through same settings row.
 - Stored custom theme color applies immediately on top of dark base surfaces; light/dark
   themes ignore custom palette state until the user switches back to `Custom`.
+- Native dropdown controls now inherit active theme colors for both closed fields and
+  popup option lists, so dark/custom themes no longer fall back to unreadable white
+  menus.
 - Character and faction gallery cards now read their max card width + media height from
   settings. Character and faction detail headers read portrait/emblem image size from
   settings.
@@ -108,7 +111,8 @@ interface AppSettingsConfig {
   verifies load, custom-only preview/color controls, card sizing persistence, draggable
   resize commit, palette persistence, custom hex persistence, and save-failure toast.
 - `tests/unit/App.test.tsx`:
-  verifies stored custom theme color becomes dark-derived document CSS variables on boot.
+  verifies stored light/dark/custom themes publish document CSS variables, including
+  native dropdown colors, on boot.
 - `tests/unit/renderer/characterCard.test.tsx` and `factionCard.test.tsx`:
   verify card frame dimensions apply to gallery cards.
 - `tests/unit/renderer/characterDetailPage.test.tsx` and `factionDetailPage.test.tsx`:

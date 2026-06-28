@@ -206,6 +206,17 @@ describe('App routes', () => {
       expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-dark');
     });
 
+    expect(document.documentElement.style.getPropertyValue('--vv-native-select-surface')).toBe(
+      '#1f2937',
+    );
+    expect(
+      document.documentElement.style.getPropertyValue('--vv-native-select-popup-surface'),
+    ).toBe('#111827');
+    expect(document.documentElement.style.getPropertyValue('--vv-native-select-popup-content'))
+      .toBe(
+        '#e5eefc',
+      );
+
     expect(screen.queryByRole('button', { name: /Switch to .* mode/ })).not.toBeInTheDocument();
   });
 
@@ -224,6 +235,17 @@ describe('App routes', () => {
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute('data-theme', 'versevault-light');
     });
+
+    expect(document.documentElement.style.getPropertyValue('--vv-native-select-surface')).toBe(
+      '#ffffff',
+    );
+    expect(
+      document.documentElement.style.getPropertyValue('--vv-native-select-popup-surface'),
+    ).toBe('#ffffff');
+    expect(document.documentElement.style.getPropertyValue('--vv-native-select-popup-content'))
+      .toBe(
+        '#0f172a',
+      );
 
     expect(screen.queryByRole('button', { name: /Switch to .* mode/ })).not.toBeInTheDocument();
   });
@@ -271,6 +293,15 @@ describe('App routes', () => {
       );
       expect(document.documentElement.style.getPropertyValue('--color-accent')).not.toBe('');
       expect(document.documentElement.style.getPropertyValue('--color-accent')).not.toBe('#38bdf8');
+      expect(
+        document.documentElement.style.getPropertyValue('--vv-native-select-surface'),
+      ).not.toBe('');
+      expect(
+        document.documentElement.style.getPropertyValue('--vv-native-select-popup-surface'),
+      ).not.toBe('');
+      expect(
+        document.documentElement.style.getPropertyValue('--vv-native-select-popup-content'),
+      ).not.toBe('');
     });
   });
 

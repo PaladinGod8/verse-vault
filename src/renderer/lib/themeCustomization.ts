@@ -76,7 +76,28 @@ export const THEME_CSS_VARIABLES = [
   '--color-accent-content',
   '--color-neutral',
   '--color-neutral-content',
+  '--vv-native-select-surface',
+  '--vv-native-select-content',
+  '--vv-native-select-border',
+  '--vv-native-select-popup-surface',
+  '--vv-native-select-popup-content',
 ] as const;
+
+const LIGHT_THEME_CSS_VARIABLES: Record<string, string> = {
+  '--vv-native-select-surface': '#ffffff',
+  '--vv-native-select-content': DARK_TEXT,
+  '--vv-native-select-border': '#cbd5e1',
+  '--vv-native-select-popup-surface': '#ffffff',
+  '--vv-native-select-popup-content': DARK_TEXT,
+};
+
+const DARK_THEME_CSS_VARIABLES: Record<string, string> = {
+  '--vv-native-select-surface': '#1f2937',
+  '--vv-native-select-content': '#e5eefc',
+  '--vv-native-select-border': '#475569',
+  '--vv-native-select-popup-surface': '#111827',
+  '--vv-native-select-popup-content': '#e5eefc',
+};
 
 const PALETTE_HEX_BY_VALUE = Object.fromEntries(
   THEME_PALETTE_OPTIONS.map((option) => [option.value, option.hex]),
@@ -145,7 +166,7 @@ export function buildAppliedTheme(config: AppSettingsConfig): AppliedTheme {
   }
 
   return {
-    cssVariables: {},
+    cssVariables: theme === 'light' ? LIGHT_THEME_CSS_VARIABLES : DARK_THEME_CSS_VARIABLES,
     colorScheme: theme,
     dataTheme: theme === 'dark' ? 'versevault-dark' : 'versevault-light',
   };
@@ -267,6 +288,11 @@ function buildThemeCssVariables(themeColors: AppThemeColors | undefined): Record
     '--color-accent-content': getReadableTextColor(accent),
     '--color-neutral': neutral,
     '--color-neutral-content': '#f3f4f6',
+    '--vv-native-select-surface': base300,
+    '--vv-native-select-content': '#e5e7eb',
+    '--vv-native-select-border': base300,
+    '--vv-native-select-popup-surface': base200,
+    '--vv-native-select-popup-content': '#e5e7eb',
   };
 }
 
