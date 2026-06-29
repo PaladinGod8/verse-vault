@@ -4,7 +4,7 @@ import { closeApp, launchApp } from './helpers/launchApp';
 // Requires `yarn package` to have been run first so that
 // .vite/build/main.js and .vite/renderer/main_window/ exist.
 
-test('app launches and shows worlds landing shell', async () => {
+test('@critical @ux app launches and shows worlds landing shell', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {

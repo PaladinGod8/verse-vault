@@ -140,6 +140,226 @@ export async function createCampaign(
   };
 }
 
+export async function createArc(
+  page: Page,
+  campaignId: number,
+  arcName = `E2E Arc ${Date.now()}`,
+): Promise<{ arcId: number; arcName: string; }> {
+  const arc = await page.evaluate(
+    async ({ nextCampaignId, nextArcName }) => {
+      return window.db.arcs.add({
+        campaign_id: nextCampaignId,
+        name: nextArcName,
+      });
+    },
+    { nextCampaignId: campaignId, nextArcName: arcName },
+  );
+
+  return {
+    arcId: arc.id,
+    arcName,
+  };
+}
+
+export async function createAct(
+  page: Page,
+  arcId: number,
+  actName = `E2E Act ${Date.now()}`,
+): Promise<{ actId: number; actName: string; }> {
+  const act = await page.evaluate(
+    async ({ nextArcId, nextActName }) => {
+      return window.db.acts.add({
+        arc_id: nextArcId,
+        name: nextActName,
+      });
+    },
+    { nextArcId: arcId, nextActName: actName },
+  );
+
+  return {
+    actId: act.id,
+    actName,
+  };
+}
+
+export async function createSession(
+  page: Page,
+  actId: number,
+  sessionName = `E2E Session ${Date.now()}`,
+): Promise<{ sessionId: number; sessionName: string; }> {
+  const session = await page.evaluate(
+    async ({ nextActId, nextSessionName }) => {
+      return window.db.sessions.add({
+        act_id: nextActId,
+        name: nextSessionName,
+      });
+    },
+    { nextActId: actId, nextSessionName: sessionName },
+  );
+
+  return {
+    sessionId: session.id,
+    sessionName,
+  };
+}
+
+export async function createScene(
+  page: Page,
+  sessionId: number,
+  sceneName = `E2E Scene ${Date.now()}`,
+): Promise<{ sceneId: number; sceneName: string; }> {
+  const scene = await page.evaluate(
+    async ({ nextSessionId, nextSceneName }) => {
+      return window.db.scenes.add({
+        session_id: nextSessionId,
+        name: nextSceneName,
+      });
+    },
+    { nextSessionId: sessionId, nextSceneName: sceneName },
+  );
+
+  return {
+    sceneId: scene.id,
+    sceneName,
+  };
+}
+
+export async function createCharacter(
+  page: Page,
+  worldId: number,
+  input: {
+    name: string;
+    profile?: string | null;
+    isPlayerCharacter?: boolean;
+    owner?: string | null;
+    author?: string | null;
+    imageSrc?: string | null;
+  },
+): Promise<{ characterId: number; characterName: string; }> {
+  const character = await page.evaluate(
+    async (payload) => {
+      return window.db.characters.add({
+        world_id: payload.worldId,
+        name: payload.name,
+        profile: payload.profile ?? null,
+        is_player_character: payload.isPlayerCharacter ? 1 : 0,
+        owner: payload.isPlayerCharacter ? payload.owner ?? null : null,
+        author: payload.author ?? null,
+        image_src: payload.imageSrc ?? null,
+        sections: '{}',
+        wiki_summary: '{}',
+      });
+    },
+    {
+      worldId,
+      name: input.name,
+      profile: input.profile ?? null,
+      isPlayerCharacter: input.isPlayerCharacter ?? false,
+      owner: input.owner ?? null,
+      author: input.author ?? null,
+      imageSrc: input.imageSrc ?? null,
+    },
+  );
+
+  return {
+    characterId: character.id,
+    characterName: character.name,
+  };
+}
+
+export async function createFactionType(
+  page: Page,
+  worldId: number,
+  typeName = `E2E Type ${Date.now()}`,
+): Promise<{ factionTypeId: number; typeName: string; }> {
+  const factionType = await page.evaluate(
+    async ({ nextWorldId, nextTypeName }) => {
+      return window.db.factionTypes.add({
+        world_id: nextWorldId,
+        name: nextTypeName,
+      });
+    },
+    { nextWorldId: worldId, nextTypeName: typeName },
+  );
+
+  return {
+    factionTypeId: factionType.id,
+    typeName,
+  };
+}
+
+export async function createFaction(
+  page: Page,
+  worldId: number,
+  input: {
+    name: string;
+    profile?: string | null;
+    typeId?: number | null;
+    parentFactionId?: number | null;
+    imageSrc?: string | null;
+  },
+): Promise<{ factionId: number; factionName: string; }> {
+  const faction = await page.evaluate(
+    async (payload) => {
+      return window.db.factions.add({
+        world_id: payload.worldId,
+        name: payload.name,
+        profile: payload.profile ?? null,
+        image_src: payload.imageSrc ?? null,
+        sections: '{}',
+        wiki_summary: '{}',
+        type_id: payload.typeId ?? null,
+        parent_faction_id: payload.parentFactionId ?? null,
+      });
+    },
+    {
+      worldId,
+      name: input.name,
+      profile: input.profile ?? null,
+      typeId: input.typeId ?? null,
+      parentFactionId: input.parentFactionId ?? null,
+      imageSrc: input.imageSrc ?? null,
+    },
+  );
+
+  return {
+    factionId: faction.id,
+    factionName: faction.name,
+  };
+}
+
+export async function createLevel(
+  page: Page,
+  worldId: number,
+  input: {
+    name: string;
+    category: string;
+    description?: string | null;
+  },
+): Promise<{ levelId: number; levelName: string; }> {
+  const level = await page.evaluate(
+    async (payload) => {
+      return window.db.levels.add({
+        world_id: payload.worldId,
+        name: payload.name,
+        category: payload.category,
+        description: payload.description ?? null,
+      });
+    },
+    {
+      worldId,
+      name: input.name,
+      category: input.category,
+      description: input.description ?? null,
+    },
+  );
+
+  return {
+    levelId: level.id,
+    levelName: level.name,
+  };
+}
+
 export async function deleteCampaign(
   page: Page,
   campaignId: number,

@@ -130,3 +130,35 @@ Run the final gate in `docs/06_AGENTIC_TESTING_QUALITY_GATE.md` and do not mark 
 
 - This file defines the cross-agent quality gate behavior.
 - Feature-level documentation still belongs in `docs/features/<feature-slug>.md` as the final docs step.
+
+## Critical Path Matrix
+
+Use these focused commands before full-lane escalation:
+
+- `yarn test:e2e:critical`
+- `yarn test:e2e:critical:ci`
+- `yarn coverage:branches`
+
+Current route and journey status:
+
+| Route                                                                             | Journey                                                     | Unit proof | E2E proof        | Criticality | Status  |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------- | ---------------- | ----------- | ------- |
+| `/`                                                                               | Launch worlds shell plus world CRUD and thumbnail lifecycle | Yes        | Yes              | High        | Covered |
+| `/settings`                                                                       | Theme persistence across restart                            | Yes        | Yes              | High        | Covered |
+| `/world/:id/levels`                                                               | Level CRUD                                                  | Yes        | Yes              | High        | Covered |
+| `/world/:id/characters`                                                           | Character create and search                                 | Yes        | Yes              | High        | Covered |
+| `/world/:id/characters/:characterId`                                              | Detail edit, image, primary faction                         | Yes        | Yes              | High        | Covered |
+| `/world/:id/factions`                                                             | Type management, filter, CRUD                               | Yes        | Yes              | High        | Covered |
+| `/world/:id/factions/:factionId`                                                  | Detail edit and membership                                  | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaign/:campaignId/scenes`                                          | Campaign-wide scene listing and drill-in                    | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | Session create, edit, move, delete                          | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | Scene create, edit, move, delete                            | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaigns`                                                            | Campaign create and navigation                              | Yes        | Yes              | High        | Covered |
+| `/world/:id/battlemaps/:battleMapId/runtime`                                      | Runtime play flow                                           | Yes        | Yes              | High        | Covered |
+| Session reorder via DnD                                                           | Drag reorder persistence                                    | Yes        | No dedicated E2E | Medium      | Partial |
+
+Branch coverage policy:
+
+- Dedicated branch floor command: `yarn coverage:branches`
+- Current enforced branch floor: `80%`
+- Raise only after fresh full-suite coverage proves new floor is green end to end.

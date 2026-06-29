@@ -13,11 +13,12 @@ describe('FactionMembersEditor', () => {
   beforeEach(() => {
     setupWindowDb();
     resetWindowDb();
-    (window.db.characters.searchByWorld as ReturnType<typeof vi.fn>).mockResolvedValue({
-      items: [],
-      hasMore: false,
-    });
-    (window.db.characters.getById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (window.db.characters.searchByWorld as ReturnType<typeof vi.fn>).mockImplementation(
+      () => new Promise(() => undefined),
+    );
+    (window.db.characters.getById as ReturnType<typeof vi.fn>).mockImplementation(
+      () => new Promise(() => undefined),
+    );
   });
 
   it('paginates member rows instead of rendering all of them at once when there are many', async () => {

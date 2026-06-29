@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CharacterCombobox from '../../../src/renderer/components/factions/CharacterCombobox';
@@ -142,7 +142,9 @@ describe('CharacterCombobox', () => {
 
     expect(await screen.findByText('Searching...')).toBeInTheDocument();
 
-    resolveSearch({ items: [], hasMore: false });
+    await act(async () => {
+      resolveSearch({ items: [], hasMore: false });
+    });
     expect(await screen.findByText('No characters found.')).toBeInTheDocument();
   });
 
@@ -183,7 +185,9 @@ describe('CharacterCombobox', () => {
 
     searchMock.mockClear();
     searchMock.mockResolvedValueOnce({ items: secondPage, hasMore: false });
-    intersectionObserver.triggerIntersection(sentinel);
+    await act(async () => {
+      intersectionObserver.triggerIntersection(sentinel);
+    });
 
     await waitFor(() =>
       expect(searchMock).toHaveBeenCalledWith(

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { cleanupElectronApp, createWorld, deleteWorld, launchElectronApp } from './helpers';
 
-test('player characters can be created and found by player-character search and owner', async () => {
+test('@critical @ux player characters can be created and found by player-character search and owner', async () => {
   const context = await launchElectronApp();
 
   try {

@@ -26,13 +26,8 @@ async function pathExists(targetPath: string): Promise<boolean> {
 }
 
 async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
-  const mainJs = path.join(repoRoot, '.vite/build/main.js');
-  if (await pathExists(mainJs)) {
-    return {
-      args: [mainJs, `--user-data-dir=${userDataDir}`],
-    };
-  }
-
+  // Prefer packaged app when present so default E2E runs exercise the same
+  // artifact humans ship, not only the repo-local dev bundle fallback.
   const packageJson = JSON.parse(
     await fs.readFile(path.join(repoRoot, 'package.json'), 'utf8'),
   ) as { productName?: string; name?: string; };
@@ -54,6 +49,13 @@ async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
     };
   }
 
+  const mainJs = path.join(repoRoot, '.vite/build/main.js');
+  if (await pathExists(mainJs)) {
+    return {
+      args: [mainJs, `--user-data-dir=${userDataDir}`],
+    };
+  }
+
   throw new Error(
     'Unable to resolve Electron launch target. Run `yarn package` or generate the Vite main bundle first.',
   );
@@ -67,8 +69,9 @@ async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
  * Returns { app, userDataDir }. Callers are responsible for fetching the
  * window (app.firstWindow() etc.) and calling closeApp() when done.
  */
-export async function launchApp(): Promise<LaunchResult> {
-  const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vv-e2e-'));
+export async function launchApp(existingUserDataDir?: string): Promise<LaunchResult> {
+  const userDataDir = existingUserDataDir
+    ?? await fs.mkdtemp(path.join(os.tmpdir(), 'vv-e2e-'));
   const launchTarget = await resolveLaunchTarget(userDataDir);
 
   const env = { ...process.env };
@@ -107,8 +110,12 @@ export async function launchApp(): Promise<LaunchResult> {
 export async function closeApp(
   app: ElectronApplication,
   userDataDir: string,
+  options?: { preserveUserDataDir?: boolean; },
 ): Promise<void> {
   await app.close().catch((): undefined => undefined);
+  if (options?.preserveUserDataDir) {
+    return;
+  }
   await fs
     .rm(userDataDir, { recursive: true, force: true })
     .catch((): undefined => undefined);
