@@ -4,7 +4,9 @@ interface EntityCountBadgeProps {
   pluralLabel?: string;
 }
 
-export default function EntityCountBadge({ count, singularLabel, pluralLabel }: EntityCountBadgeProps) {
+export default function EntityCountBadge(
+  { count, singularLabel, pluralLabel }: EntityCountBadgeProps,
+) {
   const noun = count === 1 ? singularLabel : pluralLabel ?? `${singularLabel}s`;
   return (
     <div

@@ -73,6 +73,35 @@ const FULL_E2E_FILES = new Set([
   'yarn.lock',
 ]);
 
+const GENERATED_DOC_SOURCE_FILES = new Set([
+  'src/main.ts',
+  'src/preload.ts',
+  'src/database/db.ts',
+  'src/renderer/App.tsx',
+  'forge.env.d.ts',
+  'docs/02_CODEBASE_MAP.md',
+  'docs/03_IPC_CONTRACT.md',
+  'scripts/generate-codebase-map.cjs',
+  'scripts/generate-ipc-contract-docs.cjs',
+  'scripts/lib/generated-docs.cjs',
+]);
+
+const GENERATED_DOC_SOURCE_PREFIXES = [
+  'src/shared/',
+  'src/main/ipc/',
+];
+
+const CONTRACT_GUARD_FILES = new Set([
+  'src/main.ts',
+  'src/preload.ts',
+  'forge.env.d.ts',
+]);
+
+const CONTRACT_GUARD_PREFIXES = [
+  'src/shared/',
+  'src/main/',
+];
+
 const SMOKE_REGRESSION_SPECS = [
   'tests/e2e/app.test.ts',
   'tests/e2e/statblocks-crud.test.ts',
@@ -325,6 +354,31 @@ function hasAnyPrefix(filePath, prefixes) {
   return prefixes.some((prefix) => filePath.startsWith(prefix));
 }
 
+function fileContentsInclude(filePath, text) {
+  try {
+    return fs.readFileSync(path.resolve(filePath), 'utf8').includes(text);
+  } catch {
+    return false;
+  }
+}
+
+function isGeneratedDocSourceRelevant(filePath) {
+  return GENERATED_DOC_SOURCE_FILES.has(filePath)
+    || hasAnyPrefix(filePath, GENERATED_DOC_SOURCE_PREFIXES);
+}
+
+function isRendererWindowDbCallsite(filePath) {
+  return filePath.startsWith('src/renderer/')
+    && fileExists(filePath)
+    && fileContentsInclude(filePath, 'window.db');
+}
+
+function isContractGuardRelevant(filePath) {
+  return CONTRACT_GUARD_FILES.has(filePath)
+    || hasAnyPrefix(filePath, CONTRACT_GUARD_PREFIXES)
+    || isRendererWindowDbCallsite(filePath);
+}
+
 function collectChangedSummary(changedFiles) {
   const summary = {
     changedFiles,
@@ -351,6 +405,9 @@ function collectChangedSummary(changedFiles) {
         || filePath.startsWith('src/database/')
         || filePath.startsWith('src/shared/'),
     ),
+    hasGeneratedDocRelevantChanges: changedFiles.some(isGeneratedDocSourceRelevant),
+    hasContractGuardRelevantChanges: changedFiles.some(isContractGuardRelevant),
+    hasE2ETimingGuardRelevantChanges: changedFiles.some(isE2ETestFile),
   };
 
   summary.hasAppRelevantChanges = summary.appSourceFiles.length > 0
@@ -361,6 +418,18 @@ function collectChangedSummary(changedFiles) {
     );
 
   return summary;
+}
+
+function shouldRunDocsCheck(summary) {
+  return summary.hasGeneratedDocRelevantChanges;
+}
+
+function shouldRunContractGuard(summary) {
+  return summary.hasContractGuardRelevantChanges;
+}
+
+function shouldRunE2ETimingGuard(summary) {
+  return summary.hasE2ETimingGuardRelevantChanges;
 }
 
 function uniqueExistingFiles(filePaths) {
@@ -539,6 +608,27 @@ function maybeRunTypecheck(summary) {
   runTask('Type check TypeScript', ['type-check']);
 }
 
+function maybeRunDocsCheck(summary) {
+  if (!shouldRunDocsCheck(summary)) {
+    return;
+  }
+  runTask('Check generated docs freshness', ['docs:check']);
+}
+
+function maybeRunContractGuard(summary) {
+  if (!shouldRunContractGuard(summary)) {
+    return;
+  }
+  runTask('Guard shared contracts', ['guard:contracts']);
+}
+
+function maybeRunE2ETimingGuard(summary) {
+  if (!shouldRunE2ETimingGuard(summary)) {
+    return;
+  }
+  runTask('Guard E2E timing', ['guard:e2e-timing']);
+}
+
 function maybeRunLint(summary) {
   if (summary.lintableFiles.length > 0) {
     runTask(
@@ -699,6 +789,9 @@ function main() {
 
   maybeRunFormat(summary);
   maybeRunTypecheck(summary);
+  maybeRunDocsCheck(summary);
+  maybeRunContractGuard(summary);
+  maybeRunE2ETimingGuard(summary);
   maybeRunSecretScan(summary);
   maybeRunLint(summary);
   maybeRunUnit(summary);
@@ -707,4 +800,16 @@ function main() {
   console.log('[verify-smart] Complete.');
 }
 
-main();
+module.exports = {
+  collectChangedSummary,
+  chooseUnitMode,
+  chooseE2EMode,
+  pickTargetedE2ESpecs,
+  shouldRunDocsCheck,
+  shouldRunContractGuard,
+  shouldRunE2ETimingGuard,
+};
+
+if (require.main === module) {
+  main();
+}

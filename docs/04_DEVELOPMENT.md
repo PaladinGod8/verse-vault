@@ -65,14 +65,20 @@ yarn test:e2e:ci
 
 ```bash
 yarn verify:rapid
+yarn verify:smart
 yarn verify:all
 yarn verify:all:dev
 yarn security:secrets
 ```
 
-Fresh install variants:
+Fresh/rebuild variants:
 
 ```bash
+yarn verify:rapid:fresh
+yarn verify:rapid:rebuild
+yarn verify:smart:fresh
+yarn verify:all:rebuild
+yarn verify:all:dev:rebuild
 yarn verify:all:fresh
 yarn verify:all:dev:fresh
 ```
@@ -80,7 +86,14 @@ yarn verify:all:dev:fresh
 Recommended cadence:
 
 1. `yarn verify:rapid` while iterating.
-2. `yarn verify:all` before push/PR.
+2. `yarn verify:smart` when you want diff-aware docs/contracts/E2E selection.
+3. `yarn verify:all` before push/PR.
+
+Verification lane notes:
+
+- `yarn verify:all` packages once, then runs `yarn test:e2e:ci`.
+- `yarn verify:all` does not rebuild native modules unless you use a `:rebuild` or `:fresh` variant.
+- `yarn verify:all:dev` uses Playwright config default workers unless you set `PLAYWRIGHT_WORKERS`.
 
 Secret-scan scope:
 

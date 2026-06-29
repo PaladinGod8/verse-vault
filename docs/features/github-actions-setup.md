@@ -39,14 +39,14 @@ Independent quality gates run concurrently, while required sequencing (`package`
 
 - `ELECTRON_RUN_AS_NODE: ''` prevents Electron from being forced into plain Node.js mode.
 - `PLAYWRIGHT_HTML_OPEN: never` avoids opening report UI in CI.
-- `YARN_ENABLE_GLOBAL_CACHE: 'true'` improves cache reuse consistency.
+- `YARN_ENABLE_GLOBAL_CACHE: 'false'` keeps Yarn cache scoped to the workspace cache path on the self-hosted runner.
 
 ## Caching Strategy
 
 ### Dependency cache
 
-- Uses `actions/setup-node@v4` with `cache: yarn`.
-- Cache key is tied to `yarn.lock` and runner/node environment.
+- Uses an explicit `actions/cache@v4` restore/save flow for Yarn's cache directory.
+- Cache key is tied to `yarn.lock` and runner OS.
 
 ### Tool cache
 
@@ -169,6 +169,7 @@ Two local verification modes are available:
 
 - Full strict gate: `yarn verify:all`
 - Rapid fast gate: `yarn verify:rapid`
+- Changeset-aware gate: `yarn verify:smart`
 - Primary local e2e command: `yarn test:e2e` (packages first, then runs Playwright)
 - E2E local worker override examples:
   - `yarn test:e2e:local` (alias of `yarn test:e2e`)
@@ -176,14 +177,24 @@ Two local verification modes are available:
 
 CI runs `yarn test:e2e:ci` so it reuses the packaged artifact from the `package` job and avoids packaging twice.
 
+Strict-lane notes:
+
+- `yarn verify:all` packages once, then runs `yarn test:e2e:ci`.
+- `yarn verify:all` does not rebuild native modules unless you use `yarn verify:all:rebuild` or a fresh install variant.
+- `yarn verify:all:dev` uses Playwright config default workers unless you override `PLAYWRIGHT_WORKERS` yourself.
+
 ### Rapid mode details
 
 `yarn verify:rapid` runs these in parallel:
 
 - `yarn format:check`
 - `yarn type-check`
+- `yarn docs:check`
+- `yarn guard:contracts`
+- `yarn guard:e2e-timing`
 - `yarn security:secrets:working-tree`
 - `yarn lint:cache`
+- `yarn lint:docs`
 - `yarn test:unit:quick`
 
 Cache hygiene in rapid mode:
@@ -195,6 +206,16 @@ Additional commands:
 
 - `yarn verify:rapid:fresh` (force cache reset)
 - `yarn verify:rapid:rebuild` (run native rebuild first)
+
+### Smart mode details
+
+`yarn verify:smart` is diff-aware:
+
+- checks formatting only on changed formattable files
+- runs `docs:check` when generated-doc sources or generated docs change
+- runs `guard:contracts` when shared/preload/main contract seams change or changed renderer files call `window.db`
+- runs `guard:e2e-timing` when `tests/e2e/**` changes
+- selects unit and E2E scope conservatively from changed files
 
 ## Related Files
 

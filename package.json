@@ -68,6 +68,8 @@
     "hooks:install": "git config core.hooksPath .githooks",
     "verify:all": "node scripts/verify-all.cjs --no-dev",
     "verify:all:dev": "node scripts/verify-all.cjs",
+    "verify:all:rebuild": "node scripts/verify-all.cjs --rebuild-native --no-dev",
+    "verify:all:dev:rebuild": "node scripts/verify-all.cjs --rebuild-native",
     "verify:all:fresh": "node scripts/verify-all.cjs --install --no-dev",
     "verify:all:dev:fresh": "node scripts/verify-all.cjs --install",
     "verify:rapid": "node scripts/verify-rapid.cjs",

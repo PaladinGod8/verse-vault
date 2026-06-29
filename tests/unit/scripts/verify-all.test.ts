@@ -9,6 +9,7 @@ const VERIFY_ALL_SCRIPT = path.resolve(process.cwd(), 'scripts', 'verify-all.cjs
 type VerifyRunResult = SpawnSyncReturns<string>;
 
 type VerifyRunOptions = {
+  args?: string[];
   env?: Record<string, string>;
 };
 
@@ -61,7 +62,11 @@ function createTempWorkspace(): string {
       '  state.failedOnce = state.failedOnce || {};',
       '}',
       '',
-      'state.calls.push({ cmd, args: process.argv.slice(2) });',
+      'state.calls.push({',
+      '  cmd,',
+      '  args: process.argv.slice(2),',
+      '  playwrightWorkers: process.env.PLAYWRIGHT_WORKERS || null,',
+      '});',
       '',
       'const stdoutOn = (process.env.FAKE_YARN_STDOUT_ON || "").split(",").filter(Boolean);',
       'const stderrOn = (process.env.FAKE_YARN_STDERR_ON || "").split(",").filter(Boolean);',
@@ -115,8 +120,9 @@ function createTempWorkspace(): string {
 
 function runVerifyAll(workspace: string, options: VerifyRunOptions = {}): VerifyRunResult {
   const binPath = path.join(workspace, 'bin');
+  const scriptArgs = options.args ?? ['--no-dev'];
 
-  return spawnSync(process.execPath, [VERIFY_ALL_SCRIPT, '--no-dev'], {
+  return spawnSync(process.execPath, [VERIFY_ALL_SCRIPT, ...scriptArgs], {
     cwd: workspace,
     encoding: 'utf8',
     timeout: 15_000,
@@ -137,6 +143,12 @@ function readLatestMeta(workspace: string): RunMeta {
   return readJsonFile<RunMeta>(
     path.join(workspace, 'scripts', 'logs', 'pipeline', 'latest.json'),
   );
+}
+
+function readFakeYarnState(workspace: string): {
+  calls: Array<{ cmd: string; args: string[]; playwrightWorkers: string | null; }>;
+} {
+  return readJsonFile(path.join(workspace, '.fake-yarn-state.json'));
 }
 
 describe('scripts/verify-all.cjs terminal log capture', () => {
@@ -254,5 +266,71 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     expect(secretStepIndex).toBeGreaterThanOrEqual(0);
     expect(secretStepIndex).toBeLessThan(formatStepIndex);
     expect(secretStepIndex).toBeLessThan(lintStepIndex);
+  }, 30_000);
+
+  it('skips native rebuild by default and only rebuilds when explicitly requested', () => {
+    const workspace = createTempWorkspace();
+
+    const defaultRun = runVerifyAll(workspace);
+    expect(defaultRun.status).toBe(0);
+
+    const defaultState = readFakeYarnState(workspace);
+    expect(defaultState.calls.some((call) => call.cmd === 'postinstall')).toBe(false);
+
+    const rebuildRun = runVerifyAll(workspace, {
+      args: ['--no-dev', '--rebuild-native'],
+    });
+    expect(rebuildRun.status).toBe(0);
+
+    const rebuildState = readFakeYarnState(workspace);
+    expect(rebuildState.calls.some((call) => call.cmd === 'postinstall')).toBe(true);
+  }, 30_000);
+
+  it('packages once and runs e2e with test:e2e:ci', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace);
+
+    expect(result.status).toBe(0);
+
+    const state = readFakeYarnState(workspace);
+    const packageCalls = state.calls.filter((call) => call.cmd === 'package');
+    const e2eCiCalls = state.calls.filter((call) => call.cmd === 'test:e2e:ci');
+    const legacyE2ECalls = state.calls.filter((call) => call.cmd === 'test:e2e');
+
+    expect(packageCalls).toHaveLength(1);
+    expect(e2eCiCalls).toHaveLength(1);
+    expect(legacyE2ECalls).toHaveLength(0);
+  }, 30_000);
+
+  it('runs guard:e2e-timing before package and e2e', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace);
+
+    expect(result.status).toBe(0);
+
+    const latestMeta = readLatestMeta(workspace);
+    const stepNames = latestMeta.steps.map((step) => step.name);
+    const guardIndex = stepNames.indexOf('Guard E2E timing');
+    const packageIndex = stepNames.indexOf('Package app for e2e');
+    const e2eIndex = stepNames.indexOf('Run e2e tests');
+
+    expect(guardIndex).toBeGreaterThanOrEqual(0);
+    expect(guardIndex).toBeLessThan(packageIndex);
+    expect(guardIndex).toBeLessThan(e2eIndex);
+  }, 30_000);
+
+  it('does not force PLAYWRIGHT_WORKERS=8 in dev mode', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace, {
+      args: [],
+    });
+
+    expect(result.status).toBe(0);
+
+    const state = readFakeYarnState(workspace);
+    const e2eCall = state.calls.find((call) => call.cmd === 'test:e2e:ci');
+
+    expect(e2eCall).toBeDefined();
+    expect(e2eCall?.playwrightWorkers).toBeNull();
   }, 30_000);
 });

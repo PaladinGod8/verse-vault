@@ -7,6 +7,7 @@ const { spawnSync } = require('child_process');
 const yarnCmd = 'yarn';
 const args = new Set(process.argv.slice(2));
 const runInstall = args.has('--install');
+const runRebuildNative = args.has('--rebuild-native');
 const runDev = !args.has('--no-dev');
 const preRunRetentionLimit = 3;
 const postRunRetentionLimit = 3;
@@ -344,11 +345,14 @@ if (runInstall) {
   });
 }
 
-steps.push(
-  {
+if (runRebuildNative) {
+  steps.push({
     name: 'Run postinstall (native module rebuild)',
     run: () => runCommand(yarnCmd, ['postinstall']),
-  },
+  });
+}
+
+steps.push(
   {
     name: 'Scan secrets (working tree + git history)',
     run: () => runCommand(yarnCmd, ['security:secrets']),
@@ -386,6 +390,10 @@ steps.push(
     run: () => runCommand(yarnCmd, ['guard:contracts']),
   },
   {
+    name: 'Guard E2E timing',
+    run: () => runCommand(yarnCmd, ['guard:e2e-timing']),
+  },
+  {
     name: 'Run lint (strict, no warnings)',
     run: () => runCommand(yarnCmd, ['lint']),
   },
@@ -404,8 +412,8 @@ steps.push(
     name: 'Run e2e tests',
     run: () => {
       cleanDirectories(['test-results', 'playwright-report']);
-      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS ?? (runDev ? '8' : undefined);
-      return runCommand(yarnCmd, ['test:e2e'], {
+      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS;
+      return runCommand(yarnCmd, ['test:e2e:ci'], {
         env: {
           PLAYWRIGHT_HTML_OPEN: 'never',
           ...(playwrightWorkersForStep
