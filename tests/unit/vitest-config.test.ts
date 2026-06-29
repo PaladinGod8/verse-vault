@@ -22,6 +22,6 @@ describe('vitest config optimization defaults', () => {
     expect(configText).toContain('lines: 80');
     expect(configText).toContain('statements: 80');
     expect(configText).toContain('functions: 80');
-    expect(configText).toContain('branches: 80');
+    expect(configText).toContain('branches: 83');
   });
 });

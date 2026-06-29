@@ -51,7 +51,7 @@ async function ensureWorldsLanding(window: import('@playwright/test').Page) {
   ).toBeVisible();
 }
 
-test('battlemap play runtime flow supports render, grid, token, camera, and exit', async () => {
+test('@critical @runtime @ux battlemap play runtime flow supports render, grid, token, camera, and exit', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {

@@ -160,5 +160,5 @@ Current route and journey status:
 Branch coverage policy:
 
 - Dedicated branch floor command: `yarn coverage:branches`
-- Current enforced branch floor: `80%`
+- Current enforced branch floor: `83%`
 - Raise only after fresh full-suite coverage proves new floor is green end to end.

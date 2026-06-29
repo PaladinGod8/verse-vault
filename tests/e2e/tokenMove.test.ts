@@ -60,7 +60,7 @@ test.afterEach(async () => {
   userDataDir = null;
 });
 
-test.describe('Token Move Flows', () => {
+test.describe('@ux Token Move Flows', () => {
   test('should move world-scoped token to campaign via dialog', async () => {
     const { page: window, worldId: targetWorldId } = requireContext();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;

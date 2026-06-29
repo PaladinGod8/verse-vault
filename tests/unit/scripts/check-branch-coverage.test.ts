@@ -43,7 +43,7 @@ describe('check-branch-coverage.cjs', () => {
 
   it('passes when total branch coverage meets default floor and prints weakest files', () => {
     const workspace = createWorkspace({
-      total: { branches: { pct: 82.14 } },
+      total: { branches: { pct: 83.26 } },
       'src/renderer/App.tsx': { branches: { pct: 78.5 } },
       'src/database/repos/tokensRepo.ts': { branches: { pct: 0 } },
     });
@@ -51,7 +51,7 @@ describe('check-branch-coverage.cjs', () => {
     const result = runScript(workspace);
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('Total branch coverage 82.14% (floor 80.00%).');
+    expect(result.stdout).toContain('Total branch coverage 83.26% (floor 83.00%).');
     expect(result.stdout).toContain('src/database/repos/tokensRepo.ts: 0.00%');
   });
 

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { cleanupElectronApp, launchElectronApp, waitForAnimationFrames } from './helpers';
 
-test('casting range overlay renders and tracks pointer in runtime', async () => {
+test('@runtime casting range overlay renders and tracks pointer in runtime', async () => {
   const context = await launchElectronApp();
   const { page } = context;
 

@@ -313,7 +313,7 @@ test.afterEach(async () => {
   userDataDir = null;
 });
 
-test.describe('Token CRUD - World-Level', () => {
+test.describe('@ux Token CRUD - World-Level', () => {
   test('creates a world-scoped token with uploaded image', async () => {
     const { page: window, worldId: targetWorldId } = requirePageAndWorld();
     await goToTokensPage(window, targetWorldId);
@@ -605,7 +605,7 @@ test.describe('Token CRUD - World-Level', () => {
   });
 });
 
-test.describe('Copy to Campaign', () => {
+test.describe('@ux Copy to Campaign', () => {
   test('copies a world-scoped token to a campaign', async () => {
     const { page: window, worldId: targetWorldId } = requirePageAndWorld();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
@@ -673,7 +673,7 @@ test.describe('Copy to Campaign', () => {
   });
 });
 
-test.describe('Scope Labels', () => {
+test.describe('@ux Scope Labels', () => {
   test('world-scoped token shows World scope label', async () => {
     const { page: window, worldId: targetWorldId } = requirePageAndWorld();
     await goToTokensPage(window, targetWorldId);
@@ -714,7 +714,7 @@ test.describe('Scope Labels', () => {
   });
 });
 
-test.describe('Runtime Palette - World Tokens', () => {
+test.describe('@runtime Runtime Palette - World Tokens', () => {
   test('world tokens section appears in the runtime palette', async () => {
     const { page: window, worldId: targetWorldId } = requirePageAndWorld();
     const unique = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;

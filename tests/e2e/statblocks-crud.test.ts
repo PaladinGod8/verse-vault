@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { closeApp, launchApp } from './helpers/launchApp';
 
-test('statblocks full CRUD flow works end to end', async () => {
+test('@ux statblocks full CRUD flow works end to end', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {
@@ -132,7 +132,7 @@ test('statblocks full CRUD flow works end to end', async () => {
   }
 });
 
-test('statblocks create dialog submit is disabled when name is empty', async () => {
+test('@ux statblocks create dialog submit is disabled when name is empty', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {
@@ -189,7 +189,7 @@ test('statblocks create dialog submit is disabled when name is empty', async () 
   }
 });
 
-test('statblocks error states: invalid world id and world not found', async () => {
+test('@ux statblocks error states: invalid world id and world not found', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {

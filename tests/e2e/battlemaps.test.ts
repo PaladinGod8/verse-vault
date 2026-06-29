@@ -54,7 +54,7 @@ async function ensureWorldsLanding(window: import('@playwright/test').Page) {
   ).toBeVisible();
 }
 
-test('battlemaps CRUD flow works end to end', async () => {
+test('@ux battlemaps CRUD flow works end to end', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {

@@ -302,6 +302,22 @@ function partitionFiles(files, partitionNames) {
   return Array.from(selectedSet).sort();
 }
 
+function splitExistingFiles(files) {
+  const existingFiles = [];
+  const missingFiles = [];
+
+  for (const filePath of files) {
+    const absolutePath = path.resolve(filePath);
+    if (fs.existsSync(absolutePath)) {
+      existingFiles.push(filePath);
+    } else {
+      missingFiles.push(filePath);
+    }
+  }
+
+  return { existingFiles, missingFiles };
+}
+
 function chunk(items, chunkSize) {
   const chunks = [];
   for (let i = 0; i < items.length; i += chunkSize) {
@@ -361,13 +377,20 @@ function main() {
   ensureValidPartitions(options.partitionNames);
 
   const candidates = getCandidateFiles(options.mode);
-  const filesToLint = partitionFiles(candidates, options.partitionNames);
+  const partitionedFiles = partitionFiles(candidates, options.partitionNames);
+  const { existingFiles: filesToLint, missingFiles } = splitExistingFiles(partitionedFiles);
 
   console.log(
     `[lint:md] tool=${options.tool} mode=${options.mode} partitions=${
       options.partitionNames.join(',')
     } count=${filesToLint.length}`,
   );
+
+  if (missingFiles.length > 0) {
+    console.log(
+      `[lint:md] Skipping ${missingFiles.length} missing tracked markdown file(s).`,
+    );
+  }
 
   if (filesToLint.length === 0) {
     console.log('[lint:md] No tracked markdown files matched the requested scope.');

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { cleanupElectronApp, launchElectronApp, waitForAnimationFrames } from './helpers';
 
-test('runtime resolves linked statblock abilities and opens popup on token double click', async () => {
+test('@runtime @ux runtime resolves linked statblock abilities and opens popup on token double click', async () => {
   const context = await launchElectronApp();
   const { page } = context;
 

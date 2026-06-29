@@ -8,7 +8,7 @@ function abilityRow(
   return window.locator('tbody tr').filter({ hasText: abilityName }).first();
 }
 
-test('abilities CRUD and child-link flow works end to end', async () => {
+test('@ux abilities CRUD and child-link flow works end to end', async () => {
   const { app, userDataDir } = await launchApp();
 
   try {

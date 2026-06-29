@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DEFAULT_BRANCH_FLOOR = 80;
+const DEFAULT_BRANCH_FLOOR = 83;
 const COVERAGE_SUMMARY_PATH = path.resolve(
   process.cwd(),
   process.env.COVERAGE_SUMMARY_PATH || 'coverage/coverage-summary.json',

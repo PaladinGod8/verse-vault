@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import CharacterImageDropzone from '../../../src/renderer/components/characters/CharacterImageDropzone';
+import FactionImageDropzone from '../../../src/renderer/components/factions/FactionImageDropzone';
 
 function makeImageFile(
-  name = 'character.png',
+  name = 'faction.png',
   type = 'image/png',
   bytes: Uint8Array = new Uint8Array([1, 2, 3]),
 ): File {
@@ -18,31 +18,21 @@ function getFileInput(container: HTMLElement): HTMLInputElement {
   return input as HTMLInputElement;
 }
 
-describe('CharacterImageDropzone', () => {
-  it('renders dropzone controls and helper text', () => {
-    render(
-      <CharacterImageDropzone
-        selectedFile={null}
-        onFileSelect={vi.fn()}
-        onClearFile={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText('Character Image Upload')).toBeInTheDocument();
-    expect(
-      screen.getByText('Drag an image here, or click to choose a file.'),
-    ).toBeInTheDocument();
-  });
-
-  it('calls onFileSelect when a file is chosen via the input', () => {
+describe('FactionImageDropzone', () => {
+  it('renders helper copy and supports input selection', () => {
     const onFileSelect = vi.fn();
     const { container } = render(
-      <CharacterImageDropzone
+      <FactionImageDropzone
         selectedFile={null}
         onFileSelect={onFileSelect}
         onClearFile={vi.fn()}
       />,
     );
+
+    expect(screen.getByText('Faction Image Upload')).toBeInTheDocument();
+    expect(
+      screen.getByText('Drag an image here, or click to choose a file.'),
+    ).toBeInTheDocument();
 
     const input = getFileInput(container);
     const file = makeImageFile();
@@ -51,10 +41,11 @@ describe('CharacterImageDropzone', () => {
     expect(onFileSelect).toHaveBeenCalledWith(file);
   });
 
-  it('ignores empty file selections and clears the input value after use', () => {
+  it('ignores empty selections and exposes selected file metadata', () => {
     const onFileSelect = vi.fn();
-    const { container } = render(
-      <CharacterImageDropzone
+    const twoKilobyteFile = makeImageFile('guild-banner.webp', '', new Uint8Array(2048));
+    const { container, rerender } = render(
+      <FactionImageDropzone
         selectedFile={null}
         onFileSelect={onFileSelect}
         onClearFile={vi.fn()}
@@ -65,50 +56,22 @@ describe('CharacterImageDropzone', () => {
     fireEvent.change(input, { target: { files: [] } });
     expect(onFileSelect).not.toHaveBeenCalled();
 
-    const file = makeImageFile();
-    fireEvent.change(input, { target: { files: [file] } });
-    expect(onFileSelect).toHaveBeenCalledWith(file);
-    expect(input.value).toBe('');
-  });
-
-  it('shows the selected file and clears it on click', () => {
-    const onClearFile = vi.fn();
-    const file = makeImageFile('dragon.png');
-    render(
-      <CharacterImageDropzone
-        selectedFile={file}
-        onFileSelect={vi.fn()}
-        onClearFile={onClearFile}
-      />,
-    );
-
-    expect(screen.getByText('dragon.png')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove selected file' }));
-    expect(onClearFile).toHaveBeenCalledTimes(1);
-  });
-
-  it('shows file type fallback and megabyte-sized files', () => {
-    const file = makeImageFile(
-      'ancient-dragon.webp',
-      '',
-      new Uint8Array(2 * 1024 * 1024),
-    );
-    render(
-      <CharacterImageDropzone
-        selectedFile={file}
-        onFileSelect={vi.fn()}
+    rerender(
+      <FactionImageDropzone
+        selectedFile={twoKilobyteFile}
+        onFileSelect={onFileSelect}
         onClearFile={vi.fn()}
       />,
     );
 
-    expect(screen.getByText('ancient-dragon.webp')).toBeInTheDocument();
-    expect(screen.getByText('unknown type - 2.00 MB')).toBeInTheDocument();
+    expect(screen.getByText('guild-banner.webp')).toBeInTheDocument();
+    expect(screen.getByText('unknown type - 2.0 KB')).toBeInTheDocument();
   });
 
-  it('supports click, keyboard, and drop selection when enabled', () => {
+  it('supports drag-drop and keyboard activation when enabled', () => {
     const onFileSelect = vi.fn();
     const { container } = render(
-      <CharacterImageDropzone
+      <FactionImageDropzone
         selectedFile={null}
         onFileSelect={onFileSelect}
         onClearFile={vi.fn()}
@@ -120,14 +83,10 @@ describe('CharacterImageDropzone', () => {
     const dropzone = screen.getByRole('button', {
       name: /drag an image here, or click to choose a file\./i,
     });
-    const file = makeImageFile('drop.png');
+    const file = makeImageFile('drop.webp');
 
-    fireEvent.click(dropzone);
-    expect(inputClickSpy).toHaveBeenCalledTimes(1);
-
-    fireEvent.keyDown(dropzone, { key: 'Enter' });
     fireEvent.keyDown(dropzone, { key: ' ' });
-    expect(inputClickSpy).toHaveBeenCalledTimes(3);
+    expect(inputClickSpy).toHaveBeenCalledTimes(1);
 
     fireEvent.dragEnter(dropzone);
     expect(dropzone.className).toContain('border-slate-600');
@@ -138,22 +97,22 @@ describe('CharacterImageDropzone', () => {
     fireEvent.dragOver(dropzone, {
       dataTransfer: { files: [file], dropEffect: 'none' },
     });
-    expect(dropzone.className).toContain('border-slate-600');
-
     fireEvent.drop(dropzone, { dataTransfer: { files: [file] } });
+
     expect(onFileSelect).toHaveBeenCalledWith(file);
     expect(dropzone.className).toContain('border-slate-300');
   });
 
-  it('stays inert while disabled', () => {
+  it('keeps clear/remove path disabled when the dropzone is locked', () => {
     const onFileSelect = vi.fn();
     const onClearFile = vi.fn();
     const { container } = render(
-      <CharacterImageDropzone
-        selectedFile={makeImageFile('locked.png')}
+      <FactionImageDropzone
+        selectedFile={makeImageFile('sigil.png')}
         onFileSelect={onFileSelect}
         onClearFile={onClearFile}
         disabled
+        error='Upload locked'
       />,
     );
 
@@ -163,11 +122,7 @@ describe('CharacterImageDropzone', () => {
       name: /drag an image here, or click to choose a file\./i,
     });
     const removeButton = screen.getByRole('button', { name: 'Remove selected file' });
-    const file = makeImageFile('ignored.png');
-
-    expect(dropzone).toHaveAttribute('aria-disabled', 'true');
-    expect(dropzone).toHaveAttribute('tabindex', '-1');
-    expect(removeButton).toBeDisabled();
+    const file = makeImageFile('ignore.png');
 
     fireEvent.click(dropzone);
     fireEvent.keyDown(dropzone, { key: 'Enter' });
@@ -177,22 +132,11 @@ describe('CharacterImageDropzone', () => {
     fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(removeButton);
 
+    expect(screen.getByText('Upload locked')).toBeInTheDocument();
+    expect(dropzone).toHaveAttribute('aria-disabled', 'true');
+    expect(removeButton).toBeDisabled();
     expect(inputClickSpy).not.toHaveBeenCalled();
     expect(onFileSelect).not.toHaveBeenCalled();
     expect(onClearFile).not.toHaveBeenCalled();
-    expect(dropzone.className).toContain('border-slate-300');
-  });
-
-  it('shows an error message when provided', () => {
-    render(
-      <CharacterImageDropzone
-        selectedFile={null}
-        onFileSelect={vi.fn()}
-        onClearFile={vi.fn()}
-        error='Unsupported file type'
-      />,
-    );
-
-    expect(screen.getByText('Unsupported file type')).toBeInTheDocument();
   });
 });
