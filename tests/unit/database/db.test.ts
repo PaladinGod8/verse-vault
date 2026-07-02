@@ -169,6 +169,7 @@ describe('database', () => {
     const arcInsertRunMock = vi.fn(() => ({ lastInsertRowid: 11 }));
     const actInsertRunMock = vi.fn(() => ({ lastInsertRowid: 21 }));
     const insertNewSessionRunMock = vi.fn();
+    const offlineMediaUpdateRunMock = vi.fn();
     const campaignsSelectAllMock = vi.fn(() => [{ id: 1 }]);
     const legacySessionsSelectAllMock = vi.fn(() => [
       {
@@ -213,6 +214,12 @@ describe('database', () => {
         if (sql === 'SELECT * FROM sessions') {
           return { all: legacySessionsSelectAllMock };
         }
+        if (/^SELECT id, \w+ AS image_src FROM \w+$/.test(sql)) {
+          return { all: () => [] };
+        }
+        if (/^UPDATE \w+ SET \w+ = \? WHERE id = \?$/.test(sql)) {
+          return { run: offlineMediaUpdateRunMock };
+        }
         if (
           sql
             === 'INSERT INTO sessions_new (id, act_id, name, notes, planned_at, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
@@ -229,6 +236,7 @@ describe('database', () => {
 
     expect(campaignsSelectAllMock).toHaveBeenCalledTimes(1);
     expect(legacySessionsSelectAllMock).toHaveBeenCalledTimes(1);
+    expect(offlineMediaUpdateRunMock).not.toHaveBeenCalled();
     expect(arcInsertRunMock).toHaveBeenCalledWith(1);
     expect(actInsertRunMock).toHaveBeenCalledWith(11);
     expect(insertNewSessionRunMock).toHaveBeenCalledWith(

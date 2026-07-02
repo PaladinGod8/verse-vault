@@ -141,23 +141,24 @@ Use these focused commands before full-lane escalation:
 
 Current route and journey status:
 
-| Route                                                                             | Journey                                                     | Unit proof | E2E proof        | Criticality | Status  |
-| --------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------- | ---------------- | ----------- | ------- |
-| `/`                                                                               | Launch worlds shell plus world CRUD and thumbnail lifecycle | Yes        | Yes              | High        | Covered |
-| `/settings`                                                                       | Theme persistence across restart                            | Yes        | Yes              | High        | Covered |
-| `/world/:id/levels`                                                               | Level CRUD                                                  | Yes        | Yes              | High        | Covered |
-| `/world/:id/characters`                                                           | Character create and search                                 | Yes        | Yes              | High        | Covered |
-| `/world/:id/characters/:characterId`                                              | Detail edit, image, primary faction                         | Yes        | Yes              | High        | Covered |
-| `/world/:id/backgrounds`                                                          | Background create, search, sort, and pagination             | Yes        | Yes              | High        | Covered |
-| `/world/:id/backgrounds/:backgroundId`                                            | Detail render, mark-viewed, and edit                        | Yes        | Yes              | High        | Covered |
-| `/world/:id/factions`                                                             | Type management, filter, CRUD                               | Yes        | Yes              | High        | Covered |
-| `/world/:id/factions/:factionId`                                                  | Detail edit and membership                                  | Yes        | Yes              | High        | Covered |
-| `/world/:id/campaign/:campaignId/scenes`                                          | Campaign-wide scene listing and drill-in                    | Yes        | Yes              | High        | Covered |
-| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | Session create, edit, move, delete                          | Yes        | Yes              | High        | Covered |
-| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | Scene create, edit, move, delete                            | Yes        | Yes              | High        | Covered |
-| `/world/:id/campaigns`                                                            | Campaign create and navigation                              | Yes        | Yes              | High        | Covered |
-| `/world/:id/battlemaps/:battleMapId/runtime`                                      | Runtime play flow                                           | Yes        | Yes              | High        | Covered |
-| Session reorder via DnD                                                           | Drag reorder persistence                                    | Yes        | No dedicated E2E | Medium      | Partial |
+| Route                                                                             | Journey                                                               | Unit proof | E2E proof        | Criticality | Status  |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------- | ---------------- | ----------- | ------- |
+| `/`                                                                               | Launch worlds shell plus world CRUD and thumbnail lifecycle           | Yes        | Yes              | High        | Covered |
+| Airplane mode                                                                     | Launch, local thumbnail upload, settings/theme, zero HTTP(S) requests | Yes        | Yes              | High        | Covered |
+| `/settings`                                                                       | Theme persistence across restart                                      | Yes        | Yes              | High        | Covered |
+| `/world/:id/levels`                                                               | Level CRUD                                                            | Yes        | Yes              | High        | Covered |
+| `/world/:id/characters`                                                           | Character create and search                                           | Yes        | Yes              | High        | Covered |
+| `/world/:id/characters/:characterId`                                              | Detail edit, image, primary faction                                   | Yes        | Yes              | High        | Covered |
+| `/world/:id/backgrounds`                                                          | Background create, search, sort, and pagination                       | Yes        | Yes              | High        | Covered |
+| `/world/:id/backgrounds/:backgroundId`                                            | Detail render, mark-viewed, and edit                                  | Yes        | Yes              | High        | Covered |
+| `/world/:id/factions`                                                             | Type management, filter, CRUD                                         | Yes        | Yes              | High        | Covered |
+| `/world/:id/factions/:factionId`                                                  | Detail edit and membership                                            | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaign/:campaignId/scenes`                                          | Campaign-wide scene listing and drill-in                              | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | Session create, edit, move, delete                                    | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | Scene create, edit, move, delete                                      | Yes        | Yes              | High        | Covered |
+| `/world/:id/campaigns`                                                            | Campaign create and navigation                                        | Yes        | Yes              | High        | Covered |
+| `/world/:id/battlemaps/:battleMapId/runtime`                                      | Runtime play flow                                                     | Yes        | Yes              | High        | Covered |
+| Session reorder via DnD                                                           | Drag reorder persistence                                              | Yes        | No dedicated E2E | Medium      | Partial |
 
 Branch coverage policy:
 

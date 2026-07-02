@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 
 const LORE_NOTE_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -113,6 +114,35 @@ function attachTagsToNotes(
   }));
 }
 
+function buildLoreNoteUpdateStatement(data: LoreNoteUpsertData): {
+  setClauses: string[];
+  values: Array<string | null>;
+} {
+  const setClauses: string[] = [];
+  const values: Array<string | null> = [];
+
+  if (Object.prototype.hasOwnProperty.call(data, 'name')) {
+    const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
+    if (!trimmedName) {
+      throw new Error('Lore note name is required');
+    }
+    setClauses.push('name = ?');
+    values.push(trimmedName);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'content')) {
+    setClauses.push('content = ?');
+    values.push(normalizeOptionalText(data.content));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
+    setClauses.push('image_src = ?');
+    values.push(normalizeMediaImageSrcForHost(data.image_src, LORE_NOTE_IMAGE_HOST));
+  }
+
+  return { setClauses, values };
+}
+
 function registerLoreNoteReadHandlers(db: Database.Database): void {
   ipcMain.handle(IPC.LORE_NOTES_GET_ALL_BY_WORLD, (_event, worldId: number) => {
     const notes = db
@@ -167,7 +197,10 @@ function registerLoreNoteMutationHandlers(db: Database.Database): void {
     }
 
     const content = normalizeOptionalText(data.content);
-    const imageSrc = normalizeOptionalText(data.image_src);
+    const imageSrc = normalizeMediaImageSrcForHost(
+      data.image_src,
+      LORE_NOTE_IMAGE_HOST,
+    );
     const tags = normalizeTags(data.tags);
 
     const insertLoreNote = db.transaction(() => {
@@ -198,27 +231,7 @@ function registerLoreNoteMutationHandlers(db: Database.Database): void {
       throw new Error('Lore note not found');
     }
 
-    const setClauses: string[] = [];
-    const values: Array<string | number | null> = [];
-
-    if (Object.prototype.hasOwnProperty.call(data, 'name')) {
-      const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
-      if (!trimmedName) {
-        throw new Error('Lore note name is required');
-      }
-      setClauses.push('name = ?');
-      values.push(trimmedName);
-    }
-
-    if (Object.prototype.hasOwnProperty.call(data, 'content')) {
-      setClauses.push('content = ?');
-      values.push(normalizeOptionalText(data.content));
-    }
-
-    if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
-      setClauses.push('image_src = ?');
-      values.push(normalizeOptionalText(data.image_src));
-    }
+    const { setClauses, values } = buildLoreNoteUpdateStatement(data);
 
     const updateSql = setClauses.length > 0
       ? `UPDATE lore_notes SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`

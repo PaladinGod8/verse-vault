@@ -59,6 +59,7 @@ not generated.
 | `items.md`                            | World-scoped item wiki entries with image and description    |
 | `editor-submit-bar.md`                | Shared sticky top-right submit/cancel bar across modal forms |
 | `settings.md`                         | App-wide user preferences stored in a singleton settings row |
+| `offline-media.md`                    | Cross-cutting offline-only image policy and airplane smoke   |
 
 ## Notes
 

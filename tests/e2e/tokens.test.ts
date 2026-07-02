@@ -172,6 +172,25 @@ async function createTokenRecord(
   }, input);
 }
 
+async function importTokenImage(
+  window: Page,
+  input: { fileName: string; mimeType: string; buffer: Buffer; },
+): Promise<string> {
+  const result = await window.evaluate(async (payload) => {
+    return self.db.tokens.importImage({
+      fileName: payload.fileName,
+      mimeType: payload.mimeType,
+      bytes: new Uint8Array(payload.bytes),
+    });
+  }, {
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    bytes: [...input.buffer],
+  });
+
+  return result.image_src;
+}
+
 async function waitForFootprintPainter(window: Page): Promise<Locator> {
   const painterDialog = window.getByRole('dialog', {
     name: 'Footprint Painter',
@@ -809,7 +828,11 @@ test.describe('@runtime Runtime Palette - World Tokens', () => {
       `Runtime BattleMap ${unique}`,
     );
     const tokenName = `Preview World Token ${unique}`;
-    const imageSrc = `https://example.com/token-preview-${unique}.png`;
+    const imageSrc = await importTokenImage(window, {
+      fileName: `token-preview-${unique}.png`,
+      mimeType: 'image/png',
+      buffer: PNG_IMAGE_A,
+    });
     await createTokenRecord(window, {
       worldId: targetWorldId,
       name: tokenName,

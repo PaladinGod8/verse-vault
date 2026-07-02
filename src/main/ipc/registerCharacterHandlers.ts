@@ -14,6 +14,7 @@ import type {
   CharacterSearchByWorldResult,
 } from '../../shared/contracts/dbApiPayloads';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 
 const CHARACTER_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -129,7 +130,7 @@ function registerCharacterMutationHandlers(db: Database.Database): void {
       normalizeCharacterOwner(data.owner),
     );
     const author = typeof data.author === 'string' ? data.author.trim() || null : null;
-    const imageSrc = typeof data.image_src === 'string' ? data.image_src : null;
+    const imageSrc = normalizeMediaImageSrcForHost(data.image_src, CHARACTER_IMAGE_HOST);
     const sections = ensureCharacterJson(data.sections, 'sections');
     const wikiSummary = ensureCharacterJson(data.wiki_summary, 'wiki_summary');
 
@@ -388,7 +389,7 @@ function buildCharacterUpdateStatement(
     data,
     'image_src',
     'image_src = ?',
-    (value) => typeof value === 'string' ? value : null,
+    (value) => normalizeMediaImageSrcForHost(value, CHARACTER_IMAGE_HOST),
     setClauses,
     values,
   );

@@ -3,6 +3,7 @@ import { runBackgroundsSchemaMigration } from './backgroundMigrations';
 import { runItemsSchemaMigration } from './itemMigrations';
 import { runLegacyShapeMigrations } from './legacyShapeMigrations';
 import { runLoreNotesSchemaMigration } from './loreNoteMigrations';
+import { runOfflineMediaImageMigration } from './offlineMediaImageMigration';
 import { runRelationshipMigrations } from './relationshipMigrations';
 import { ensureTokenIndexes } from './tokenIndexMigrations';
 
@@ -27,6 +28,7 @@ export function runMigrations(db: Database.Database): void {
   runFactionMembersSchemaMigration(db);
   runRelationshipMigrations(db);
   ensureCharacterNameIndex(db);
+  runOfflineMediaImageMigration(db);
 }
 
 function runFactionTypesSchemaMigration(db: Database.Database): void {

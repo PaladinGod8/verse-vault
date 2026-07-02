@@ -190,7 +190,7 @@ describe('TokenForm', () => {
         initialValues={{
           name: 'Existing Token',
           grid_type: 'hex',
-          image_src: 'https://assets.example/token.png',
+          image_src: 'vv-media://token-images/token.png',
           is_visible: 1,
         }}
         onSave={vi.fn()}
@@ -349,7 +349,7 @@ describe('TokenForm', () => {
         initialValues={{
           name: 'Existing Token',
           grid_type: 'hex',
-          image_src: 'https://assets.example/current.png',
+          image_src: 'vv-media://token-images/current.png',
           is_visible: 1,
         }}
         onSave={onSave}
@@ -374,7 +374,7 @@ describe('TokenForm', () => {
         initialValues={{
           name: 'Existing Token',
           grid_type: 'hex',
-          image_src: 'https://assets.example/current.png',
+          image_src: 'vv-media://token-images/current.png',
           is_visible: 1,
         }}
         onSave={onSave}
@@ -408,7 +408,7 @@ describe('TokenForm', () => {
         initialValues={{
           name: 'Existing Token',
           grid_type: 'hex',
-          image_src: 'https://assets.example/current.png',
+          image_src: 'vv-media://token-images/current.png',
           is_visible: 1,
         }}
         onSave={onSave}

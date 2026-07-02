@@ -369,10 +369,12 @@ describe('TokensPage', () => {
       buildToken({
         id: 501,
         name: 'Uploaded Wolf',
-        image_src: 'file:///a.png',
+        image_src: 'vv-media://token-images/uploaded-wolf.png',
       }),
     ]);
-    tokensImportImageMock.mockResolvedValue({ image_src: 'file:///a.png' });
+    tokensImportImageMock.mockResolvedValue({
+      image_src: 'vv-media://token-images/uploaded-wolf.png',
+    });
     tokensAddMock.mockResolvedValue(
       buildToken({ id: 501, name: 'Uploaded Wolf' }),
     );
@@ -407,7 +409,7 @@ describe('TokensPage', () => {
         world_id: 1,
         name: 'Uploaded Wolf',
         grid_type: 'square',
-        image_src: 'file:///a.png',
+        image_src: 'vv-media://token-images/uploaded-wolf.png',
         is_visible: 1,
       }),
     );
@@ -484,7 +486,7 @@ describe('TokensPage', () => {
     const existingToken = buildToken({
       id: 300,
       name: 'Scout',
-      image_src: 'https://assets.example/scout.png',
+      image_src: 'vv-media://token-images/scout.png',
     });
     const imageFile = new File([new Uint8Array([4, 5, 6])], 'replace.png', {
       type: 'image/png',
@@ -499,11 +501,21 @@ describe('TokensPage', () => {
     tokensGetAllByWorldMock
       .mockResolvedValueOnce([existingToken])
       .mockResolvedValueOnce([
-        buildToken({ id: 300, name: 'Scout', image_src: 'file:///new.png' }),
+        buildToken({
+          id: 300,
+          name: 'Scout',
+          image_src: 'vv-media://token-images/scout-replaced.png',
+        }),
       ]);
-    tokensImportImageMock.mockResolvedValue({ image_src: 'file:///new.png' });
+    tokensImportImageMock.mockResolvedValue({
+      image_src: 'vv-media://token-images/scout-replaced.png',
+    });
     tokensUpdateMock.mockResolvedValue(
-      buildToken({ id: 300, name: 'Scout', image_src: 'file:///new.png' }),
+      buildToken({
+        id: 300,
+        name: 'Scout',
+        image_src: 'vv-media://token-images/scout-replaced.png',
+      }),
     );
 
     renderTokensPage();
@@ -535,7 +547,7 @@ describe('TokensPage', () => {
       expect.objectContaining({
         name: 'Scout',
         grid_type: 'square',
-        image_src: 'file:///new.png',
+        image_src: 'vv-media://token-images/scout-replaced.png',
         is_visible: 1,
       }),
     );
@@ -550,7 +562,7 @@ describe('TokensPage', () => {
     const existingToken = buildToken({
       id: 301,
       name: 'Scout',
-      image_src: 'https://assets.example/scout.png',
+      image_src: 'vv-media://token-images/scout.png',
     });
 
     worldsGetByIdMock.mockResolvedValue(buildWorld());

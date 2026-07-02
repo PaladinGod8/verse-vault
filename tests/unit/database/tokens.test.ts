@@ -373,7 +373,7 @@ describe('token IPC handlers', () => {
       1,
       7,
       'Guard',
-      'https://assets.example/guard.png',
+      null,
       '{"size":"large"}',
       'square',
       0,
@@ -382,7 +382,7 @@ describe('token IPC handlers', () => {
       world_id: 1,
       campaign_id: 7,
       name: 'Guard',
-      image_src: 'https://assets.example/guard.png',
+      image_src: null,
       config: '{"size":"large"}',
       is_visible: 0,
     });

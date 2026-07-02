@@ -42,29 +42,29 @@ describe('normalizeTokenImageSrc', () => {
   });
 
   describe('non-file:// URLs', () => {
-    it('returns http:// URLs unchanged', () => {
+    it('rejects http:// URLs', () => {
       const url = 'http://example.com/image.png';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('returns https:// URLs unchanged', () => {
+    it('rejects https:// URLs', () => {
       const url = 'https://example.com/image.png';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('returns data: URLs unchanged', () => {
+    it('rejects data: URLs', () => {
       const url = 'data:image/png;base64,iVBORw0KGgo...';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('returns relative paths unchanged', () => {
+    it('rejects relative paths', () => {
       const url = './images/token.png';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('returns URLs with custom schemes unchanged', () => {
+    it('rejects URLs with custom schemes', () => {
       const url = 'custom://resource.png';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
   });
 
@@ -110,42 +110,38 @@ describe('normalizeTokenImageSrc', () => {
   });
 
   describe('file:// URLs without token-images path', () => {
-    it('returns file:// URL unchanged if no token-images in path', () => {
+    it('rejects file:// URL if it does not map to supported local image folders', () => {
       const url = 'file:///C:/Users/user/images/dragon.png';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('returns file:// URL unchanged if token-images not at expected position', () => {
+    it('rejects file:// URL if folder only resembles supported host', () => {
       const url = 'file:///C:/Users/mytoken-images-backup/dragon.png';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
   });
 
   describe('invalid URLs', () => {
-    it('handles malformed file:// URL gracefully', () => {
+    it('rejects malformed file:// URL gracefully', () => {
       const url = 'file://[invalid-url-chars]';
-      const result = normalizeTokenImageSrc(url);
-      // Should return the original URL when URL parsing fails
-      expect(result).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('handles file:// URL with percent-encoding errors gracefully', () => {
+    it('rejects file:// URL with percent-encoding errors gracefully', () => {
       const url = 'file:///C:/Users/user/token-images/%ZZ_invalid.png';
-      const result = normalizeTokenImageSrc(url);
-      // Should return the original URL when decoding fails
-      expect(result).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
   });
 
   describe('whitespace handling', () => {
-    it('trims leading/trailing whitespace', () => {
+    it('trims before rejecting unsupported URLs', () => {
       const url = '  https://example.com/image.png  ';
-      expect(normalizeTokenImageSrc(url)).toBe('https://example.com/image.png');
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('trims tabs and newlines', () => {
+    it('trims tabs and newlines before rejecting unsupported URLs', () => {
       const url = '\t\nhttps://example.com/image.png\n\t';
-      expect(normalizeTokenImageSrc(url)).toBe('https://example.com/image.png');
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
   });
 
@@ -184,14 +180,22 @@ describe('normalizeTokenImageSrc', () => {
       expect(result).toBe('vv-media://token-images/elf_rogue.png');
     });
 
-    it('handles image URLs from web as-is', () => {
+    it('rejects image URLs from web', () => {
       const url = 'https://cdn.example.com/tokens/dragon.webp';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
     });
 
-    it('handles image URLs from relative paths as-is', () => {
+    it('rejects image URLs from relative paths', () => {
       const url = '../assets/tokens/wizard.svg';
-      expect(normalizeTokenImageSrc(url)).toBe(url);
+      expect(normalizeTokenImageSrc(url)).toBeNull();
+    });
+
+    it('handles non-token legacy file URLs for supported local image folders', () => {
+      const url =
+        'file:///C:/Users/DnDMaster/AppData/Roaming/Verse%20Vault/faction-images/banner.png';
+      expect(normalizeTokenImageSrc(url)).toBe(
+        'vv-media://faction-images/banner.png',
+      );
     });
   });
 });

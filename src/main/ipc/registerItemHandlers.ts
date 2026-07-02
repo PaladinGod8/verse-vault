@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 
 const ITEM_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -68,7 +69,7 @@ function registerItemMutationHandlers(db: Database.Database): void {
     }
 
     const description = normalizeOptionalText(data.description);
-    const imageSrc = normalizeOptionalText(data.image_src);
+    const imageSrc = normalizeMediaImageSrcForHost(data.image_src, ITEM_IMAGE_HOST);
 
     const stmt = db.prepare(
       'INSERT INTO items (world_id, name, description, image_src) VALUES (?, ?, ?, ?)',
@@ -109,7 +110,7 @@ function registerItemMutationHandlers(db: Database.Database): void {
 
     if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
       setClauses.push('image_src = ?');
-      values.push(normalizeOptionalText(data.image_src));
+      values.push(normalizeMediaImageSrcForHost(data.image_src, ITEM_IMAGE_HOST));
     }
 
     const updateSql = setClauses.length > 0

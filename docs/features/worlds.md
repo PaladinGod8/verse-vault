@@ -110,6 +110,8 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
 - Renderer ordering after create/update is based on local upsert behavior (newly touched world moves to top).
 - World image files are never cleaned up automatically. Deleting a world leaves its thumbnail
   image on disk in `userData/world-images/`.
-- Worlds that previously stored an external URL in `thumbnail` will now have a broken
-  thumbnail display (the URL field no longer exists in the form). These worlds must be edited
-  and a local file re-uploaded to restore a thumbnail.
+- Worlds that previously stored legacy `file://.../world-images/<file>` thumbnails are repaired
+  automatically to canonical `vv-media://world-images/<file>` URLs during startup migration.
+- Worlds that previously stored deprecated external thumbnail URLs are normalized to `null`
+  during startup migration and on future saves. Restoring a thumbnail requires re-uploading a
+  local file.

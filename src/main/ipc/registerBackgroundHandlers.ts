@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 
 const BACKGROUND_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -60,7 +61,7 @@ function registerBackgroundMutationHandlers(db: Database.Database): void {
     }
 
     const description = typeof data.description === 'string' ? data.description : null;
-    const imageSrc = typeof data.image_src === 'string' ? data.image_src : null;
+    const imageSrc = normalizeMediaImageSrcForHost(data.image_src, BACKGROUND_IMAGE_HOST);
 
     const stmt = db.prepare(
       'INSERT INTO backgrounds (world_id, name, description, image_src) VALUES (?, ?, ?, ?)',
@@ -103,7 +104,9 @@ function registerBackgroundMutationHandlers(db: Database.Database): void {
 
     if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
       setClauses.push('image_src = ?');
-      values.push(typeof data.image_src === 'string' ? data.image_src : null);
+      values.push(
+        normalizeMediaImageSrcForHost(data.image_src, BACKGROUND_IMAGE_HOST),
+      );
     }
 
     const updateSql = setClauses.length > 0

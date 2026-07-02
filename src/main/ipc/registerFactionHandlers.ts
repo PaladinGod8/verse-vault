@@ -11,6 +11,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { wouldCreateCycle } from '../../shared/factionHierarchy';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 
 const FACTION_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -86,7 +87,7 @@ function registerFactionMutationHandlers(db: Database.Database): void {
     }
 
     const profile = typeof data.profile === 'string' ? data.profile : null;
-    const imageSrc = typeof data.image_src === 'string' ? data.image_src : null;
+    const imageSrc = normalizeMediaImageSrcForHost(data.image_src, FACTION_IMAGE_HOST);
     const sections = ensureFactionJson(data.sections, 'sections');
     const wikiSummary = ensureFactionJson(data.wiki_summary, 'wiki_summary');
     const typeId = typeof data.type_id === 'number' ? data.type_id : null;
@@ -258,7 +259,7 @@ function buildFactionUpdateStatement(data: FactionUpsertData): {
 
   if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
     setClauses.push('image_src = ?');
-    values.push(typeof data.image_src === 'string' ? data.image_src : null);
+    values.push(normalizeMediaImageSrcForHost(data.image_src, FACTION_IMAGE_HOST));
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'sections')) {

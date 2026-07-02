@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 import { getDefaultWorldConfig } from '../../shared/statisticsTypes';
 
 const TOKEN_IMAGE_MIME_TO_EXTENSION = {
@@ -46,7 +47,7 @@ function registerWorldMutationHandlers(db: Database.Database): void {
       throw new Error('World name is required');
     }
 
-    const thumbnail = typeof data.thumbnail === 'string' ? data.thumbnail : null;
+    const thumbnail = normalizeMediaImageSrcForHost(data.thumbnail, WORLD_IMAGE_HOST);
     const shortDescription = typeof data.short_description === 'string'
       ? data.short_description
       : null;
@@ -201,7 +202,7 @@ function buildWorldUpdateStatement(data: WorldUpsertData): {
 
   if (Object.prototype.hasOwnProperty.call(data, 'thumbnail')) {
     setClauses.push('thumbnail = ?');
-    values.push(typeof data.thumbnail === 'string' ? data.thumbnail : null);
+    values.push(normalizeMediaImageSrcForHost(data.thumbnail, WORLD_IMAGE_HOST));
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'short_description')) {

@@ -11,6 +11,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { db as dbHandlers, ensureTokenConfigJsonText } from '../../database/db';
 import { IPC } from '../../shared/ipcChannels';
+import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 import { ensureSqliteBooleanNumber } from './validation';
 
 const TOKEN_GRID_TYPES = new Set(['square', 'hex']);
@@ -159,7 +160,7 @@ function registerTokenAddHandler(db: Database.Database): void {
         data.world_id,
         campaignId,
         name,
-        data.image_src ?? null,
+        normalizeMediaImageSrcForHost(data.image_src, TOKEN_IMAGE_HOST),
         config,
         gridType,
         isVisible,
@@ -199,7 +200,7 @@ function registerTokenUpdateHandler(db: Database.Database): void {
 
       if (hasImageSrc && data.image_src !== undefined) {
         setClauses.push('image_src = ?');
-        values.push(data.image_src);
+        values.push(normalizeMediaImageSrcForHost(data.image_src, TOKEN_IMAGE_HOST));
       }
 
       if (hasConfig && data.config !== undefined) {

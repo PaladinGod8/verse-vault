@@ -33,6 +33,7 @@ export default defineConfig({
       name: 'smoke',
       testMatch: [
         'app.test.ts',
+        'offline-smoke.test.ts',
         'backgrounds.test.ts',
         'items.test.ts',
         'loreNotes.test.ts',
