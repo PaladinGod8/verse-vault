@@ -28,6 +28,7 @@ Update rule:
 | Tailwind CSS v4 | Utility-first styling                                    |
 | DaisyUI 5       | Theme/component utility layer on top of Tailwind         |
 | PixiJS 8        | Battlemap rendering and graphics runtime                 |
+| phonemize       | English-to-IPA phonemization in the renderer IPA tool    |
 
 ## Packaging And Desktop Build
 

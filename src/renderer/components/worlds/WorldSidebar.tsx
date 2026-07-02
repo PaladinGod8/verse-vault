@@ -1,7 +1,31 @@
 import { NavLink } from 'react-router-dom';
+import { useIpaTool } from '../../hooks/useIpaTool';
 
 interface WorldSidebarProps {
   worldId: number | null;
+}
+
+function PhoneticIcon() {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='20'
+      height='20'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      <path d='M4 7V5h16v2' />
+      <path d='M9 5v14' />
+      <path d='M7 19h4' />
+      <path d='M14 12h6' />
+      <path d='M17 9v10' />
+    </svg>
+  );
 }
 
 function LayersIcon() {
@@ -259,6 +283,8 @@ function BarChartIcon() {
 }
 
 export default function WorldSidebar({ worldId }: WorldSidebarProps) {
+  const { open: openIpaTool } = useIpaTool();
+
   return (
     <aside className='flex w-16 flex-col items-center gap-2 border-r border-slate-200 bg-white py-4 shadow-sm'>
       <NavLink
@@ -417,6 +443,15 @@ export default function WorldSidebar({ worldId }: WorldSidebarProps) {
         <BarChartIcon />
         <span>Statistics</span>
       </NavLink>
+      <button
+        type='button'
+        onClick={openIpaTool}
+        aria-label='IPA phonetic tool'
+        className='flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-xs leading-tight font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-800'
+      >
+        <PhoneticIcon />
+        <span>IPA</span>
+      </button>
     </aside>
   );
 }

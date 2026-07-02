@@ -36,30 +36,31 @@ For "what do I read for task X", see `AGENTS.md` > Orientation By Task. That tab
 Update this table when adding or removing a `docs/features/*.md` file — it is hand-maintained,
 not generated.
 
-| File                                  | Scope                                                        |
-| ------------------------------------- | ------------------------------------------------------------ |
-| `abilities.md`                        | World-scoped abilities CRUD with parent-child links          |
-| `campaign-session-scene-backbone.md`  | Campaign/Arc/Act/Session/Scene hierarchy with ordering       |
-| `levels.md`                           | Categorized level records scoped to worlds                   |
-| `modal-light-mode.md`                 | Light-theme modal dialog fix across CRUD surfaces            |
-| `battlemaps.md`                       | World-scoped battlemaps with PixiJS grid/token runtime       |
-| `casting.md`                          | Ability casting range/AoE overlays on battlemaps             |
-| `alphabetical-list-ordering.md`       | Shared alphabetical ordering for card grids and name tables  |
-| `worlds.md`                           | World records with thumbnail image uploads                   |
-| `statistics.md`                       | World/statblock-level TTRPG statistics framework             |
-| `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped    |
-| `ipc-domain-split.md`                 | IPC handlers split into per-domain registrar modules         |
-| `optimization.md`                     | Test-suite speed and packaged app size reductions            |
-| `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting             |
-| `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates           |
-| `secret-scanning.md`                  | Local gitleaks secret-scan lanes and ignored artifact rules  |
-| `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links  |
-| `characters.md`                       | World-scoped character wiki entries with search and image    |
-| `backgrounds.md`                      | World-scoped background wiki entries with image and summary  |
-| `items.md`                            | World-scoped item wiki entries with image and description    |
-| `editor-submit-bar.md`                | Shared sticky top-right submit/cancel bar across modal forms |
-| `settings.md`                         | App-wide user preferences stored in a singleton settings row |
-| `offline-media.md`                    | Cross-cutting offline-only image policy and airplane smoke   |
+| File                                  | Scope                                                         |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `abilities.md`                        | World-scoped abilities CRUD with parent-child links           |
+| `campaign-session-scene-backbone.md`  | Campaign/Arc/Act/Session/Scene hierarchy with ordering        |
+| `levels.md`                           | Categorized level records scoped to worlds                    |
+| `modal-light-mode.md`                 | Light-theme modal dialog fix across CRUD surfaces             |
+| `battlemaps.md`                       | World-scoped battlemaps with PixiJS grid/token runtime        |
+| `casting.md`                          | Ability casting range/AoE overlays on battlemaps              |
+| `alphabetical-list-ordering.md`       | Shared alphabetical ordering for card grids and name tables   |
+| `worlds.md`                           | World records with thumbnail image uploads                    |
+| `statistics.md`                       | World/statblock-level TTRPG statistics framework              |
+| `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped     |
+| `ipc-domain-split.md`                 | IPC handlers split into per-domain registrar modules          |
+| `optimization.md`                     | Test-suite speed and packaged app size reductions             |
+| `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting              |
+| `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates            |
+| `secret-scanning.md`                  | Local gitleaks secret-scan lanes and ignored artifact rules   |
+| `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links   |
+| `characters.md`                       | World-scoped character wiki entries with search and image     |
+| `backgrounds.md`                      | World-scoped background wiki entries with image and summary   |
+| `items.md`                            | World-scoped item wiki entries with image and description     |
+| `editor-submit-bar.md`                | Shared sticky top-right submit/cancel bar across modal forms  |
+| `settings.md`                         | App-wide user preferences stored in a singleton settings row  |
+| `offline-media.md`                    | Cross-cutting offline-only image policy and airplane smoke    |
+| `ipa-phonetic-tool.md`                | Renderer IPA scratchpad: English-to-IPA, symbol palette, copy |
 
 ## Notes
 

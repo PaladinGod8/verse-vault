@@ -12,6 +12,15 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.{ts,tsx}'],
     css: false,
 
+    // `phonemize` ships ESM with bare JSON imports (`import * as x from './x.json'`).
+    // Inline it so Vite transforms those imports (matching the renderer build)
+    // instead of letting Node's native ESM loader reject them.
+    server: {
+      deps: {
+        inline: [/phonemize/],
+      },
+    },
+
     // Use process isolation to make hard timeouts more reliable when a worker
     // event loop is blocked by long synchronous work.
     pool: 'forks',

@@ -18,6 +18,15 @@ export default defineConfig((env) => {
       outDir: `.vite/renderer/${name}`,
     },
     plugins: [tailwindcss(), pluginExposeRenderer(name)],
+    // phonemize ships dictionary JSON whose keys include reserved words (e.g.
+    // "await"). esbuild's dep pre-bundler turns JSON keys into named bindings,
+    // emitting `var await = ...` — a SyntaxError in an ES module that crashes
+    // the whole renderer to a white screen. Excluding it from optimization lets
+    // Vite's Rollup JSON handling serve it (reserved-word keys stay reachable
+    // via the default export, which phonemize reads through resolveJson).
+    optimizeDeps: {
+      exclude: ['phonemize'],
+    },
     resolve: {
       preserveSymlinks: true,
     },
