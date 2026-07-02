@@ -15,6 +15,8 @@ import BackgroundDetailPage from './pages/BackgroundDetailPage';
 import BackgroundsPage from './pages/BackgroundsPage';
 import BattleMapRuntimePage from './pages/BattleMapRuntimePage';
 import BattleMapsPage from './pages/BattleMapsPage';
+import CampaignNoteDetailPage from './pages/CampaignNoteDetailPage';
+import CampaignNotesPage from './pages/CampaignNotesPage';
 import CampaignScenesPage from './pages/CampaignScenesPage';
 import CampaignsPage from './pages/CampaignsPage';
 import CharacterDetailPage from './pages/CharacterDetailPage';
@@ -24,6 +26,7 @@ import FactionsPage from './pages/FactionsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import ItemsPage from './pages/ItemsPage';
 import LevelsPage from './pages/LevelsPage';
+import LoreNoteCanvasPage from './pages/LoreNoteCanvasPage';
 import LoreNoteDetailPage from './pages/LoreNoteDetailPage';
 import LoreNotesPage from './pages/LoreNotesPage';
 import ScenesPage from './pages/ScenesPage';
@@ -36,73 +39,70 @@ import WorldsHomePage from './pages/WorldsHomePage';
 import WorldStatisticsConfigPage from './pages/WorldStatisticsConfigPage';
 import './index.css';
 
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path='/' element={<WorldsHomePage />} />
+      <Route path='/settings' element={<SettingsPage />} />
+      <Route path='/world/:id' element={<WorldPage />} />
+      <Route path='/world/:id/levels' element={<LevelsPage />} />
+      <Route path='/world/:id/abilities' element={<AbilitiesPage />} />
+      <Route path='/world/:id/campaigns' element={<CampaignsPage />} />
+      <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
+      <Route path='/world/:id/tokens' element={<TokensPage />} />
+      <Route path='/world/:id/statblocks' element={<StatBlocksPage />} />
+      <Route path='/world/:id/backgrounds' element={<BackgroundsPage />} />
+      <Route
+        path='/world/:id/backgrounds/:backgroundId'
+        element={<BackgroundDetailPage />}
+      />
+      <Route path='/world/:id/items' element={<ItemsPage />} />
+      <Route path='/world/:id/items/:itemId' element={<ItemDetailPage />} />
+      <Route path='/world/:id/lore-notes' element={<LoreNotesPage />} />
+      <Route path='/world/:id/lore-notes/:loreNoteId' element={<LoreNoteDetailPage />} />
+      <Route
+        path='/world/:id/lore-notes/:loreNoteId/canvas'
+        element={<LoreNoteCanvasPage />}
+      />
+      <Route path='/world/:id/characters' element={<CharactersPage />} />
+      <Route path='/world/:id/characters/:characterId' element={<CharacterDetailPage />} />
+      <Route path='/world/:id/factions' element={<FactionsPage />} />
+      <Route path='/world/:id/factions/:factionId' element={<FactionDetailPage />} />
+      <Route path='/world/:id/statistics' element={<WorldStatisticsConfigPage />} />
+      <Route
+        path='/world/:id/battlemaps/:battleMapId/runtime'
+        element={<BattleMapRuntimePage />}
+      />
+      <Route
+        path='/world/:id/campaign/:campaignId/scenes'
+        element={<CampaignScenesPage />}
+      />
+      <Route path='/world/:id/campaign/:campaignId/arcs' element={<ArcsPage />} />
+      <Route path='/world/:id/campaign/:campaignId/notes' element={<CampaignNotesPage />} />
+      <Route
+        path='/world/:id/campaign/:campaignId/notes/:campaignNoteId'
+        element={<CampaignNoteDetailPage />}
+      />
+      <Route path='/world/:id/campaign/:campaignId/arc/:arcId/acts' element={<ActsPage />} />
+      <Route
+        path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions'
+        element={<SessionsPage />}
+      />
+      <Route
+        path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes'
+        element={<ScenesPage />}
+      />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <ToastProvider>
       <AppSettingsProvider>
         <IpaToolProvider>
           <div className='min-h-screen'>
-            <Routes>
-              <Route path='/' element={<WorldsHomePage />} />
-              <Route path='/settings' element={<SettingsPage />} />
-              <Route path='/world/:id' element={<WorldPage />} />
-              <Route path='/world/:id/levels' element={<LevelsPage />} />
-              <Route path='/world/:id/abilities' element={<AbilitiesPage />} />
-              <Route path='/world/:id/campaigns' element={<CampaignsPage />} />
-              <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
-              <Route path='/world/:id/tokens' element={<TokensPage />} />
-              <Route path='/world/:id/statblocks' element={<StatBlocksPage />} />
-              <Route path='/world/:id/backgrounds' element={<BackgroundsPage />} />
-              <Route
-                path='/world/:id/backgrounds/:backgroundId'
-                element={<BackgroundDetailPage />}
-              />
-              <Route path='/world/:id/items' element={<ItemsPage />} />
-              <Route
-                path='/world/:id/items/:itemId'
-                element={<ItemDetailPage />}
-              />
-              <Route path='/world/:id/lore-notes' element={<LoreNotesPage />} />
-              <Route
-                path='/world/:id/lore-notes/:loreNoteId'
-                element={<LoreNoteDetailPage />}
-              />
-              <Route path='/world/:id/characters' element={<CharactersPage />} />
-              <Route
-                path='/world/:id/characters/:characterId'
-                element={<CharacterDetailPage />}
-              />
-              <Route path='/world/:id/factions' element={<FactionsPage />} />
-              <Route path='/world/:id/factions/:factionId' element={<FactionDetailPage />} />
-              <Route
-                path='/world/:id/statistics'
-                element={<WorldStatisticsConfigPage />}
-              />
-              <Route
-                path='/world/:id/battlemaps/:battleMapId/runtime'
-                element={<BattleMapRuntimePage />}
-              />
-              <Route
-                path='/world/:id/campaign/:campaignId/scenes'
-                element={<CampaignScenesPage />}
-              />
-              <Route
-                path='/world/:id/campaign/:campaignId/arcs'
-                element={<ArcsPage />}
-              />
-              <Route
-                path='/world/:id/campaign/:campaignId/arc/:arcId/acts'
-                element={<ActsPage />}
-              />
-              <Route
-                path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions'
-                element={<SessionsPage />}
-              />
-              <Route
-                path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes'
-                element={<ScenesPage />}
-              />
-            </Routes>
+            <AppRoutes />
           </div>
         </IpaToolProvider>
       </AppSettingsProvider>

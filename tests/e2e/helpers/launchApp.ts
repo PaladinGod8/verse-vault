@@ -99,6 +99,29 @@ export async function launchApp(existingUserDataDir?: string): Promise<LaunchRes
       .forEach((candidate) => candidate.close());
   });
 
+  // Disable CSS transitions/animations app-wide for the whole test run. Playwright
+  // waits for elements to be "stable" (bounding box unchanged across frames) before
+  // acting; DaisyUI's `.modal-open` opens with a transition, so under parallel-worker
+  // CPU load the settle detection can stall past the timeout and flake actions like
+  // `check()`/`click()` on a freshly-opened dialog. Removing motion makes elements
+  // immediately stable — deterministic, not a retry-style mask. Injected at the source
+  // launcher so every test (both `launchApp` and `launchElectronApp` callers) is covered.
+  const mainWindow = app.windows().find((candidate) => !candidate.url().startsWith('devtools://'));
+  if (mainWindow) {
+    await mainWindow.waitForLoadState('domcontentloaded').catch((): undefined => undefined);
+    await mainWindow
+      .addStyleTag({
+        content: `*, *::before, *::after {
+          transition-duration: 0s !important;
+          transition-delay: 0s !important;
+          animation-duration: 0s !important;
+          animation-delay: 0s !important;
+          scroll-behavior: auto !important;
+        }`,
+      })
+      .catch((): undefined => undefined);
+  }
+
   return { app, userDataDir };
 }
 

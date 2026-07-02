@@ -1,6 +1,7 @@
 // Inline payload/result shapes used only by DbApi method signatures, kept out of
 // dbApi.ts to stay within the file-size budget enforced by .eslintrc.cjs.
 import type {
+  CanvasSceneData,
   Character,
   CharacterRelationship,
   FactionMember,
@@ -39,10 +40,20 @@ export type ItemUpsertPayload = {
   image_src?: string | null;
 };
 
+export type CampaignNoteUpsertPayload = {
+  name?: string;
+  tags?: string[];
+  canvas_scene?: CanvasSceneData | null;
+  canvas_preview_image?: string | null;
+};
+
 export type LoreNoteUpsertPayload = {
   name?: string;
   content?: string | null;
   image_src?: string | null;
+  canvas_enabled?: boolean;
+  canvas_scene?: CanvasSceneData | null;
+  canvas_preview_image?: string | null;
   tags?: string[];
 };
 

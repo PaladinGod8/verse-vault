@@ -66,6 +66,24 @@ export interface Campaign {
   updated_at: string;
 }
 
+export interface CanvasSceneData {
+  elements: unknown[];
+  appState: Record<string, unknown>;
+  files: Record<string, unknown>;
+}
+
+export interface CampaignNote {
+  id: number;
+  world_id: number;
+  campaign_id: number;
+  name: string;
+  canvas_scene: CanvasSceneData | null;
+  canvas_preview_image: string | null;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BattleMap {
   id: number;
   world_id: number;
@@ -307,6 +325,9 @@ export interface LoreNote {
   name: string;
   content: string | null;
   image_src: string | null;
+  canvas_enabled: boolean;
+  canvas_scene: CanvasSceneData | null;
+  canvas_preview_image: string | null;
   tags: string[];
   last_viewed_at: string | null;
   created_at: string;

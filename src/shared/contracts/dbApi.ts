@@ -21,6 +21,7 @@ export const DB_API_METHODS = {
     'getChildren',
   ],
   campaigns: ['getAllByWorld', 'getById', 'add', 'update', 'delete'],
+  campaignNotes: ['getAllByCampaign', 'getById', 'add', 'update', 'delete', 'getAllTagsByCampaign'],
   battlemaps: ['getAllByWorld', 'getById', 'add', 'update', 'delete'],
   tokens: [
     'getAllByWorld',

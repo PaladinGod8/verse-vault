@@ -100,6 +100,8 @@ describe('database', () => {
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS worlds');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS levels');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS campaigns');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS campaign_notes');
+    expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS campaign_note_tags');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS battlemaps');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS arcs');
     expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS acts');
@@ -137,6 +139,9 @@ describe('database', () => {
     expect(schemaSql).toContain(
       'campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE',
     );
+    expect(schemaSql).toContain('canvas_enabled INTEGER NOT NULL DEFAULT 0');
+    expect(schemaSql).toContain('canvas_scene   TEXT');
+    expect(schemaSql).toContain('canvas_preview_image TEXT');
     expect(schemaSql).toContain(
       'session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE',
     );

@@ -19,6 +19,7 @@ This document is a current-state contract index. It is generated from `src/share
 | levels                 | 5        | `src/main/ipc/registerLevelHandlers.ts`                 |
 | abilities              | 8        | `src/main/ipc/registerAbilityHandlers.ts`               |
 | campaigns              | 5        | `src/main/ipc/registerCampaignHandlers.ts`              |
+| campaignNotes          | 6        | `src/main/ipc/registerCampaignNoteHandlers.ts`          |
 | battlemaps             | 5        | `src/main/ipc/registerBattleMapHandlers.ts`             |
 | tokens                 | 9        | `src/main/ipc/registerTokenHandlers.ts`                 |
 | arcs                   | 5        | `src/main/ipc/registerArcHandlers.ts`                   |
@@ -74,6 +75,12 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.CAMPAIGNS_ADD`                                | `db:campaigns:add`                            | `window.db.campaigns.add`                            | `src/main/ipc/registerCampaignHandlers.ts`              | `DbApi.campaigns.add`                            |
 | `IPC.CAMPAIGNS_UPDATE`                             | `db:campaigns:update`                         | `window.db.campaigns.update`                         | `src/main/ipc/registerCampaignHandlers.ts`              | `DbApi.campaigns.update`                         |
 | `IPC.CAMPAIGNS_DELETE`                             | `db:campaigns:delete`                         | `window.db.campaigns.delete`                         | `src/main/ipc/registerCampaignHandlers.ts`              | `DbApi.campaigns.delete`                         |
+| `IPC.CAMPAIGN_NOTES_GET_ALL_BY_CAMPAIGN`           | `db:campaignNotes:getAllByCampaign`           | `window.db.campaignNotes.getAllByCampaign`           | `src/main/ipc/registerCampaignNoteHandlers.ts`          | `DbApi.campaignNotes.getAllByCampaign`           |
+| `IPC.CAMPAIGN_NOTES_GET_BY_ID`                     | `db:campaignNotes:getById`                    | `window.db.campaignNotes.getById`                    | `src/main/ipc/registerCampaignNoteHandlers.ts`          | `DbApi.campaignNotes.getById`                    |
+| `IPC.CAMPAIGN_NOTES_ADD`                           | `db:campaignNotes:add`                        | `window.db.campaignNotes.add`                        | `src/main/ipc/registerCampaignNoteHandlers.ts`          | `DbApi.campaignNotes.add`                        |
+| `IPC.CAMPAIGN_NOTES_UPDATE`                        | `db:campaignNotes:update`                     | `window.db.campaignNotes.update`                     | `src/main/ipc/registerCampaignNoteHandlers.ts`          | `DbApi.campaignNotes.update`                     |
+| `IPC.CAMPAIGN_NOTES_DELETE`                        | `db:campaignNotes:delete`                     | `window.db.campaignNotes.delete`                     | `src/main/ipc/registerCampaignNoteHandlers.ts`          | `DbApi.campaignNotes.delete`                     |
+| `IPC.CAMPAIGN_NOTE_TAGS_GET_ALL_BY_CAMPAIGN`       | `db:campaignNoteTags:getAllByCampaign`        | `window.db.campaignNotes.getAllTagsByCampaign`       | `src/main/ipc/registerCampaignNoteHandlers.ts`          | `DbApi.campaignNotes.getAllTagsByCampaign`       |
 | `IPC.BATTLEMAPS_GET_ALL_BY_WORLD`                  | `db:battlemaps:getAllByWorld`                 | `window.db.battlemaps.getAllByWorld`                 | `src/main/ipc/registerBattleMapHandlers.ts`             | `DbApi.battlemaps.getAllByWorld`                 |
 | `IPC.BATTLEMAPS_GET_BY_ID`                         | `db:battlemaps:getById`                       | `window.db.battlemaps.getById`                       | `src/main/ipc/registerBattleMapHandlers.ts`             | `DbApi.battlemaps.getById`                       |
 | `IPC.BATTLEMAPS_ADD`                               | `db:battlemaps:add`                           | `window.db.battlemaps.add`                           | `src/main/ipc/registerBattleMapHandlers.ts`             | `DbApi.battlemaps.add`                           |

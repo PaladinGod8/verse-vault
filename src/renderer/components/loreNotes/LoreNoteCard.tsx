@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildCardFrameStyle, buildCardMediaStyle } from '../../lib/cardDisplaySettings';
+import { resolveCanvasPreferredImage } from '../../lib/noteCanvasPreview';
 
 type LoreNoteCardProps = {
   loreNote: LoreNote;
@@ -21,7 +22,11 @@ export default function LoreNoteCard({
   displayDimensions = { width: 320, height: 160 },
 }: LoreNoteCardProps) {
   const navigate = useNavigate();
-  const imageSrc = loreNote.image_src?.trim() ?? '';
+  const imageSrc = resolveCanvasPreferredImage({
+    imageSrc: loreNote.image_src,
+    canvasEnabled: loreNote.canvas_enabled,
+    canvasPreviewImage: loreNote.canvas_preview_image,
+  }) ?? '';
   const [showImage, setShowImage] = useState(imageSrc.length > 0);
 
   useEffect(() => {
@@ -88,6 +93,13 @@ export default function LoreNoteCard({
         <h2 className='line-clamp-2 text-lg font-semibold text-slate-900'>
           {loreNote.name}
         </h2>
+        {loreNote.canvas_enabled
+          ? (
+            <p className='text-[10px] font-semibold tracking-wide text-slate-500 uppercase'>
+              Canvas
+            </p>
+          )
+          : null}
         {loreNote.content
           ? <p className='line-clamp-2 text-xs text-slate-500'>{loreNote.content}</p>
           : null}

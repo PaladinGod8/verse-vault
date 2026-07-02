@@ -9,6 +9,9 @@ export function runLoreNotesSchemaMigration(db: Database.Database): void {
         name           TEXT    NOT NULL,
         content        TEXT,
         image_src      TEXT,
+        canvas_enabled INTEGER NOT NULL DEFAULT 0,
+        canvas_scene   TEXT,
+        canvas_preview_image TEXT,
         last_viewed_at TEXT,
         created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
         updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -35,7 +38,18 @@ export function runLoreNotesSchemaMigration(db: Database.Database): void {
   }
 
   const cols = db.pragma('table_info(lore_notes)') as Array<{ name: string; }>;
-  if (Array.isArray(cols) && cols.length > 0 && !cols.some((c) => c.name === 'last_viewed_at')) {
-    db.exec('ALTER TABLE lore_notes ADD COLUMN last_viewed_at TEXT');
+  if (Array.isArray(cols) && cols.length > 0) {
+    if (!cols.some((c) => c.name === 'canvas_enabled')) {
+      db.exec('ALTER TABLE lore_notes ADD COLUMN canvas_enabled INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!cols.some((c) => c.name === 'canvas_scene')) {
+      db.exec('ALTER TABLE lore_notes ADD COLUMN canvas_scene TEXT');
+    }
+    if (!cols.some((c) => c.name === 'canvas_preview_image')) {
+      db.exec('ALTER TABLE lore_notes ADD COLUMN canvas_preview_image TEXT');
+    }
+    if (!cols.some((c) => c.name === 'last_viewed_at')) {
+      db.exec('ALTER TABLE lore_notes ADD COLUMN last_viewed_at TEXT');
+    }
   }
 }

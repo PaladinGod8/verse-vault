@@ -7,6 +7,7 @@ export type CardSortListKey =
   | 'backgrounds'
   | 'items'
   | 'loreNotes'
+  | 'campaignNotes'
   | 'characters'
   | 'factions'
   | 'worlds';

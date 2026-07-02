@@ -7,6 +7,7 @@ import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useLoreNoteCrud } from '../hooks/useLoreNoteCrud';
 import { buildDetailImageStyle, resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
+import { resolveCanvasPreferredImage } from '../lib/noteCanvasPreview';
 import { parsePositiveIntParam } from '../lib/routeParams';
 import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
 
@@ -70,7 +71,11 @@ export default function LoreNoteDetailPage() {
     onDeleteSettled: () => undefined,
   });
 
-  const imageSrc = normalizeTokenImageSrc(loreNote?.image_src);
+  const imageSrc = resolveCanvasPreferredImage({
+    imageSrc: normalizeTokenImageSrc(loreNote?.image_src),
+    canvasEnabled: loreNote?.canvas_enabled ?? false,
+    canvasPreviewImage: loreNote?.canvas_preview_image,
+  });
 
   return (
     <div className='flex min-h-screen'>
@@ -147,6 +152,39 @@ export default function LoreNoteDetailPage() {
                   Edit
                 </button>
               </div>
+
+              <section className='space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4'>
+                <div className='flex items-start justify-between gap-4'>
+                  <div>
+                    <h2 className='text-lg font-semibold text-slate-900'>Canvas</h2>
+                    <p className='text-sm text-slate-600'>
+                      {loreNote.canvas_enabled
+                        ? 'Canvas enabled for freeform ideation.'
+                        : 'Canvas disabled for this lore note.'}
+                    </p>
+                  </div>
+                  {loreNote.canvas_enabled
+                    ? (
+                      <Link
+                        to={`/world/${worldId}/lore-notes/${loreNote.id}/canvas`}
+                        className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100'
+                      >
+                        Open Canvas
+                      </Link>
+                    )
+                    : null}
+                </div>
+
+                {loreNote.canvas_enabled && loreNote.canvas_preview_image
+                  ? (
+                    <img
+                      src={loreNote.canvas_preview_image}
+                      alt={`${loreNote.name} canvas preview`}
+                      className='max-h-72 w-full rounded-lg border border-slate-200 object-contain bg-white'
+                    />
+                  )
+                  : null}
+              </section>
             </section>
           )
           : null}
@@ -170,7 +208,8 @@ export default function LoreNoteDetailPage() {
               initialValues={{
                 name: loreNote.name,
                 content: loreNote.content,
-                image_src: imageSrc,
+                image_src: normalizeTokenImageSrc(loreNote.image_src),
+                canvas_enabled: loreNote.canvas_enabled,
                 tags: loreNote.tags,
               }}
               onSave={(data) => void handleUpdate(data)}

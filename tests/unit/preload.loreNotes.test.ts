@@ -42,6 +42,17 @@ describe('preload lore notes bridge', () => {
       tags: [],
     });
 
+    await api.loreNotes.update(2, {
+      canvas_enabled: true,
+      canvas_scene: { elements: [], appState: {}, files: {} },
+      canvas_preview_image: 'data:image/png;base64,abc',
+    });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.LORE_NOTES_UPDATE, 2, {
+      canvas_enabled: true,
+      canvas_scene: { elements: [], appState: {}, files: {} },
+      canvas_preview_image: 'data:image/png;base64,abc',
+    });
+
     await api.loreNotes.delete(2);
     expect(invokeMock).toHaveBeenCalledWith(IPC.LORE_NOTES_DELETE, 2);
 

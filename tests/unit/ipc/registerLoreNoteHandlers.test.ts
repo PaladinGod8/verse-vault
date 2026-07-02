@@ -38,6 +38,9 @@ function buildLoreNoteRow(overrides?: Record<string, unknown>) {
     name: 'Founding Myth',
     content: null as null,
     image_src: null as null,
+    canvas_enabled: 0,
+    canvas_scene: null as null,
+    canvas_preview_image: null as null,
     last_viewed_at: null as null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
@@ -87,7 +90,13 @@ describe('registerLoreNoteHandlers', () => {
       .mockReturnValueOnce({ all: tagAll });
 
     expect(handlers[IPC.LORE_NOTES_GET_ALL_BY_WORLD]({}, 10)).toEqual([
-      { ...buildLoreNoteRow({ id: 1 }), tags: ['Economics', 'Trade'] },
+      {
+        ...buildLoreNoteRow({ id: 1 }),
+        canvas_enabled: false,
+        canvas_scene: null,
+        canvas_preview_image: null,
+        tags: ['Economics', 'Trade'],
+      },
     ]);
   });
 
@@ -99,7 +108,13 @@ describe('registerLoreNoteHandlers', () => {
       .mockReturnValueOnce({ all: tagAll });
 
     expect(handlers[IPC.LORE_NOTES_GET_ALL_BY_WORLD]({}, 10)).toEqual([
-      { ...buildLoreNoteRow({ id: 1 }), tags: [] },
+      {
+        ...buildLoreNoteRow({ id: 1 }),
+        canvas_enabled: false,
+        canvas_scene: null,
+        canvas_preview_image: null,
+        tags: [],
+      },
     ]);
   });
 
@@ -112,6 +127,9 @@ describe('registerLoreNoteHandlers', () => {
 
     expect(handlers[IPC.LORE_NOTES_GET_BY_ID]({}, 1)).toEqual({
       ...buildLoreNoteRow(),
+      canvas_enabled: false,
+      canvas_scene: null,
+      canvas_preview_image: null,
       tags: ['Economics'],
     });
   });
@@ -129,6 +147,9 @@ describe('registerLoreNoteHandlers', () => {
         name: 'Founding Myth',
         content: 'Long ago...',
         image_src: 'vv-media://lore-note-images/myth.png',
+        canvas_enabled: 1,
+        canvas_scene: JSON.stringify({ elements: [], appState: {}, files: {} }),
+        canvas_preview_image: 'data:image/png;base64,abc',
       }),
     });
     vi.clearAllMocks();
@@ -140,6 +161,9 @@ describe('registerLoreNoteHandlers', () => {
       name: 'Founding Myth',
       content: 'Long ago...',
       image_src: 'vv-media://lore-note-images/myth.png',
+      canvas_enabled: true,
+      canvas_scene: { elements: [], appState: {}, files: {} },
+      canvas_preview_image: 'data:image/png;base64,abc',
       tags: ['Economics', '  economics ', 'Trade', ''],
     });
 
@@ -147,6 +171,9 @@ describe('registerLoreNoteHandlers', () => {
       name: 'Founding Myth',
       content: 'Long ago...',
       image_src: 'vv-media://lore-note-images/myth.png',
+      canvas_enabled: true,
+      canvas_scene: { elements: [], appState: {}, files: {} },
+      canvas_preview_image: 'data:image/png;base64,abc',
       tags: ['Economics', 'Trade'],
     });
   });
@@ -176,6 +203,9 @@ describe('registerLoreNoteHandlers', () => {
       selectedLoreNote: buildLoreNoteRow({
         name: 'Updated Myth',
         content: 'Updated content.',
+        canvas_enabled: 1,
+        canvas_scene: JSON.stringify({ elements: [], appState: { zoom: 1 }, files: {} }),
+        canvas_preview_image: 'data:image/png;base64,def',
       }),
     });
     vi.clearAllMocks();
@@ -193,6 +223,9 @@ describe('registerLoreNoteHandlers', () => {
       name: 'Updated Myth',
       content: 'Updated content.',
       image_src: null,
+      canvas_enabled: true,
+      canvas_scene: { elements: [], appState: { zoom: 1 }, files: {} },
+      canvas_preview_image: 'data:image/png;base64,def',
       tags: ['Magic'],
     });
   });

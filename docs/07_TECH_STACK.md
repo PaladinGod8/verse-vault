@@ -16,19 +16,20 @@ Update rule:
 
 ## Runtime Application Stack
 
-| Technology      | Role in repo                                             |
-| --------------- | -------------------------------------------------------- |
-| Electron 35     | Desktop shell and main/preload process runtime           |
-| React 19        | Renderer UI framework                                    |
-| React Router 7  | Renderer route management                                |
-| TypeScript 5    | Primary language across app and scripts                  |
-| Vite 6          | Renderer and Electron build integration via Forge plugin |
-| better-sqlite3  | Main-process SQLite driver                               |
-| Zustand 5       | Renderer client-state management                         |
-| Tailwind CSS v4 | Utility-first styling                                    |
-| DaisyUI 5       | Theme/component utility layer on top of Tailwind         |
-| PixiJS 8        | Battlemap rendering and graphics runtime                 |
-| phonemize       | English-to-IPA phonemization in the renderer IPA tool    |
+| Technology      | Role in repo                                                      |
+| --------------- | ----------------------------------------------------------------- |
+| Electron 35     | Desktop shell and main/preload process runtime                    |
+| React 19        | Renderer UI framework                                             |
+| React Router 7  | Renderer route management                                         |
+| TypeScript 5    | Primary language across app and scripts                           |
+| Vite 6          | Renderer and Electron build integration via Forge plugin          |
+| better-sqlite3  | Main-process SQLite driver                                        |
+| Zustand 5       | Renderer client-state management                                  |
+| Tailwind CSS v4 | Utility-first styling                                             |
+| DaisyUI 5       | Theme/component utility layer on top of Tailwind                  |
+| PixiJS 8        | Battlemap rendering and graphics runtime                          |
+| phonemize       | English-to-IPA phonemization in the renderer IPA tool             |
+| Excalidraw      | Infinite-canvas whiteboard editor for campaign/lore note canvases |
 
 ## Packaging And Desktop Build
 

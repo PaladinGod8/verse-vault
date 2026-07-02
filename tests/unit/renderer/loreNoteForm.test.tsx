@@ -41,6 +41,7 @@ describe('LoreNoteForm', () => {
       expect.objectContaining({
         name: 'Founding Myth',
         content: 'Long ago...',
+        canvas_enabled: false,
         tags: ['Economics'],
       }),
     );
@@ -57,7 +58,28 @@ describe('LoreNoteForm', () => {
     await user.click(screen.getByRole('button', { name: 'Create' }));
 
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Founding Myth', tags: [] }),
+      expect.objectContaining({ name: 'Founding Myth', canvas_enabled: false, tags: [] }),
+    );
+  });
+
+  it('defaults canvas toggle off and submits enabled flag when turned on', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(
+      <LoreNoteForm onSave={onSave} onClose={vi.fn()} isSaving={false} tagVocabulary={[]} />,
+    );
+
+    expect(screen.getByRole('checkbox', { name: 'Enable canvas' })).not.toBeChecked();
+
+    await user.type(screen.getByLabelText('Name *'), 'Founding Myth');
+    await user.click(screen.getByRole('checkbox', { name: 'Enable canvas' }));
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Founding Myth',
+        canvas_enabled: true,
+      }),
     );
   });
 
@@ -68,6 +90,7 @@ describe('LoreNoteForm', () => {
           name: 'Founding Myth',
           content: 'Long ago...',
           image_src: 'vv-media://lore-note-images/myth.png',
+          canvas_enabled: true,
           tags: ['Economics'],
         }}
         onSave={vi.fn()}
@@ -82,6 +105,7 @@ describe('LoreNoteForm', () => {
     expect(screen.getByText('Economics')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Current lore note' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Enable canvas' })).toBeChecked();
   });
 
   it('passes tag vocabulary through to the tag suggestion list', async () => {
@@ -121,6 +145,7 @@ describe('LoreNoteForm', () => {
           name: 'Founding Myth',
           content: 'Long ago...',
           image_src: 'vv-media://lore-note-images/myth.png',
+          canvas_enabled: false,
           tags: [],
         }}
         onSave={onSave}

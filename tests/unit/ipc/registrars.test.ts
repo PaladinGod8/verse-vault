@@ -6,6 +6,7 @@ import { registerArcHandlers } from '../../../src/main/ipc/registerArcHandlers';
 import { registerBackgroundHandlers } from '../../../src/main/ipc/registerBackgroundHandlers';
 import { registerBattleMapHandlers } from '../../../src/main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from '../../../src/main/ipc/registerCampaignHandlers';
+import { registerCampaignNoteHandlers } from '../../../src/main/ipc/registerCampaignNoteHandlers';
 import { registerCharacterHandlers } from '../../../src/main/ipc/registerCharacterHandlers';
 import { registerCharacterRelationshipHandlers } from '../../../src/main/ipc/registerCharacterRelationshipHandlers';
 import { registerFactionHandlers } from '../../../src/main/ipc/registerFactionHandlers';
@@ -127,6 +128,18 @@ describe('IPC registrar channel wiring', () => {
           IPC.CAMPAIGNS_ADD,
           IPC.CAMPAIGNS_UPDATE,
           IPC.CAMPAIGNS_DELETE,
+        ],
+      },
+      {
+        name: 'campaignNotes',
+        register: () => registerCampaignNoteHandlers(dbMock),
+        expected: [
+          IPC.CAMPAIGN_NOTES_GET_ALL_BY_CAMPAIGN,
+          IPC.CAMPAIGN_NOTES_GET_BY_ID,
+          IPC.CAMPAIGN_NOTE_TAGS_GET_ALL_BY_CAMPAIGN,
+          IPC.CAMPAIGN_NOTES_ADD,
+          IPC.CAMPAIGN_NOTES_UPDATE,
+          IPC.CAMPAIGN_NOTES_DELETE,
         ],
       },
       {
@@ -372,6 +385,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerWorldHandlers(dbMock),
       () => registerLevelHandlers(dbMock),
       () => registerCampaignHandlers(dbMock),
+      () => registerCampaignNoteHandlers(dbMock),
       () => registerBattleMapHandlers(dbMock),
       () => registerTokenHandlers(dbMock, { userDataPath: 'C:\\mock-user-data' }),
       () => registerArcHandlers(dbMock),

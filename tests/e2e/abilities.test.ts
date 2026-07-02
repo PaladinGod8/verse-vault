@@ -31,10 +31,19 @@ test('@ux abilities CRUD and child-link flow works end to end', async () => {
     const childAbilityName = `Spark ${unique}`;
     const childAbilityUpdatedName = `${childAbilityName} Updated`;
 
-    await window.getByRole('button', { name: 'Create world' }).click();
+    // `domcontentloaded` fires before React mounts and before the window resize above
+    // has fully settled. Under parallel-worker load, clicking immediately can open the
+    // dialog before its form has rendered, so `getByLabel('Name')` never resolves and
+    // the fill times out. Gate on the landing shell control being rendered first, then
+    // wait for the dialog's own field before typing — deterministic instead of racy.
+    const createWorldButton = window.getByRole('button', { name: 'Create world' });
+    await expect(createWorldButton).toBeVisible();
+    await createWorldButton.click();
     const worldDialog = window.getByRole('dialog', { name: 'Create world' });
     await expect(worldDialog).toBeVisible();
-    await worldDialog.getByLabel('Name').fill(worldName);
+    const worldNameField = worldDialog.getByLabel('Name');
+    await expect(worldNameField).toBeVisible();
+    await worldNameField.fill(worldName);
     await worldDialog
       .getByRole('button', { name: 'Create world', exact: true })
       .click();

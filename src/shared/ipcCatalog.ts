@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /**
  * @role IPC metadata catalog
  * @owns Doc-generation and guard metadata for every registered IPC channel
@@ -21,6 +22,7 @@ const HANDLERS = {
   levels: 'src/main/ipc/registerLevelHandlers.ts',
   abilities: 'src/main/ipc/registerAbilityHandlers.ts',
   campaigns: 'src/main/ipc/registerCampaignHandlers.ts',
+  campaignNotes: 'src/main/ipc/registerCampaignNoteHandlers.ts',
   battlemaps: 'src/main/ipc/registerBattleMapHandlers.ts',
   tokens: 'src/main/ipc/registerTokenHandlers.ts',
   arcs: 'src/main/ipc/registerArcHandlers.ts',
@@ -109,6 +111,26 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
     ['CAMPAIGNS_ADD', 'window.db.campaigns.add', 'DbApi.campaigns.add'],
     ['CAMPAIGNS_UPDATE', 'window.db.campaigns.update', 'DbApi.campaigns.update'],
     ['CAMPAIGNS_DELETE', 'window.db.campaigns.delete', 'DbApi.campaigns.delete'],
+  ]),
+  ...entries('campaignNotes', HANDLERS.campaignNotes, [
+    [
+      'CAMPAIGN_NOTES_GET_ALL_BY_CAMPAIGN',
+      'window.db.campaignNotes.getAllByCampaign',
+      'DbApi.campaignNotes.getAllByCampaign',
+    ],
+    [
+      'CAMPAIGN_NOTES_GET_BY_ID',
+      'window.db.campaignNotes.getById',
+      'DbApi.campaignNotes.getById',
+    ],
+    ['CAMPAIGN_NOTES_ADD', 'window.db.campaignNotes.add', 'DbApi.campaignNotes.add'],
+    ['CAMPAIGN_NOTES_UPDATE', 'window.db.campaignNotes.update', 'DbApi.campaignNotes.update'],
+    ['CAMPAIGN_NOTES_DELETE', 'window.db.campaignNotes.delete', 'DbApi.campaignNotes.delete'],
+    [
+      'CAMPAIGN_NOTE_TAGS_GET_ALL_BY_CAMPAIGN',
+      'window.db.campaignNotes.getAllTagsByCampaign',
+      'DbApi.campaignNotes.getAllTagsByCampaign',
+    ],
   ]),
   ...entries('battlemaps', HANDLERS.battlemaps, [
     [

@@ -24,6 +24,7 @@ export type LoreNoteFormValues = {
   image_src?: string | null;
   image_upload?: LoreNoteImageUploadPayload;
   clear_image?: boolean;
+  canvas_enabled: boolean;
   tags: string[];
 };
 
@@ -141,6 +142,7 @@ export default function LoreNoteForm({
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [clearImage, setClearImage] = useState(false);
+  const [canvasEnabled, setCanvasEnabled] = useState(initialValues?.canvas_enabled ?? false);
 
   const selectedImagePreviewUrl = useMemo(
     () => selectedImageFile ? URL.createObjectURL(selectedImageFile) : undefined,
@@ -178,6 +180,7 @@ export default function LoreNoteForm({
       image_src: clearImage ? null : undefined,
       image_upload: imageUpload,
       clear_image: clearImage,
+      canvas_enabled: canvasEnabled,
       tags,
     });
   };
@@ -245,6 +248,23 @@ export default function LoreNoteForm({
         suggestions={tagVocabulary}
         disabled={isSaving}
       />
+
+      <label className='flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3'>
+        <input
+          type='checkbox'
+          aria-label='Enable canvas'
+          checked={canvasEnabled}
+          onChange={(event) => setCanvasEnabled(event.target.checked)}
+          className='mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500'
+          disabled={isSaving}
+        />
+        <span className='space-y-1'>
+          <span className='block text-sm font-medium text-slate-700'>Enable canvas</span>
+          <span className='block text-xs text-slate-500'>
+            Add dedicated Excalidraw canvas for whiteboard-style lore work.
+          </span>
+        </span>
+      </label>
 
       {!isCreateMode && initialImageSrc
         ? (

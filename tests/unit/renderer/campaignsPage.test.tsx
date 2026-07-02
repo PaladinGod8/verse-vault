@@ -67,6 +67,10 @@ function renderCampaignsPage(path: string) {
           path='/world/:id/campaign/:campaignId/arcs'
           element={<div>Arcs Page</div>}
         />
+        <Route
+          path='/world/:id/campaign/:campaignId/notes'
+          element={<div>Campaign Notes Page</div>}
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -410,5 +414,20 @@ describe('CampaignsPage', () => {
     await user.click(screen.getByRole('link', { name: 'Scenes' }));
 
     expect(await screen.findByText('Campaign Scenes Page')).toBeInTheDocument();
+  });
+
+  it('navigates to campaign notes page when Notes link is clicked', async () => {
+    const user = userEvent.setup();
+    const campaign = buildCampaign();
+
+    worldsGetByIdMock.mockResolvedValue(buildWorld());
+    campaignsGetAllByWorldMock.mockResolvedValue([campaign]);
+
+    renderCampaignsPage('/world/1/campaigns');
+
+    await screen.findByText('The Dragon Saga');
+    await user.click(screen.getByRole('link', { name: 'Notes' }));
+
+    expect(await screen.findByText('Campaign Notes Page')).toBeInTheDocument();
   });
 });

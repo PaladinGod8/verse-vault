@@ -98,6 +98,21 @@ export function buildCampaign(overrides: Partial<Campaign> = {}): Campaign {
   };
 }
 
+export function buildCampaignNote(overrides: Partial<CampaignNote> = {}): CampaignNote {
+  return {
+    id: getNextId(),
+    world_id: getNextId(),
+    campaign_id: getNextId(),
+    name: 'Test Campaign Note',
+    canvas_scene: null,
+    canvas_preview_image: null,
+    tags: [],
+    created_at: DEFAULT_TIMESTAMP,
+    updated_at: DEFAULT_TIMESTAMP,
+    ...overrides,
+  };
+}
+
 export function buildBattleMap(overrides: Partial<BattleMap> = {}): BattleMap {
   return {
     id: getNextId(),
@@ -268,6 +283,9 @@ export function buildLoreNote(overrides: Partial<LoreNote> = {}): LoreNote {
     name: 'Test Lore Note',
     content: 'A test lore note body',
     image_src: null,
+    canvas_enabled: false,
+    canvas_scene: null,
+    canvas_preview_image: null,
     tags: [],
     last_viewed_at: null,
     created_at: DEFAULT_TIMESTAMP,

@@ -18,7 +18,7 @@ test('@critical @ux player characters can be created and found by player-charact
     const createDialog = page.getByRole('dialog', { name: 'New Character' });
     await expect(createDialog).toBeVisible();
     await createDialog.getByLabel('Name *').fill(characterName);
-    await createDialog.locator('input[type="checkbox"]').check();
+    await createDialog.getByLabel('Player Character').check();
     await createDialog.getByLabel('Owner *').fill('Gator');
     await createDialog.getByRole('button', { name: 'Create' }).click();
 

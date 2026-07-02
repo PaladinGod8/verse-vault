@@ -16,6 +16,8 @@ declare global {
   type Ability = DomainTypes.Ability;
   type AbilityChild = DomainTypes.AbilityChild;
   type Campaign = DomainTypes.Campaign;
+  type CanvasSceneData = DomainTypes.CanvasSceneData;
+  type CampaignNote = DomainTypes.CampaignNote;
   type BattleMap = DomainTypes.BattleMap;
   type BattleMapGridMode = DomainTypes.BattleMapGridMode;
   type BattleMapRuntimeGridConfig = DomainTypes.BattleMapRuntimeGridConfig;
@@ -61,6 +63,7 @@ declare global {
 
   interface Window {
     db: DbApi;
+    EXCALIDRAW_ASSET_PATH?: string;
   }
 
   const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;

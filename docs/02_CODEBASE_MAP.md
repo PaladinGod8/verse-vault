@@ -58,6 +58,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/items/:itemId`                                                        | `ItemDetailPage`            | `src/renderer/pages/ItemDetailPage.tsx`            |
 | `/world/:id/lore-notes`                                                           | `LoreNotesPage`             | `src/renderer/pages/LoreNotesPage.tsx`             |
 | `/world/:id/lore-notes/:loreNoteId`                                               | `LoreNoteDetailPage`        | `src/renderer/pages/LoreNoteDetailPage.tsx`        |
+| `/world/:id/lore-notes/:loreNoteId/canvas`                                        | `LoreNoteCanvasPage`        | `src/renderer/pages/LoreNoteCanvasPage.tsx`        |
 | `/world/:id/characters`                                                           | `CharactersPage`            | `src/renderer/pages/CharactersPage.tsx`            |
 | `/world/:id/characters/:characterId`                                              | `CharacterDetailPage`       | `src/renderer/pages/CharacterDetailPage.tsx`       |
 | `/world/:id/factions`                                                             | `FactionsPage`              | `src/renderer/pages/FactionsPage.tsx`              |
@@ -66,6 +67,8 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/battlemaps/:battleMapId/runtime`                                      | `BattleMapRuntimePage`      | `src/renderer/pages/BattleMapRuntimePage.tsx`      |
 | `/world/:id/campaign/:campaignId/scenes`                                          | `CampaignScenesPage`        | `src/renderer/pages/CampaignScenesPage.tsx`        |
 | `/world/:id/campaign/:campaignId/arcs`                                            | `ArcsPage`                  | `src/renderer/pages/ArcsPage.tsx`                  |
+| `/world/:id/campaign/:campaignId/notes`                                           | `CampaignNotesPage`         | `src/renderer/pages/CampaignNotesPage.tsx`         |
+| `/world/:id/campaign/:campaignId/notes/:campaignNoteId`                           | `CampaignNoteDetailPage`    | `src/renderer/pages/CampaignNoteDetailPage.tsx`    |
 | `/world/:id/campaign/:campaignId/arc/:arcId/acts`                                 | `ActsPage`                  | `src/renderer/pages/ActsPage.tsx`                  |
 | `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | `SessionsPage`              | `src/renderer/pages/SessionsPage.tsx`              |
 | `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | `ScenesPage`                | `src/renderer/pages/ScenesPage.tsx`                |
@@ -83,6 +86,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerLevelHandlers.ts`                 | levels                 | 5        |
 | `src/main/ipc/registerAbilityHandlers.ts`               | abilities              | 8        |
 | `src/main/ipc/registerCampaignHandlers.ts`              | campaigns              | 5        |
+| `src/main/ipc/registerCampaignNoteHandlers.ts`          | campaignNotes          | 6        |
 | `src/main/ipc/registerBattleMapHandlers.ts`             | battlemaps             | 5        |
 | `src/main/ipc/registerTokenHandlers.ts`                 | tokens                 | 9        |
 | `src/main/ipc/registerArcHandlers.ts`                   | arcs                   | 5        |

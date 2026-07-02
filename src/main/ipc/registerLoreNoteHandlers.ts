@@ -11,6 +11,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
 import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
+import {
+  normalizeCanvasEnabled,
+  normalizeCanvasPreviewImage,
+  parseCanvasScene,
+  serializeCanvasScene,
+} from './canvasPersistence';
+import { normalizeTags } from './noteTagUtils';
 
 const LORE_NOTE_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -27,6 +34,9 @@ type LoreNoteUpsertData = {
   name?: string;
   content?: string | null;
   image_src?: string | null;
+  canvas_enabled?: boolean;
+  canvas_scene?: unknown;
+  canvas_preview_image?: string | null;
   tags?: unknown;
 };
 
@@ -38,28 +48,6 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
   }
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
-}
-
-function normalizeTags(tags: unknown): string[] {
-  if (!Array.isArray(tags)) {
-    return [];
-  }
-
-  const seenByLowerCase = new Map<string, string>();
-  for (const raw of tags) {
-    if (typeof raw !== 'string') {
-      continue;
-    }
-    const trimmed = raw.trim();
-    if (!trimmed) {
-      continue;
-    }
-    const key = trimmed.toLowerCase();
-    if (!seenByLowerCase.has(key)) {
-      seenByLowerCase.set(key, trimmed);
-    }
-  }
-  return [...seenByLowerCase.values()];
 }
 
 function fetchTagsForNote(db: Database.Database, loreNoteId: number): string[] {
@@ -90,7 +78,7 @@ function attachTagsToNotes(
   db: Database.Database,
   worldId: number,
   notes: Array<Record<string, unknown>>,
-): Array<Record<string, unknown>> {
+): LoreNote[] {
   if (notes.length === 0) {
     return [];
   }
@@ -108,10 +96,17 @@ function attachTagsToNotes(
     tagsByNoteId.set(row.lore_note_id, existing);
   }
 
-  return notes.map((note) => ({
-    ...note,
-    tags: tagsByNoteId.get(note.id as number) ?? [],
-  }));
+  return notes.map((note) => mapLoreNoteRow(note, tagsByNoteId.get(note.id as number) ?? []));
+}
+
+function mapLoreNoteRow(row: Record<string, unknown>, tags: string[]): LoreNote {
+  return {
+    ...(row as Omit<LoreNote, 'canvas_enabled' | 'canvas_scene' | 'canvas_preview_image' | 'tags'>),
+    canvas_enabled: normalizeCanvasEnabled(row.canvas_enabled),
+    canvas_scene: parseCanvasScene(row.canvas_scene),
+    canvas_preview_image: normalizeCanvasPreviewImage(row.canvas_preview_image),
+    tags,
+  };
 }
 
 function buildLoreNoteUpdateStatement(data: LoreNoteUpsertData): {
@@ -140,6 +135,21 @@ function buildLoreNoteUpdateStatement(data: LoreNoteUpsertData): {
     values.push(normalizeMediaImageSrcForHost(data.image_src, LORE_NOTE_IMAGE_HOST));
   }
 
+  if (Object.prototype.hasOwnProperty.call(data, 'canvas_enabled')) {
+    setClauses.push('canvas_enabled = ?');
+    values.push(data.canvas_enabled ? '1' : '0');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'canvas_scene')) {
+    setClauses.push('canvas_scene = ?');
+    values.push(serializeCanvasScene(data.canvas_scene));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'canvas_preview_image')) {
+    setClauses.push('canvas_preview_image = ?');
+    values.push(normalizeCanvasPreviewImage(data.canvas_preview_image));
+  }
+
   return { setClauses, values };
 }
 
@@ -158,7 +168,7 @@ function registerLoreNoteReadHandlers(db: Database.Database): void {
     if (!note) {
       return null;
     }
-    return { ...note, tags: fetchTagsForNote(db, id) };
+    return mapLoreNoteRow(note, fetchTagsForNote(db, id));
   });
 
   ipcMain.handle(IPC.LORE_NOTES_MARK_VIEWED, (_event, id: number) => {
@@ -171,7 +181,7 @@ function registerLoreNoteReadHandlers(db: Database.Database): void {
     if (!note) {
       return null;
     }
-    return { ...note, tags: fetchTagsForNote(db, id) };
+    return mapLoreNoteRow(note, fetchTagsForNote(db, id));
   });
 
   ipcMain.handle(IPC.LORE_NOTE_TAGS_GET_ALL_BY_WORLD, (_event, worldId: number) => {
@@ -201,13 +211,24 @@ function registerLoreNoteMutationHandlers(db: Database.Database): void {
       data.image_src,
       LORE_NOTE_IMAGE_HOST,
     );
+    const canvasEnabled = data.canvas_enabled ? 1 : 0;
+    const canvasScene = serializeCanvasScene(data.canvas_scene);
+    const canvasPreviewImage = normalizeCanvasPreviewImage(data.canvas_preview_image);
     const tags = normalizeTags(data.tags);
 
     const insertLoreNote = db.transaction(() => {
       const stmt = db.prepare(
-        'INSERT INTO lore_notes (world_id, name, content, image_src) VALUES (?, ?, ?, ?)',
+        'INSERT INTO lore_notes (world_id, name, content, image_src, canvas_enabled, canvas_scene, canvas_preview_image) VALUES (?, ?, ?, ?, ?, ?, ?)',
       );
-      const result = stmt.run(worldId, name, content, imageSrc);
+      const result = stmt.run(
+        worldId,
+        name,
+        content,
+        imageSrc,
+        canvasEnabled,
+        canvasScene,
+        canvasPreviewImage,
+      );
       const loreNoteId = result.lastInsertRowid as number;
       replaceTagsForNote(db, loreNoteId, worldId, tags);
       return loreNoteId;
@@ -220,7 +241,7 @@ function registerLoreNoteMutationHandlers(db: Database.Database): void {
     if (!note) {
       throw new Error('Failed to create lore note');
     }
-    return { ...note, tags };
+    return mapLoreNoteRow(note, tags);
   });
 
   ipcMain.handle(IPC.LORE_NOTES_UPDATE, (_event, id: number, data: LoreNoteUpsertData) => {
@@ -250,7 +271,7 @@ function registerLoreNoteMutationHandlers(db: Database.Database): void {
     if (!note) {
       throw new Error('Lore note not found');
     }
-    return { ...note, tags: tags ?? fetchTagsForNote(db, id) };
+    return mapLoreNoteRow(note, tags ?? fetchTagsForNote(db, id));
   });
 
   ipcMain.handle(IPC.LORE_NOTES_DELETE, (_event, id: number) => {

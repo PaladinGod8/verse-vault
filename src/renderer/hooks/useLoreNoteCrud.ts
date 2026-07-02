@@ -39,17 +39,20 @@ async function resolveLoreNoteImageSrc(
 function buildLoreNoteUpdatePayload(data: LoreNoteFormValues): {
   name: string;
   content: string | null;
+  canvas_enabled: boolean;
   tags: string[];
   image_src?: string | null;
 } {
   const updatePayload: {
     name: string;
     content: string | null;
+    canvas_enabled: boolean;
     tags: string[];
     image_src?: string | null;
   } = {
     name: data.name,
     content: data.content ?? null,
+    canvas_enabled: data.canvas_enabled,
     tags: data.tags,
   };
 
@@ -79,6 +82,9 @@ function createHandleCreate(params: {
         world_id: params.worldId,
         name: data.name,
         content: data.content ?? null,
+        canvas_enabled: data.canvas_enabled,
+        canvas_scene: null,
+        canvas_preview_image: null,
         tags: data.tags,
         image_src: imageSrc,
       });

@@ -23,6 +23,9 @@ function buildLoreNote(overrides: Partial<LoreNote> = {}): LoreNote {
     name: 'Founding Myth',
     content: 'Long ago the city was founded.',
     image_src: null,
+    canvas_enabled: false,
+    canvas_scene: null,
+    canvas_preview_image: null,
     tags: ['Economics', 'History'],
     last_viewed_at: null,
     created_at: '2026-02-26 00:00:00',
@@ -63,6 +66,22 @@ describe('LoreNoteCard', () => {
       loreNote: buildLoreNote({ image_src: 'vv-media://lore-note-images/myth.png' }),
     });
     expect(screen.getByRole('img', { name: 'Founding Myth' })).toBeInTheDocument();
+  });
+
+  it('prefers canvas preview image when canvas is enabled', () => {
+    renderCard({
+      loreNote: buildLoreNote({
+        image_src: 'vv-media://lore-note-images/myth.png',
+        canvas_enabled: true,
+        canvas_preview_image: 'data:image/png;base64,canvas-preview',
+      }),
+    });
+
+    expect(screen.getByRole('img', { name: 'Founding Myth' })).toHaveAttribute(
+      'src',
+      'data:image/png;base64,canvas-preview',
+    );
+    expect(screen.getByText('Canvas')).toBeInTheDocument();
   });
 
   it('card body click navigates to detail page', () => {

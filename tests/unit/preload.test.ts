@@ -31,6 +31,7 @@ describe('preload', () => {
         abilities: expect.any(Object),
         worlds: expect.any(Object),
         campaigns: expect.any(Object),
+        campaignNotes: expect.any(Object),
         battlemaps: expect.any(Object),
         tokens: expect.any(Object),
         arcs: expect.any(Object),

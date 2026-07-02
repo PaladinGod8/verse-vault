@@ -63,6 +63,28 @@ describe('LoreNoteDetailPage', () => {
     expect(mockDb.loreNotes.markViewed).toHaveBeenCalledWith(5);
   });
 
+  it('shows canvas section and open action when enabled', async () => {
+    const loreNote = buildLoreNote({
+      id: 5,
+      world_id: 1,
+      name: 'Founding Myth',
+      canvas_enabled: true,
+      canvas_preview_image: 'data:image/png;base64,canvas-preview',
+    });
+    (mockDb.loreNotes.getById as ReturnType<typeof vi.fn>).mockResolvedValue(loreNote);
+    (mockDb.loreNotes.markViewed as ReturnType<typeof vi.fn>).mockResolvedValue(loreNote);
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Founding Myth' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Canvas' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Canvas' })).toHaveAttribute(
+      'href',
+      '/world/1/lore-notes/5/canvas',
+    );
+    expect(screen.getByRole('img', { name: 'Founding Myth canvas preview' })).toBeInTheDocument();
+  });
+
   it('opens edit form prefilled and saves via window.db.loreNotes.update', async () => {
     const loreNote = buildLoreNote({
       id: 5,

@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { runBackgroundsSchemaMigration } from './backgroundMigrations';
+import { runCampaignNotesSchemaMigration } from './campaignNoteMigrations';
 import { runItemsSchemaMigration } from './itemMigrations';
 import { runLegacyShapeMigrations } from './legacyShapeMigrations';
 import { runLoreNotesSchemaMigration } from './loreNoteMigrations';
@@ -22,6 +23,7 @@ export function runMigrations(db: Database.Database): void {
   runBackgroundsSchemaMigration(db);
   runItemsSchemaMigration(db);
   runLoreNotesSchemaMigration(db);
+  runCampaignNotesSchemaMigration(db);
   runFactionTypesSchemaMigration(db);
   runFactionsSchemaMigration(db);
   runFactionsLastViewedMigration(db);

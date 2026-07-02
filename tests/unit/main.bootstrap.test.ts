@@ -23,12 +23,18 @@ const netFetchMock = vi.fn(async () => new Response('ok', { status: 200 }));
 const loadURLMock = vi.fn();
 const loadFileMock = vi.fn();
 const openDevToolsMock = vi.fn();
+const browserWindowOnceMock = vi.fn((_event: string, handler: () => void) => {
+  handler();
+});
+const browserWindowShowMock = vi.fn();
 const getAllWindowsMock = vi.fn(() => []);
 const browserWindowCtorMock = vi.fn();
 
 class BrowserWindowMock {
   loadURL = loadURLMock;
   loadFile = loadFileMock;
+  once = browserWindowOnceMock;
+  show = browserWindowShowMock;
   webContents = {
     openDevTools: openDevToolsMock,
   };
@@ -47,6 +53,7 @@ const registerVerseHandlersMock = vi.fn();
 const registerWorldHandlersMock = vi.fn();
 const registerLevelHandlersMock = vi.fn();
 const registerCampaignHandlersMock = vi.fn();
+const registerCampaignNoteHandlersMock = vi.fn();
 const registerBattleMapHandlersMock = vi.fn();
 const registerTokenHandlersMock = vi.fn();
 const registerArcHandlersMock = vi.fn();
@@ -97,6 +104,9 @@ vi.mock('../../src/main/ipc/registerLevelHandlers', () => ({
 }));
 vi.mock('../../src/main/ipc/registerCampaignHandlers', () => ({
   registerCampaignHandlers: registerCampaignHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerCampaignNoteHandlers', () => ({
+  registerCampaignNoteHandlers: registerCampaignNoteHandlersMock,
 }));
 vi.mock('../../src/main/ipc/registerBattleMapHandlers', () => ({
   registerBattleMapHandlers: registerBattleMapHandlersMock,
@@ -194,6 +204,7 @@ describe('main bootstrap orchestration', () => {
     expect(registerWorldHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerLevelHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerCampaignHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerCampaignNoteHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerBattleMapHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerTokenHandlersMock).toHaveBeenCalledWith(dbMock, {
       userDataPath: 'C:\\mock-user-data',

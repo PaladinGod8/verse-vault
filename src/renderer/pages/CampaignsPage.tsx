@@ -260,6 +260,12 @@ export default function CampaignsPage() {
                           >
                             Arcs
                           </Link>
+                          <Link
+                            to={`/world/${worldId}/campaign/${campaign.id}/notes`}
+                            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
+                          >
+                            Notes
+                          </Link>
                           <button
                             type='button'
                             onClick={() => {

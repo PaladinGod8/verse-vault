@@ -39,6 +39,16 @@ const dbApi: DbApi = {
     update: (id, data) => ipcRenderer.invoke(IPC.CAMPAIGNS_UPDATE, id, data),
     delete: (id) => ipcRenderer.invoke(IPC.CAMPAIGNS_DELETE, id),
   },
+  campaignNotes: {
+    getAllByCampaign: (campaignId) =>
+      ipcRenderer.invoke(IPC.CAMPAIGN_NOTES_GET_ALL_BY_CAMPAIGN, campaignId),
+    getById: (id) => ipcRenderer.invoke(IPC.CAMPAIGN_NOTES_GET_BY_ID, id),
+    add: (data) => ipcRenderer.invoke(IPC.CAMPAIGN_NOTES_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.CAMPAIGN_NOTES_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.CAMPAIGN_NOTES_DELETE, id),
+    getAllTagsByCampaign: (campaignId) =>
+      ipcRenderer.invoke(IPC.CAMPAIGN_NOTE_TAGS_GET_ALL_BY_CAMPAIGN, campaignId),
+  },
   battlemaps: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.BATTLEMAPS_GET_ALL_BY_WORLD, worldId),
     getById: (id) => ipcRenderer.invoke(IPC.BATTLEMAPS_GET_BY_ID, id),

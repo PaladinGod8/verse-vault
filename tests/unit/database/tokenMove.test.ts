@@ -28,6 +28,11 @@ class BrowserWindowMock {
   webContents = {
     openDevTools: openDevToolsMock,
   };
+  once = vi.fn((_event: string, callback?: () => void) => {
+    callback?.();
+    return this;
+  });
+  show = vi.fn();
 
   constructor(options: Record<string, unknown>) {
     browserWindowCtorMock(options);

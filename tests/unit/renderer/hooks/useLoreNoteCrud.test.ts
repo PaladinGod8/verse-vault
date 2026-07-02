@@ -35,7 +35,7 @@ describe('useLoreNoteCrud', () => {
     );
 
     await act(async () => {
-      await result.current.handleCreate({ name: 'Founding Myth', tags: [] });
+      await result.current.handleCreate({ name: 'Founding Myth', canvas_enabled: false, tags: [] });
     });
 
     expect(window.db.loreNotes.add).not.toHaveBeenCalled();
@@ -68,6 +68,7 @@ describe('useLoreNoteCrud', () => {
       await result.current.handleCreate({
         name: 'Founding Myth',
         content: 'Long ago...',
+        canvas_enabled: false,
         tags: ['Economics'],
         image_upload: {
           fileName: 'myth.png',
@@ -82,6 +83,9 @@ describe('useLoreNoteCrud', () => {
       world_id: 9,
       name: 'Founding Myth',
       content: 'Long ago...',
+      canvas_enabled: false,
+      canvas_scene: null,
+      canvas_preview_image: null,
       tags: ['Economics'],
       image_src: 'vv-media://lore-note-images/new.png',
     });
@@ -121,6 +125,7 @@ describe('useLoreNoteCrud', () => {
       await result.current.handleUpdate({
         name: 'Old Myth',
         content: 'Restored',
+        canvas_enabled: false,
         tags: ['Magic'],
         image_upload: {
           fileName: 'replaced.png',
@@ -133,6 +138,7 @@ describe('useLoreNoteCrud', () => {
     expect(window.db.loreNotes.update).toHaveBeenCalledWith(12, {
       name: 'Old Myth',
       content: 'Restored',
+      canvas_enabled: false,
       tags: ['Magic'],
       image_src: 'vv-media://lore-note-images/replaced.png',
     });
@@ -141,7 +147,7 @@ describe('useLoreNoteCrud', () => {
 
     rerender({ currentEditingLoreNote: null });
     await act(async () => {
-      await result.current.handleUpdate({ name: 'Ignored', tags: [] });
+      await result.current.handleUpdate({ name: 'Ignored', canvas_enabled: false, tags: [] });
     });
     expect(window.db.loreNotes.update).toHaveBeenCalledTimes(1);
 
@@ -151,6 +157,7 @@ describe('useLoreNoteCrud', () => {
       await result.current.handleUpdate({
         name: 'Old Myth',
         content: null,
+        canvas_enabled: false,
         tags: [],
         clear_image: true,
       });

@@ -1,5 +1,6 @@
 import type {
   BackgroundUpsertPayload,
+  CampaignNoteUpsertPayload,
   CharacterSearchByWorldQuery,
   CharacterSearchByWorldResult,
   CharacterUpsertPayload,
@@ -22,6 +23,7 @@ import type {
   Background,
   BattleMap,
   Campaign,
+  CampaignNote,
   CampaignSceneListItem,
   Character,
   Faction,
@@ -150,6 +152,20 @@ export interface DbApi extends DbApiRelationships {
       data: { name?: string; summary?: string | null; config?: string; },
     ): Promise<Campaign>;
     delete(id: number): Promise<{ id: number; }>;
+  };
+  campaignNotes: {
+    getAllByCampaign(campaignId: number): Promise<CampaignNote[]>;
+    getById(id: number): Promise<CampaignNote | null>;
+    add(
+      data: CampaignNoteUpsertPayload & {
+        world_id: number;
+        campaign_id: number;
+        name: string;
+      },
+    ): Promise<CampaignNote>;
+    update(id: number, data: CampaignNoteUpsertPayload): Promise<CampaignNote>;
+    delete(id: number): Promise<{ id: number; }>;
+    getAllTagsByCampaign(campaignId: number): Promise<string[]>;
   };
   battlemaps: {
     getAllByWorld(worldId: number): Promise<BattleMap[]>;

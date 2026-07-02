@@ -85,6 +85,9 @@ describe('Lore Notes schema migration', () => {
     expect(sql).toContain('name           TEXT    NOT NULL');
     expect(sql).toContain('content        TEXT');
     expect(sql).toContain('image_src      TEXT');
+    expect(sql).toContain('canvas_enabled INTEGER NOT NULL DEFAULT 0');
+    expect(sql).toContain('canvas_scene   TEXT');
+    expect(sql).toContain('canvas_preview_image TEXT');
     expect(sql).toContain('last_viewed_at TEXT');
     expect(sql).toContain(
       'CREATE INDEX IF NOT EXISTS idx_lore_notes_world_id ON lore_notes(world_id)',
@@ -131,6 +134,11 @@ describe('Lore Notes schema migration', () => {
 
     expect(pragmaMock).toHaveBeenCalledWith('table_info(lore_notes)');
     const sql = execMock.mock.calls.map(([s]) => String(s)).join('\n');
+    expect(sql).toContain(
+      'ALTER TABLE lore_notes ADD COLUMN canvas_enabled INTEGER NOT NULL DEFAULT 0',
+    );
+    expect(sql).toContain('ALTER TABLE lore_notes ADD COLUMN canvas_scene TEXT');
+    expect(sql).toContain('ALTER TABLE lore_notes ADD COLUMN canvas_preview_image TEXT');
     expect(sql).toContain('ALTER TABLE lore_notes ADD COLUMN last_viewed_at TEXT');
   });
 
@@ -142,6 +150,9 @@ describe('Lore Notes schema migration', () => {
         { name: 'name' },
         { name: 'content' },
         { name: 'image_src' },
+        { name: 'canvas_enabled' },
+        { name: 'canvas_scene' },
+        { name: 'canvas_preview_image' },
         { name: 'last_viewed_at' },
         { name: 'created_at' },
         { name: 'updated_at' },
@@ -152,6 +163,11 @@ describe('Lore Notes schema migration', () => {
     closeDatabase();
 
     const sql = execMock.mock.calls.map(([s]) => String(s)).join('\n');
+    expect(sql).not.toContain(
+      'ALTER TABLE lore_notes ADD COLUMN canvas_enabled INTEGER NOT NULL DEFAULT 0',
+    );
+    expect(sql).not.toContain('ALTER TABLE lore_notes ADD COLUMN canvas_scene TEXT');
+    expect(sql).not.toContain('ALTER TABLE lore_notes ADD COLUMN canvas_preview_image TEXT');
     expect(sql).not.toContain('ALTER TABLE lore_notes ADD COLUMN last_viewed_at TEXT');
   });
 });

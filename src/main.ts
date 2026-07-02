@@ -14,6 +14,7 @@ import { registerArcHandlers } from './main/ipc/registerArcHandlers';
 import { registerBackgroundHandlers } from './main/ipc/registerBackgroundHandlers';
 import { registerBattleMapHandlers } from './main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from './main/ipc/registerCampaignHandlers';
+import { registerCampaignNoteHandlers } from './main/ipc/registerCampaignNoteHandlers';
 import { registerCharacterHandlers } from './main/ipc/registerCharacterHandlers';
 import { registerCharacterRelationshipHandlers } from './main/ipc/registerCharacterRelationshipHandlers';
 import { registerFactionHandlers } from './main/ipc/registerFactionHandlers';
@@ -142,6 +143,7 @@ function registerIpcHandlers() {
   registerWorldHandlers(db);
   registerLevelHandlers(db);
   registerCampaignHandlers(db);
+  registerCampaignNoteHandlers(db);
   registerBattleMapHandlers(db);
   registerTokenHandlers(db, {
     userDataPath: app.getPath('userData'),

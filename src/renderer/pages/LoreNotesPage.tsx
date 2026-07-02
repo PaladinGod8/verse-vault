@@ -205,6 +205,7 @@ export default function LoreNotesPage() {
                 name: editingLoreNote.name,
                 content: editingLoreNote.content,
                 image_src: normalizeTokenImageSrc(editingLoreNote.image_src),
+                canvas_enabled: editingLoreNote.canvas_enabled,
                 tags: editingLoreNote.tags,
               }}
               onSave={(data) => void handleUpdate(data)}

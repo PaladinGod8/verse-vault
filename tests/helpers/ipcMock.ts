@@ -45,6 +45,14 @@ export function createMockDb(): DbApi {
       update: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn().mockResolvedValue(undefined),
     },
+    campaignNotes: {
+      getAllByCampaign: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue({ id: 1 } as CampaignNote),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      getAllTagsByCampaign: vi.fn().mockResolvedValue([]),
+    },
     battlemaps: {
       getAllByWorld: vi.fn().mockResolvedValue([]),
       getById: vi.fn().mockResolvedValue(undefined),
