@@ -117,6 +117,91 @@ describe('CharactersPage', () => {
     );
   });
 
+  it('paginates the character list, showing only the first page by default', async () => {
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    const characters = Array.from({ length: 55 }, (_, index) =>
+      buildCharacter({
+        id: index + 1,
+        world_id: 1,
+        name: `Char ${String(index + 1).padStart(2, '0')}`,
+      }));
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue(characters);
+
+    renderPage(1);
+
+    await screen.findByText('Char 01');
+    expect(screen.getByText('Char 50')).toBeInTheDocument();
+    expect(screen.queryByText('Char 51')).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('moves to the next page of characters when Next is clicked', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    const characters = Array.from({ length: 55 }, (_, index) =>
+      buildCharacter({
+        id: index + 1,
+        world_id: 1,
+        name: `Char ${String(index + 1).padStart(2, '0')}`,
+      }));
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue(characters);
+
+    renderPage(1);
+
+    await screen.findByText('Char 01');
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+
+    expect(await screen.findByText('Char 51')).toBeInTheDocument();
+    expect(screen.queryByText('Char 01')).not.toBeInTheDocument();
+  });
+
+  it('shows fewer cards when a smaller results-per-page size is selected', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    const characters = Array.from({ length: 55 }, (_, index) =>
+      buildCharacter({
+        id: index + 1,
+        world_id: 1,
+        name: `Char ${String(index + 1).padStart(2, '0')}`,
+      }));
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue(characters);
+
+    renderPage(1);
+
+    await screen.findByText('Char 01');
+    await user.selectOptions(screen.getByLabelText('Results per page'), '10');
+
+    expect(screen.getByText('Char 10')).toBeInTheDocument();
+    expect(screen.queryByText('Char 11')).not.toBeInTheDocument();
+  });
+
+  it('resets to the first page when the search query changes', async () => {
+    const user = userEvent.setup();
+    const world = buildWorld({ id: 1, name: 'Aetheria' });
+    const characters = Array.from({ length: 55 }, (_, index) =>
+      buildCharacter({
+        id: index + 1,
+        world_id: 1,
+        name: `Char ${String(index + 1).padStart(2, '0')}`,
+      }));
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);
+    (mockDb.characters.getAllByWorld as ReturnType<typeof vi.fn>).mockResolvedValue(characters);
+
+    renderPage(1);
+
+    await screen.findByText('Char 01');
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    await screen.findByText('Char 51');
+
+    await user.type(screen.getByPlaceholderText(/search characters/i), 'Char 01');
+
+    expect(await screen.findByText('Char 01')).toBeInTheDocument();
+    expect(screen.queryByText('Page 2 of')).not.toBeInTheDocument();
+  });
+
   it('shows the total character count and keeps it unchanged while filtering', async () => {
     const world = buildWorld({ id: 1, name: 'Aetheria' });
     (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(world);

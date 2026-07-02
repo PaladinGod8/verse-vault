@@ -14,7 +14,7 @@ export default function EntityCountBadge(
       aria-label={`Total ${noun}`}
       className='inline-flex shrink-0 items-center rounded-lg border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700'
     >
-      {count} {noun}
+      {count.toLocaleString()} {noun}
     </div>
   );
 }

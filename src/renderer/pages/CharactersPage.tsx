@@ -6,11 +6,14 @@ import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EntityCountBadge from '../components/ui/EntityCountBadge';
 import ModalShell from '../components/ui/ModalShell';
+import PageSizeSelect from '../components/ui/PageSizeSelect';
+import PaginationBar from '../components/ui/PaginationBar';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useCardSortPreference } from '../hooks/useCardSortPreference';
 import { useCharacterCrud } from '../hooks/useCharacterCrud';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useWorldCharactersData } from '../hooks/useWorldCharactersData';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { characterMatchesQuery } from '../lib/characterSearch';
@@ -93,6 +96,19 @@ export default function CharactersPage() {
     [characters, searchQuery, primaryFactionByCharacterId, allFactions, sortMethod],
   );
 
+  const {
+    page,
+    pageSize,
+    totalPages,
+    pageItems: pagedCharacters,
+    setPage,
+    setPageSize,
+  } = usePaginatedList(visibleCharacters);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, sortMethod, setPage]);
+
   return (
     <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
@@ -161,26 +177,32 @@ export default function CharactersPage() {
             </section>
           )
           : (
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-              {visibleCharacters.map((character) => {
-                const primaryFactionId = primaryFactionByCharacterId.get(character.id);
-                const primaryFactionName = primaryFactionId === undefined
-                  ? null
-                  : allFactions.find((faction) => faction.id === primaryFactionId)?.name ?? null;
+            <>
+              <div className='flex justify-end'>
+                <PageSizeSelect value={pageSize} onChange={setPageSize} />
+              </div>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                {pagedCharacters.map((character) => {
+                  const primaryFactionId = primaryFactionByCharacterId.get(character.id);
+                  const primaryFactionName = primaryFactionId === undefined
+                    ? null
+                    : allFactions.find((faction) => faction.id === primaryFactionId)?.name ?? null;
 
-                return (
-                  <CharacterCard
-                    key={character.id}
-                    character={character}
-                    onEdit={() => setEditingCharacter(character)}
-                    onDelete={() => setPendingDeleteCharacter(character)}
-                    isDeleting={deletingCharacterId === character.id}
-                    primaryFactionName={primaryFactionName}
-                    displayDimensions={cardDisplayDimensions}
-                  />
-                );
-              })}
-            </div>
+                  return (
+                    <CharacterCard
+                      key={character.id}
+                      character={character}
+                      onEdit={() => setEditingCharacter(character)}
+                      onDelete={() => setPendingDeleteCharacter(character)}
+                      isDeleting={deletingCharacterId === character.id}
+                      primaryFactionName={primaryFactionName}
+                      displayDimensions={cardDisplayDimensions}
+                    />
+                  );
+                })}
+              </div>
+              <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} />
+            </>
           )}
       </main>
 

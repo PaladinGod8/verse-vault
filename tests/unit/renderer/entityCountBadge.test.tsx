@@ -27,6 +27,14 @@ describe('EntityCountBadge', () => {
     );
   });
 
+  it('formats large counts with thousands separators', () => {
+    render(<EntityCountBadge count={11231} singularLabel='character' />);
+
+    expect(screen.getByRole('status', { name: 'Total characters' })).toHaveTextContent(
+      '11,231 characters',
+    );
+  });
+
   it('renders zero as plural', () => {
     render(<EntityCountBadge count={0} singularLabel='character' />);
 

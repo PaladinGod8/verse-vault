@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { FactionSections, FactionWikiSummary } from '../../shared/contracts/factionTypes';
 import FactionCard from '../components/factions/FactionCard';
@@ -8,12 +8,15 @@ import CardSortToggle from '../components/ui/CardSortToggle';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EntityCountBadge from '../components/ui/EntityCountBadge';
 import ModalShell from '../components/ui/ModalShell';
+import PageSizeSelect from '../components/ui/PageSizeSelect';
+import PaginationBar from '../components/ui/PaginationBar';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useCardSortPreference } from '../hooks/useCardSortPreference';
 import { useFactionCrud } from '../hooks/useFactionCrud';
 import { useFactionTypes } from '../hooks/useFactionTypes';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useWorldFactionsData } from '../hooks/useWorldFactionsData';
 import { resolveCardDisplayDimensions } from '../lib/cardDisplaySettings';
 import { factionMatchesQuery } from '../lib/factionSearch';
@@ -81,6 +84,19 @@ export default function FactionsPage() {
       ),
     [factions, searchQuery, typeFilter, sortMethod],
   );
+
+  const {
+    page,
+    pageSize,
+    totalPages,
+    pageItems: pagedFactions,
+    setPage,
+    setPageSize,
+  } = usePaginatedList(visibleFactions);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, typeFilter, sortMethod, setPage]);
 
   return (
     <div className='flex min-h-screen'>
@@ -172,19 +188,25 @@ export default function FactionsPage() {
             </section>
           )
           : (
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-              {visibleFactions.map((faction) => (
-                <FactionCard
-                  key={faction.id}
-                  faction={faction}
-                  factionTypesById={factionTypesById}
-                  onEdit={() => setEditingFaction(faction)}
-                  onDelete={() => setPendingDeleteFaction(faction)}
-                  isDeleting={deletingFactionId === faction.id}
-                  displayDimensions={cardDisplayDimensions}
-                />
-              ))}
-            </div>
+            <>
+              <div className='flex justify-end'>
+                <PageSizeSelect value={pageSize} onChange={setPageSize} />
+              </div>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                {pagedFactions.map((faction) => (
+                  <FactionCard
+                    key={faction.id}
+                    faction={faction}
+                    factionTypesById={factionTypesById}
+                    onEdit={() => setEditingFaction(faction)}
+                    onDelete={() => setPendingDeleteFaction(faction)}
+                    isDeleting={deletingFactionId === faction.id}
+                    displayDimensions={cardDisplayDimensions}
+                  />
+                ))}
+              </div>
+              <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} />
+            </>
           )}
       </main>
 

@@ -41,6 +41,13 @@ and any Wiki Summary value), and are listed as cards.
   any ancestor of that faction) also includes that character, even if the name doesn't
   appear verbatim in any of the character's own fields — see "Faction-aware search"
   below. When characters exist but none match, shows `No characters match your search.`.
+- The total character count for the world (independent of search/pagination) is shown
+  via `EntityCountBadge`, formatted with thousands separators (e.g. `11,231
+  characters`).
+- Below the search bar, a `PageSizeSelect` (10/50/100, default 50) sits at the top-right
+  of the cards grid — not the page header — and a `PaginationBar` sits below the grid.
+  Only the current page's cards are mounted, so the DOM node count stays bounded
+  regardless of how many characters a world has; see "Pagination" below.
 - "New Character" opens a modal form. Name is required; everything else, including
   Author, is optional except `Owner`, which becomes required when `Player Character` is
   checked.
@@ -94,6 +101,25 @@ and any Wiki Summary value), and are listed as cards.
   the `primaryFactionByCharacterId` map passed into the search.
 - See `docs/features/factions.md` for the Faction entity and its membership model.
 
+### Pagination (shared with Factions)
+
+- The full `getAllByWorld` result is always fetched and filtered/sorted client-side
+  (search, faction-aware matching, and `sortCardRecords` are unaffected by this
+  change) — only the _rendered_ card grid is windowed. This targets the actual lag
+  source: mounting hundreds/thousands of `CharacterCard`/`FactionCard` DOM trees is
+  what stalls the renderer, not the in-memory array scan.
+- `src/renderer/hooks/usePaginatedList.ts` — generic hook taking the filtered/sorted
+  array and a page size (`PAGE_SIZE_OPTIONS = [10, 50, 100]`, default 50), returning
+  `{ page, pageSize, totalPages, totalItems, pageItems, setPage, setPageSize }`.
+  `setPageSize` resets to page 1; `page` auto-clamps to `totalPages` (e.g. after the
+  filtered set shrinks).
+- `CharactersPage`/`FactionsPage` reset to page 1 whenever `searchQuery`,
+  `sortMethod` (and, for factions, `typeFilter`) change, so a new search never leaves
+  the user stranded on an out-of-range page.
+- `src/renderer/components/ui/PageSizeSelect.tsx` — the results-per-page `<select>`.
+- `src/renderer/components/ui/PaginationBar.tsx` — Previous/Next + "Page X of Y";
+  renders nothing when `totalPages <= 1`.
+
 ## Architecture Notes
 
 - IPC channels (`src/shared/ipcChannels.ts`): `CHARACTERS_GET_ALL_BY_WORLD`,
@@ -115,7 +141,10 @@ and any Wiki Summary value), and are listed as cards.
     `/world/:id/characters/:characterId`).
   - `src/renderer/hooks/useWorldCharactersData.ts`, `useCharacterCrud.ts`,
     `useCharacterFactionMemberships.ts` (read-only memberships + the `setPrimary`
-    action, used by the detail page).
+    action, used by the detail page), `usePaginatedList.ts` (shared with Factions —
+    see "Pagination" above).
+  - `src/renderer/components/ui/PageSizeSelect.tsx`, `PaginationBar.tsx` (shared with
+    Factions — see "Pagination" above).
   - `src/renderer/components/characters/`: `CharacterCard.tsx`,
     `CharacterImageDropzone.tsx`, `CharacterForm.tsx`, `CharacterWikiSummaryEditor.tsx`
     and its group/list sub-editors (`CharacterWikiSummaryGroupFields.tsx`,
@@ -213,7 +242,13 @@ required for player characters.`).
 - `tests/unit/renderer/components/characters/*.test.tsx` — Wiki Summary group/list
   sub-editors.
 - `tests/unit/renderer/charactersPage.test.tsx` — page-level load, search, create, and
-  delete flows against a mocked `window.db`.
+  delete flows against a mocked `window.db`, plus pagination: default page size,
+  Next-page navigation, results-per-page selection, and page-reset-on-search.
+- `tests/unit/renderer/hooks/usePaginatedList.test.ts`,
+  `tests/unit/renderer/components/ui/pageSizeSelect.test.tsx`,
+  `tests/unit/renderer/components/ui/paginationBar.test.tsx` — the shared pagination
+  hook and UI components in isolation (windowing, clamping, page-size reset,
+  Previous/Next boundary states).
 - `tests/unit/renderer/characterDetailPage.test.tsx` — detail-page rendering, faction
   membership links, the primary-toggle action, and edit-modal save flow.
 
@@ -229,6 +264,12 @@ Additional player-character coverage:
 - Search is a simple case-insensitive substring match over a flattened in-memory blob,
   not SQLite FTS5. This is intentional for the current dataset scale; revisit if
   character counts grow large enough to need server-side filtering.
+- Pagination (see above) only windows what gets _rendered_; `getAllByWorld` still
+  fetches and JSON-parses every character in the world on every load/reload, and
+  search/sort still run over the full in-memory list. This was an intentional,
+  lower-risk fix scoped to the actual reported bug (DOM render lag), not a full
+  server-side pagination rebuild — revisit fetch-time pagination if load time itself
+  becomes a problem at very large (~20k+) character counts.
 - The four text sections (Background, Personality, Relationships, Notes) are fixed, not
   user-defined/arbitrary blocks.
 - Orphaned character images (from cancelled forms or cleared images) are not cleaned up

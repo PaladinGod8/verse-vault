@@ -49,6 +49,13 @@ characters.
   faction's name _exactly_ (case-insensitive) also surfaces all of its descendants,
   even if the descendant's own fields don't contain that text. A separate "Filter by
   type" dropdown narrows to an exact type match; the two filters combine with AND.
+- The total faction count for the world (independent of search/filter/pagination) is
+  shown via `EntityCountBadge`, formatted with thousands separators.
+- Below the search/type-filter row, a `PageSizeSelect` (10/50/100, default 50) sits at
+  the top-right of the cards grid and a `PaginationBar` sits below it; only the current
+  page's cards are mounted. Changing the search text, type filter, or sort method
+  resets to page 1. See "Pagination" in `docs/features/characters.md` — the mechanism
+  is shared verbatim between both pages.
 - "New Faction" and "Manage Types" buttons in the header; "Manage Types" opens a modal
   to add/rename/delete the world's faction type list.
 - Clicking a card's body navigates to its detail page
@@ -153,7 +160,10 @@ characters.
   - `src/renderer/hooks/useWorldFactionsData.ts`, `useFactionCrud.ts`,
     `useFactionTypes.ts`, `useCharacterSearch.ts` (debounced, paginated search backing
     the member-picker combobox; documented alongside `CHARACTERS_SEARCH_BY_WORLD` in
-    `docs/features/characters.md`).
+    `docs/features/characters.md`), `usePaginatedList.ts` (list-page pagination,
+    shared with Characters — see "Pagination" in `docs/features/characters.md`).
+  - `src/renderer/components/ui/PageSizeSelect.tsx`, `PaginationBar.tsx` (shared with
+    Characters — see "Pagination" in `docs/features/characters.md`).
   - `src/renderer/components/factions/`: `FactionCard.tsx`, `FactionImageDropzone.tsx`,
     `FactionForm.tsx`, `FactionMembersEditor.tsx`, `CharacterCombobox.tsx`,
     `ManageFactionTypesModal.tsx`. Aliases/Locations list editing and the flat Basic
@@ -261,7 +271,13 @@ selected), and re-validates with `wouldCreateCycle` on submit as a final guard.
   `tests/unit/renderer/hooks/useCharacterSearch.test.ts` — combobox selection,
   exclusion, debounce, and infinite-scroll behavior.
 - `tests/unit/renderer/factionsPage.test.tsx`, `factionDetailPage.test.tsx` — page-level
-  load, search, type filter, create flow, and detail-page rendering/grouping/linking.
+  load, search, type filter, create flow, detail-page rendering/grouping/linking, and
+  pagination (default page size, Next-page navigation, results-per-page selection,
+  page-reset-on-search).
+- `tests/unit/renderer/hooks/usePaginatedList.test.ts`,
+  `tests/unit/renderer/components/ui/pageSizeSelect.test.tsx`,
+  `tests/unit/renderer/components/ui/paginationBar.test.tsx` — shared pagination hook
+  and UI components, documented in full in `docs/features/characters.md`.
 - `tests/unit/renderer/lib/characterSearch.test.ts` — the additive primary-faction
   exact-match and ancestor-expansion rules (documented in `docs/features/characters.md`).
 
@@ -284,3 +300,7 @@ selected), and re-validates with `wouldCreateCycle` on submit as a final guard.
   automatically, matching the accepted limitation already documented for
   worlds/tokens/characters.
 - No campaign-level scoping; factions belong to a world only.
+- Pagination only windows what gets _rendered_; `getAllByWorld` still fetches every
+  faction in the world on every load/reload, and search/type-filter/sort still run
+  over the full in-memory list — see the matching note in
+  `docs/features/characters.md`'s Known Limits.
