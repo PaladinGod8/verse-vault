@@ -1,4 +1,7 @@
-import type { CharacterWikiSummary } from '../../../shared/contracts/characterTypes';
+import type {
+  CharacterTraitGroup,
+  CharacterWikiSummary,
+} from '../../../shared/contracts/characterTypes';
 import {
   BIOGRAPHIC_FIELDS,
   PERSONAL_DESCRIPTION_FIELDS,
@@ -9,6 +12,9 @@ import CharacterWikiSummaryAgesTimelineEditor from './CharacterWikiSummaryAgesTi
 import CharacterWikiSummaryGroupFields from './CharacterWikiSummaryGroupFields';
 import CharacterWikiSummaryListEditor from './CharacterWikiSummaryListEditor';
 import CharacterWikiSummaryNoteListEditor from './CharacterWikiSummaryNoteListEditor';
+import CharacterWikiSummaryQuoteListEditor from './CharacterWikiSummaryQuoteListEditor';
+import CharacterWikiSummaryTraitGroupEditor from './CharacterWikiSummaryTraitGroupEditor';
+import CharacterWikiSummaryVicesVirtuesEditor from './CharacterWikiSummaryVicesVirtuesEditor';
 
 type CharacterWikiSummaryEditorProps = {
   wikiSummary: CharacterWikiSummary;
@@ -19,6 +25,15 @@ type CharacterWikiSummaryEditorProps = {
 type ObjectGroupKey = 'biographic' | 'personalDescription' | 'statusDemographics' | 'trivia';
 type ListGroupKey = 'conditions' | 'educationalHistory' | 'occupationalHistory';
 type NoteListGroupKey = 'aliases' | 'titles';
+type TraitGroupKey = 'personality' | 'physical' | 'social' | 'bonds' | 'tenetsAndMorals';
+
+const TRAIT_GROUPS: Array<{ key: TraitGroupKey; legend: string; }> = [
+  { key: 'personality', legend: 'Personality' },
+  { key: 'physical', legend: 'Physical' },
+  { key: 'social', legend: 'Social' },
+  { key: 'bonds', legend: 'Bonds' },
+  { key: 'tenetsAndMorals', legend: 'Tenets & Morals' },
+];
 
 export default function CharacterWikiSummaryEditor({
   wikiSummary,
@@ -41,6 +56,28 @@ export default function CharacterWikiSummaryEditor({
     items: Array<{ text: string; note?: string | null; }>,
   ) => {
     onChange({ ...wikiSummary, [groupKey]: items });
+  };
+
+  const patchTraitGroup = (groupKey: TraitGroupKey, patch: Partial<CharacterTraitGroup>) => {
+    onChange({
+      ...wikiSummary,
+      characterTraits: {
+        ...wikiSummary.characterTraits,
+        [groupKey]: { ...wikiSummary.characterTraits?.[groupKey], ...patch },
+      },
+    });
+  };
+
+  const patchVicesVirtues = (
+    patch: Partial<{ summary: string; vices: string[]; virtues: string[]; }>,
+  ) => {
+    onChange({
+      ...wikiSummary,
+      characterTraits: {
+        ...wikiSummary.characterTraits,
+        vicesAndVirtues: { ...wikiSummary.characterTraits?.vicesAndVirtues, ...patch },
+      },
+    });
   };
 
   return (
@@ -108,6 +145,37 @@ export default function CharacterWikiSummaryEditor({
         onChange={(key, value) => patchGroup('trivia', key, value)}
         disabled={disabled}
       />
+      <div className='space-y-6 border-t border-slate-200 pt-4'>
+        <h3 className='text-sm font-semibold text-slate-900'>Character Traits</h3>
+        {TRAIT_GROUPS.map(({ key, legend }) => (
+          <CharacterWikiSummaryTraitGroupEditor
+            key={key}
+            legend={legend}
+            summary={wikiSummary.characterTraits?.[key]?.summary}
+            traits={wikiSummary.characterTraits?.[key]?.traits ?? []}
+            onSummaryChange={(value) => patchTraitGroup(key, { summary: value })}
+            onTraitsChange={(items) => patchTraitGroup(key, { traits: items })}
+            disabled={disabled}
+          />
+        ))}
+        <CharacterWikiSummaryVicesVirtuesEditor
+          summary={wikiSummary.characterTraits?.vicesAndVirtues?.summary}
+          vices={wikiSummary.characterTraits?.vicesAndVirtues?.vices ?? []}
+          virtues={wikiSummary.characterTraits?.vicesAndVirtues?.virtues ?? []}
+          onSummaryChange={(value) => patchVicesVirtues({ summary: value })}
+          onVicesChange={(items) => patchVicesVirtues({ vices: items })}
+          onVirtuesChange={(items) => patchVicesVirtues({ virtues: items })}
+          disabled={disabled}
+        />
+      </div>
+      <div className='space-y-6 border-t border-slate-200 pt-4'>
+        <h3 className='text-sm font-semibold text-slate-900'>Quotes</h3>
+        <CharacterWikiSummaryQuoteListEditor
+          items={wikiSummary.quotes ?? []}
+          onChange={(items) => onChange({ ...wikiSummary, quotes: items })}
+          disabled={disabled}
+        />
+      </div>
     </div>
   );
 }

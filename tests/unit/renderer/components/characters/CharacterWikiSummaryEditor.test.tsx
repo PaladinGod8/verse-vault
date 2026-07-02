@@ -18,6 +18,13 @@ describe('CharacterWikiSummaryEditor', () => {
     expect(screen.getByText('Conditions')).toBeInTheDocument();
     expect(screen.getByText('Educational History')).toBeInTheDocument();
     expect(screen.getByText('Occupational History')).toBeInTheDocument();
+    expect(screen.getByText('Personality')).toBeInTheDocument();
+    expect(screen.getByText('Physical')).toBeInTheDocument();
+    expect(screen.getByText('Social')).toBeInTheDocument();
+    expect(screen.getByText('Bonds')).toBeInTheDocument();
+    expect(screen.getByText('Tenets & Morals')).toBeInTheDocument();
+    expect(screen.getByText('Vices & Virtues')).toBeInTheDocument();
+    expect(screen.getAllByText('Quotes').length).toBeGreaterThan(0);
   });
 
   it('patches the biographic group without disturbing other groups', async () => {
@@ -50,6 +57,36 @@ describe('CharacterWikiSummaryEditor', () => {
 
     expect(onChange).toHaveBeenCalledWith({
       conditions: ['Perfect Primal', ''],
+    });
+  });
+
+  it('patches the first character traits group (Personality) without disturbing other groups', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const wikiSummary: CharacterWikiSummary = {
+      characterTraits: { physical: { summary: 'Scarred.' } },
+    };
+    render(<CharacterWikiSummaryEditor wikiSummary={wikiSummary} onChange={onChange} />);
+
+    await user.click(screen.getAllByRole('button', { name: 'Add Traits' })[0]);
+
+    expect(onChange).toHaveBeenCalledWith({
+      characterTraits: {
+        physical: { summary: 'Scarred.' },
+        personality: { traits: [''] },
+      },
+    });
+  });
+
+  it('appends a blank quote when Add Quote is clicked', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<CharacterWikiSummaryEditor wikiSummary={{}} onChange={onChange} />);
+
+    await user.click(screen.getByRole('button', { name: 'Add Quote' }));
+
+    expect(onChange).toHaveBeenCalledWith({
+      quotes: [{ context: '', text: '', speaker: '' }],
     });
   });
 });

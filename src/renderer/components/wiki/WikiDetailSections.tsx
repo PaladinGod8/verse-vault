@@ -65,6 +65,84 @@ export function WikiDetailListSection({
   );
 }
 
+export function WikiDetailSummaryListSection({
+  title,
+  summary,
+  items,
+}: {
+  title: string;
+  summary?: string | null;
+  items: ReactNode[];
+}) {
+  return (
+    <section className='overflow-hidden rounded-lg border border-slate-200'>
+      <WikiDetailSectionHeading title={title} />
+      {summary
+        ? <p className='whitespace-pre-wrap px-4 py-3 text-sm text-slate-600'>{summary}</p>
+        : null}
+      {items.length > 0
+        ? (
+          <ul className='space-y-2 px-4 py-3 text-sm text-slate-600'>
+            {items.map((item, index) => (
+              <li key={index} className='list-none'>
+                <span aria-hidden='true' className='mr-2 text-fuchsia-500'>
+                  *
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        )
+        : (!summary ? <div className='min-h-11' /> : null)}
+    </section>
+  );
+}
+
+function WikiDetailSubList({ label, items }: { label: string; items: ReactNode[]; }) {
+  return (
+    <div className='px-4 py-3'>
+      <h3 className='text-xs font-semibold text-slate-700'>{label}</h3>
+      {items.length > 0
+        ? (
+          <ul className='mt-1 space-y-2 text-sm text-slate-600'>
+            {items.map((item, index) => (
+              <li key={index} className='list-none'>
+                <span aria-hidden='true' className='mr-2 text-fuchsia-500'>
+                  *
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        )
+        : <div className='min-h-11' />}
+    </div>
+  );
+}
+
+export function WikiDetailVicesVirtuesSection({
+  summary,
+  vices,
+  virtues,
+}: {
+  summary?: string | null;
+  vices: ReactNode[];
+  virtues: ReactNode[];
+}) {
+  return (
+    <section className='overflow-hidden rounded-lg border border-slate-200'>
+      <WikiDetailSectionHeading title='Vices & Virtues' />
+      {summary
+        ? <p className='whitespace-pre-wrap px-4 pt-3 text-sm text-slate-600'>{summary}</p>
+        : null}
+      <WikiDetailSubList label='Vices' items={vices} />
+      <div className='border-t border-slate-100'>
+        <WikiDetailSubList label='Virtues' items={virtues} />
+      </div>
+    </section>
+  );
+}
+
 export function WikiDetailDataTableSection<Row>({
   title,
   columns,
@@ -108,7 +186,7 @@ export function WikiDetailDataTableSection<Row>({
   );
 }
 
-function WikiDetailSectionHeading({ title }: { title: string; }) {
+export function WikiDetailSectionHeading({ title }: { title: string; }) {
   return (
     <div className='border-b border-slate-200 bg-slate-900 px-4 py-2'>
       <h2 className='text-base font-semibold text-white'>{title}</h2>

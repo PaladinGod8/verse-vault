@@ -8,8 +8,22 @@ import {
 import {
   WikiDetailDataTableSection,
   WikiDetailListSection,
+  WikiDetailSummaryListSection,
   WikiDetailTableSection,
+  WikiDetailVicesVirtuesSection,
 } from '../wiki/WikiDetailSections';
+import CharacterQuotesSection from './CharacterQuotesSection';
+
+const TRAIT_GROUPS: Array<{
+  key: 'personality' | 'physical' | 'social' | 'bonds' | 'tenetsAndMorals';
+  title: string;
+}> = [
+  { key: 'personality', title: 'Personality' },
+  { key: 'physical', title: 'Physical' },
+  { key: 'social', title: 'Social' },
+  { key: 'bonds', title: 'Bonds' },
+  { key: 'tenetsAndMorals', title: 'Tenets & Morals' },
+];
 
 function renderNoteItem(item: { text: string; note?: string | null; }) {
   if (!item.note) {
@@ -76,6 +90,20 @@ export default function CharacterWikiSummaryDetail({
         items={(wikiSummary.occupationalHistory ?? []).map((item) => item)}
       />
       <WikiDetailTableSection title='Trivia' rows={buildRows(TRIVIA_FIELDS, wikiSummary.trivia)} />
+      {TRAIT_GROUPS.map(({ key, title }) => (
+        <WikiDetailSummaryListSection
+          key={key}
+          title={title}
+          summary={wikiSummary.characterTraits?.[key]?.summary}
+          items={wikiSummary.characterTraits?.[key]?.traits ?? []}
+        />
+      ))}
+      <WikiDetailVicesVirtuesSection
+        summary={wikiSummary.characterTraits?.vicesAndVirtues?.summary}
+        vices={wikiSummary.characterTraits?.vicesAndVirtues?.vices ?? []}
+        virtues={wikiSummary.characterTraits?.vicesAndVirtues?.virtues ?? []}
+      />
+      <CharacterQuotesSection quotes={wikiSummary.quotes ?? []} />
     </div>
   );
 }

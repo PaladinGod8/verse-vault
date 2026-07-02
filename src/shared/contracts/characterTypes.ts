@@ -56,6 +56,34 @@ export interface CharacterWikiSummary {
     habitsHobbies?: string | null;
     apparelAccessories?: string | null;
   };
+  characterTraits?: CharacterTraits;
+  quotes?: CharacterQuote[];
+}
+
+export interface CharacterTraitGroup {
+  summary?: string | null;
+  traits?: string[];
+}
+
+export interface CharacterVicesVirtuesGroup {
+  summary?: string | null;
+  vices?: string[];
+  virtues?: string[];
+}
+
+export interface CharacterTraits {
+  personality?: CharacterTraitGroup;
+  physical?: CharacterTraitGroup;
+  social?: CharacterTraitGroup;
+  bonds?: CharacterTraitGroup;
+  tenetsAndMorals?: CharacterTraitGroup;
+  vicesAndVirtues?: CharacterVicesVirtuesGroup;
+}
+
+export interface CharacterQuote {
+  context?: string | null;
+  text: string;
+  speaker?: string | null;
 }
 
 export function getDefaultCharacterSections(): CharacterSections {
