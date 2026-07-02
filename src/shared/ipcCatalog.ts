@@ -30,6 +30,7 @@ const HANDLERS = {
   statblocks: 'src/main/ipc/registerStatBlockHandlers.ts',
   characters: 'src/main/ipc/registerCharacterHandlers.ts',
   backgrounds: 'src/main/ipc/registerBackgroundHandlers.ts',
+  items: 'src/main/ipc/registerItemHandlers.ts',
   factions: 'src/main/ipc/registerFactionHandlers.ts',
   factionTypes: 'src/main/ipc/registerFactionTypeHandlers.ts',
   factionMembers: 'src/main/ipc/registerFactionMemberHandlers.ts',
@@ -261,6 +262,15 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'DbApi.backgrounds.importImage',
     ],
     ['BACKGROUNDS_MARK_VIEWED', 'window.db.backgrounds.markViewed', 'DbApi.backgrounds.markViewed'],
+  ]),
+  ...entries('items', HANDLERS.items, [
+    ['ITEMS_GET_ALL_BY_WORLD', 'window.db.items.getAllByWorld', 'DbApi.items.getAllByWorld'],
+    ['ITEMS_GET_BY_ID', 'window.db.items.getById', 'DbApi.items.getById'],
+    ['ITEMS_ADD', 'window.db.items.add', 'DbApi.items.add'],
+    ['ITEMS_UPDATE', 'window.db.items.update', 'DbApi.items.update'],
+    ['ITEMS_DELETE', 'window.db.items.delete', 'DbApi.items.delete'],
+    ['ITEMS_IMPORT_IMAGE', 'window.db.items.importImage', 'DbApi.items.importImage'],
+    ['ITEMS_MARK_VIEWED', 'window.db.items.markViewed', 'DbApi.items.markViewed'],
   ]),
   ...entries('factions', HANDLERS.factions, [
     [

@@ -179,6 +179,24 @@ const dbApi: DbApi = {
     },
     markViewed: (id) => ipcRenderer.invoke(IPC.BACKGROUNDS_MARK_VIEWED, id),
   },
+  items: {
+    getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.ITEMS_GET_ALL_BY_WORLD, worldId),
+    getById: (id) => ipcRenderer.invoke(IPC.ITEMS_GET_BY_ID, id),
+    add: (data) => ipcRenderer.invoke(IPC.ITEMS_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.ITEMS_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.ITEMS_DELETE, id),
+    importImage: (payload) => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('Item image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.ITEMS_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: new Uint8Array(payload.bytes),
+      });
+    },
+    markViewed: (id) => ipcRenderer.invoke(IPC.ITEMS_MARK_VIEWED, id),
+  },
   factions: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTIONS_GET_ALL_BY_WORLD, worldId),
     getById: (id) => ipcRenderer.invoke(IPC.FACTIONS_GET_BY_ID, id),

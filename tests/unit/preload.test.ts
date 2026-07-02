@@ -38,6 +38,7 @@ describe('preload', () => {
         sessions: expect.any(Object),
         scenes: expect.any(Object),
         backgrounds: expect.any(Object),
+        items: expect.any(Object),
       }),
     );
 

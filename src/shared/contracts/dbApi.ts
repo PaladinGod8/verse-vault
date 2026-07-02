@@ -63,6 +63,7 @@ export const DB_API_METHODS = {
     'markViewed',
   ],
   backgrounds: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
+  items: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
   factions: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
   factionTypes: ['getAllByWorld', 'add', 'rename', 'delete'],
   factionMembers: [

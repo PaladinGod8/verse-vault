@@ -35,6 +35,7 @@ describe('playwright project worker grouping', () => {
       'backgrounds.test.ts',
       'character-detail.test.ts',
       'characters.test.ts',
+      'items.test.ts',
       'arc-act.test.ts',
       'battlemap-runtime-play.test.ts',
       'battlemap-runtime-statblock-popup.test.ts',

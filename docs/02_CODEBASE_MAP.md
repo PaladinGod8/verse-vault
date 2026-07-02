@@ -54,6 +54,8 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/statblocks`                                                           | `StatBlocksPage`            | `src/renderer/pages/StatBlocksPage.tsx`            |
 | `/world/:id/backgrounds`                                                          | `BackgroundsPage`           | `src/renderer/pages/BackgroundsPage.tsx`           |
 | `/world/:id/backgrounds/:backgroundId`                                            | `BackgroundDetailPage`      | `src/renderer/pages/BackgroundDetailPage.tsx`      |
+| `/world/:id/items`                                                                | `ItemsPage`                 | `src/renderer/pages/ItemsPage.tsx`                 |
+| `/world/:id/items/:itemId`                                                        | `ItemDetailPage`            | `src/renderer/pages/ItemDetailPage.tsx`            |
 | `/world/:id/characters`                                                           | `CharactersPage`            | `src/renderer/pages/CharactersPage.tsx`            |
 | `/world/:id/characters/:characterId`                                              | `CharacterDetailPage`       | `src/renderer/pages/CharacterDetailPage.tsx`       |
 | `/world/:id/factions`                                                             | `FactionsPage`              | `src/renderer/pages/FactionsPage.tsx`              |
@@ -88,6 +90,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerStatBlockHandlers.ts`             | statblocks             | 13       |
 | `src/main/ipc/registerCharacterHandlers.ts`             | characters             | 8        |
 | `src/main/ipc/registerBackgroundHandlers.ts`            | backgrounds            | 7        |
+| `src/main/ipc/registerItemHandlers.ts`                  | items                  | 7        |
 | `src/main/ipc/registerFactionHandlers.ts`               | factions               | 7        |
 | `src/main/ipc/registerFactionTypeHandlers.ts`           | factionTypes           | 4        |
 | `src/main/ipc/registerFactionMemberHandlers.ts`         | factionMembers         | 5        |

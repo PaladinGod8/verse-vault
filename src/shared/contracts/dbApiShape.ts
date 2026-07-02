@@ -7,6 +7,7 @@ import type {
   FactionMembershipByCharacter,
   FactionMembershipByFaction,
   FactionUpsertPayload,
+  ItemUpsertPayload,
   PrimaryFactionMembership,
   RosterReplaceResult,
 } from './dbApiPayloads';
@@ -24,6 +25,7 @@ import type {
   Character,
   Faction,
   FactionType,
+  Item,
   Level,
   Scene,
   Session,
@@ -314,6 +316,15 @@ export interface DbApi extends DbApiRelationships {
     delete(id: number): Promise<{ id: number; }>;
     importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
     markViewed(id: number): Promise<Background>;
+  };
+  items: {
+    getAllByWorld(worldId: number): Promise<Item[]>;
+    getById(id: number): Promise<Item | null>;
+    add(data: ItemUpsertPayload & { world_id: number; name: string; }): Promise<Item>;
+    update(id: number, data: ItemUpsertPayload): Promise<Item>;
+    delete(id: number): Promise<{ id: number; }>;
+    importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+    markViewed(id: number): Promise<Item>;
   };
   factions: {
     getAllByWorld(worldId: number): Promise<Faction[]>;

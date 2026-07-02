@@ -96,7 +96,13 @@ function createWorldScopedTables(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id
       ON tokens(campaign_id);
+  `);
 
+  createWorldCodexTables(db);
+}
+
+function createWorldCodexTables(db: Database.Database): void {
+  db.exec(`
     CREATE TABLE IF NOT EXISTS backgrounds (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
       world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
@@ -110,6 +116,20 @@ function createWorldScopedTables(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_backgrounds_world_id
       ON backgrounds(world_id);
+
+    CREATE TABLE IF NOT EXISTS items (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name           TEXT    NOT NULL,
+      description    TEXT,
+      image_src      TEXT,
+      last_viewed_at TEXT,
+      created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_items_world_id
+      ON items(world_id);
   `);
 }
 

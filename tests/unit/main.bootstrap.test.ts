@@ -57,6 +57,7 @@ const registerAbilityHandlersMock = vi.fn();
 const registerStatBlockHandlersMock = vi.fn();
 const registerCharacterHandlersMock = vi.fn();
 const registerBackgroundHandlersMock = vi.fn();
+const registerItemHandlersMock = vi.fn();
 const registerFactionHandlersMock = vi.fn();
 const registerFactionTypeHandlersMock = vi.fn();
 const registerFactionMemberHandlersMock = vi.fn();
@@ -125,6 +126,9 @@ vi.mock('../../src/main/ipc/registerCharacterHandlers', () => ({
 }));
 vi.mock('../../src/main/ipc/registerBackgroundHandlers', () => ({
   registerBackgroundHandlers: registerBackgroundHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerItemHandlers', () => ({
+  registerItemHandlers: registerItemHandlersMock,
 }));
 vi.mock('../../src/main/ipc/registerFactionHandlers', () => ({
   registerFactionHandlers: registerFactionHandlersMock,
@@ -198,6 +202,7 @@ describe('main bootstrap orchestration', () => {
     expect(registerStatBlockHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerCharacterHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerBackgroundHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerItemHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerFactionHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerFactionTypeHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerFactionMemberHandlersMock).toHaveBeenCalledWith(dbMock);
@@ -254,6 +259,14 @@ describe('main bootstrap orchestration', () => {
     expect(backgroundResponse.status).toBe(200);
     expect(netFetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/background-images/background.png'),
+    );
+
+    const itemResponse = await protocolHandler({
+      url: 'vv-media://item-images/item.png',
+    });
+    expect(itemResponse.status).toBe(200);
+    expect(netFetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/item-images/item.png'),
     );
 
     const unknownHostResponse = await protocolHandler({

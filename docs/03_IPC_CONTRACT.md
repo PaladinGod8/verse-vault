@@ -28,6 +28,7 @@ This document is a current-state contract index. It is generated from `src/share
 | statblocks             | 13       | `src/main/ipc/registerStatBlockHandlers.ts`             |
 | characters             | 8        | `src/main/ipc/registerCharacterHandlers.ts`             |
 | backgrounds            | 7        | `src/main/ipc/registerBackgroundHandlers.ts`            |
+| items                  | 7        | `src/main/ipc/registerItemHandlers.ts`                  |
 | factions               | 7        | `src/main/ipc/registerFactionHandlers.ts`               |
 | factionTypes           | 4        | `src/main/ipc/registerFactionTypeHandlers.ts`           |
 | factionMembers         | 5        | `src/main/ipc/registerFactionMemberHandlers.ts`         |
@@ -140,6 +141,13 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.BACKGROUNDS_DELETE`                           | `db:backgrounds:delete`                       | `window.db.backgrounds.delete`                       | `src/main/ipc/registerBackgroundHandlers.ts`            | `DbApi.backgrounds.delete`                       |
 | `IPC.BACKGROUNDS_IMPORT_IMAGE`                     | `db:backgrounds:importImage`                  | `window.db.backgrounds.importImage`                  | `src/main/ipc/registerBackgroundHandlers.ts`            | `DbApi.backgrounds.importImage`                  |
 | `IPC.BACKGROUNDS_MARK_VIEWED`                      | `db:backgrounds:markViewed`                   | `window.db.backgrounds.markViewed`                   | `src/main/ipc/registerBackgroundHandlers.ts`            | `DbApi.backgrounds.markViewed`                   |
+| `IPC.ITEMS_GET_ALL_BY_WORLD`                       | `db:items:getAllByWorld`                      | `window.db.items.getAllByWorld`                      | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.getAllByWorld`                      |
+| `IPC.ITEMS_GET_BY_ID`                              | `db:items:getById`                            | `window.db.items.getById`                            | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.getById`                            |
+| `IPC.ITEMS_ADD`                                    | `db:items:add`                                | `window.db.items.add`                                | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.add`                                |
+| `IPC.ITEMS_UPDATE`                                 | `db:items:update`                             | `window.db.items.update`                             | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.update`                             |
+| `IPC.ITEMS_DELETE`                                 | `db:items:delete`                             | `window.db.items.delete`                             | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.delete`                             |
+| `IPC.ITEMS_IMPORT_IMAGE`                           | `db:items:importImage`                        | `window.db.items.importImage`                        | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.importImage`                        |
+| `IPC.ITEMS_MARK_VIEWED`                            | `db:items:markViewed`                         | `window.db.items.markViewed`                         | `src/main/ipc/registerItemHandlers.ts`                  | `DbApi.items.markViewed`                         |
 | `IPC.FACTIONS_GET_ALL_BY_WORLD`                    | `db:factions:getAllByWorld`                   | `window.db.factions.getAllByWorld`                   | `src/main/ipc/registerFactionHandlers.ts`               | `DbApi.factions.getAllByWorld`                   |
 | `IPC.FACTIONS_GET_BY_ID`                           | `db:factions:getById`                         | `window.db.factions.getById`                         | `src/main/ipc/registerFactionHandlers.ts`               | `DbApi.factions.getById`                         |
 | `IPC.FACTIONS_ADD`                                 | `db:factions:add`                             | `window.db.factions.add`                             | `src/main/ipc/registerFactionHandlers.ts`               | `DbApi.factions.add`                             |

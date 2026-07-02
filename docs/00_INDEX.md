@@ -56,6 +56,7 @@ not generated.
 | `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links  |
 | `characters.md`                       | World-scoped character wiki entries with search and image    |
 | `backgrounds.md`                      | World-scoped background wiki entries with image and summary  |
+| `items.md`                            | World-scoped item wiki entries with image and description    |
 | `editor-submit-bar.md`                | Shared sticky top-right submit/cancel bar across modal forms |
 | `settings.md`                         | App-wide user preferences stored in a singleton settings row |
 

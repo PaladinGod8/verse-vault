@@ -12,6 +12,7 @@ import { registerFactionHandlers } from '../../../src/main/ipc/registerFactionHa
 import { registerFactionMemberHandlers } from '../../../src/main/ipc/registerFactionMemberHandlers';
 import { registerFactionRelationshipHandlers } from '../../../src/main/ipc/registerFactionRelationshipHandlers';
 import { registerFactionTypeHandlers } from '../../../src/main/ipc/registerFactionTypeHandlers';
+import { registerItemHandlers } from '../../../src/main/ipc/registerItemHandlers';
 import { registerLevelHandlers } from '../../../src/main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from '../../../src/main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from '../../../src/main/ipc/registerSessionHandlers';
@@ -264,6 +265,19 @@ describe('IPC registrar channel wiring', () => {
         ],
       },
       {
+        name: 'items',
+        register: () => registerItemHandlers(dbMock),
+        expected: [
+          IPC.ITEMS_GET_ALL_BY_WORLD,
+          IPC.ITEMS_GET_BY_ID,
+          IPC.ITEMS_MARK_VIEWED,
+          IPC.ITEMS_ADD,
+          IPC.ITEMS_UPDATE,
+          IPC.ITEMS_DELETE,
+          IPC.ITEMS_IMPORT_IMAGE,
+        ],
+      },
+      {
         name: 'factions',
         register: () => registerFactionHandlers(dbMock),
         expected: [
@@ -353,6 +367,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerStatBlockHandlers(dbMock),
       () => registerCharacterHandlers(dbMock),
       () => registerBackgroundHandlers(dbMock),
+      () => registerItemHandlers(dbMock),
       () => registerFactionHandlers(dbMock),
       () => registerFactionTypeHandlers(dbMock),
       () => registerFactionMemberHandlers(dbMock),

@@ -20,6 +20,8 @@ import CharacterDetailPage from './pages/CharacterDetailPage';
 import CharactersPage from './pages/CharactersPage';
 import FactionDetailPage from './pages/FactionDetailPage';
 import FactionsPage from './pages/FactionsPage';
+import ItemDetailPage from './pages/ItemDetailPage';
+import ItemsPage from './pages/ItemsPage';
 import LevelsPage from './pages/LevelsPage';
 import ScenesPage from './pages/ScenesPage';
 import SessionsPage from './pages/SessionsPage';
@@ -50,6 +52,11 @@ export default function App() {
             <Route
               path='/world/:id/backgrounds/:backgroundId'
               element={<BackgroundDetailPage />}
+            />
+            <Route path='/world/:id/items' element={<ItemsPage />} />
+            <Route
+              path='/world/:id/items/:itemId'
+              element={<ItemDetailPage />}
             />
             <Route path='/world/:id/characters' element={<CharactersPage />} />
             <Route

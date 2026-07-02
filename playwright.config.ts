@@ -34,6 +34,7 @@ export default defineConfig({
       testMatch: [
         'app.test.ts',
         'backgrounds.test.ts',
+        'items.test.ts',
         'settings.test.ts',
         'worlds.test.ts',
         'characters.test.ts',

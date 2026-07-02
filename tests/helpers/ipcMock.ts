@@ -135,6 +135,17 @@ export function createMockDb(): DbApi {
       }),
       markViewed: vi.fn().mockResolvedValue(undefined),
     },
+    items: {
+      getAllByWorld: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue({ id: 1 } as Item),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      importImage: vi.fn().mockResolvedValue({
+        image_src: 'vv-media://item-images/mock.png',
+      }),
+      markViewed: vi.fn().mockResolvedValue(undefined),
+    },
     factions: {
       getAllByWorld: vi.fn().mockResolvedValue([]),
       getById: vi.fn().mockResolvedValue(undefined),
