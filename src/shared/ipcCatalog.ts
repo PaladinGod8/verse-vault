@@ -31,6 +31,7 @@ const HANDLERS = {
   characters: 'src/main/ipc/registerCharacterHandlers.ts',
   backgrounds: 'src/main/ipc/registerBackgroundHandlers.ts',
   items: 'src/main/ipc/registerItemHandlers.ts',
+  loreNotes: 'src/main/ipc/registerLoreNoteHandlers.ts',
   factions: 'src/main/ipc/registerFactionHandlers.ts',
   factionTypes: 'src/main/ipc/registerFactionTypeHandlers.ts',
   factionMembers: 'src/main/ipc/registerFactionMemberHandlers.ts',
@@ -271,6 +272,28 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
     ['ITEMS_DELETE', 'window.db.items.delete', 'DbApi.items.delete'],
     ['ITEMS_IMPORT_IMAGE', 'window.db.items.importImage', 'DbApi.items.importImage'],
     ['ITEMS_MARK_VIEWED', 'window.db.items.markViewed', 'DbApi.items.markViewed'],
+  ]),
+  ...entries('loreNotes', HANDLERS.loreNotes, [
+    [
+      'LORE_NOTES_GET_ALL_BY_WORLD',
+      'window.db.loreNotes.getAllByWorld',
+      'DbApi.loreNotes.getAllByWorld',
+    ],
+    ['LORE_NOTES_GET_BY_ID', 'window.db.loreNotes.getById', 'DbApi.loreNotes.getById'],
+    ['LORE_NOTES_ADD', 'window.db.loreNotes.add', 'DbApi.loreNotes.add'],
+    ['LORE_NOTES_UPDATE', 'window.db.loreNotes.update', 'DbApi.loreNotes.update'],
+    ['LORE_NOTES_DELETE', 'window.db.loreNotes.delete', 'DbApi.loreNotes.delete'],
+    [
+      'LORE_NOTES_IMPORT_IMAGE',
+      'window.db.loreNotes.importImage',
+      'DbApi.loreNotes.importImage',
+    ],
+    ['LORE_NOTES_MARK_VIEWED', 'window.db.loreNotes.markViewed', 'DbApi.loreNotes.markViewed'],
+    [
+      'LORE_NOTE_TAGS_GET_ALL_BY_WORLD',
+      'window.db.loreNotes.getAllTagsByWorld',
+      'DbApi.loreNotes.getAllTagsByWorld',
+    ],
   ]),
   ...entries('factions', HANDLERS.factions, [
     [

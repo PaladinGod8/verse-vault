@@ -35,6 +35,7 @@ export default defineConfig({
         'app.test.ts',
         'backgrounds.test.ts',
         'items.test.ts',
+        'loreNotes.test.ts',
         'settings.test.ts',
         'worlds.test.ts',
         'characters.test.ts',

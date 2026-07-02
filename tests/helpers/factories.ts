@@ -261,6 +261,21 @@ export function buildItem(overrides: Partial<Item> = {}): Item {
   };
 }
 
+export function buildLoreNote(overrides: Partial<LoreNote> = {}): LoreNote {
+  return {
+    id: getNextId(),
+    world_id: getNextId(),
+    name: 'Test Lore Note',
+    content: 'A test lore note body',
+    image_src: null,
+    tags: [],
+    last_viewed_at: null,
+    created_at: DEFAULT_TIMESTAMP,
+    updated_at: DEFAULT_TIMESTAMP,
+    ...overrides,
+  };
+}
+
 export function buildFaction(overrides: Partial<Faction> = {}): Faction {
   return {
     id: getNextId(),

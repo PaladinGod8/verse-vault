@@ -197,6 +197,26 @@ const dbApi: DbApi = {
     },
     markViewed: (id) => ipcRenderer.invoke(IPC.ITEMS_MARK_VIEWED, id),
   },
+  loreNotes: {
+    getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.LORE_NOTES_GET_ALL_BY_WORLD, worldId),
+    getById: (id) => ipcRenderer.invoke(IPC.LORE_NOTES_GET_BY_ID, id),
+    add: (data) => ipcRenderer.invoke(IPC.LORE_NOTES_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.LORE_NOTES_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.LORE_NOTES_DELETE, id),
+    importImage: (payload) => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('Lore note image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.LORE_NOTES_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: new Uint8Array(payload.bytes),
+      });
+    },
+    markViewed: (id) => ipcRenderer.invoke(IPC.LORE_NOTES_MARK_VIEWED, id),
+    getAllTagsByWorld: (worldId) =>
+      ipcRenderer.invoke(IPC.LORE_NOTE_TAGS_GET_ALL_BY_WORLD, worldId),
+  },
   factions: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTIONS_GET_ALL_BY_WORLD, worldId),
     getById: (id) => ipcRenderer.invoke(IPC.FACTIONS_GET_BY_ID, id),

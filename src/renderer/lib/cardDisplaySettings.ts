@@ -24,6 +24,8 @@ export const DEFAULT_CARD_DISPLAY_SETTINGS: Record<
   backgroundDetail: { width: 96, height: 96, lockAspectRatio: true },
   itemCard: { width: 320, height: 160, lockAspectRatio: true },
   itemDetail: { width: 96, height: 96, lockAspectRatio: true },
+  loreNoteCard: { width: 320, height: 160, lockAspectRatio: true },
+  loreNoteDetail: { width: 96, height: 96, lockAspectRatio: true },
   characterCard: { width: 320, height: 160, lockAspectRatio: true },
   factionCard: { width: 320, height: 160, lockAspectRatio: true },
   characterDetail: { width: 96, height: 96, lockAspectRatio: true },

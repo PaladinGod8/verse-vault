@@ -22,6 +22,7 @@ import { registerFactionRelationshipHandlers } from './main/ipc/registerFactionR
 import { registerFactionTypeHandlers } from './main/ipc/registerFactionTypeHandlers';
 import { registerItemHandlers } from './main/ipc/registerItemHandlers';
 import { registerLevelHandlers } from './main/ipc/registerLevelHandlers';
+import { registerLoreNoteHandlers } from './main/ipc/registerLoreNoteHandlers';
 import { registerSceneHandlers } from './main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from './main/ipc/registerSessionHandlers';
 import { registerSettingsHandlers } from './main/ipc/registerSettingsHandlers';
@@ -36,6 +37,7 @@ const WORLD_IMAGE_HOST = 'world-images';
 const CHARACTER_IMAGE_HOST = 'character-images';
 const BACKGROUND_IMAGE_HOST = 'background-images';
 const ITEM_IMAGE_HOST = 'item-images';
+const LORE_NOTE_IMAGE_HOST = 'lore-note-images';
 const FACTION_IMAGE_HOST = 'faction-images';
 const IS_DEV = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
@@ -63,6 +65,8 @@ function registerTokenImageProtocol(): void {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'background-images'));
     } else if (requestUrl.hostname === ITEM_IMAGE_HOST) {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'item-images'));
+    } else if (requestUrl.hostname === LORE_NOTE_IMAGE_HOST) {
+      imagesDir = path.resolve(path.join(app.getPath('userData'), 'lore-note-images'));
     } else if (requestUrl.hostname === FACTION_IMAGE_HOST) {
       imagesDir = path.resolve(path.join(app.getPath('userData'), 'faction-images'));
     } else {
@@ -144,6 +148,7 @@ function registerIpcHandlers() {
   registerCharacterHandlers(db);
   registerBackgroundHandlers(db);
   registerItemHandlers(db);
+  registerLoreNoteHandlers(db);
   registerCharacterRelationshipHandlers(db);
   registerFactionHandlers(db);
   registerFactionTypeHandlers(db);

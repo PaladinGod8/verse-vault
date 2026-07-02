@@ -130,6 +130,33 @@ function createWorldCodexTables(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_items_world_id
       ON items(world_id);
+
+    CREATE TABLE IF NOT EXISTS lore_notes (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name           TEXT    NOT NULL,
+      content        TEXT,
+      image_src      TEXT,
+      last_viewed_at TEXT,
+      created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lore_notes_world_id
+      ON lore_notes(world_id);
+
+    CREATE TABLE IF NOT EXISTS lore_note_tags (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      lore_note_id INTEGER NOT NULL REFERENCES lore_notes(id) ON DELETE CASCADE,
+      world_id     INTEGER NOT NULL,
+      tag_name     TEXT    NOT NULL
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_lore_note_tags_unique
+      ON lore_note_tags(lore_note_id, tag_name COLLATE NOCASE);
+
+    CREATE INDEX IF NOT EXISTS idx_lore_note_tags_world_tag
+      ON lore_note_tags(world_id, tag_name COLLATE NOCASE);
   `);
 }
 

@@ -39,6 +39,13 @@ export type ItemUpsertPayload = {
   image_src?: string | null;
 };
 
+export type LoreNoteUpsertPayload = {
+  name?: string;
+  content?: string | null;
+  image_src?: string | null;
+  tags?: string[];
+};
+
 export type FactionMemberInput = { character_id: number; role: string; };
 export type FactionMembershipByFaction = FactionMember & { character_name: string; };
 export type FactionMembershipByCharacter = FactionMember & { faction_name: string; };

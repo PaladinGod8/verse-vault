@@ -14,6 +14,7 @@ import { registerFactionRelationshipHandlers } from '../../../src/main/ipc/regis
 import { registerFactionTypeHandlers } from '../../../src/main/ipc/registerFactionTypeHandlers';
 import { registerItemHandlers } from '../../../src/main/ipc/registerItemHandlers';
 import { registerLevelHandlers } from '../../../src/main/ipc/registerLevelHandlers';
+import { registerLoreNoteHandlers } from '../../../src/main/ipc/registerLoreNoteHandlers';
 import { registerSceneHandlers } from '../../../src/main/ipc/registerSceneHandlers';
 import { registerSessionHandlers } from '../../../src/main/ipc/registerSessionHandlers';
 import { registerSettingsHandlers } from '../../../src/main/ipc/registerSettingsHandlers';
@@ -278,6 +279,20 @@ describe('IPC registrar channel wiring', () => {
         ],
       },
       {
+        name: 'loreNotes',
+        register: () => registerLoreNoteHandlers(dbMock),
+        expected: [
+          IPC.LORE_NOTES_GET_ALL_BY_WORLD,
+          IPC.LORE_NOTES_GET_BY_ID,
+          IPC.LORE_NOTES_MARK_VIEWED,
+          IPC.LORE_NOTE_TAGS_GET_ALL_BY_WORLD,
+          IPC.LORE_NOTES_ADD,
+          IPC.LORE_NOTES_UPDATE,
+          IPC.LORE_NOTES_DELETE,
+          IPC.LORE_NOTES_IMPORT_IMAGE,
+        ],
+      },
+      {
         name: 'factions',
         register: () => registerFactionHandlers(dbMock),
         expected: [
@@ -368,6 +383,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerCharacterHandlers(dbMock),
       () => registerBackgroundHandlers(dbMock),
       () => registerItemHandlers(dbMock),
+      () => registerLoreNoteHandlers(dbMock),
       () => registerFactionHandlers(dbMock),
       () => registerFactionTypeHandlers(dbMock),
       () => registerFactionMemberHandlers(dbMock),

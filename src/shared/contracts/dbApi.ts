@@ -64,6 +64,16 @@ export const DB_API_METHODS = {
   ],
   backgrounds: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
   items: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
+  loreNotes: [
+    'getAllByWorld',
+    'getById',
+    'add',
+    'update',
+    'delete',
+    'importImage',
+    'markViewed',
+    'getAllTagsByWorld',
+  ],
   factions: ['getAllByWorld', 'getById', 'add', 'update', 'delete', 'importImage', 'markViewed'],
   factionTypes: ['getAllByWorld', 'add', 'rename', 'delete'],
   factionMembers: [

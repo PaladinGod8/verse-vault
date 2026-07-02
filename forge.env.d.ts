@@ -47,6 +47,7 @@ declare global {
   type Character = DomainTypes.Character;
   type Background = DomainTypes.Background;
   type Item = DomainTypes.Item;
+  type LoreNote = DomainTypes.LoreNote;
   type Faction = DomainTypes.Faction;
   type FactionType = DomainTypes.FactionType;
   type FactionMember = DomainTypes.FactionMember;

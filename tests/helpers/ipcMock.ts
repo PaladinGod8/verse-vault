@@ -146,6 +146,18 @@ export function createMockDb(): DbApi {
       }),
       markViewed: vi.fn().mockResolvedValue(undefined),
     },
+    loreNotes: {
+      getAllByWorld: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue({ id: 1 } as LoreNote),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      importImage: vi.fn().mockResolvedValue({
+        image_src: 'vv-media://lore-note-images/mock.png',
+      }),
+      markViewed: vi.fn().mockResolvedValue(undefined),
+      getAllTagsByWorld: vi.fn().mockResolvedValue([]),
+    },
     factions: {
       getAllByWorld: vi.fn().mockResolvedValue([]),
       getById: vi.fn().mockResolvedValue(undefined),

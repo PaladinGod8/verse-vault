@@ -8,6 +8,7 @@ import type {
   FactionMembershipByFaction,
   FactionUpsertPayload,
   ItemUpsertPayload,
+  LoreNoteUpsertPayload,
   PrimaryFactionMembership,
   RosterReplaceResult,
 } from './dbApiPayloads';
@@ -27,6 +28,7 @@ import type {
   FactionType,
   Item,
   Level,
+  LoreNote,
   Scene,
   Session,
   StatBlock,
@@ -325,6 +327,16 @@ export interface DbApi extends DbApiRelationships {
     delete(id: number): Promise<{ id: number; }>;
     importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
     markViewed(id: number): Promise<Item>;
+  };
+  loreNotes: {
+    getAllByWorld(worldId: number): Promise<LoreNote[]>;
+    getById(id: number): Promise<LoreNote | null>;
+    add(data: LoreNoteUpsertPayload & { world_id: number; name: string; }): Promise<LoreNote>;
+    update(id: number, data: LoreNoteUpsertPayload): Promise<LoreNote>;
+    delete(id: number): Promise<{ id: number; }>;
+    importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+    markViewed(id: number): Promise<LoreNote>;
+    getAllTagsByWorld(worldId: number): Promise<string[]>;
   };
   factions: {
     getAllByWorld(worldId: number): Promise<Faction[]>;

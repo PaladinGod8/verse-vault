@@ -23,6 +23,8 @@ import FactionsPage from './pages/FactionsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import ItemsPage from './pages/ItemsPage';
 import LevelsPage from './pages/LevelsPage';
+import LoreNoteDetailPage from './pages/LoreNoteDetailPage';
+import LoreNotesPage from './pages/LoreNotesPage';
 import ScenesPage from './pages/ScenesPage';
 import SessionsPage from './pages/SessionsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -57,6 +59,11 @@ export default function App() {
             <Route
               path='/world/:id/items/:itemId'
               element={<ItemDetailPage />}
+            />
+            <Route path='/world/:id/lore-notes' element={<LoreNotesPage />} />
+            <Route
+              path='/world/:id/lore-notes/:loreNoteId'
+              element={<LoreNoteDetailPage />}
             />
             <Route path='/world/:id/characters' element={<CharactersPage />} />
             <Route
