@@ -29,6 +29,7 @@ const HANDLERS = {
   scenes: 'src/main/ipc/registerSceneHandlers.ts',
   statblocks: 'src/main/ipc/registerStatBlockHandlers.ts',
   characters: 'src/main/ipc/registerCharacterHandlers.ts',
+  backgrounds: 'src/main/ipc/registerBackgroundHandlers.ts',
   factions: 'src/main/ipc/registerFactionHandlers.ts',
   factionTypes: 'src/main/ipc/registerFactionTypeHandlers.ts',
   factionMembers: 'src/main/ipc/registerFactionMemberHandlers.ts',
@@ -243,6 +244,23 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'DbApi.characters.searchByWorld',
     ],
     ['CHARACTERS_MARK_VIEWED', 'window.db.characters.markViewed', 'DbApi.characters.markViewed'],
+  ]),
+  ...entries('backgrounds', HANDLERS.backgrounds, [
+    [
+      'BACKGROUNDS_GET_ALL_BY_WORLD',
+      'window.db.backgrounds.getAllByWorld',
+      'DbApi.backgrounds.getAllByWorld',
+    ],
+    ['BACKGROUNDS_GET_BY_ID', 'window.db.backgrounds.getById', 'DbApi.backgrounds.getById'],
+    ['BACKGROUNDS_ADD', 'window.db.backgrounds.add', 'DbApi.backgrounds.add'],
+    ['BACKGROUNDS_UPDATE', 'window.db.backgrounds.update', 'DbApi.backgrounds.update'],
+    ['BACKGROUNDS_DELETE', 'window.db.backgrounds.delete', 'DbApi.backgrounds.delete'],
+    [
+      'BACKGROUNDS_IMPORT_IMAGE',
+      'window.db.backgrounds.importImage',
+      'DbApi.backgrounds.importImage',
+    ],
+    ['BACKGROUNDS_MARK_VIEWED', 'window.db.backgrounds.markViewed', 'DbApi.backgrounds.markViewed'],
   ]),
   ...entries('factions', HANDLERS.factions, [
     [

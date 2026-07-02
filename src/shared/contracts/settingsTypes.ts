@@ -3,9 +3,11 @@
 export type AppThemePreference = 'light' | 'dark' | 'custom';
 export type AppCardSize = 'small' | 'medium' | 'large';
 export type CardSortMethod = 'alphabetical' | 'recentlyViewed';
-export type CardSortListKey = 'characters' | 'factions' | 'worlds';
+export type CardSortListKey = 'backgrounds' | 'characters' | 'factions' | 'worlds';
 export type CardSortPreferences = Partial<Record<CardSortListKey, CardSortMethod>>;
 export type AppCardDisplaySurface =
+  | 'backgroundCard'
+  | 'backgroundDetail'
   | 'characterCard'
   | 'factionCard'
   | 'characterDetail'

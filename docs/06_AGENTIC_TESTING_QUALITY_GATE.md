@@ -148,6 +148,8 @@ Current route and journey status:
 | `/world/:id/levels`                                                               | Level CRUD                                                  | Yes        | Yes              | High        | Covered |
 | `/world/:id/characters`                                                           | Character create and search                                 | Yes        | Yes              | High        | Covered |
 | `/world/:id/characters/:characterId`                                              | Detail edit, image, primary faction                         | Yes        | Yes              | High        | Covered |
+| `/world/:id/backgrounds`                                                          | Background create, search, sort, and pagination             | Yes        | Yes              | High        | Covered |
+| `/world/:id/backgrounds/:backgroundId`                                            | Detail render, mark-viewed, and edit                        | Yes        | Yes              | High        | Covered |
 | `/world/:id/factions`                                                             | Type management, filter, CRUD                               | Yes        | Yes              | High        | Covered |
 | `/world/:id/factions/:factionId`                                                  | Detail edit and membership                                  | Yes        | Yes              | High        | Covered |
 | `/world/:id/campaign/:campaignId/scenes`                                          | Campaign-wide scene listing and drill-in                    | Yes        | Yes              | High        | Covered |

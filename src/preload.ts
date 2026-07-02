@@ -161,6 +161,24 @@ const dbApi: DbApi = {
     searchByWorld: (query) => ipcRenderer.invoke(IPC.CHARACTERS_SEARCH_BY_WORLD, query),
     markViewed: (id) => ipcRenderer.invoke(IPC.CHARACTERS_MARK_VIEWED, id),
   },
+  backgrounds: {
+    getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.BACKGROUNDS_GET_ALL_BY_WORLD, worldId),
+    getById: (id) => ipcRenderer.invoke(IPC.BACKGROUNDS_GET_BY_ID, id),
+    add: (data) => ipcRenderer.invoke(IPC.BACKGROUNDS_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.BACKGROUNDS_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.BACKGROUNDS_DELETE, id),
+    importImage: (payload) => {
+      if (!(payload.bytes instanceof Uint8Array)) {
+        throw new Error('Background image bytes must be a Uint8Array');
+      }
+      return ipcRenderer.invoke(IPC.BACKGROUNDS_IMPORT_IMAGE, {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        bytes: new Uint8Array(payload.bytes),
+      });
+    },
+    markViewed: (id) => ipcRenderer.invoke(IPC.BACKGROUNDS_MARK_VIEWED, id),
+  },
   factions: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.FACTIONS_GET_ALL_BY_WORLD, worldId),
     getById: (id) => ipcRenderer.invoke(IPC.FACTIONS_GET_BY_ID, id),

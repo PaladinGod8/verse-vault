@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { IPC } from '../../../src/shared/ipcChannels';
 
 describe('IPC channels', () => {
-  it('defines all expected verse, world, level, ability, campaign, battlemap, arc, act, session, scene, statblock, and character channels', () => {
+  it('defines all expected verse, world, level, ability, campaign, battlemap, arc, act, session, scene, statblock, character, background, and faction channels', () => {
     expect(IPC).toEqual({
       VERSES_GET_ALL: 'db:verses:getAll',
       VERSES_ADD: 'db:verses:add',
@@ -94,6 +94,13 @@ describe('IPC channels', () => {
       CHARACTERS_IMPORT_IMAGE: 'db:characters:importImage',
       CHARACTERS_SEARCH_BY_WORLD: 'db:characters:searchByWorld',
       CHARACTERS_MARK_VIEWED: 'db:characters:markViewed',
+      BACKGROUNDS_GET_ALL_BY_WORLD: 'db:backgrounds:getAllByWorld',
+      BACKGROUNDS_GET_BY_ID: 'db:backgrounds:getById',
+      BACKGROUNDS_ADD: 'db:backgrounds:add',
+      BACKGROUNDS_UPDATE: 'db:backgrounds:update',
+      BACKGROUNDS_DELETE: 'db:backgrounds:delete',
+      BACKGROUNDS_IMPORT_IMAGE: 'db:backgrounds:importImage',
+      BACKGROUNDS_MARK_VIEWED: 'db:backgrounds:markViewed',
       FACTIONS_GET_ALL_BY_WORLD: 'db:factions:getAllByWorld',
       FACTIONS_GET_BY_ID: 'db:factions:getById',
       FACTIONS_ADD: 'db:factions:add',

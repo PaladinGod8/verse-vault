@@ -233,6 +233,20 @@ export function buildCharacter(overrides: Partial<Character> = {}): Character {
   };
 }
 
+export function buildBackground(overrides: Partial<Background> = {}): Background {
+  return {
+    id: getNextId(),
+    world_id: getNextId(),
+    name: 'Test Background',
+    description: 'A test background description',
+    image_src: null,
+    last_viewed_at: null,
+    created_at: DEFAULT_TIMESTAMP,
+    updated_at: DEFAULT_TIMESTAMP,
+    ...overrides,
+  };
+}
+
 export function buildFaction(overrides: Partial<Faction> = {}): Faction {
   return {
     id: getNextId(),

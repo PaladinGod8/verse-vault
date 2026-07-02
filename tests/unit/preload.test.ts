@@ -37,6 +37,7 @@ describe('preload', () => {
         acts: expect.any(Object),
         sessions: expect.any(Object),
         scenes: expect.any(Object),
+        backgrounds: expect.any(Object),
       }),
     );
 
@@ -499,6 +500,73 @@ describe('preload', () => {
 
     await api.factions.markViewed(2);
     expect(invokeMock).toHaveBeenCalledWith(IPC.FACTIONS_MARK_VIEWED, 2);
+  });
+
+  it('forwards backgrounds CRUD calls to their IPC channels', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.backgrounds.getAllByWorld(1);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_GET_ALL_BY_WORLD, 1);
+
+    await api.backgrounds.getById(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_GET_BY_ID, 2);
+
+    await api.backgrounds.add({ world_id: 1, name: 'Royal Guard' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_ADD, {
+      world_id: 1,
+      name: 'Royal Guard',
+    });
+
+    await api.backgrounds.update(2, { name: 'Updated' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_UPDATE, 2, {
+      name: 'Updated',
+    });
+
+    await api.backgrounds.delete(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_DELETE, 2);
+
+    await api.backgrounds.markViewed(2);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_MARK_VIEWED, 2);
+  });
+
+  it('forwards backgrounds.importImage to BACKGROUNDS_IMPORT_IMAGE', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const payload: TokenImageImportPayload = {
+      fileName: 'background.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([7, 8, 9]),
+    };
+
+    await api.backgrounds.importImage(payload);
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.BACKGROUNDS_IMPORT_IMAGE, {
+      fileName: 'background.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([7, 8, 9]),
+    });
+  });
+
+  it('throws error when backgrounds.importImage receives non-Uint8Array bytes', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    const invalidPayload = {
+      fileName: 'background.png',
+      mimeType: 'image/png',
+      bytes: [7, 8, 9],
+    } as unknown as TokenImageImportPayload;
+
+    try {
+      await api.backgrounds.importImage(invalidPayload);
+      expect.fail('Should have thrown an error');
+    } catch (err) {
+      expect((err as Error).message).toBe(
+        'Background image bytes must be a Uint8Array',
+      );
+    }
   });
 
   it('forwards factions.importImage to FACTIONS_IMPORT_IMAGE', async () => {

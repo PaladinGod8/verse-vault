@@ -10,6 +10,8 @@ import { AppSettingsProvider } from './hooks/useAppSettings';
 import AbilitiesPage from './pages/AbilitiesPage';
 import ActsPage from './pages/ActsPage';
 import ArcsPage from './pages/ArcsPage';
+import BackgroundDetailPage from './pages/BackgroundDetailPage';
+import BackgroundsPage from './pages/BackgroundsPage';
 import BattleMapRuntimePage from './pages/BattleMapRuntimePage';
 import BattleMapsPage from './pages/BattleMapsPage';
 import CampaignScenesPage from './pages/CampaignScenesPage';
@@ -44,6 +46,11 @@ export default function App() {
             <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
             <Route path='/world/:id/tokens' element={<TokensPage />} />
             <Route path='/world/:id/statblocks' element={<StatBlocksPage />} />
+            <Route path='/world/:id/backgrounds' element={<BackgroundsPage />} />
+            <Route
+              path='/world/:id/backgrounds/:backgroundId'
+              element={<BackgroundDetailPage />}
+            />
             <Route path='/world/:id/characters' element={<CharactersPage />} />
             <Route
               path='/world/:id/characters/:characterId'

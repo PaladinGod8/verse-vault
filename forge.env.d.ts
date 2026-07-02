@@ -45,6 +45,7 @@ declare global {
   type StatBlockConfig = DomainTypes.StatBlockConfig;
   type StatBlock = DomainTypes.StatBlock;
   type Character = DomainTypes.Character;
+  type Background = DomainTypes.Background;
   type Faction = DomainTypes.Faction;
   type FactionType = DomainTypes.FactionType;
   type FactionMember = DomainTypes.FactionMember;

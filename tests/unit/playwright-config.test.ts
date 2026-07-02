@@ -32,6 +32,7 @@ describe('playwright project worker grouping', () => {
     const expected = [
       'abilities.test.ts',
       'app.test.ts',
+      'backgrounds.test.ts',
       'character-detail.test.ts',
       'characters.test.ts',
       'arc-act.test.ts',

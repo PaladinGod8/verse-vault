@@ -27,6 +27,12 @@ export type FactionUpsertPayload = RichEntityUpsertPayload & {
   parent_faction_id?: number | null;
 };
 
+export type BackgroundUpsertPayload = {
+  name?: string;
+  description?: string | null;
+  image_src?: string | null;
+};
+
 export type FactionMemberInput = { character_id: number; role: string; };
 export type FactionMembershipByFaction = FactionMember & { character_name: string; };
 export type FactionMembershipByCharacter = FactionMember & { faction_name: string; };

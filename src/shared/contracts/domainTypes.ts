@@ -279,6 +279,17 @@ export interface Character {
   updated_at: string;
 }
 
+export interface Background {
+  id: number;
+  world_id: number;
+  name: string;
+  description: string | null;
+  image_src: string | null;
+  last_viewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Faction {
   id: number;
   world_id: number;

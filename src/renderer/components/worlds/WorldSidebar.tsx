@@ -171,6 +171,27 @@ function FactionsIcon() {
   );
 }
 
+function BookOpenIcon() {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='20'
+      height='20'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      <path d='M12 7v14' />
+      <path d='M3 18V5a2 2 0 0 1 2-2h6v18H5a2 2 0 0 1-2-2Z' />
+      <path d='M21 18V5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2Z' />
+    </svg>
+  );
+}
+
 function BarChartIcon() {
   return (
     <svg
@@ -272,6 +293,19 @@ export default function WorldSidebar({ worldId }: WorldSidebarProps) {
       >
         <ShieldIcon />
         <span>StatBlocks</span>
+      </NavLink>
+      <NavLink
+        to={`/world/${worldId}/backgrounds`}
+        className={({ isActive }) =>
+          [
+            'flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-xs leading-tight font-medium transition',
+            isActive
+              ? 'bg-slate-100 text-slate-900'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
+          ].join(' ')}
+      >
+        <BookOpenIcon />
+        <span>Backgrounds</span>
       </NavLink>
       <NavLink
         to={`/world/${worldId}/characters`}

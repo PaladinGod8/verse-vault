@@ -20,6 +20,8 @@ export const DEFAULT_CARD_DISPLAY_SETTINGS: Record<
   AppCardDisplaySurface,
   ResolvedCardDisplayDimensions
 > = {
+  backgroundCard: { width: 320, height: 160, lockAspectRatio: true },
+  backgroundDetail: { width: 96, height: 96, lockAspectRatio: true },
   characterCard: { width: 320, height: 160, lockAspectRatio: true },
   factionCard: { width: 320, height: 160, lockAspectRatio: true },
   characterDetail: { width: 96, height: 96, lockAspectRatio: true },

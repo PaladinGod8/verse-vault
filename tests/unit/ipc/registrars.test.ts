@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerAbilityHandlers } from '../../../src/main/ipc/registerAbilityHandlers';
 import { registerActHandlers } from '../../../src/main/ipc/registerActHandlers';
 import { registerArcHandlers } from '../../../src/main/ipc/registerArcHandlers';
+import { registerBackgroundHandlers } from '../../../src/main/ipc/registerBackgroundHandlers';
 import { registerBattleMapHandlers } from '../../../src/main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from '../../../src/main/ipc/registerCampaignHandlers';
 import { registerCharacterHandlers } from '../../../src/main/ipc/registerCharacterHandlers';
@@ -250,6 +251,19 @@ describe('IPC registrar channel wiring', () => {
         ],
       },
       {
+        name: 'backgrounds',
+        register: () => registerBackgroundHandlers(dbMock),
+        expected: [
+          IPC.BACKGROUNDS_GET_ALL_BY_WORLD,
+          IPC.BACKGROUNDS_GET_BY_ID,
+          IPC.BACKGROUNDS_MARK_VIEWED,
+          IPC.BACKGROUNDS_ADD,
+          IPC.BACKGROUNDS_UPDATE,
+          IPC.BACKGROUNDS_DELETE,
+          IPC.BACKGROUNDS_IMPORT_IMAGE,
+        ],
+      },
+      {
         name: 'factions',
         register: () => registerFactionHandlers(dbMock),
         expected: [
@@ -338,6 +352,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerAbilityHandlers(dbMock),
       () => registerStatBlockHandlers(dbMock),
       () => registerCharacterHandlers(dbMock),
+      () => registerBackgroundHandlers(dbMock),
       () => registerFactionHandlers(dbMock),
       () => registerFactionTypeHandlers(dbMock),
       () => registerFactionMemberHandlers(dbMock),

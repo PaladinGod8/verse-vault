@@ -33,6 +33,7 @@ export default defineConfig({
       name: 'smoke',
       testMatch: [
         'app.test.ts',
+        'backgrounds.test.ts',
         'settings.test.ts',
         'worlds.test.ts',
         'characters.test.ts',
