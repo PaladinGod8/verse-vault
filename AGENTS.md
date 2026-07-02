@@ -148,6 +148,8 @@ One-off hook bypass commands (use sparingly):
 
 CI incidents: use `docs/CI_INCIDENTS.md`. Unless the user asks otherwise, do not rerun long pipelines when targeted checks are enough.
 
+Safe, low-risk, run freely without asking first: `yarn type-check` / `yarn tsc --noEmit`, `yarn docs:generate`, `yarn docs:check` (and their underlying scripts `node scripts/generate-codebase-map.cjs`, `node scripts/generate-ipc-contract-docs.cjs`). Claude Code has these allow-listed in `.claude/settings.json`; Codex has no per-command allowlist, so this is a convention only — confirm with the user before assuming zero-prompt execution on Codex.
+
 ## Agent Setup: Codex and Claude
 
 Both agents must be able to set up from this repo alone, with no tribal knowledge.
