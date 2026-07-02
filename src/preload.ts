@@ -197,6 +197,20 @@ const dbApi: DbApi = {
     setPrimary: (characterId, factionId) =>
       ipcRenderer.invoke(IPC.FACTION_MEMBERS_SET_PRIMARY, characterId, factionId),
   },
+  characterRelationships: {
+    getAllByCharacter: (characterId) =>
+      ipcRenderer.invoke(IPC.CHARACTER_RELATIONSHIPS_GET_ALL_BY_CHARACTER, characterId),
+    add: (data) => ipcRenderer.invoke(IPC.CHARACTER_RELATIONSHIPS_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.CHARACTER_RELATIONSHIPS_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.CHARACTER_RELATIONSHIPS_DELETE, id),
+  },
+  factionRelationships: {
+    getAllByFaction: (factionId) =>
+      ipcRenderer.invoke(IPC.FACTION_RELATIONSHIPS_GET_ALL_BY_FACTION, factionId),
+    add: (data) => ipcRenderer.invoke(IPC.FACTION_RELATIONSHIPS_ADD, data),
+    update: (id, data) => ipcRenderer.invoke(IPC.FACTION_RELATIONSHIPS_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC.FACTION_RELATIONSHIPS_DELETE, id),
+  },
   settings: {
     get: () => ipcRenderer.invoke(IPC.SETTINGS_GET),
     update: (config) => ipcRenderer.invoke(IPC.SETTINGS_UPDATE, config),

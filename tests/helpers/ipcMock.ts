@@ -148,6 +148,18 @@ export function createMockDb(): DbApi {
       setForFaction: vi.fn().mockResolvedValue({ faction_id: 1 }),
       setPrimary: vi.fn().mockResolvedValue({ character_id: 1, faction_id: 1 }),
     },
+    characterRelationships: {
+      getAllByCharacter: vi.fn().mockResolvedValue([]),
+      add: vi.fn().mockResolvedValue({ id: 1 } as CharacterRelationship),
+      update: vi.fn().mockResolvedValue({ id: 1 } as CharacterRelationship),
+      delete: vi.fn().mockResolvedValue({ id: 1 }),
+    },
+    factionRelationships: {
+      getAllByFaction: vi.fn().mockResolvedValue([]),
+      add: vi.fn().mockResolvedValue({ id: 1 } as FactionRelationship),
+      update: vi.fn().mockResolvedValue({ id: 1 } as FactionRelationship),
+      delete: vi.fn().mockResolvedValue({ id: 1 }),
+    },
     settings: {
       get: vi.fn().mockResolvedValue({
         id: 1,

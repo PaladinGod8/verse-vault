@@ -6,8 +6,10 @@ import { registerArcHandlers } from '../../../src/main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from '../../../src/main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from '../../../src/main/ipc/registerCampaignHandlers';
 import { registerCharacterHandlers } from '../../../src/main/ipc/registerCharacterHandlers';
+import { registerCharacterRelationshipHandlers } from '../../../src/main/ipc/registerCharacterRelationshipHandlers';
 import { registerFactionHandlers } from '../../../src/main/ipc/registerFactionHandlers';
 import { registerFactionMemberHandlers } from '../../../src/main/ipc/registerFactionMemberHandlers';
+import { registerFactionRelationshipHandlers } from '../../../src/main/ipc/registerFactionRelationshipHandlers';
 import { registerFactionTypeHandlers } from '../../../src/main/ipc/registerFactionTypeHandlers';
 import { registerLevelHandlers } from '../../../src/main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from '../../../src/main/ipc/registerSceneHandlers';
@@ -282,6 +284,26 @@ describe('IPC registrar channel wiring', () => {
         ],
       },
       {
+        name: 'characterRelationships',
+        register: () => registerCharacterRelationshipHandlers(dbMock),
+        expected: [
+          IPC.CHARACTER_RELATIONSHIPS_GET_ALL_BY_CHARACTER,
+          IPC.CHARACTER_RELATIONSHIPS_ADD,
+          IPC.CHARACTER_RELATIONSHIPS_UPDATE,
+          IPC.CHARACTER_RELATIONSHIPS_DELETE,
+        ],
+      },
+      {
+        name: 'factionRelationships',
+        register: () => registerFactionRelationshipHandlers(dbMock),
+        expected: [
+          IPC.FACTION_RELATIONSHIPS_GET_ALL_BY_FACTION,
+          IPC.FACTION_RELATIONSHIPS_ADD,
+          IPC.FACTION_RELATIONSHIPS_UPDATE,
+          IPC.FACTION_RELATIONSHIPS_DELETE,
+        ],
+      },
+      {
         name: 'settings',
         register: () => registerSettingsHandlers(dbMock),
         expected: [
@@ -319,6 +341,8 @@ describe('IPC registrar channel wiring', () => {
       () => registerFactionHandlers(dbMock),
       () => registerFactionTypeHandlers(dbMock),
       () => registerFactionMemberHandlers(dbMock),
+      () => registerCharacterRelationshipHandlers(dbMock),
+      () => registerFactionRelationshipHandlers(dbMock),
       () => registerSettingsHandlers(dbMock),
     ];
 

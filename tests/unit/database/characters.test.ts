@@ -134,3 +134,42 @@ describe('Characters schema migration', () => {
     );
   });
 });
+
+describe('Character relationships schema migration', () => {
+  it('creates character_relationships table with dual label columns and guard constraints', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+
+    getDatabase();
+    closeDatabase();
+
+    const sql = execMock.mock.calls.map(([s]) => String(s)).join('\n');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS character_relationships');
+    expect(sql).toContain(
+      'character_id         INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE',
+    );
+    expect(sql).toContain(
+      'related_character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE',
+    );
+    expect(sql).toContain('character_label      TEXT    NOT NULL');
+    expect(sql).toContain('related_label        TEXT    NOT NULL');
+    expect(sql).toContain('CHECK (character_id != related_character_id)');
+    expect(sql).toContain(
+      'UNIQUE (character_id, related_character_id, character_label, related_label)',
+    );
+  });
+
+  it('creates the expected character_relationships indexes', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+
+    getDatabase();
+    closeDatabase();
+
+    const sql = execMock.mock.calls.map(([s]) => String(s)).join('\n');
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_character_relationships_character_id ON character_relationships(character_id)',
+    );
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_character_relationships_related_character_id ON character_relationships(related_character_id)',
+    );
+  });
+});

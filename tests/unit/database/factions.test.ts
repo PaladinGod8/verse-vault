@@ -164,3 +164,40 @@ describe('Factions schema migration', () => {
     }
   });
 });
+
+describe('Faction relationships schema migration', () => {
+  it('creates faction_relationships table with dual label columns and guard constraints', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+    getDatabase();
+    closeDatabase();
+
+    const sql = execMock.mock.calls.map(([s]) => String(s)).join('\n');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS faction_relationships');
+    expect(sql).toContain(
+      'faction_id         INTEGER NOT NULL REFERENCES factions(id) ON DELETE CASCADE',
+    );
+    expect(sql).toContain(
+      'related_faction_id INTEGER NOT NULL REFERENCES factions(id) ON DELETE CASCADE',
+    );
+    expect(sql).toContain('faction_label      TEXT    NOT NULL');
+    expect(sql).toContain('related_label      TEXT    NOT NULL');
+    expect(sql).toContain('CHECK (faction_id != related_faction_id)');
+    expect(sql).toContain(
+      'UNIQUE (faction_id, related_faction_id, faction_label, related_label)',
+    );
+  });
+
+  it('creates the expected faction_relationships indexes', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule();
+    getDatabase();
+    closeDatabase();
+
+    const sql = execMock.mock.calls.map(([s]) => String(s)).join('\n');
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_faction_relationships_faction_id ON faction_relationships(faction_id)',
+    );
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_faction_relationships_related_faction_id ON faction_relationships(related_faction_id)',
+    );
+  });
+});

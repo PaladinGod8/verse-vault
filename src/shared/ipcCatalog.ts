@@ -32,6 +32,8 @@ const HANDLERS = {
   factions: 'src/main/ipc/registerFactionHandlers.ts',
   factionTypes: 'src/main/ipc/registerFactionTypeHandlers.ts',
   factionMembers: 'src/main/ipc/registerFactionMemberHandlers.ts',
+  characterRelationships: 'src/main/ipc/registerCharacterRelationshipHandlers.ts',
+  factionRelationships: 'src/main/ipc/registerFactionRelationshipHandlers.ts',
   settings: 'src/main/ipc/registerSettingsHandlers.ts',
 } as const;
 
@@ -294,6 +296,50 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'FACTION_MEMBERS_SET_PRIMARY',
       'window.db.factionMembers.setPrimary',
       'DbApi.factionMembers.setPrimary',
+    ],
+  ]),
+  ...entries('characterRelationships', HANDLERS.characterRelationships, [
+    [
+      'CHARACTER_RELATIONSHIPS_GET_ALL_BY_CHARACTER',
+      'window.db.characterRelationships.getAllByCharacter',
+      'DbApi.characterRelationships.getAllByCharacter',
+    ],
+    [
+      'CHARACTER_RELATIONSHIPS_ADD',
+      'window.db.characterRelationships.add',
+      'DbApi.characterRelationships.add',
+    ],
+    [
+      'CHARACTER_RELATIONSHIPS_UPDATE',
+      'window.db.characterRelationships.update',
+      'DbApi.characterRelationships.update',
+    ],
+    [
+      'CHARACTER_RELATIONSHIPS_DELETE',
+      'window.db.characterRelationships.delete',
+      'DbApi.characterRelationships.delete',
+    ],
+  ]),
+  ...entries('factionRelationships', HANDLERS.factionRelationships, [
+    [
+      'FACTION_RELATIONSHIPS_GET_ALL_BY_FACTION',
+      'window.db.factionRelationships.getAllByFaction',
+      'DbApi.factionRelationships.getAllByFaction',
+    ],
+    [
+      'FACTION_RELATIONSHIPS_ADD',
+      'window.db.factionRelationships.add',
+      'DbApi.factionRelationships.add',
+    ],
+    [
+      'FACTION_RELATIONSHIPS_UPDATE',
+      'window.db.factionRelationships.update',
+      'DbApi.factionRelationships.update',
+    ],
+    [
+      'FACTION_RELATIONSHIPS_DELETE',
+      'window.db.factionRelationships.delete',
+      'DbApi.factionRelationships.delete',
     ],
   ]),
   ...entries('settings', HANDLERS.settings, [

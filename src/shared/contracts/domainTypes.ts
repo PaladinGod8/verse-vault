@@ -310,6 +310,26 @@ export interface FactionMember {
   created_at: string;
 }
 
+export interface CharacterRelationship {
+  id: number;
+  character_id: number;
+  related_character_id: number;
+  character_label: string;
+  related_label: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FactionRelationship {
+  id: number;
+  faction_id: number;
+  related_faction_id: number;
+  faction_label: string;
+  related_label: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AppSettings {
   id: number;
   config: string; // JSON text of AppSettingsConfig

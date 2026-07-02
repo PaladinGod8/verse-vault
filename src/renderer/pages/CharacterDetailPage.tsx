@@ -5,6 +5,7 @@ import type {
   CharacterWikiSummary,
 } from '../../shared/contracts/characterTypes';
 import CharacterForm from '../components/characters/CharacterForm';
+import CharacterRelationshipsPanel from '../components/characters/CharacterRelationshipsPanel';
 import CharacterWikiSummaryDetail from '../components/characters/CharacterWikiSummaryDetail';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
@@ -219,6 +220,8 @@ export default function CharacterDetailPage() {
                     </ul>
                   )}
               </div>
+
+              <CharacterRelationshipsPanel characterId={character.id} worldId={worldId} />
             </section>
           )
           : null}

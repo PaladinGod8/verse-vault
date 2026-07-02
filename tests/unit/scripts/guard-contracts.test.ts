@@ -29,6 +29,16 @@ function makeTempRepo(modifyCatalog: (source: string) => string): string {
     fs.readFileSync(path.join(process.cwd(), 'src/shared/contracts/dbApi.ts'), 'utf8'),
     'utf8',
   );
+  // dbApi.ts imports DB_API_RELATIONSHIP_METHODS as a runtime value (not just a type), so
+  // this sibling file must be copied too - unlike its other imports, it isn't erased by TS.
+  fs.writeFileSync(
+    path.join(tempDir, 'src/shared/contracts/dbApiRelationships.ts'),
+    fs.readFileSync(
+      path.join(process.cwd(), 'src/shared/contracts/dbApiRelationships.ts'),
+      'utf8',
+    ),
+    'utf8',
+  );
   fs.writeFileSync(
     path.join(tempDir, 'src/shared/ipcCatalog.ts'),
     modifyCatalog(

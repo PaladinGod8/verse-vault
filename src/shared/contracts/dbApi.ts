@@ -15,6 +15,7 @@ import type {
   PrimaryFactionMembership,
   RosterReplaceResult,
 } from './dbApiPayloads';
+import { DB_API_RELATIONSHIP_METHODS, type DbApiRelationships } from './dbApiRelationships';
 import type {
   Ability,
   AbilityChild,
@@ -106,10 +107,11 @@ export const DB_API_METHODS = {
     'setForFaction',
     'setPrimary',
   ],
+  ...DB_API_RELATIONSHIP_METHODS,
   settings: ['get', 'update'],
 } as const;
 
-export interface DbApi {
+export interface DbApi extends DbApiRelationships {
   verses: {
     getAll(): Promise<Verse[]>;
     add(data: { text: string; reference?: string; tags?: string; }): Promise<Verse>;

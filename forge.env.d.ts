@@ -48,6 +48,8 @@ declare global {
   type Faction = DomainTypes.Faction;
   type FactionType = DomainTypes.FactionType;
   type FactionMember = DomainTypes.FactionMember;
+  type CharacterRelationship = DomainTypes.CharacterRelationship;
+  type FactionRelationship = DomainTypes.FactionRelationship;
   type AppSettings = DomainTypes.AppSettings;
   type AppThemePreference = SettingsTypes.AppThemePreference;
   type AppCardSize = SettingsTypes.AppCardSize;

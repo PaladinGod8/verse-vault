@@ -55,6 +55,8 @@ export default defineConfig({
         'statblock-statistics.test.ts',
         'casting-range-overlay.test.ts',
         'factions.test.ts',
+        'characterRelationships.test.ts',
+        'factionRelationships.test.ts',
         'scenes.test.ts',
         'sessions.test.ts',
         'tokenMove.test.ts',

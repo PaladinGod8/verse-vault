@@ -14,8 +14,10 @@ import { registerArcHandlers } from './main/ipc/registerArcHandlers';
 import { registerBattleMapHandlers } from './main/ipc/registerBattleMapHandlers';
 import { registerCampaignHandlers } from './main/ipc/registerCampaignHandlers';
 import { registerCharacterHandlers } from './main/ipc/registerCharacterHandlers';
+import { registerCharacterRelationshipHandlers } from './main/ipc/registerCharacterRelationshipHandlers';
 import { registerFactionHandlers } from './main/ipc/registerFactionHandlers';
 import { registerFactionMemberHandlers } from './main/ipc/registerFactionMemberHandlers';
+import { registerFactionRelationshipHandlers } from './main/ipc/registerFactionRelationshipHandlers';
 import { registerFactionTypeHandlers } from './main/ipc/registerFactionTypeHandlers';
 import { registerLevelHandlers } from './main/ipc/registerLevelHandlers';
 import { registerSceneHandlers } from './main/ipc/registerSceneHandlers';
@@ -132,9 +134,11 @@ function registerIpcHandlers() {
   registerAbilityHandlers(db);
   registerStatBlockHandlers(db);
   registerCharacterHandlers(db);
+  registerCharacterRelationshipHandlers(db);
   registerFactionHandlers(db);
   registerFactionTypeHandlers(db);
   registerFactionMemberHandlers(db);
+  registerFactionRelationshipHandlers(db);
   registerSettingsHandlers(db);
 }
 

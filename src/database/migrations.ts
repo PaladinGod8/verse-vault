@@ -1,4 +1,6 @@
 import type Database from 'better-sqlite3';
+import { runRelationshipMigrations } from './relationshipMigrations';
+import { ensureTokenIndexes } from './tokenIndexMigrations';
 
 /**
  * Runs all additive, idempotent schema migrations in the order they must apply against a
@@ -11,8 +13,7 @@ export function runMigrations(db: Database.Database): void {
   runTokenWorldIdMigration(db);
   runTokenCampaignNullableMigration(db);
   runTokenGridTypeMigration(db);
-  ensureTokenCampaignIdIndex(db);
-  ensureTokenWorldIdIndex(db);
+  ensureTokenIndexes(db);
   runAbilitiesRangeShapeTargetMigration(db);
   runStatBlocksSchemaMigration(db);
   runStatBlockLinkageSchemaMigration(db);
@@ -22,6 +23,7 @@ export function runMigrations(db: Database.Database): void {
   runFactionsSchemaMigration(db);
   runFactionsLastViewedMigration(db);
   runFactionMembersSchemaMigration(db);
+  runRelationshipMigrations(db);
   ensureCharacterNameIndex(db);
 }
 
@@ -410,23 +412,10 @@ function runTokenGridTypeMigration(db: Database.Database): void {
   `);
 }
 
-function ensureTokenCampaignIdIndex(db: Database.Database): void {
-  db.exec('CREATE INDEX IF NOT EXISTS idx_tokens_campaign_id ON tokens(campaign_id)');
-}
-
 function ensureCharacterNameIndex(db: Database.Database): void {
   db.exec(
     'CREATE INDEX IF NOT EXISTS idx_characters_world_id_name ON characters(world_id, name COLLATE NOCASE)',
   );
-}
-
-function ensureTokenWorldIdIndex(db: Database.Database): void {
-  const cols = db.pragma('table_info(tokens)') as { name: string; }[];
-  if (!cols.some((c) => c.name === 'world_id')) {
-    return;
-  }
-
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_tokens_world_id ON tokens(world_id)`);
 }
 
 function runSessionPlannedAtMigration(db: Database.Database): void {

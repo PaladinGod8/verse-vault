@@ -3,6 +3,7 @@ import type { FactionSections, FactionWikiSummary } from '../../../shared/contra
 import { buildDetailImageStyle } from '../../lib/cardDisplaySettings';
 import { FACTION_BASIC_INFO_FIELDS } from '../../lib/factionWikiSummaryFieldConfig';
 import { WikiDetailListSection, WikiDetailTableSection } from '../wiki/WikiDetailSections';
+import FactionRelationshipsPanel from './FactionRelationshipsPanel';
 
 type FactionMemberWithCharacterName = FactionMember & { character_name: string; };
 
@@ -25,6 +26,7 @@ type FactionDetailContentProps = {
   leadership: FactionMemberWithCharacterName[];
   plainMembers: FactionMemberWithCharacterName[];
   worldId: number | null;
+  allFactionsInWorld: Faction[];
   onEdit: () => void;
   imageDimensions?: {
     width: number;
@@ -44,6 +46,7 @@ export default function FactionDetailContent({
   leadership,
   plainMembers,
   worldId,
+  allFactionsInWorld,
   onEdit,
   imageDimensions = { width: 96, height: 96 },
 }: FactionDetailContentProps) {
@@ -123,6 +126,16 @@ export default function FactionDetailContent({
       <MemberGroupSection title='Founders' members={founders} worldId={worldId} />
       <MemberGroupSection title='Leadership' members={leadership} worldId={worldId} />
       <MemberGroupSection title='Members' members={plainMembers} worldId={worldId} />
+
+      {worldId !== null
+        ? (
+          <FactionRelationshipsPanel
+            factionId={faction.id}
+            worldId={worldId}
+            allFactionsInWorld={allFactionsInWorld}
+          />
+        )
+        : null}
 
       {childFactions.length > 0
         ? (

@@ -154,6 +154,7 @@ export default function FactionDetailPage() {
               leadership={leadership}
               plainMembers={plainMembers}
               worldId={worldId}
+              allFactionsInWorld={allFactions}
               onEdit={() => setIsEditOpen(true)}
               imageDimensions={imageDimensions}
             />
