@@ -114,7 +114,7 @@
     "@types/react-dom": "^19.0.3",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "^4.1.9",
     "cli-progress-bar": "^1.0.1",
     "daisyui": "^5.0.0",
     "dprint": "^0.47.4",
@@ -134,12 +134,12 @@
     "playwright": "^1.58.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.13.1",
+    "react-router-dom": "^7.18.1",
     "tailwindcss": "^4.2.1",
     "ts-node": "^10.0.0",
     "typescript": "~5.7.3",
-    "vite": "^6.2.3",
-    "vitest": "^4.0.18",
+    "vite": "^6.4.3",
+    "vitest": "^4.1.9",
     "yaml-eslint-parser": "^2.0.0",
     "zustand": "^5.0.11"
   },
@@ -156,6 +156,7 @@
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "resolutions": {
-    "node-abi": "3.87.0"
+    "node-abi": "3.87.0",
+    "vite": "6.4.3"
   }
 }
