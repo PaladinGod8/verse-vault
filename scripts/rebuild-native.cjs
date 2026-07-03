@@ -2,7 +2,7 @@
 
 const path = require('path');
 const { spawnSync } = require('child_process');
-const electronRebuildCli = require.resolve('electron-rebuild/lib/src/cli.js');
+const electronRebuildCli = require.resolve('@electron/rebuild/lib/cli.js');
 
 const MAX_ATTEMPTS = 5;
 const LOCK_RETRY_DELAYS_MS = [500, 1000, 2000, 4000];
@@ -49,7 +49,7 @@ function printLikelyLockingProcesses() {
 
 function runRebuildAttempt(attempt) {
   console.error(
-    `[rebuild] Attempt ${attempt}/${MAX_ATTEMPTS}: electron-rebuild -f -w better-sqlite3`,
+    `[rebuild] Attempt ${attempt}/${MAX_ATTEMPTS}: @electron/rebuild -f -w better-sqlite3`,
   );
   const result = run(process.execPath, [electronRebuildCli, '-f', '-w', 'better-sqlite3']);
   const combined = outputStreams(result);
@@ -62,7 +62,7 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
   const { result, combined } = runRebuildAttempt(attempt);
 
   if (result.error) {
-    console.error(`[rebuild] Failed to start electron-rebuild: ${result.error.message}`);
+    console.error(`[rebuild] Failed to start @electron/rebuild: ${result.error.message}`);
     process.exit(1);
   }
 
