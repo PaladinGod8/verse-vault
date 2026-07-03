@@ -1,4 +1,5 @@
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -381,6 +382,44 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     expect(rebuildState.calls.some((call) => call.cmd === 'postinstall')).toBe(true);
   }, 30_000);
 
+  it('reuses the packaged app when the package-fingerprint cache is warm', () => {
+    const workspace = createTempWorkspace();
+
+    // The fingerprint inputs (src/, forge.config.ts, package.json, ...) don't
+    // exist in this bare sandbox workspace, so verify-all.cjs will compute the
+    // fingerprint of zero files — the SHA-256 of an empty input. Pre-seed the
+    // cache with that same value plus a stub packaged entry point to simulate
+    // "already packaged, nothing relevant has changed since".
+    const emptyFingerprint = crypto.createHash('sha256').digest('hex');
+    const cacheFile = path.join(
+      workspace,
+      '.cache',
+      'package-fingerprint',
+      'state.json',
+    );
+    fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+    fs.writeFileSync(
+      cacheFile,
+      JSON.stringify({ package: { fingerprint: emptyFingerprint } }),
+      'utf8',
+    );
+
+    const mainEntry = path.join(workspace, '.vite', 'build', 'main.js');
+    fs.mkdirSync(path.dirname(mainEntry), { recursive: true });
+    fs.writeFileSync(mainEntry, '// stub packaged entry\n', 'utf8');
+
+    const result = runVerifyAll(workspace);
+    expect(result.status).toBe(0);
+
+    const state = readFakeYarnState(workspace);
+    const packageCalls = state.calls.filter((call) => call.cmd === 'package');
+    expect(packageCalls).toHaveLength(0);
+
+    const latestMeta = readLatestMeta(workspace);
+    const packageStep = latestMeta.steps.find((step) => step.name === 'Package app for e2e');
+    expect(packageStep?.status).toBe('passed');
+  }, 30_000);
+
   it('packages once and runs e2e with test:e2e:ci', () => {
     const workspace = createTempWorkspace();
     const result = runVerifyAll(workspace);
@@ -414,7 +453,7 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     expect(guardIndex).toBeLessThan(e2eIndex);
   }, 30_000);
 
-  it('defaults the e2e step to a single Playwright worker', () => {
+  it('defaults the e2e step to parallel Playwright workers', () => {
     const workspace = createTempWorkspace();
     const result = runVerifyAll(workspace, {
       args: [],
@@ -425,10 +464,12 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     const state = readFakeYarnState(workspace);
     const e2eCall = state.calls.find((call) => call.cmd === 'test:e2e:ci');
 
-    // Serial e2e avoids the Windows Electron parallel-launch races that
-    // otherwise flake verify:all on a loaded machine.
+    // Parallel e2e is safe now that the earlier Windows flakes (Chromium
+    // throttling requestAnimationFrame in non-foreground Electron windows) are
+    // fixed at the source via `backgroundThrottling: false` and the renderer
+    // anti-throttle launch switches. An explicit PLAYWRIGHT_WORKERS still wins.
     expect(e2eCall).toBeDefined();
-    expect(e2eCall?.playwrightWorkers).toBe('1');
+    expect(e2eCall?.playwrightWorkers).toBe('4');
   }, 30_000);
 
   it('honors an explicit PLAYWRIGHT_WORKERS override for the e2e step', () => {
