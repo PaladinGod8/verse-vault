@@ -104,7 +104,7 @@ Verification lane notes:
 
 - `yarn verify:all` packages once, then runs `yarn test:e2e:ci`.
 - `yarn verify:all` does not rebuild native modules unless you use a `:rebuild` or `:fresh` variant.
-- `yarn verify:all:dev` uses Playwright config default workers unless you set `PLAYWRIGHT_WORKERS`.
+- `yarn verify:all` / `verify:all:dev` run the e2e step at a single Playwright worker by default to avoid Windows Electron parallel-launch flakiness; set `PLAYWRIGHT_WORKERS` to override (CI stays parallel via its own sharded `test:e2e:ci`).
 
 Secret-scan scope:
 

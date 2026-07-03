@@ -442,7 +442,11 @@ steps.push(
     name: 'Run e2e tests',
     run: () => {
       cleanDirectories(['test-results', 'playwright-report']);
-      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS;
+      // Default the full local e2e suite to a single worker: running all specs
+      // in one pool at 2+ workers races Electron app launch/teardown on Windows
+      // and flakes the gate. CI stays parallel via its own sharded test:e2e:ci.
+      // An explicit PLAYWRIGHT_WORKERS still wins for callers who want more.
+      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS || '1';
       const e2eTimeoutMs = parseTimeoutEnv(
         'VERIFY_ALL_E2E_TIMEOUT_MS',
         DEFAULT_E2E_TIMEOUT_MS,
@@ -450,9 +454,7 @@ steps.push(
       return runCommand(yarnCmd, ['test:e2e:ci'], {
         env: {
           PLAYWRIGHT_HTML_OPEN: 'never',
-          ...(playwrightWorkersForStep
-            ? { PLAYWRIGHT_WORKERS: playwrightWorkersForStep }
-            : {}),
+          PLAYWRIGHT_WORKERS: playwrightWorkersForStep,
         },
         timeout: e2eTimeoutMs,
       });

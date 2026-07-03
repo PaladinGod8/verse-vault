@@ -414,7 +414,7 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     expect(guardIndex).toBeLessThan(e2eIndex);
   }, 30_000);
 
-  it('does not force PLAYWRIGHT_WORKERS=8 in dev mode', () => {
+  it('defaults the e2e step to a single Playwright worker', () => {
     const workspace = createTempWorkspace();
     const result = runVerifyAll(workspace, {
       args: [],
@@ -425,8 +425,25 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     const state = readFakeYarnState(workspace);
     const e2eCall = state.calls.find((call) => call.cmd === 'test:e2e:ci');
 
+    // Serial e2e avoids the Windows Electron parallel-launch races that
+    // otherwise flake verify:all on a loaded machine.
     expect(e2eCall).toBeDefined();
-    expect(e2eCall?.playwrightWorkers).toBeNull();
+    expect(e2eCall?.playwrightWorkers).toBe('1');
+  }, 30_000);
+
+  it('honors an explicit PLAYWRIGHT_WORKERS override for the e2e step', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace, {
+      args: [],
+      env: { PLAYWRIGHT_WORKERS: '4' },
+    });
+
+    expect(result.status).toBe(0);
+
+    const state = readFakeYarnState(workspace);
+    const e2eCall = state.calls.find((call) => call.cmd === 'test:e2e:ci');
+
+    expect(e2eCall?.playwrightWorkers).toBe('4');
   }, 30_000);
 
   it('uses the dedicated e2e timeout override for the e2e step', () => {
