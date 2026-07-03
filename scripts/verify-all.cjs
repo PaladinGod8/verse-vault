@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { canReusePackagedApp, recordPackaged } = require('./lib/package-fingerprint.cjs');
 
 const yarnCmd = 'yarn';
 const args = new Set(process.argv.slice(2));
@@ -436,17 +437,34 @@ steps.push(
   },
   {
     name: 'Package app for e2e',
-    run: () => runCommand(yarnCmd, ['package']),
+    run: () => {
+      const { canReuse, fingerprint, cacheState } = canReusePackagedApp();
+      if (canReuse) {
+        logLine('[verify-all] Reusing existing package output (fingerprint match).');
+        return true;
+      }
+
+      if (!runCommand(yarnCmd, ['package'])) {
+        return false;
+      }
+
+      recordPackaged({ fingerprint, cacheState });
+      return true;
+    },
   },
   {
     name: 'Run e2e tests',
     run: () => {
       cleanDirectories(['test-results', 'playwright-report']);
-      // Default the full local e2e suite to a single worker: running all specs
-      // in one pool at 2+ workers races Electron app launch/teardown on Windows
-      // and flakes the gate. CI stays parallel via its own sharded test:e2e:ci.
-      // An explicit PLAYWRIGHT_WORKERS still wins for callers who want more.
-      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS || '1';
+      // Run the full local e2e suite in parallel. The earlier 2+ worker flakes
+      // were Chromium throttling requestAnimationFrame in the non-foreground
+      // Electron windows (only one window holds OS foreground at a time), which
+      // stalled canvas/pixi.js rendering that tests assert on. That is now fixed
+      // at the source (`backgroundThrottling: false` on the BrowserWindows plus
+      // renderer anti-throttle switches in tests/e2e/helpers/launchApp.ts), so
+      // parallel workers are safe. Default is conservative; raise it via
+      // PLAYWRIGHT_WORKERS once you've confirmed 0 flakes on this machine.
+      const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS || '4';
       const e2eTimeoutMs = parseTimeoutEnv(
         'VERIFY_ALL_E2E_TIMEOUT_MS',
         DEFAULT_E2E_TIMEOUT_MS,
