@@ -26,6 +26,10 @@ describe('PACKAGE_INCLUDE', () => {
     expect(PACKAGE_INCLUDE.includes('/package.json')).toBe(true);
   });
 
+  it('contains /vendor/azgaar-fmg', () => {
+    expect(PACKAGE_INCLUDE.includes('/vendor/azgaar-fmg')).toBe(true);
+  });
+
   it('does not contain bare /node_modules', () => {
     expect(PACKAGE_INCLUDE).not.toContain('/node_modules');
   });
@@ -81,6 +85,10 @@ describe('isIgnoredFromPackage', () => {
 
     it('returns false for /package.json', () => {
       expect(isIgnoredFromPackage('/package.json')).toBe(false);
+    });
+
+    it('returns false for /vendor/azgaar-fmg/1.99/index.html', () => {
+      expect(isIgnoredFromPackage('/vendor/azgaar-fmg/1.99/index.html')).toBe(false);
     });
   });
 

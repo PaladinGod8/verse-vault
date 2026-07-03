@@ -42,6 +42,8 @@ import type {
   TokenImageImportResult,
   Verse,
   World,
+  WorldMap,
+  WorldMapOpenEditorResult,
 } from './domainTypes';
 
 export interface DbApi extends DbApiRelationships {
@@ -177,6 +179,10 @@ export interface DbApi extends DbApiRelationships {
     }): Promise<BattleMap>;
     update(id: number, data: { name?: string; config?: string; }): Promise<BattleMap>;
     delete(id: number): Promise<{ id: number; }>;
+  };
+  worldMaps: {
+    getByWorld(worldId: number): Promise<WorldMap | null>;
+    openEditor(worldId: number): Promise<WorldMapOpenEditorResult>;
   };
   tokens: {
     getAllByWorld(worldId: number): Promise<Token[]>;

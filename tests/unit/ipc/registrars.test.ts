@@ -23,6 +23,7 @@ import { registerStatBlockHandlers } from '../../../src/main/ipc/registerStatBlo
 import { registerTokenHandlers } from '../../../src/main/ipc/registerTokenHandlers';
 import { registerVerseHandlers } from '../../../src/main/ipc/registerVerseHandlers';
 import { registerWorldHandlers } from '../../../src/main/ipc/registerWorldHandlers';
+import { registerWorldMapHandlers } from '../../../src/main/ipc/registerWorldMapHandlers';
 import { IPC } from '../../../src/shared/ipcChannels';
 
 const { ipcHandleMock } = vi.hoisted(() => ({
@@ -151,6 +152,14 @@ describe('IPC registrar channel wiring', () => {
           IPC.BATTLEMAPS_ADD,
           IPC.BATTLEMAPS_UPDATE,
           IPC.BATTLEMAPS_DELETE,
+        ],
+      },
+      {
+        name: 'worldMaps',
+        register: () => registerWorldMapHandlers(dbMock, { openEditor: vi.fn() }),
+        expected: [
+          IPC.WORLD_MAPS_GET_BY_WORLD,
+          IPC.WORLD_MAPS_OPEN_EDITOR,
         ],
       },
       {
@@ -387,6 +396,7 @@ describe('IPC registrar channel wiring', () => {
       () => registerCampaignHandlers(dbMock),
       () => registerCampaignNoteHandlers(dbMock),
       () => registerBattleMapHandlers(dbMock),
+      () => registerWorldMapHandlers(dbMock, { openEditor: vi.fn() }),
       () => registerTokenHandlers(dbMock, { userDataPath: 'C:\\mock-user-data' }),
       () => registerArcHandlers(dbMock),
       () => registerActHandlers(dbMock),

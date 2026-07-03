@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useIpaTool } from '../../hooks/useIpaTool';
+import { useToast } from '../ui/ToastProvider';
 
 interface WorldSidebarProps {
   worldId: number | null;
@@ -107,6 +108,27 @@ function MapIcon() {
       <polygon points='3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6' />
       <line x1='9' y1='3' x2='9' y2='18' />
       <line x1='15' y1='6' x2='15' y2='21' />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='20'
+      height='20'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      <circle cx='12' cy='12' r='10' />
+      <path d='M2 12h20' />
+      <path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z' />
     </svg>
   );
 }
@@ -284,6 +306,19 @@ function BarChartIcon() {
 
 export default function WorldSidebar({ worldId }: WorldSidebarProps) {
   const { open: openIpaTool } = useIpaTool();
+  const toast = useToast();
+
+  const handleOpenWorldMap = () => {
+    if (worldId == null) {
+      return;
+    }
+    void window.db.worldMaps.openEditor(worldId).catch(() => {
+      toast.error(
+        'Could not open World Map',
+        'The map editor failed to open. Please try again.',
+      );
+    });
+  };
 
   return (
     <aside className='flex w-16 flex-col items-center gap-2 border-r border-slate-200 bg-white py-4 shadow-sm'>
@@ -339,6 +374,16 @@ export default function WorldSidebar({ worldId }: WorldSidebarProps) {
         <MapIcon />
         <span>BattleMaps</span>
       </NavLink>
+      <button
+        type='button'
+        onClick={handleOpenWorldMap}
+        disabled={worldId == null}
+        aria-label='World Map'
+        className='flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-xs leading-tight font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40'
+      >
+        <GlobeIcon />
+        <span>World Map</span>
+      </button>
       <NavLink
         to={`/world/${worldId}/tokens`}
         className={({ isActive }) =>

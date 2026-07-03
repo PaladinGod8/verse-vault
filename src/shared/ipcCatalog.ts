@@ -24,6 +24,7 @@ const HANDLERS = {
   campaigns: 'src/main/ipc/registerCampaignHandlers.ts',
   campaignNotes: 'src/main/ipc/registerCampaignNoteHandlers.ts',
   battlemaps: 'src/main/ipc/registerBattleMapHandlers.ts',
+  worldMaps: 'src/main/ipc/registerWorldMapHandlers.ts',
   tokens: 'src/main/ipc/registerTokenHandlers.ts',
   arcs: 'src/main/ipc/registerArcHandlers.ts',
   acts: 'src/main/ipc/registerActHandlers.ts',
@@ -142,6 +143,18 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
     ['BATTLEMAPS_ADD', 'window.db.battlemaps.add', 'DbApi.battlemaps.add'],
     ['BATTLEMAPS_UPDATE', 'window.db.battlemaps.update', 'DbApi.battlemaps.update'],
     ['BATTLEMAPS_DELETE', 'window.db.battlemaps.delete', 'DbApi.battlemaps.delete'],
+  ]),
+  ...entries('worldMaps', HANDLERS.worldMaps, [
+    [
+      'WORLD_MAPS_GET_BY_WORLD',
+      'window.db.worldMaps.getByWorld',
+      'DbApi.worldMaps.getByWorld',
+    ],
+    [
+      'WORLD_MAPS_OPEN_EDITOR',
+      'window.db.worldMaps.openEditor',
+      'DbApi.worldMaps.openEditor',
+    ],
   ]),
   ...entries('tokens', HANDLERS.tokens, [
     [

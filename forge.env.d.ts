@@ -25,6 +25,11 @@ declare global {
   type BattleMapRuntimeCameraConfig = DomainTypes.BattleMapRuntimeCameraConfig;
   type BattleMapRuntimeConfig = DomainTypes.BattleMapRuntimeConfig;
   type BattleMapConfig = DomainTypes.BattleMapConfig;
+  type WorldMap = DomainTypes.WorldMap;
+  type WorldMapOpenEditorResult = DomainTypes.WorldMapOpenEditorResult;
+  type WorldMapSaveMeta = DomainTypes.WorldMapSaveMeta;
+  type WorldMapEditorSession = DomainTypes.WorldMapEditorSession;
+  type WorldMapHost = import('./src/shared/contracts/worldMapHost').WorldMapHost;
   type ScenePayloadRuntime = DomainTypes.ScenePayloadRuntime;
   type ScenePayload = DomainTypes.ScenePayload;
   type TokenImageImportPayload = DomainTypes.TokenImageImportPayload;
@@ -63,6 +68,8 @@ declare global {
 
   interface Window {
     db: DbApi;
+    // Present only inside the dedicated FMG editor window (preloadWorldMap.ts).
+    worldMapHost?: WorldMapHost;
     EXCALIDRAW_ASSET_PATH?: string;
   }
 

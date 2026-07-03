@@ -44,6 +44,8 @@ describe('IPC channels', () => {
       BATTLEMAPS_ADD: 'db:battlemaps:add',
       BATTLEMAPS_UPDATE: 'db:battlemaps:update',
       BATTLEMAPS_DELETE: 'db:battlemaps:delete',
+      WORLD_MAPS_GET_BY_WORLD: 'db:worldMaps:getByWorld',
+      WORLD_MAPS_OPEN_EDITOR: 'db:worldMaps:openEditor',
       TOKENS_GET_ALL_BY_CAMPAIGN: 'db:tokens:getAllByCampaign',
       TOKENS_GET_BY_ID: 'db:tokens:getById',
       TOKENS_ADD: 'db:tokens:add',

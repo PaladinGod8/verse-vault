@@ -40,7 +40,14 @@ function registerWorldReadHandlers(db: Database.Database): void {
   });
 }
 
-function registerWorldMutationHandlers(db: Database.Database): void {
+interface WorldHandlerDeps {
+  cleanupDeletedWorld?(worldId: number): Promise<void>;
+}
+
+function registerWorldMutationHandlers(
+  db: Database.Database,
+  deps: WorldHandlerDeps,
+): void {
   ipcMain.handle(IPC.WORLDS_ADD, (_event, data: WorldUpsertData) => {
     const name = typeof data.name === 'string' ? data.name.trim() : '';
     if (!name) {
@@ -83,7 +90,8 @@ function registerWorldMutationHandlers(db: Database.Database): void {
     return world;
   });
 
-  ipcMain.handle(IPC.WORLDS_DELETE, (_event, id: number) => {
+  ipcMain.handle(IPC.WORLDS_DELETE, async (_event, id: number) => {
+    await deps.cleanupDeletedWorld?.(id);
     db.prepare('DELETE FROM worlds WHERE id = ?').run(id);
     return { id };
   });
@@ -230,8 +238,9 @@ function buildWorldUpdateStatement(data: WorldUpsertData): {
 
 export function registerWorldHandlers(
   db: Database.Database,
+  deps: WorldHandlerDeps = {},
 ): void {
   registerWorldReadHandlers(db);
-  registerWorldMutationHandlers(db);
+  registerWorldMutationHandlers(db, deps);
   registerWorldImageImportHandler();
 }

@@ -38,6 +38,26 @@ type RunMeta = {
 
 const tempDirs: string[] = [];
 
+function sleep(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function removeDirWithRetries(dir: string): void {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (attempt < 5 && (code === 'EBUSY' || code === 'EPERM' || code === 'ENOTEMPTY')) {
+        sleep(100 * attempt);
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 function createTempWorkspace(): string {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-all-test-'));
   tempDirs.push(workspace);
@@ -73,6 +93,14 @@ function createTempWorkspace(): string {
       'const failOn = (process.env.FAKE_YARN_FAIL_ON || "").split(",").filter(Boolean);',
       'const failOnce = (process.env.FAKE_YARN_FAIL_ONCE || "").split(",").filter(Boolean);',
       'const failCode = Number(process.env.FAKE_YARN_FAIL_CODE || "2");',
+      'const delayOn = (process.env.FAKE_YARN_DELAY_ON || "").split(",").filter(Boolean);',
+      'const delayMs = Number(process.env.FAKE_YARN_DELAY_MS || "0");',
+      '',
+      'fs.writeFileSync(statePath, JSON.stringify(state, null, 2));',
+      '',
+      'if (delayOn.includes(cmd) && Number.isFinite(delayMs) && delayMs > 0) {',
+      '  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);',
+      '}',
       '',
       'if (stdoutOn.includes(cmd)) {',
       '  process.stdout.write(`[fake-yarn-stdout] ${cmd}\\n`);',
@@ -90,7 +118,6 @@ function createTempWorkspace(): string {
       '  exitCode = failCode;',
       '}',
       '',
-      'fs.writeFileSync(statePath, JSON.stringify(state, null, 2));',
       'process.exit(exitCode);',
       '',
     ].join('\n'),
@@ -154,7 +181,7 @@ function readFakeYarnState(workspace: string): {
 describe('scripts/verify-all.cjs terminal log capture', () => {
   afterEach(() => {
     for (const dir of tempDirs.splice(0)) {
-      fs.rmSync(dir, { recursive: true, force: true });
+      removeDirWithRetries(dir);
     }
   });
 
@@ -332,5 +359,22 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
 
     expect(e2eCall).toBeDefined();
     expect(e2eCall?.playwrightWorkers).toBeNull();
+  }, 30_000);
+
+  it('uses the dedicated e2e timeout override for the e2e step', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace, {
+      env: {
+        FAKE_YARN_DELAY_ON: 'test:e2e:ci',
+        FAKE_YARN_DELAY_MS: '250',
+        VERIFY_ALL_E2E_TIMEOUT_MS: '100',
+      },
+    });
+
+    expect(result.status).toBe(1);
+
+    const latestMeta = readLatestMeta(workspace);
+    expect(latestMeta.status).toBe('failed');
+    expect(latestMeta.failedStep?.name).toBe('Run e2e tests');
   }, 30_000);
 });

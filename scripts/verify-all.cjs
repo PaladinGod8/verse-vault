@@ -11,6 +11,8 @@ const runRebuildNative = args.has('--rebuild-native');
 const runDev = !args.has('--no-dev');
 const preRunRetentionLimit = 3;
 const postRunRetentionLimit = 3;
+const DEFAULT_COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_E2E_TIMEOUT_MS = 30 * 60 * 1000;
 
 const baseLogDir = path.resolve(process.cwd(), 'scripts', 'logs', 'pipeline');
 const runsDir = path.join(baseLogDir, 'runs');
@@ -54,6 +56,20 @@ const runMeta = {
 };
 
 let currentStepMeta = null;
+
+function parseTimeoutEnv(name, fallbackMs) {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallbackMs;
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallbackMs;
+  }
+
+  return parsed;
+}
 
 function appendRunLog(text) {
   if (!isRunLogReady) {
@@ -109,7 +125,7 @@ function runCommand(cmd, commandArgs, options = {}) {
     shell: process.platform === 'win32',
     env: { ...process.env, ...(options.env || {}) },
     encoding: 'utf8',
-    timeout: options.timeout || 10 * 60 * 1000, // 10 minutes default
+    timeout: options.timeout || DEFAULT_COMMAND_TIMEOUT_MS,
   });
 
   const stdout = stdioMode === 'pipe' && typeof result.stdout === 'string'
@@ -413,6 +429,10 @@ steps.push(
     run: () => {
       cleanDirectories(['test-results', 'playwright-report']);
       const playwrightWorkersForStep = process.env.PLAYWRIGHT_WORKERS;
+      const e2eTimeoutMs = parseTimeoutEnv(
+        'VERIFY_ALL_E2E_TIMEOUT_MS',
+        DEFAULT_E2E_TIMEOUT_MS,
+      );
       return runCommand(yarnCmd, ['test:e2e:ci'], {
         env: {
           PLAYWRIGHT_HTML_OPEN: 'never',
@@ -420,6 +440,7 @@ steps.push(
             ? { PLAYWRIGHT_WORKERS: playwrightWorkersForStep }
             : {}),
         },
+        timeout: e2eTimeoutMs,
       });
     },
   },

@@ -23,6 +23,7 @@ export const DB_API_METHODS = {
   campaigns: ['getAllByWorld', 'getById', 'add', 'update', 'delete'],
   campaignNotes: ['getAllByCampaign', 'getById', 'add', 'update', 'delete', 'getAllTagsByCampaign'],
   battlemaps: ['getAllByWorld', 'getById', 'add', 'update', 'delete'],
+  worldMaps: ['getByWorld', 'openEditor'],
   tokens: [
     'getAllByWorld',
     'getAllByCampaign',

@@ -56,6 +56,10 @@ const dbApi: DbApi = {
     update: (id, data) => ipcRenderer.invoke(IPC.BATTLEMAPS_UPDATE, id, data),
     delete: (id) => ipcRenderer.invoke(IPC.BATTLEMAPS_DELETE, id),
   },
+  worldMaps: {
+    getByWorld: (worldId) => ipcRenderer.invoke(IPC.WORLD_MAPS_GET_BY_WORLD, worldId),
+    openEditor: (worldId) => ipcRenderer.invoke(IPC.WORLD_MAPS_OPEN_EDITOR, worldId),
+  },
   tokens: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.TOKENS_GET_ALL_BY_WORLD, worldId),
     getAllByCampaign: (campaignId) =>

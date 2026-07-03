@@ -1,0 +1,32 @@
+{
+  "name": "Azgaar Fantasy Map Generator",
+  "upstreamRepo": "https://github.com/Azgaar/Fantasy-Map-Generator",
+  "pinnedVersion": "v1.99",
+  "pinnedCommit": "21f16296e7eee5fbbf01216a5f4afeb952275a7d",
+  "license": "MIT",
+  "bundleDir": "1.99",
+  "entry": "index.html",
+  "offlineCapable": true,
+  "notes": [
+    "Classic static single-page build (root index.html + relative modules/libs/styles/heightmaps).",
+    "Matches PLAN.md's window.Services / loadMapFromURL(maplink) integration contract.",
+    "Master has since been rewritten as a Vite app and no longer ships a root index.html; do not track master.",
+    "Runtime integration lives in the Verse Vault wrapper/protocol/preload layer. Do NOT edit files inside 1.99/."
+  ],
+  "prunedFromUpstream": [
+    "README.md",
+    "CODE_OF_CONDUCT.md",
+    "ISSUE_TEMPLATE.md",
+    "Dockerfile",
+    "run_php_server.bat",
+    "run_python_server.bat",
+    "**/*.md"
+  ],
+  "refreshProcedure": [
+    "git clone --depth 1 --branch <tag> https://github.com/Azgaar/Fantasy-Map-Generator fmg-tmp",
+    "rm -rf fmg-tmp/.git && rm -f fmg-tmp/README.md fmg-tmp/CODE_OF_CONDUCT.md fmg-tmp/ISSUE_TEMPLATE.md fmg-tmp/Dockerfile fmg-tmp/run_*_server.bat",
+    "find fmg-tmp -name '*.md' -delete",
+    "copy fmg-tmp -> vendor/azgaar-fmg/<tag>/ and update this MANIFEST (pinnedVersion, pinnedCommit, bundleDir)",
+    "keep LICENSE for attribution; never hand-edit vendored files"
+  ]
+}

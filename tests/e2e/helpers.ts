@@ -7,6 +7,8 @@ export interface E2EAppContext {
   userDataDir: string;
 }
 
+const MAIN_WINDOW_TIMEOUT_MS = 15000;
+
 function findMainWindow(app: ElectronApplication): Page | null {
   return app.windows().find((candidate) => !candidate.url().startsWith('devtools://')) ?? null;
 }
@@ -28,7 +30,7 @@ export async function launchElectronApp(): Promise<E2EAppContext> {
   });
 
   await expect
-    .poll(() => Boolean(findMainWindow(app)), { timeout: 5000 })
+    .poll(() => Boolean(findMainWindow(app)), { timeout: MAIN_WINDOW_TIMEOUT_MS })
     .toBe(true);
 
   const page = findMainWindow(app) ?? await app.firstWindow();

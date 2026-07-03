@@ -88,6 +88,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerCampaignHandlers.ts`              | campaigns              | 5        |
 | `src/main/ipc/registerCampaignNoteHandlers.ts`          | campaignNotes          | 6        |
 | `src/main/ipc/registerBattleMapHandlers.ts`             | battlemaps             | 5        |
+| `src/main/ipc/registerWorldMapHandlers.ts`              | worldMaps              | 2        |
 | `src/main/ipc/registerTokenHandlers.ts`                 | tokens                 | 9        |
 | `src/main/ipc/registerArcHandlers.ts`                   | arcs                   | 5        |
 | `src/main/ipc/registerActHandlers.ts`                   | acts                   | 7        |

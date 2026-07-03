@@ -7,6 +7,7 @@ import { runLoreNotesSchemaMigration } from './loreNoteMigrations';
 import { runOfflineMediaImageMigration } from './offlineMediaImageMigration';
 import { runRelationshipMigrations } from './relationshipMigrations';
 import { ensureTokenIndexes } from './tokenIndexMigrations';
+import { runWorldMapsSchemaMigration } from './worldMapMigrations';
 
 /**
  * Runs all additive, idempotent schema migrations in the order they must apply against a
@@ -31,6 +32,7 @@ export function runMigrations(db: Database.Database): void {
   runRelationshipMigrations(db);
   ensureCharacterNameIndex(db);
   runOfflineMediaImageMigration(db);
+  runWorldMapsSchemaMigration(db);
 }
 
 function runFactionTypesSchemaMigration(db: Database.Database): void {

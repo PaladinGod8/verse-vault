@@ -14,5 +14,6 @@
     },
     "outDir": "dist",
     "resolveJsonModule": true
-  }
+  },
+  "exclude": ["node_modules", "vendor", "dist", "out", ".vite"]
 }

@@ -218,10 +218,16 @@ describe('registerWorldHandlers', () => {
   });
 
   describe(IPC.WORLDS_DELETE, () => {
-    it('deletes world and returns id', () => {
+    it('deletes world, runs cleanup hook, and returns id', async () => {
       const runMock = vi.fn();
+      const cleanupDeletedWorld = vi.fn().mockResolvedValue(undefined);
       (dbMock.prepare as ReturnType<typeof vi.fn>).mockReturnValueOnce({ run: runMock });
-      expect(handlers[IPC.WORLDS_DELETE]({}, 5)).toEqual({ id: 5 });
+      vi.clearAllMocks();
+      registerWorldHandlers(dbMock, { cleanupDeletedWorld });
+      const deleteHandlers = getHandlers();
+
+      await expect(deleteHandlers[IPC.WORLDS_DELETE]({}, 5)).resolves.toEqual({ id: 5 });
+      expect(cleanupDeletedWorld).toHaveBeenCalledWith(5);
     });
   });
 

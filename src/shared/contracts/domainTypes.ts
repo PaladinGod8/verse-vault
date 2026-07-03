@@ -125,6 +125,35 @@ export interface BattleMapConfig {
   [key: string]: unknown;
 }
 
+export interface WorldMap {
+  id: number;
+  world_id: number;
+  map_name: string | null;
+  storage_key: string;
+  generator_version: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorldMapOpenEditorResult {
+  opened: true;
+  worldMapId: number | null;
+}
+
+export interface WorldMapSaveMeta {
+  mapName: string | null;
+  generatorVersion: string | null;
+}
+
+export interface WorldMapEditorSession {
+  worldId: number;
+  worldName: string;
+  worldMapId: number | null;
+  mapFileUrl: string | null;
+  vendorEntryUrl: string;
+  hasExistingMap: boolean;
+}
+
 export interface ScenePayloadRuntime {
   battlemap_id?: number | null;
   [key: string]: unknown;

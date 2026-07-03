@@ -11,11 +11,14 @@ const appOnMock = vi.fn((event: string, handler: EventHandler) => {
 });
 const appQuitMock = vi.fn();
 const appGetPathMock = vi.fn(() => 'C:\\mock-user-data');
+const appGetAppPathMock = vi.fn(() => 'C:\\mock-app');
 const protocolHandleMock = vi.fn();
+const protocolRegisterSchemesAsPrivilegedMock = vi.fn();
 const netFetchMock = vi.fn();
 const ipcHandleMock = vi.fn((channel: string, handler: IpcHandler) => {
   registeredIpcHandlers[channel] = handler;
 });
+const ipcOnMock = vi.fn();
 const loadURLMock = vi.fn();
 const loadFileMock = vi.fn();
 const openDevToolsMock = vi.fn();
@@ -53,6 +56,13 @@ const closeDatabaseMock = vi.fn();
 const randomUUIDMock = vi.fn(() => 'mock-uuid');
 const mkdirMock = vi.fn(async () => undefined);
 const writeFileMock = vi.fn(async () => undefined);
+const readFileSyncMock = vi.fn(() =>
+  JSON.stringify({
+    bundleDir: '1.99',
+    entry: 'index.html',
+    pinnedVersion: 'v1.99',
+  })
+);
 const pathToFileURLMock = vi.fn((value: string) => ({
   toString: () => `file:///${value.replaceAll('\\', '/')}`,
 }));
@@ -85,13 +95,16 @@ async function importMainWithMocks() {
       on: appOnMock,
       quit: appQuitMock,
       getPath: appGetPathMock,
+      getAppPath: appGetAppPathMock,
     },
     BrowserWindow: BrowserWindowMock,
     ipcMain: {
       handle: ipcHandleMock,
+      on: ipcOnMock,
     },
     protocol: {
       handle: protocolHandleMock,
+      registerSchemesAsPrivileged: protocolRegisterSchemesAsPrivilegedMock,
     },
     net: {
       fetch: netFetchMock,
@@ -111,6 +124,13 @@ async function importMainWithMocks() {
     default: {
       mkdir: mkdirMock,
       writeFile: writeFileMock,
+    },
+  }));
+  vi.doMock('node:fs', () => ({
+    __esModule: true,
+    readFileSync: readFileSyncMock,
+    default: {
+      readFileSync: readFileSyncMock,
     },
   }));
   vi.doMock('node:url', () => ({
@@ -248,8 +268,19 @@ describe('token move IPC handlers', () => {
     prepareMock.mockReset();
     appGetPathMock.mockReset();
     appGetPathMock.mockReturnValue('C:\\mock-user-data');
+    appGetAppPathMock.mockReset();
+    appGetAppPathMock.mockReturnValue('C:\\mock-app');
     protocolHandleMock.mockReset();
+    protocolRegisterSchemesAsPrivilegedMock.mockReset();
     netFetchMock.mockReset();
+    readFileSyncMock.mockReset();
+    readFileSyncMock.mockReturnValue(
+      JSON.stringify({
+        bundleDir: '1.99',
+        entry: 'index.html',
+        pinnedVersion: 'v1.99',
+      }),
+    );
     randomUUIDMock.mockReset();
     randomUUIDMock.mockReturnValue('mock-uuid');
     mkdirMock.mockReset();

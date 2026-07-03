@@ -20,6 +20,12 @@ export function getDatabase(): Database.Database {
     databaseConnection.pragma('journal_mode = WAL');
     createCoreTables(databaseConnection);
     runMigrations(databaseConnection);
+    // Enforce foreign keys (default off in SQLite) so ON DELETE CASCADE / SET
+    // NULL actually fire — e.g. deleting a world removes its world_maps, levels,
+    // campaigns, etc. Enabled only AFTER migrations: the legacy table-rebuild
+    // migrations use `DROP TABLE`, which with foreign keys on triggers an
+    // implicit cascading DELETE of child rows.
+    databaseConnection.pragma('foreign_keys = ON');
   }
   return databaseConnection;
 }

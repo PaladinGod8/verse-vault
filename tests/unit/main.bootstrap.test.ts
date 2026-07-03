@@ -10,15 +10,22 @@ const appOnMock = vi.fn((event: string, handler: EventHandler) => {
   registeredEvents[event] = handler;
 });
 const appQuitMock = vi.fn();
+const dialogShowMessageBoxMock = vi.fn();
+const dialogShowSaveDialogMock = vi.fn();
+const appGetAppPathMock = vi.fn(() => 'C:\\repo-root');
 const appGetPathMock = vi.fn((name: string) => {
   if (name === 'userData') {
     return 'C:\\mock-user-data';
+  }
+  if (name === 'downloads') {
+    return 'C:\\mock-downloads';
   }
   return 'C:\\other-path';
 });
 const protocolHandleMock = vi.fn((name: string, handler: ProtocolHandler) => {
   registeredProtocols[name] = handler;
 });
+const protocolRegisterSchemesAsPrivilegedMock = vi.fn();
 const netFetchMock = vi.fn(async () => new Response('ok', { status: 200 }));
 const loadURLMock = vi.fn();
 const loadFileMock = vi.fn();
@@ -70,20 +77,52 @@ const registerFactionHandlersMock = vi.fn();
 const registerFactionTypeHandlersMock = vi.fn();
 const registerFactionMemberHandlersMock = vi.fn();
 const registerSettingsHandlersMock = vi.fn();
+const registerWorldMapHandlersMock = vi.fn();
+const registerWorldMapHostHandlersMock = vi.fn();
+const createWorldMapsRepoMock = vi.fn(() => ({ getByWorld: vi.fn(() => null) }));
+const createWorldMapSnapshotStoreMock = vi.fn(() => ({ deleteSnapshot: vi.fn() }));
+const createWorldMapPersistenceMock = vi.fn(() => ({
+  getByWorld: vi.fn(() => null),
+  deleteByWorld: vi.fn(async () => undefined),
+  saveSnapshot: vi.fn(),
+}));
+const createWorldMapEditorManagerMock = vi.fn(() => ({
+  openWorldMapEditor: vi.fn(async () => ({ opened: true as const, worldMapId: null })),
+  resolveWorldId: vi.fn(() => null),
+  buildSession: vi.fn(),
+  saveWorldMapSnapshot: vi.fn(),
+  regenerateWorldMap: vi.fn(async () => ({ ok: true as const })),
+  exportWorldMapCopy: vi.fn(async () => ({ ok: true as const })),
+  closeWorldMapWindow: vi.fn(async () => ({ ok: true as const })),
+}));
+const createWorldMapProtocolHandlerMock = vi.fn(() => ({
+  urls: {
+    hostPageUrl: 'vv-fmg://app/index.html',
+    vendorEntryUrl: 'vv-fmg://app/vendor/index.html',
+    mapFileUrl: (storageKey: string) => `vv-fmg://app/maps/${storageKey}`,
+  },
+  handle: vi.fn(async () => new Response('world-map-protocol', { status: 200 })),
+}));
 
 vi.mock('electron-squirrel-startup', () => false);
 vi.mock('electron', () => ({
   app: {
     on: appOnMock,
     quit: appQuitMock,
+    getAppPath: appGetAppPathMock,
     getPath: appGetPathMock,
   },
   BrowserWindow: BrowserWindowMock,
   protocol: {
     handle: protocolHandleMock,
+    registerSchemesAsPrivileged: protocolRegisterSchemesAsPrivilegedMock,
   },
   net: {
     fetch: netFetchMock,
+  },
+  dialog: {
+    showMessageBox: dialogShowMessageBoxMock,
+    showSaveDialog: dialogShowSaveDialogMock,
   },
   ipcMain: {
     handle: vi.fn(),
@@ -156,6 +195,28 @@ vi.mock('../../src/main/ipc/registerFactionMemberHandlers', () => ({
 vi.mock('../../src/main/ipc/registerSettingsHandlers', () => ({
   registerSettingsHandlers: registerSettingsHandlersMock,
 }));
+vi.mock('../../src/main/ipc/registerWorldMapHandlers', () => ({
+  registerWorldMapHandlers: registerWorldMapHandlersMock,
+}));
+vi.mock('../../src/main/ipc/registerWorldMapHostHandlers', () => ({
+  registerWorldMapHostHandlers: registerWorldMapHostHandlersMock,
+}));
+vi.mock('../../src/database/repos/worldMapsRepo', () => ({
+  createWorldMapsRepo: createWorldMapsRepoMock,
+}));
+vi.mock('../../src/main/worldMapSnapshotStore', () => ({
+  createWorldMapSnapshotStore: createWorldMapSnapshotStoreMock,
+}));
+vi.mock('../../src/main/worldMapPersistence', () => ({
+  createWorldMapPersistence: createWorldMapPersistenceMock,
+}));
+vi.mock('../../src/main/worldMapEditorManager', () => ({
+  createWorldMapEditorManager: createWorldMapEditorManagerMock,
+}));
+vi.mock('../../src/main/worldMapProtocol', () => ({
+  WORLD_MAP_PROTOCOL: 'vv-fmg',
+  createWorldMapProtocolHandler: createWorldMapProtocolHandlerMock,
+}));
 
 function setForgeGlobals(devServerUrl: string | undefined): void {
   Object.defineProperty(globalThis, 'MAIN_WINDOW_VITE_DEV_SERVER_URL', {
@@ -201,7 +262,12 @@ describe('main bootstrap orchestration', () => {
 
     const dbMock = getDatabaseMock.mock.results[0]?.value;
     expect(registerVerseHandlersMock).toHaveBeenCalledWith(dbMock);
-    expect(registerWorldHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerWorldHandlersMock).toHaveBeenCalledWith(
+      dbMock,
+      expect.objectContaining({
+        cleanupDeletedWorld: expect.any(Function),
+      }),
+    );
     expect(registerLevelHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerCampaignHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerCampaignNoteHandlersMock).toHaveBeenCalledWith(dbMock);
@@ -223,6 +289,22 @@ describe('main bootstrap orchestration', () => {
     expect(registerFactionTypeHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerFactionMemberHandlersMock).toHaveBeenCalledWith(dbMock);
     expect(registerSettingsHandlersMock).toHaveBeenCalledWith(dbMock);
+    expect(registerWorldMapHandlersMock).toHaveBeenCalledWith(
+      dbMock,
+      expect.objectContaining({
+        openEditor: expect.any(Function),
+      }),
+    );
+    expect(registerWorldMapHostHandlersMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolveWorldId: expect.any(Function),
+        buildSession: expect.any(Function),
+        saveCurrent: expect.any(Function),
+        regenerate: expect.any(Function),
+        exportCopy: expect.any(Function),
+        closeWindow: expect.any(Function),
+      }),
+    );
 
     expect(browserWindowCtorMock).toHaveBeenCalledTimes(1);
     expect(loadFileMock).toHaveBeenCalledTimes(1);
@@ -234,6 +316,8 @@ describe('main bootstrap orchestration', () => {
     await registeredEvents.ready();
 
     expect(protocolHandleMock).toHaveBeenCalledWith('vv-media', expect.any(Function));
+    expect(protocolRegisterSchemesAsPrivilegedMock).toHaveBeenCalled();
+    expect(protocolHandleMock).toHaveBeenCalledWith('vv-fmg', expect.any(Function));
     const protocolHandler = registeredProtocols['vv-media'];
     expect(protocolHandler).toBeDefined();
 

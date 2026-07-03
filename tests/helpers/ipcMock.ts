@@ -60,6 +60,10 @@ export function createMockDb(): DbApi {
       update: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn().mockResolvedValue(undefined),
     },
+    worldMaps: {
+      getByWorld: vi.fn().mockResolvedValue(null),
+      openEditor: vi.fn().mockResolvedValue({ opened: true, worldMapId: null }),
+    },
     tokens: {
       getAllByWorld: vi.fn().mockResolvedValue([]),
       getAllByCampaign: vi.fn().mockResolvedValue([]),

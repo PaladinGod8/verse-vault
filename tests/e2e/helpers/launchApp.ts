@@ -1,14 +1,16 @@
-import { type ElectronApplication, expect } from '@playwright/test';
+import { type ElectronApplication } from '@playwright/test';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { _electron as electron } from 'playwright';
 
 const repoRoot = path.join(__dirname, '../../..');
+const WINDOW_DISCOVERY_TIMEOUT_MS = 15000;
+const APP_CLOSE_TIMEOUT_MS = 5000;
 
 interface LaunchTarget {
   args: string[];
-  executablePath?: string;
+  label: string;
 }
 
 export interface LaunchResult {
@@ -25,9 +27,10 @@ async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
-async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
-  // Prefer packaged app when present so default E2E runs exercise the same
-  // artifact humans ship, not only the repo-local dev bundle fallback.
+async function resolveLaunchTargets(userDataDir: string): Promise<LaunchTarget[]> {
+  // Prefer packaged app when present. If Electron+Playwright cannot attach to
+  // that target in current environment, fall back to repo root so local verify
+  // lanes still exercise the freshly-built `.vite` assets from `yarn package`.
   const packageJson = JSON.parse(
     await fs.readFile(path.join(repoRoot, 'package.json'), 'utf8'),
   ) as { productName?: string; name?: string; };
@@ -43,22 +46,46 @@ async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
     'resources',
     'app.asar',
   );
+  const targets: LaunchTarget[] = [];
   if (await pathExists(packagedApp)) {
-    return {
+    targets.push({
+      label: 'packaged-app.asar',
       args: [packagedApp, `--user-data-dir=${userDataDir}`],
-    };
+    });
   }
 
-  const mainJs = path.join(repoRoot, '.vite/build/main.js');
-  if (await pathExists(mainJs)) {
-    return {
-      args: [mainJs, `--user-data-dir=${userDataDir}`],
-    };
+  if (await pathExists(path.join(repoRoot, 'package.json'))) {
+    targets.push({
+      label: 'repo-root-package',
+      args: [repoRoot, `--user-data-dir=${userDataDir}`],
+    });
   }
 
-  throw new Error(
-    'Unable to resolve Electron launch target. Run `yarn package` or generate the Vite main bundle first.',
-  );
+  if (targets.length === 0) {
+    throw new Error(
+      'Unable to resolve Electron launch target. Run `yarn package` first.',
+    );
+  }
+
+  return targets;
+}
+
+async function launchWithTarget(
+  launchTarget: LaunchTarget,
+  env: NodeJS.ProcessEnv,
+): Promise<ElectronApplication> {
+  const app = await electron.launch({
+    args: launchTarget.args,
+    env,
+  });
+
+  try {
+    await app.firstWindow({ timeout: WINDOW_DISCOVERY_TIMEOUT_MS });
+    return app;
+  } catch (error) {
+    await app.close().catch((): undefined => undefined);
+    throw error;
+  }
 }
 
 /**
@@ -72,26 +99,28 @@ async function resolveLaunchTarget(userDataDir: string): Promise<LaunchTarget> {
 export async function launchApp(existingUserDataDir?: string): Promise<LaunchResult> {
   const userDataDir = existingUserDataDir
     ?? await fs.mkdtemp(path.join(os.tmpdir(), 'vv-e2e-'));
-  const launchTarget = await resolveLaunchTarget(userDataDir);
+  const launchTargets = await resolveLaunchTargets(userDataDir);
 
   const env = { ...process.env };
   // CRITICAL: VS Code / some terminals set ELECTRON_RUN_AS_NODE=1, which
   // makes Electron behave as plain Node.js (no process.type, no BrowserWindow).
   delete env.ELECTRON_RUN_AS_NODE;
 
-  const app = await electron.launch({
-    ...launchTarget,
-    env,
-  });
+  let app: ElectronApplication | null = null;
+  const launchErrors: string[] = [];
+  for (const launchTarget of launchTargets) {
+    try {
+      app = await launchWithTarget(launchTarget, env);
+      break;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      launchErrors.push(`${launchTarget.label}: ${message}`);
+    }
+  }
 
-  // Ensure test code that calls app.firstWindow() attaches to the app window,
-  // not a stray DevTools window.
-  await expect
-    .poll(
-      () => app.windows().some((candidate) => !candidate.url().startsWith('devtools://')),
-      { timeout: 5000 },
-    )
-    .toBe(true);
+  if (!app) {
+    throw new Error(`Unable to launch Electron app. ${launchErrors.join(' | ')}`);
+  }
 
   await app.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows()
@@ -135,7 +164,29 @@ export async function closeApp(
   userDataDir: string,
   options?: { preserveUserDataDir?: boolean; },
 ): Promise<void> {
-  await app.close().catch((): undefined => undefined);
+  const processHandle = app.process();
+  const forceKill = (): void => {
+    if (processHandle.killed) {
+      return;
+    }
+    processHandle.kill('SIGKILL');
+  };
+
+  await app
+    .evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows().forEach((candidate) => candidate.destroy());
+    })
+    .catch((): undefined => undefined);
+
+  const closeEvent = app.waitForEvent('close', { timeout: APP_CLOSE_TIMEOUT_MS });
+  void app.close().catch((): undefined => undefined);
+  await closeEvent.catch(async () => {
+    forceKill();
+    await app.waitForEvent('close', { timeout: APP_CLOSE_TIMEOUT_MS }).catch((): undefined =>
+      undefined
+    );
+  });
+
   if (options?.preserveUserDataDir) {
     return;
   }

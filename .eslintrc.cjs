@@ -1,6 +1,7 @@
 // @ts-check
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
+  ignorePatterns: ['vendor/'],
   env: {
     browser: true,
     es6: true,

@@ -21,6 +21,7 @@ This document is a current-state contract index. It is generated from `src/share
 | campaigns              | 5        | `src/main/ipc/registerCampaignHandlers.ts`              |
 | campaignNotes          | 6        | `src/main/ipc/registerCampaignNoteHandlers.ts`          |
 | battlemaps             | 5        | `src/main/ipc/registerBattleMapHandlers.ts`             |
+| worldMaps              | 2        | `src/main/ipc/registerWorldMapHandlers.ts`              |
 | tokens                 | 9        | `src/main/ipc/registerTokenHandlers.ts`                 |
 | arcs                   | 5        | `src/main/ipc/registerArcHandlers.ts`                   |
 | acts                   | 7        | `src/main/ipc/registerActHandlers.ts`                   |
@@ -86,6 +87,8 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.BATTLEMAPS_ADD`                               | `db:battlemaps:add`                           | `window.db.battlemaps.add`                           | `src/main/ipc/registerBattleMapHandlers.ts`             | `DbApi.battlemaps.add`                           |
 | `IPC.BATTLEMAPS_UPDATE`                            | `db:battlemaps:update`                        | `window.db.battlemaps.update`                        | `src/main/ipc/registerBattleMapHandlers.ts`             | `DbApi.battlemaps.update`                        |
 | `IPC.BATTLEMAPS_DELETE`                            | `db:battlemaps:delete`                        | `window.db.battlemaps.delete`                        | `src/main/ipc/registerBattleMapHandlers.ts`             | `DbApi.battlemaps.delete`                        |
+| `IPC.WORLD_MAPS_GET_BY_WORLD`                      | `db:worldMaps:getByWorld`                     | `window.db.worldMaps.getByWorld`                     | `src/main/ipc/registerWorldMapHandlers.ts`              | `DbApi.worldMaps.getByWorld`                     |
+| `IPC.WORLD_MAPS_OPEN_EDITOR`                       | `db:worldMaps:openEditor`                     | `window.db.worldMaps.openEditor`                     | `src/main/ipc/registerWorldMapHandlers.ts`              | `DbApi.worldMaps.openEditor`                     |
 | `IPC.TOKENS_GET_ALL_BY_CAMPAIGN`                   | `db:tokens:getAllByCampaign`                  | `window.db.tokens.getAllByCampaign`                  | `src/main/ipc/registerTokenHandlers.ts`                 | `DbApi.tokens.getAllByCampaign`                  |
 | `IPC.TOKENS_GET_BY_ID`                             | `db:tokens:getById`                           | `window.db.tokens.getById`                           | `src/main/ipc/registerTokenHandlers.ts`                 | `DbApi.tokens.getById`                           |
 | `IPC.TOKENS_ADD`                                   | `db:tokens:add`                               | `window.db.tokens.add`                               | `src/main/ipc/registerTokenHandlers.ts`                 | `DbApi.tokens.add`                               |

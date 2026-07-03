@@ -127,7 +127,8 @@ describe('CampaignNoteDetailPage', () => {
     renderPage();
 
     expect(await screen.findByDisplayValue('Boss Arena')).toBeInTheDocument();
-    await user.click(await screen.findByRole('button', { name: 'Change Scene' }));
+    expect(await screen.findByText('Mock Campaign Canvas')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Change Scene' }));
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {

@@ -4,10 +4,14 @@
  * @seam Main process entrypoint for preload and database adapters
  * @calls getDatabase, closeDatabase, and register*Handlers modules
  */
-import { app, BrowserWindow, net, protocol } from 'electron';
+import { app, BrowserWindow, dialog, net, protocol } from 'electron';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
+import { gzip } from 'node:zlib';
 import path from 'path';
 import { closeDatabase, getDatabase } from './database/db';
+import { createWorldMapsRepo } from './database/repos/worldMapsRepo';
 import { registerAbilityHandlers } from './main/ipc/registerAbilityHandlers';
 import { registerActHandlers } from './main/ipc/registerActHandlers';
 import { registerArcHandlers } from './main/ipc/registerArcHandlers';
@@ -31,6 +35,12 @@ import { registerStatBlockHandlers } from './main/ipc/registerStatBlockHandlers'
 import { registerTokenHandlers } from './main/ipc/registerTokenHandlers';
 import { registerVerseHandlers } from './main/ipc/registerVerseHandlers';
 import { registerWorldHandlers } from './main/ipc/registerWorldHandlers';
+import { registerWorldMapHandlers } from './main/ipc/registerWorldMapHandlers';
+import { registerWorldMapHostHandlers } from './main/ipc/registerWorldMapHostHandlers';
+import { createWorldMapEditorManager } from './main/worldMapEditorManager';
+import { createWorldMapPersistence } from './main/worldMapPersistence';
+import { createWorldMapProtocolHandler, WORLD_MAP_PROTOCOL } from './main/worldMapProtocol';
+import { createWorldMapSnapshotStore } from './main/worldMapSnapshotStore';
 
 const TOKEN_IMAGE_PROTOCOL = 'vv-media';
 const TOKEN_IMAGE_HOST = 'token-images';
@@ -44,6 +54,19 @@ const IS_DEV = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const SHOULD_OPEN_DEVTOOLS = IS_DEV && process.env.VV_OPEN_DEVTOOLS === '1';
 const SHOULD_INSTALL_REACT_DEVTOOLS = IS_DEV && !process.env.VITEST
   && process.env.VV_ENABLE_REACT_DEVTOOLS === '1';
+const gzipAsync = promisify(gzip);
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: WORLD_MAP_PROTOCOL,
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
 
 function registerTokenImageProtocol(): void {
   protocol.handle(TOKEN_IMAGE_PROTOCOL, async (request) => {
@@ -96,6 +119,45 @@ function registerTokenImageProtocol(): void {
   });
 }
 
+function registerWorldMapProtocol(options: {
+  manifestPath: string;
+  snapshotDir: string;
+}) {
+  const handler = createWorldMapProtocolHandler(options);
+  protocol.handle(WORLD_MAP_PROTOCOL, (request) => handler.handle(request.url));
+  return handler;
+}
+
+async function exportWorldMapCopy(mapData: string, suggestedName: string): Promise<boolean> {
+  const downloadsDir = app.getPath('downloads');
+  const preferredName = suggestedName.endsWith('.map') || suggestedName.endsWith('.map.gz')
+    ? suggestedName
+    : `${suggestedName}.map.gz`;
+  const result = await dialog.showSaveDialog({
+    title: 'Export World Map Copy',
+    defaultPath: path.join(downloadsDir, preferredName),
+    filters: [
+      { name: 'FMG map gzip', extensions: ['map.gz'] },
+      { name: 'FMG map', extensions: ['map'] },
+    ],
+  });
+
+  if (result.canceled || !result.filePath) {
+    return false;
+  }
+
+  const targetPath = result.filePath;
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  if (targetPath.toLowerCase().endsWith('.map')) {
+    await writeFile(targetPath, mapData, 'utf8');
+    return true;
+  }
+
+  const bytes = await gzipAsync(Buffer.from(mapData, 'utf8'));
+  await writeFile(targetPath, bytes);
+  return true;
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -135,16 +197,93 @@ const createWindow = () => {
   }
 };
 
+function createWorldMapEditorWindow(hostPageUrl: string): BrowserWindow {
+  const editorWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    title: 'World Map',
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preloadWorldMap.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  editorWindow.once('ready-to-show', () => {
+    editorWindow.show();
+  });
+  editorWindow.loadURL(hostPageUrl);
+  return editorWindow;
+}
+
 // Register IPC handlers for database operations.
 function registerIpcHandlers() {
   const db = getDatabase();
+  const worldMapManifestPath = path.join(app.getAppPath(), 'vendor', 'azgaar-fmg', 'MANIFEST.json');
+  const worldMapSnapshotDir = path.join(app.getPath('userData'), 'world-maps');
+  const worldMapProtocol = registerWorldMapProtocol({
+    manifestPath: worldMapManifestPath,
+    snapshotDir: worldMapSnapshotDir,
+  });
 
+  const worldMapsRepo = createWorldMapsRepo(db);
+  const worldMapSnapshotStore = createWorldMapSnapshotStore({ baseDir: worldMapSnapshotDir });
+  const worldMapPersistence = createWorldMapPersistence({
+    repo: worldMapsRepo,
+    store: worldMapSnapshotStore,
+  });
   registerVerseHandlers(db);
-  registerWorldHandlers(db);
+  registerWorldHandlers(db, {
+    cleanupDeletedWorld: async (worldId) => {
+      await worldMapPersistence.deleteByWorld(worldId);
+    },
+  });
   registerLevelHandlers(db);
   registerCampaignHandlers(db);
   registerCampaignNoteHandlers(db);
   registerBattleMapHandlers(db);
+  const worldMapEditorManager = createWorldMapEditorManager({
+    getWorld: (worldId) =>
+      (db.prepare('SELECT id, name FROM worlds WHERE id = ?').get(worldId) as {
+        id: number;
+        name: string;
+      } | undefined) ?? null,
+    persistence: worldMapPersistence,
+    createWindow: () => createWorldMapEditorWindow(worldMapProtocol.urls.hostPageUrl),
+    vendorEntryUrl: worldMapProtocol.urls.vendorEntryUrl,
+    mapFileUrl: (storageKey) => worldMapProtocol.urls.mapFileUrl(storageKey),
+    exportCopy: async (_worldId, mapData, suggestedName) => {
+      await exportWorldMapCopy(mapData, suggestedName);
+      return { ok: true as const };
+    },
+    confirmDiscardOnCloseFailure: async (worldId, errorMessage) => {
+      const result = await dialog.showMessageBox({
+        type: 'warning',
+        buttons: ['Discard', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1,
+        title: 'World Map Save Failed',
+        message: `World map for world #${worldId} failed to save while closing.`,
+        detail: `${errorMessage}\n\nDiscard unsaved changes and close window?`,
+        noLink: true,
+      });
+      return result.response === 0;
+    },
+  });
+  registerWorldMapHandlers(db, {
+    openEditor: (worldId) => worldMapEditorManager.openWorldMapEditor(worldId),
+  });
+  registerWorldMapHostHandlers({
+    resolveWorldId: (webContentsId) => worldMapEditorManager.resolveWorldId(webContentsId),
+    buildSession: (worldId) => worldMapEditorManager.buildSession(worldId),
+    saveCurrent: (worldId, mapData, meta) =>
+      worldMapEditorManager.saveWorldMapSnapshot(worldId, mapData, meta),
+    regenerate: (worldId) => worldMapEditorManager.regenerateWorldMap(worldId),
+    exportCopy: (worldId, mapData, suggestedName) =>
+      worldMapEditorManager.exportWorldMapCopy(worldId, mapData, suggestedName),
+    closeWindow: (webContentsId) => worldMapEditorManager.closeWorldMapWindow(webContentsId),
+  });
   registerTokenHandlers(db, {
     userDataPath: app.getPath('userData'),
   });

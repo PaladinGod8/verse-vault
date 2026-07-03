@@ -9,6 +9,7 @@ export const PACKAGE_INCLUDE = [
   '/node_modules/better-sqlite3',
   '/node_modules/electron-squirrel-startup',
   '/package.json',
+  '/vendor/azgaar-fmg',
 ] as const;
 
 /**
