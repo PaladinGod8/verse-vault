@@ -295,6 +295,65 @@ describe('scripts/verify-all.cjs terminal log capture', () => {
     expect(secretStepIndex).toBeLessThan(lintStepIndex);
   }, 30_000);
 
+  it('runs the dependency vulnerability scan after secrets and before formatting', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace);
+
+    expect(result.status).toBe(0);
+
+    const latestMeta = readLatestMeta(workspace);
+    const stepNames = latestMeta.steps.map((step) => step.name);
+
+    const secretIndex = stepNames.indexOf('Scan secrets (working tree + git history)');
+    const depsIndex = stepNames.indexOf('Scan dependencies for vulnerabilities (Trivy)');
+    const formatIndex = stepNames.indexOf('Check formatting and auto-fix if needed');
+
+    expect(depsIndex).toBeGreaterThanOrEqual(0);
+    expect(secretIndex).toBeLessThan(depsIndex);
+    expect(depsIndex).toBeLessThan(formatIndex);
+
+    const state = readFakeYarnState(workspace);
+    expect(state.calls.some((call) => call.cmd === 'security:deps')).toBe(true);
+  }, 30_000);
+
+  it('fails the pipeline when the dependency vulnerability scan fails', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace, {
+      env: {
+        FAKE_YARN_FAIL_ON: 'security:deps',
+      },
+    });
+
+    expect(result.status).toBe(1);
+
+    const latestMeta = readLatestMeta(workspace);
+    expect(latestMeta.status).toBe('failed');
+    expect(latestMeta.failedStep?.name).toBe(
+      'Scan dependencies for vulnerabilities (Trivy)',
+    );
+  }, 30_000);
+
+  it('treats the outdated dependency report as non-blocking', () => {
+    const workspace = createTempWorkspace();
+    const result = runVerifyAll(workspace, {
+      env: {
+        FAKE_YARN_FAIL_ON: 'deps:outdated',
+      },
+    });
+
+    // `yarn outdated` exits non-zero whenever anything is behind latest; the
+    // pipeline must still pass and record the informational step as passed.
+    expect(result.status).toBe(0);
+
+    const latestMeta = readLatestMeta(workspace);
+    expect(latestMeta.status).toBe('passed');
+
+    const outdatedStep = latestMeta.steps.find(
+      (step) => step.name === 'Report outdated dependencies (informational)',
+    );
+    expect(outdatedStep?.status).toBe('passed');
+  }, 30_000);
+
   it('skips native rebuild by default and only rebuilds when explicitly requested', () => {
     const workspace = createTempWorkspace();
 

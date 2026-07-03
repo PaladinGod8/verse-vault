@@ -52,13 +52,15 @@ Update rule:
 
 ## Code Quality And Docs Quality
 
-| Technology        | Role in repo                                                |
-| ----------------- | ----------------------------------------------------------- |
-| ESLint            | TypeScript/YAML/code linting                                |
-| dprint            | Formatting and format checks                                |
-| markdownlint-cli2 | Markdown linting                                            |
-| Vale              | Prose/docs linting                                          |
-| gitleaks          | Secret scanning in local verify lanes and CI-aligned checks |
+| Technology        | Role in repo                                                  |
+| ----------------- | ------------------------------------------------------------- |
+| ESLint            | TypeScript/YAML/code linting                                  |
+| dprint            | Formatting and format checks                                  |
+| markdownlint-cli2 | Markdown linting                                              |
+| Vale              | Prose/docs linting                                            |
+| gitleaks          | Secret scanning in local verify lanes and CI-aligned checks   |
+| Trivy             | Dependency vulnerability gate in `security:deps`/`verify:all` |
+| npm-check-updates | On-demand dependency update planning (`deps:update:check`)    |
 
 ## Build, CI, And Repo Automation
 

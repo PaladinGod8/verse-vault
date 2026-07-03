@@ -53,6 +53,7 @@ not generated.
 | `markdown-linting-standardization.md` | dprint/markdownlint/Vale partitioned doc linting              |
 | `github-actions-setup.md`             | Parallel CI workflow with concurrent quality gates            |
 | `secret-scanning.md`                  | Local gitleaks secret-scan lanes and ignored artifact rules   |
+| `dependency-management.md`            | Trivy vuln gate, outdated reporting, and update planning      |
 | `statblocks.md`                       | Gameplay container: identity, stats, abilities, token links   |
 | `characters.md`                       | World-scoped character wiki entries with search and image     |
 | `backgrounds.md`                      | World-scoped background wiki entries with image and summary   |

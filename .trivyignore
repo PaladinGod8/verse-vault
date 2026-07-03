@@ -1,0 +1,12 @@
+# Trivy vulnerability suppressions for `yarn security:deps` (scripts/deps-scan.cjs).
+#
+# Only add an entry when a HIGH/CRITICAL finding is a confirmed false positive or
+# an explicitly accepted risk (for example: no upstream fix yet, or the vulnerable
+# code path is unreachable in this Electron desktop app). Record why, and prefer
+# upgrading the dependency over suppressing.
+#
+# Format: one CVE / advisory ID per line. Optional expiry keeps suppressions honest.
+#   CVE-2024-12345
+#   CVE-2024-12345 exp:2026-12-31
+#
+# Keep this file empty unless a suppression is genuinely justified.

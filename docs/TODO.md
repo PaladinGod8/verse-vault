@@ -337,4 +337,4 @@ Priority caching opportunities based on verify-all.cjs analysis:
 - [ ] Add Semgrep to local pipeline
 - [ ] Add ESLint security plugins to local pipeline
 - [ ] Add gitleaks to local pipeline
-- [ ] Add Trivy to local pipeline
+- [x] Add Trivy to local pipeline

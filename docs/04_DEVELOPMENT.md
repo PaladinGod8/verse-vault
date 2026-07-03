@@ -8,6 +8,9 @@ Guide for local setup, daily dev commands, validation gates, and common troubles
 - Yarn 1.22.x (`yarn --version`)
 - Git
 - Gitleaks CLI on `PATH` for secret scanning in `verify:*`
+- Trivy CLI on `PATH` for the dependency vulnerability gate in `verify:all` /
+  `security:deps` (install via `winget install AquaSecurity.Trivy` or
+  `scoop install trivy`)
 - Optional for docs lint: Vale CLI on `PATH`
 
 ## First-Time Setup
@@ -71,6 +74,14 @@ yarn verify:all:dev
 yarn security:secrets
 ```
 
+### Dependency Management
+
+```bash
+yarn security:deps
+yarn deps:outdated
+yarn deps:update:check
+```
+
 Fresh/rebuild variants:
 
 ```bash
@@ -100,6 +111,16 @@ Secret-scan scope:
 - `yarn verify:rapid` and `yarn verify:smart` run a working-tree-only gitleaks pass.
 - `yarn verify:all` runs working tree plus full git history.
 - Ignore rules live in `.gitleaks.toml` for generated local artifacts like `out/` and `playwright-report/`.
+
+Dependency-management scope:
+
+- `yarn verify:all` runs the Trivy vulnerability gate (`security:deps`) after the
+  secret scan; it fails on `HIGH`/`CRITICAL` findings in `yarn.lock`.
+- `yarn verify:all` also prints `yarn outdated` as a non-blocking informational step.
+- Record confirmed false positives or accepted risks in `.trivyignore`; prefer
+  upgrading the dependency over suppressing it.
+- Use `yarn deps:update:check` to plan intentional version bumps.
+- See `docs/features/dependency-management.md` for the full model.
 
 ## Targeted Test Runs
 

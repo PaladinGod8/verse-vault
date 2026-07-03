@@ -374,6 +374,20 @@ steps.push(
     run: () => runCommand(yarnCmd, ['security:secrets']),
   },
   {
+    name: 'Scan dependencies for vulnerabilities (Trivy)',
+    run: () => runCommand(yarnCmd, ['security:deps']),
+  },
+  {
+    name: 'Report outdated dependencies (informational)',
+    run: () => {
+      // Non-blocking: `yarn outdated` exits non-zero whenever anything is
+      // behind latest, which is normal. Surface the list for awareness but
+      // never fail the gate on it — vulnerability blocking is Trivy's job.
+      runCommand(yarnCmd, ['deps:outdated'], { allowFailure: true });
+      return true;
+    },
+  },
+  {
     name: 'Check formatting and auto-fix if needed',
     run: () => {
       const formatIsClean = runCommand(yarnCmd, ['format:check'], {
