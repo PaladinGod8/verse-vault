@@ -69,6 +69,9 @@ export default defineConfig({
         'scenes.test.ts',
         'sessions.test.ts',
         'tokenMove.test.ts',
+        // Plain DOM/dialog CRUD — no live canvas dependency, safe to
+        // parallelize. Only the runtime-palette split stays in `runtime`.
+        'tokens.test.ts',
       ],
       use: { ...devices['Desktop Chrome'] },
       // Moderate parallelization
@@ -80,7 +83,7 @@ export default defineConfig({
         'arc-act.test.ts',
         'battlemap-runtime-play.test.ts',
         'battlemap-runtime-statblock-popup.test.ts',
-        'tokens.test.ts',
+        'tokens-runtime-palette.test.ts',
       ],
       use: { ...devices['Desktop Chrome'] },
       // Conservative workers for heavy tests

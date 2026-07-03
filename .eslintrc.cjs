@@ -269,7 +269,6 @@ module.exports = {
         'tests/unit/renderer/battleMapRuntimeCanvas.test.tsx',
         'tests/unit/renderer/battleMapRuntimePage.test.tsx',
         'tests/unit/renderer/tokensPage.test.tsx',
-        'tests/e2e/tokens.test.ts',
         'tests/unit/renderer/scenesPage.test.tsx',
         'tests/unit/renderer/lib/castingRangeMath.test.ts',
         'tests/unit/StatBlocksPage.test.tsx',

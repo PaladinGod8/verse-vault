@@ -2,8 +2,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { spawnSync } = require('child_process');
+const {
+  DEFAULT_CACHE_DIR: PACKAGE_FINGERPRINT_CACHE_DIR,
+  canReusePackagedApp,
+  recordPackaged,
+} = require('./lib/package-fingerprint.cjs');
 
 const args = process.argv.slice(2);
 const argSet = new Set(args);
@@ -23,10 +27,7 @@ for (const arg of args) {
   }
 }
 
-const CACHE_STATE_DIR = path.resolve('.cache', 'verify-smart');
-const CACHE_STATE_FILE = path.join(CACHE_STATE_DIR, 'state.json');
 const ESLINT_CACHE_LOCATION = 'node_modules/.cache/eslint/.eslintcache';
-const PACKAGE_MAIN_ENTRY = path.resolve('.vite', 'build', 'main.js');
 const TASK_TIMEOUT_MS = 20 * 60 * 1000;
 
 const FORMATTABLE_EXTENSIONS = new Set([
@@ -130,6 +131,7 @@ const DOMAIN_E2E_RULES = [
     specs: [
       'tests/e2e/tokenMove.test.ts',
       'tests/e2e/tokens.test.ts',
+      'tests/e2e/tokens-runtime-palette.test.ts',
     ],
   },
   {
@@ -153,20 +155,6 @@ const DOMAIN_E2E_RULES = [
     pattern: /(campaign|arc|act|session|scene)/,
     specs: ['tests/e2e/arc-act.test.ts'],
   },
-];
-
-const PACKAGE_FINGERPRINT_INPUTS = [
-  'src',
-  'forge.config.ts',
-  'forge.ignore.ts',
-  'vite.base.config.ts',
-  'vite.main.config.ts',
-  'vite.preload.config.ts',
-  'vite.renderer.config.ts',
-  'tsconfig.json',
-  'forge.env.d.ts',
-  'package.json',
-  'yarn.lock',
 ];
 
 function printUsage() {
@@ -519,76 +507,10 @@ function runTask(label, commandArgs, options = {}) {
   }
 }
 
-function hashFile(filePath) {
-  const hash = crypto.createHash('sha256');
-  hash.update(fs.readFileSync(filePath));
-  return hash.digest('hex');
-}
-
-function walkFiles(rootPath, output = []) {
-  const absoluteRoot = path.resolve(rootPath);
-  if (!fs.existsSync(absoluteRoot)) {
-    return output;
-  }
-
-  const stat = fs.statSync(absoluteRoot);
-  if (stat.isFile()) {
-    output.push(normalizePath(path.relative(process.cwd(), absoluteRoot)));
-    return output;
-  }
-
-  const entries = fs.readdirSync(absoluteRoot, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.name === 'node_modules' || entry.name === '.git') {
-      continue;
-    }
-    const nextPath = path.join(absoluteRoot, entry.name);
-    if (entry.isDirectory()) {
-      walkFiles(nextPath, output);
-    } else if (entry.isFile()) {
-      output.push(normalizePath(path.relative(process.cwd(), nextPath)));
-    }
-  }
-
-  return output;
-}
-
-function getPackageFingerprint() {
-  const files = PACKAGE_FINGERPRINT_INPUTS.flatMap((inputPath) => walkFiles(inputPath));
-  const uniqueFiles = [...new Set(files)].sort((left, right) => left.localeCompare(right));
-  const hash = crypto.createHash('sha256');
-
-  for (const filePath of uniqueFiles) {
-    const absolute = path.resolve(filePath);
-    hash.update(filePath);
-    hash.update(':');
-    hash.update(hashFile(absolute));
-    hash.update('\n');
-  }
-
-  return hash.digest('hex');
-}
-
-function loadCacheState() {
-  try {
-    if (!fs.existsSync(CACHE_STATE_FILE)) {
-      return {};
-    }
-    return JSON.parse(fs.readFileSync(CACHE_STATE_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function saveCacheState(state) {
-  fs.mkdirSync(CACHE_STATE_DIR, { recursive: true });
-  fs.writeFileSync(CACHE_STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
-}
-
 function resetSmartCache() {
   fs.rmSync(path.resolve('.vite'), { recursive: true, force: true });
   fs.rmSync(path.resolve('out'), { recursive: true, force: true });
-  fs.rmSync(path.resolve(CACHE_STATE_DIR), { recursive: true, force: true });
+  fs.rmSync(PACKAGE_FINGERPRINT_CACHE_DIR, { recursive: true, force: true });
 }
 
 function maybeRunFormat(summary) {
@@ -700,24 +622,15 @@ function maybeRunUnit(summary) {
 }
 
 function maybePackageForE2E() {
-  const packageFingerprint = getPackageFingerprint();
-  const cacheState = loadCacheState();
-  const cachedFingerprint = cacheState.package?.fingerprint;
-  const canReuse = cachedFingerprint === packageFingerprint && fs.existsSync(PACKAGE_MAIN_ENTRY);
+  const { canReuse, fingerprint, cacheState } = canReusePackagedApp();
 
   if (canReuse) {
-    console.log('[verify-smart] Reusing existing package output (.vite fingerprint match).');
+    console.log('[verify-smart] Reusing existing package output (fingerprint match).');
     return;
   }
 
   runTask('Package app for E2E', ['package']);
-  saveCacheState({
-    ...cacheState,
-    package: {
-      fingerprint: packageFingerprint,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  recordPackaged({ fingerprint, cacheState });
 }
 
 function maybeRunE2E(summary) {
