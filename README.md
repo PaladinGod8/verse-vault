@@ -12,7 +12,7 @@ worldbuilding, and writing workflows in one local workspace.
 
 ## Tech Stack
 
-- Electron 35
+- Electron 43
 - React 19 + Vite 6
 - TypeScript
 - better-sqlite3

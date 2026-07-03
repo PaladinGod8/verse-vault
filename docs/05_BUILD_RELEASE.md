@@ -158,7 +158,7 @@ available `ci`-labeled runners.
 
 - **`better-sqlite3` must be rebuilt** after `yarn install` or Electron version bumps. `postinstall` handles this automatically, but Electron must not be running (Windows EPERM).
 - **All `@electron-forge/*` packages must match versions.** Mismatches can cause misleading startup/plugin errors.
-- **`node-abi` is pinned** in `package.json` `resolutions` to `3.87.0` for Electron 35 ABI support.
+- **`node-abi` is pinned** in `package.json` `resolutions` to `4.33.0` for Electron 43 ABI support.
 - **Fuses are compile-time.** Security fuses (`FusesPlugin` in `forge.config.ts`) are baked at `yarn make`, not `yarn start`.
 - **asar native unpacking matters.** `.node` and `.dylib` files are unpacked via `asar.unpack`/`asar.unpackDir`; removing this breaks native modules in production.
 - **Offline-first validation is required.** Before release, verify startup and core CRUD while disconnected from network.

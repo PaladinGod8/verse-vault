@@ -30,7 +30,7 @@ Example: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
 
 ## Project Baseline
 
-- Stack: Electron 35, React 19, Vite 6, TypeScript, better-sqlite3, Tailwind v4, Zustand 5, React Router 7
+- Stack: Electron 43, React 19, Vite 6, TypeScript, better-sqlite3, Tailwind v4, Zustand 5, React Router 7
 - Architecture: Main <-> Preload <-> Renderer
 - Security boundary:
   - `contextIsolation: true`
