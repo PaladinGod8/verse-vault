@@ -21,7 +21,11 @@ const workerCount = Number.isFinite(parsedWorkers) && parsedWorkers > 0
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60000,
-  retries: 0,
+  // One retry absorbs transient Electron launch/teardown races on Windows
+  // (e.g. "Target page, context or browser has been closed") without masking
+  // real failures — a genuine bug fails both attempts. Pairs with the
+  // `trace: 'on-first-retry'` capture below.
+  retries: 1,
   workers: workerCount, // default cap for CI; local override via PLAYWRIGHT_WORKERS
   reporter: [['html', { open: 'never' }]],
   outputDir: 'test-results/',
