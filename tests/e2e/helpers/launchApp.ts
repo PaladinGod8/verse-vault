@@ -8,6 +8,19 @@ const repoRoot = path.join(__dirname, '../../..');
 const WINDOW_DISCOVERY_TIMEOUT_MS = 15000;
 const APP_CLOSE_TIMEOUT_MS = 5000;
 
+// Chromium deprioritizes/throttles renderers that are backgrounded or occluded.
+// Under parallel Playwright workers only one Electron window can hold OS
+// foreground at a time, so every other window's requestAnimationFrame (and thus
+// canvas/pixi.js rendering that tests assert on via boundingBox()) stalls,
+// timing out render-dependent waits. These switches keep every launched window
+// painting at full rate so the suite is deterministic in parallel. Pairs with
+// `backgroundThrottling: false` on the BrowserWindows in src/main.ts.
+const RENDERER_ANTITHROTTLE_SWITCHES = [
+  '--disable-renderer-backgrounding',
+  '--disable-background-timer-throttling',
+  '--disable-backgrounding-occluded-windows',
+];
+
 interface LaunchTarget {
   args: string[];
   label: string;
@@ -75,7 +88,7 @@ async function launchWithTarget(
   env: NodeJS.ProcessEnv,
 ): Promise<ElectronApplication> {
   const app = await electron.launch({
-    args: launchTarget.args,
+    args: [...launchTarget.args, ...RENDERER_ANTITHROTTLE_SWITCHES],
     env,
   });
 

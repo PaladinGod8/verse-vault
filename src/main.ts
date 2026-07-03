@@ -175,6 +175,12 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Keep rendering, timers, and requestAnimationFrame running at full rate
+      // even when the window is backgrounded or occluded. The canvas/pixi.js
+      // views (battlemaps, world map) must keep painting when the OS foreground
+      // is elsewhere; this also makes E2E deterministic under parallel workers,
+      // where only one Electron window can hold foreground at a time.
+      backgroundThrottling: false,
     },
   });
 
@@ -207,6 +213,9 @@ function createWorldMapEditorWindow(hostPageUrl: string): BrowserWindow {
       preload: path.join(__dirname, 'preloadWorldMap.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // See main window: keep the map canvas painting when backgrounded and
+      // keep parallel-worker E2E deterministic.
+      backgroundThrottling: false,
     },
   });
 
