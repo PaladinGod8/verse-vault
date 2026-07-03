@@ -149,16 +149,25 @@ function runVerifyAll(workspace: string, options: VerifyRunOptions = {}): Verify
   const binPath = path.join(workspace, 'bin');
   const scriptArgs = options.args ?? ['--no-dev'];
 
+  const env: Record<string, string> = {
+    ...process.env,
+    ...options.env,
+    PATH: `${binPath}${path.delimiter}${process.env.PATH || ''}`,
+    FAKE_YARN_STATE_PATH: path.join(workspace, '.fake-yarn-state.json'),
+  };
+
+  // Keep worker assertions deterministic regardless of the runner's ambient
+  // PLAYWRIGHT_WORKERS (e.g. someone running via test:e2e:local:8, or a
+  // verify:all invocation that exported it). Tests that care set it explicitly.
+  if (!options.env || !('PLAYWRIGHT_WORKERS' in options.env)) {
+    delete env.PLAYWRIGHT_WORKERS;
+  }
+
   return spawnSync(process.execPath, [VERIFY_ALL_SCRIPT, ...scriptArgs], {
     cwd: workspace,
     encoding: 'utf8',
     timeout: 15_000,
-    env: {
-      ...process.env,
-      ...options.env,
-      PATH: `${binPath}${path.delimiter}${process.env.PATH || ''}`,
-      FAKE_YARN_STATE_PATH: path.join(workspace, '.fake-yarn-state.json'),
-    },
+    env,
   });
 }
 
