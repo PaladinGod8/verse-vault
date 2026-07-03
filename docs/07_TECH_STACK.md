@@ -18,7 +18,7 @@ Update rule:
 
 | Technology      | Role in repo                                                                    |
 | --------------- | ------------------------------------------------------------------------------- |
-| Electron 35     | Desktop shell and main/preload process runtime                                  |
+| Electron 43     | Desktop shell and main/preload process runtime                                  |
 | React 19        | Renderer UI framework                                                           |
 | React Router 7  | Renderer route management                                                       |
 | TypeScript 5    | Primary language across app and scripts                                         |
@@ -37,7 +37,7 @@ Update rule:
 | Technology                | Role in repo                                        |
 | ------------------------- | --------------------------------------------------- |
 | Electron Forge            | App start, package, make, and publish workflow      |
-| electron-rebuild          | Native module rebuild after install/version changes |
+| @electron/rebuild         | Native module rebuild after install/version changes |
 | electron-squirrel-startup | Windows installer startup handling                  |
 | @electron/fuses           | Electron hardening/fuse config                      |
 
@@ -74,4 +74,4 @@ Update rule:
 
 - If your change adds a new technology, update this file in same change.
 - Examples that should update this file: adding `gitleaks`, Playwright, new UI framework, new DB, new package manager, new docs/lint tool, new release/distribution tool.
-- Examples that should not update this file: adding feature code with existing React/Electron stack, bumping Electron 35.0.3 to newer 35.x, changing internal scripts without new external tooling.
+- Examples that should not update this file: adding feature code with existing React/Electron stack, bumping Electron 43.0.0 to newer 43.x, changing internal scripts without new external tooling.
