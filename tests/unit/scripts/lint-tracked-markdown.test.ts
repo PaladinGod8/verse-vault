@@ -66,6 +66,26 @@ describe('lint-tracked-markdown.cjs', () => {
     }
   });
 
+  it('excludes vendored third-party markdown from linting', () => {
+    const workspace = createWorkspace();
+    const ownDoc = path.join(workspace, 'README.md');
+    const vendorDoc = path.join(workspace, 'vendor', 'lib', 'THIRD_PARTY.md');
+
+    writeFile(ownDoc, '# Readme\n');
+    writeFile(vendorDoc, '# Third party\n');
+
+    spawnSync('git', ['add', 'README.md', 'vendor/lib/THIRD_PARTY.md'], {
+      cwd: workspace,
+      stdio: 'ignore',
+    });
+
+    const result = runScript(workspace);
+
+    expect(result.status).toBe(0);
+    // Only README.md is our doc; the vendored file must not be linted.
+    expect(result.stdout).toContain('count=1');
+  });
+
   it('skips tracked markdown files that were deleted from the working tree', () => {
     const workspace = createWorkspace();
     const deletedDoc = path.join(workspace, 'LOCAL_CI_PIPELINE_REVIEW.md');

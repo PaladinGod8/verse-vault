@@ -97,13 +97,22 @@ function runGit(commandArgs) {
   return { ok: true, files: parseLines(result.stdout) };
 }
 
+// Vendored third-party trees are not ours to lint against house style. Their
+// upstream Markdown (e.g. bundled tinymce READMEs) trips rules like MD034 and
+// would be overwritten on the next vendor sync anyway.
+const EXCLUDED_PATH_PREFIXES = ['vendor/'];
+
+function isVendoredPath(filePath) {
+  return EXCLUDED_PATH_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
 function getTrackedMarkdownFiles() {
   const tracked = runGit(['ls-files', '--', '*.md']);
   if (!tracked.ok) {
     console.error('[lint:md] Failed to list tracked markdown files via git ls-files.');
     process.exit(2);
   }
-  return tracked.files;
+  return tracked.files.filter((filePath) => !isVendoredPath(filePath));
 }
 
 function getStagedMarkdownFiles() {
