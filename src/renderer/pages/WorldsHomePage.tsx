@@ -19,6 +19,8 @@ export default function WorldsHomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [exportingWorldId, setExportingWorldId] = useState<number | null>(null);
   const [editingWorld, setEditingWorld] = useState<World | null>(null);
   const [deletingWorldId, setDeletingWorldId] = useState<number | null>(null);
   const [pendingDeleteWorld, setPendingDeleteWorld] = useState<World | null>(
@@ -100,6 +102,45 @@ export default function WorldsHomePage() {
     }
   };
 
+  const handleImportWorld = async () => {
+    setIsImporting(true);
+    try {
+      const result = await window.db.worlds.import();
+      if (result.canceled) {
+        return;
+      }
+      const data = await window.db.worlds.getAll();
+      setWorlds(data);
+      setLoadError(null);
+      toast.success('World imported.', `"${result.worldName}" was added to your worlds.`);
+    } catch (importError) {
+      toast.error(
+        'Failed to import world.',
+        importError instanceof Error ? importError.message : 'Please try again.',
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleExportWorld = async (world: World) => {
+    setExportingWorldId(world.id);
+    try {
+      const result = await window.db.worlds.export(world.id);
+      if (result.canceled) {
+        return;
+      }
+      toast.success('World exported.', `"${world.name}" was saved to ${result.filePath}.`);
+    } catch (exportError) {
+      toast.error(
+        'Failed to export world.',
+        exportError instanceof Error ? exportError.message : 'Please try again.',
+      );
+    } finally {
+      setExportingWorldId((current) => (current === world.id ? null : current));
+    }
+  };
+
   const handleRequestDeleteWorld = (world: World) => {
     setPendingDeleteWorld(world);
   };
@@ -154,6 +195,14 @@ export default function WorldsHomePage() {
             </Link>
             <button
               type='button'
+              disabled={isImporting}
+              className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
+              onClick={handleImportWorld}
+            >
+              {isImporting ? 'Importing…' : 'Import World Data'}
+            </button>
+            <button
+              type='button'
               className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800'
               onClick={() => setIsCreateOpen(true)}
             >
@@ -203,10 +252,14 @@ export default function WorldsHomePage() {
                     setIsCreateOpen(false);
                     setEditingWorld(world);
                   }}
+                  onExport={() => {
+                    handleExportWorld(world);
+                  }}
                   onDelete={() => {
                     handleRequestDeleteWorld(world);
                   }}
                   isDeleting={deletingWorldId === world.id}
+                  isExporting={exportingWorldId === world.id}
                 />
               ))}
             </section>

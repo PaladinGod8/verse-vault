@@ -42,6 +42,8 @@ import type {
   TokenImageImportResult,
   Verse,
   World,
+  WorldExportOutcome,
+  WorldImportOutcome,
   WorldMap,
   WorldMapOpenEditorResult,
 } from './domainTypes';
@@ -79,6 +81,8 @@ export interface DbApi extends DbApiRelationships {
     delete(id: number): Promise<{ id: number; }>;
     markViewed(id: number): Promise<World>;
     importImage(payload: TokenImageImportPayload): Promise<TokenImageImportResult>;
+    export(worldId: number): Promise<WorldExportOutcome>;
+    import(): Promise<WorldImportOutcome>;
   };
   levels: {
     getAllByWorld(worldId: number): Promise<Level[]>;

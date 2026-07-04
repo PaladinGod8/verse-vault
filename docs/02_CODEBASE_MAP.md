@@ -83,6 +83,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | ------------------------------------------------------- | ---------------------- | -------- |
 | `src/main/ipc/registerVerseHandlers.ts`                 | verses                 | 4        |
 | `src/main/ipc/registerWorldHandlers.ts`                 | worlds                 | 7        |
+| `src/main/ipc/registerWorldTransferHandlers.ts`         | worlds                 | 2        |
 | `src/main/ipc/registerLevelHandlers.ts`                 | levels                 | 5        |
 | `src/main/ipc/registerAbilityHandlers.ts`               | abilities              | 8        |
 | `src/main/ipc/registerCampaignHandlers.ts`              | campaigns              | 5        |

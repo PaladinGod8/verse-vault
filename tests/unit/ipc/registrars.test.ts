@@ -24,6 +24,7 @@ import { registerTokenHandlers } from '../../../src/main/ipc/registerTokenHandle
 import { registerVerseHandlers } from '../../../src/main/ipc/registerVerseHandlers';
 import { registerWorldHandlers } from '../../../src/main/ipc/registerWorldHandlers';
 import { registerWorldMapHandlers } from '../../../src/main/ipc/registerWorldMapHandlers';
+import { registerWorldTransferHandlers } from '../../../src/main/ipc/registerWorldTransferHandlers';
 import { IPC } from '../../../src/shared/ipcChannels';
 
 const { ipcHandleMock } = vi.hoisted(() => ({
@@ -107,6 +108,18 @@ describe('IPC registrar channel wiring', () => {
           IPC.WORLDS_DELETE,
           IPC.WORLDS_MARK_VIEWED,
           IPC.WORLDS_IMPORT_IMAGE,
+        ],
+      },
+      {
+        name: 'worldTransfer',
+        register: () =>
+          registerWorldTransferHandlers(dbMock, {
+            userDataPath: 'C:\\mock-user-data',
+            appVersion: '1.0.0',
+          }),
+        expected: [
+          IPC.WORLDS_EXPORT,
+          IPC.WORLDS_IMPORT,
         ],
       },
       {
@@ -392,6 +405,11 @@ describe('IPC registrar channel wiring', () => {
     const allRegisterCalls = [
       () => registerVerseHandlers(dbMock),
       () => registerWorldHandlers(dbMock),
+      () =>
+        registerWorldTransferHandlers(dbMock, {
+          userDataPath: 'C:\\mock-user-data',
+          appVersion: '1.0.0',
+        }),
       () => registerLevelHandlers(dbMock),
       () => registerCampaignHandlers(dbMock),
       () => registerCampaignNoteHandlers(dbMock),

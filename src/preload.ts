@@ -155,6 +155,8 @@ const dbApi: DbApi = {
         bytes: new Uint8Array(payload.bytes),
       });
     },
+    export: (worldId) => ipcRenderer.invoke(IPC.WORLDS_EXPORT, worldId),
+    import: () => ipcRenderer.invoke(IPC.WORLDS_IMPORT),
   },
   characters: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.CHARACTERS_GET_ALL_BY_WORLD, worldId),

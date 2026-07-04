@@ -64,6 +64,7 @@ describe('playwright project worker grouping', () => {
       'tokens.test.ts',
       'tokens-runtime-palette.test.ts',
       'world-default-statistics.test.ts',
+      'world-import-export.test.ts',
       'world-maps.test.ts',
       'worlds.test.ts',
       'world-statistics-config.test.ts',

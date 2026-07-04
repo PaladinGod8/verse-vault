@@ -43,6 +43,7 @@ export default defineConfig({
         'loreNotes.test.ts',
         'settings.test.ts',
         'worlds.test.ts',
+        'world-import-export.test.ts',
         'world-maps.test.ts',
         'characters.test.ts',
         'character-detail.test.ts',

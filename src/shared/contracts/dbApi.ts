@@ -8,7 +8,17 @@ import { DB_API_RELATIONSHIP_METHODS } from './dbApiRelationships';
 
 export const DB_API_METHODS = {
   verses: ['getAll', 'add', 'update', 'delete'],
-  worlds: ['getAll', 'getById', 'add', 'update', 'delete', 'markViewed', 'importImage'],
+  worlds: [
+    'getAll',
+    'getById',
+    'add',
+    'update',
+    'delete',
+    'markViewed',
+    'importImage',
+    'export',
+    'import',
+  ],
   levels: ['getAllByWorld', 'getById', 'add', 'update', 'delete'],
   abilities: [
     'getAllByWorld',

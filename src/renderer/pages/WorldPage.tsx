@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
 function formatTimestamp(timestamp: string | null, fallback: string): string {
@@ -23,6 +24,7 @@ function formatTimestamp(timestamp: string | null, fallback: string): string {
 }
 
 export default function WorldPage() {
+  const toast = useToast();
   const { id } = useParams();
   const worldId = useMemo(() => {
     if (!id) {
@@ -40,6 +42,7 @@ export default function WorldPage() {
   const [world, setWorld] = useState<World | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -90,20 +93,54 @@ export default function WorldPage() {
     };
   }, [worldId]);
 
+  const handleExportWorld = async () => {
+    if (!world) {
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const result = await window.db.worlds.export(world.id);
+      if (result.canceled) {
+        return;
+      }
+      toast.success('World exported.', `"${world.name}" was saved to ${result.filePath}.`);
+    } catch (exportError) {
+      toast.error(
+        'Failed to export world.',
+        exportError instanceof Error ? exportError.message : 'Please try again.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className='flex min-h-screen'>
       <WorldSidebar worldId={worldId} />
       <main className='flex-1 space-y-6 p-6'>
-        <header className='space-y-2'>
-          <Link
-            to='/'
-            className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
+        <header className='flex items-start justify-between gap-4'>
+          <div className='space-y-2'>
+            <Link
+              to='/'
+              className='inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900'
+            >
+              Back to worlds
+            </Link>
+            <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
+              World Overview
+            </h1>
+          </div>
+          <button
+            type='button'
+            disabled={!world || isLoading || Boolean(error) || isExporting}
+            className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
+            onClick={() => {
+              void handleExportWorld();
+            }}
           >
-            Back to worlds
-          </Link>
-          <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
-            World Overview
-          </h1>
+            {isExporting ? 'Exporting...' : 'Export World Data'}
+          </button>
         </header>
 
         {isLoading

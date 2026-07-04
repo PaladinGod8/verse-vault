@@ -37,6 +37,7 @@ import { registerVerseHandlers } from './main/ipc/registerVerseHandlers';
 import { registerWorldHandlers } from './main/ipc/registerWorldHandlers';
 import { registerWorldMapHandlers } from './main/ipc/registerWorldMapHandlers';
 import { registerWorldMapHostHandlers } from './main/ipc/registerWorldMapHostHandlers';
+import { registerWorldTransferHandlers } from './main/ipc/registerWorldTransferHandlers';
 import { createWorldMapEditorManager } from './main/worldMapEditorManager';
 import { createWorldMapPersistence } from './main/worldMapPersistence';
 import { createWorldMapProtocolHandler, WORLD_MAP_PROTOCOL } from './main/worldMapProtocol';
@@ -231,6 +232,7 @@ function registerIpcHandlers() {
   const db = getDatabase();
   const worldMapManifestPath = path.join(app.getAppPath(), 'vendor', 'azgaar-fmg', 'MANIFEST.json');
   const worldMapSnapshotDir = path.join(app.getPath('userData'), 'world-maps');
+  const appVersion = typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
   const worldMapProtocol = registerWorldMapProtocol({
     manifestPath: worldMapManifestPath,
     snapshotDir: worldMapSnapshotDir,
@@ -247,6 +249,10 @@ function registerIpcHandlers() {
     cleanupDeletedWorld: async (worldId) => {
       await worldMapPersistence.deleteByWorld(worldId);
     },
+  });
+  registerWorldTransferHandlers(db, {
+    userDataPath: app.getPath('userData'),
+    appVersion,
   });
   registerLevelHandlers(db);
   registerCampaignHandlers(db);

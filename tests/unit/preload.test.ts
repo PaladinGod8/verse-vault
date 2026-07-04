@@ -374,6 +374,24 @@ describe('preload', () => {
     }
   });
 
+  it('forwards worlds.export to WORLDS_EXPORT', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.worlds.export(17);
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.WORLDS_EXPORT, 17);
+  });
+
+  it('forwards worlds.import to WORLDS_IMPORT', async () => {
+    await import('../../src/preload');
+    const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;
+
+    await api.worlds.import();
+
+    expect(invokeMock).toHaveBeenCalledWith(IPC.WORLDS_IMPORT);
+  });
+
   it('forwards sessions.getAllByCampaign to SESSIONS_GET_ALL_BY_CAMPAIGN', async () => {
     await import('../../src/preload');
     const api = exposeInMainWorldMock.mock.calls[0][1] as DbApi;

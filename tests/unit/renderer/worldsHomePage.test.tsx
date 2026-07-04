@@ -26,6 +26,8 @@ const worldsGetAllMock = vi.fn();
 const worldsAddMock = vi.fn();
 const worldsUpdateMock = vi.fn();
 const worldsDeleteMock = vi.fn();
+const worldsExportMock = vi.fn();
+const worldsImportMock = vi.fn();
 
 function buildWorld(overrides: Partial<World> = {}): World {
   return {
@@ -76,6 +78,8 @@ describe('WorldsHomePage renderer behaviors', () => {
         update: worldsUpdateMock,
         delete: worldsDeleteMock,
         markViewed: vi.fn(),
+        export: worldsExportMock,
+        import: worldsImportMock,
       },
       settings: {
         get: vi.fn().mockResolvedValue({
@@ -365,6 +369,58 @@ describe('WorldsHomePage renderer behaviors', () => {
     ).toBeInTheDocument();
   });
 
+  it('imports a world and refreshes list after success', async () => {
+    const user = userEvent.setup();
+    const importedWorld = buildWorld({ id: 2, name: 'Imported Realm' });
+
+    worldsGetAllMock
+      .mockResolvedValueOnce([buildWorld()])
+      .mockResolvedValueOnce([buildWorld(), importedWorld]);
+    worldsImportMock.mockResolvedValue({
+      canceled: false,
+      worldId: 2,
+      worldName: 'Imported Realm',
+    });
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    await user.click(screen.getByRole('button', { name: 'Import World Data' }));
+
+    await waitFor(() => {
+      expect(worldsImportMock).toHaveBeenCalledTimes(1);
+    });
+    expect(await screen.findByRole('button', { name: 'Open Imported Realm' })).toBeInTheDocument();
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'World imported.',
+      '"Imported Realm" was added to your worlds.',
+    );
+  });
+
+  it('exports a world from card action and shows success toast', async () => {
+    const user = userEvent.setup();
+
+    worldsGetAllMock.mockResolvedValue([buildWorld()]);
+    worldsExportMock.mockResolvedValue({
+      canceled: false,
+      filePath: 'C:\\Exports\\alpha.zip',
+      worldName: 'Alpha',
+    });
+
+    renderWorldsHomePage();
+
+    await screen.findByRole('button', { name: 'Open Alpha' });
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    await waitFor(() => {
+      expect(worldsExportMock).toHaveBeenCalledWith(1);
+    });
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'World exported.',
+      '"Alpha" was saved to C:\\Exports\\alpha.zip.',
+    );
+  });
+
   it('shows delete failure toast when delete fails with non-Error exception', async () => {
     const user = userEvent.setup();
     const world = buildWorld();
@@ -387,6 +443,25 @@ describe('WorldsHomePage renderer behaviors', () => {
       expect(toastErrorMock).toHaveBeenCalledWith(
         'Failed to delete world.',
         'Please try again.',
+      );
+    });
+  });
+
+  it('shows import failure toast when import fails', async () => {
+    const user = userEvent.setup();
+
+    worldsGetAllMock.mockResolvedValue([]);
+    worldsImportMock.mockRejectedValue(new Error('bad zip'));
+
+    renderWorldsHomePage();
+
+    await screen.findByText('No worlds yet');
+    await user.click(screen.getByRole('button', { name: 'Import World Data' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Failed to import world.',
+        'bad zip',
       );
     });
   });

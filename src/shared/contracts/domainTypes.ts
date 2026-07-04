@@ -140,6 +140,18 @@ export interface WorldMapOpenEditorResult {
   worldMapId: number | null;
 }
 
+export interface WorldExportOutcome {
+  canceled: boolean;
+  filePath?: string;
+  worldName?: string;
+}
+
+export interface WorldImportOutcome {
+  canceled: boolean;
+  worldId?: number;
+  worldName?: string;
+}
+
 export interface WorldMapSaveMeta {
   mapName: string | null;
   generatorVersion: string | null;

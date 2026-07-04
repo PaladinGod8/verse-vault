@@ -4,8 +4,10 @@ type WorldCardProps = {
   world: World;
   onOpen: () => void;
   onEdit: () => void;
+  onExport: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
+  isExporting?: boolean;
 };
 
 function formatTimestamp(timestamp: string | null, fallback: string): string {
@@ -32,8 +34,10 @@ export default function WorldCard({
   world,
   onOpen,
   onEdit,
+  onExport,
   onDelete,
   isDeleting = false,
+  isExporting = false,
 }: WorldCardProps) {
   const thumbnail = world.thumbnail?.trim() ?? '';
   const [showImage, setShowImage] = useState(thumbnail.length > 0);
@@ -57,6 +61,11 @@ export default function WorldCard({
   const handleEditClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onEdit();
+  };
+
+  const handleExportClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onExport();
   };
 
   const handleDeleteClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -122,6 +131,14 @@ export default function WorldCard({
             disabled={isDeleting}
           >
             Edit
+          </button>
+          <button
+            type='button'
+            className='rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
+            onClick={handleExportClick}
+            disabled={isDeleting || isExporting}
+          >
+            {isExporting ? 'Exporting...' : 'Export'}
           </button>
           <button
             type='button'

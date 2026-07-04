@@ -28,6 +28,7 @@ describe('WorldCard', () => {
         })}
         onOpen={vi.fn()}
         onEdit={vi.fn()}
+        onExport={vi.fn()}
         onDelete={vi.fn()}
       />,
     );
@@ -46,6 +47,7 @@ describe('WorldCard', () => {
         world={buildWorld()}
         onOpen={onOpen}
         onEdit={vi.fn()}
+        onExport={vi.fn()}
         onDelete={vi.fn()}
       />,
     );
@@ -61,10 +63,11 @@ describe('WorldCard', () => {
     expect(onOpen).toHaveBeenCalledTimes(2);
   });
 
-  it('stops propagation for edit and delete button clicks', async () => {
+  it('stops propagation for edit, export, and delete button clicks', async () => {
     const user = userEvent.setup();
     const onOpen = vi.fn();
     const onEdit = vi.fn();
+    const onExport = vi.fn();
     const onDelete = vi.fn();
 
     render(
@@ -72,14 +75,17 @@ describe('WorldCard', () => {
         world={buildWorld()}
         onOpen={onOpen}
         onEdit={onEdit}
+        onExport={onExport}
         onDelete={onDelete}
       />,
     );
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Export' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onExport).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(onOpen).not.toHaveBeenCalled();
   });
@@ -93,6 +99,7 @@ describe('WorldCard', () => {
         })}
         onOpen={vi.fn()}
         onEdit={vi.fn()}
+        onExport={vi.fn()}
         onDelete={vi.fn()}
         isDeleting
       />,
@@ -100,13 +107,32 @@ describe('WorldCard', () => {
 
     const image = screen.getByRole('img', { name: 'Alpha thumbnail' });
     const editButton = screen.getByRole('button', { name: 'Edit' });
+    const exportButton = screen.getByRole('button', { name: 'Export' });
     const deleteButton = screen.getByRole('button', { name: 'Deleting...' });
 
     expect(editButton).toBeDisabled();
+    expect(exportButton).toBeDisabled();
     expect(deleteButton).toBeDisabled();
 
     fireEvent.error(image);
 
     expect(screen.getByText('No thumbnail')).toBeInTheDocument();
+  });
+
+  it('shows exporting state on export button only', () => {
+    render(
+      <WorldCard
+        world={buildWorld()}
+        onOpen={vi.fn()}
+        onEdit={vi.fn()}
+        onExport={vi.fn()}
+        onDelete={vi.fn()}
+        isExporting
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Exporting...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
   });
 });

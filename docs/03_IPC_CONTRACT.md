@@ -12,32 +12,32 @@ This document is a current-state contract index. It is generated from `src/share
 
 <!-- BEGIN GENERATED IPC SUMMARY -->
 
-| Domain                 | Channels | Handlers                                                |
-| ---------------------- | -------- | ------------------------------------------------------- |
-| verses                 | 4        | `src/main/ipc/registerVerseHandlers.ts`                 |
-| worlds                 | 7        | `src/main/ipc/registerWorldHandlers.ts`                 |
-| levels                 | 5        | `src/main/ipc/registerLevelHandlers.ts`                 |
-| abilities              | 8        | `src/main/ipc/registerAbilityHandlers.ts`               |
-| campaigns              | 5        | `src/main/ipc/registerCampaignHandlers.ts`              |
-| campaignNotes          | 6        | `src/main/ipc/registerCampaignNoteHandlers.ts`          |
-| battlemaps             | 5        | `src/main/ipc/registerBattleMapHandlers.ts`             |
-| worldMaps              | 2        | `src/main/ipc/registerWorldMapHandlers.ts`              |
-| tokens                 | 9        | `src/main/ipc/registerTokenHandlers.ts`                 |
-| arcs                   | 5        | `src/main/ipc/registerArcHandlers.ts`                   |
-| acts                   | 7        | `src/main/ipc/registerActHandlers.ts`                   |
-| sessions               | 7        | `src/main/ipc/registerSessionHandlers.ts`               |
-| scenes                 | 7        | `src/main/ipc/registerSceneHandlers.ts`                 |
-| statblocks             | 13       | `src/main/ipc/registerStatBlockHandlers.ts`             |
-| characters             | 8        | `src/main/ipc/registerCharacterHandlers.ts`             |
-| backgrounds            | 7        | `src/main/ipc/registerBackgroundHandlers.ts`            |
-| items                  | 7        | `src/main/ipc/registerItemHandlers.ts`                  |
-| loreNotes              | 8        | `src/main/ipc/registerLoreNoteHandlers.ts`              |
-| factions               | 7        | `src/main/ipc/registerFactionHandlers.ts`               |
-| factionTypes           | 4        | `src/main/ipc/registerFactionTypeHandlers.ts`           |
-| factionMembers         | 5        | `src/main/ipc/registerFactionMemberHandlers.ts`         |
-| characterRelationships | 4        | `src/main/ipc/registerCharacterRelationshipHandlers.ts` |
-| factionRelationships   | 4        | `src/main/ipc/registerFactionRelationshipHandlers.ts`   |
-| settings               | 2        | `src/main/ipc/registerSettingsHandlers.ts`              |
+| Domain                 | Channels | Handlers                                                                                 |
+| ---------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| verses                 | 4        | `src/main/ipc/registerVerseHandlers.ts`                                                  |
+| worlds                 | 9        | `src/main/ipc/registerWorldHandlers.ts`, `src/main/ipc/registerWorldTransferHandlers.ts` |
+| levels                 | 5        | `src/main/ipc/registerLevelHandlers.ts`                                                  |
+| abilities              | 8        | `src/main/ipc/registerAbilityHandlers.ts`                                                |
+| campaigns              | 5        | `src/main/ipc/registerCampaignHandlers.ts`                                               |
+| campaignNotes          | 6        | `src/main/ipc/registerCampaignNoteHandlers.ts`                                           |
+| battlemaps             | 5        | `src/main/ipc/registerBattleMapHandlers.ts`                                              |
+| worldMaps              | 2        | `src/main/ipc/registerWorldMapHandlers.ts`                                               |
+| tokens                 | 9        | `src/main/ipc/registerTokenHandlers.ts`                                                  |
+| arcs                   | 5        | `src/main/ipc/registerArcHandlers.ts`                                                    |
+| acts                   | 7        | `src/main/ipc/registerActHandlers.ts`                                                    |
+| sessions               | 7        | `src/main/ipc/registerSessionHandlers.ts`                                                |
+| scenes                 | 7        | `src/main/ipc/registerSceneHandlers.ts`                                                  |
+| statblocks             | 13       | `src/main/ipc/registerStatBlockHandlers.ts`                                              |
+| characters             | 8        | `src/main/ipc/registerCharacterHandlers.ts`                                              |
+| backgrounds            | 7        | `src/main/ipc/registerBackgroundHandlers.ts`                                             |
+| items                  | 7        | `src/main/ipc/registerItemHandlers.ts`                                                   |
+| loreNotes              | 8        | `src/main/ipc/registerLoreNoteHandlers.ts`                                               |
+| factions               | 7        | `src/main/ipc/registerFactionHandlers.ts`                                                |
+| factionTypes           | 4        | `src/main/ipc/registerFactionTypeHandlers.ts`                                            |
+| factionMembers         | 5        | `src/main/ipc/registerFactionMemberHandlers.ts`                                          |
+| characterRelationships | 4        | `src/main/ipc/registerCharacterRelationshipHandlers.ts`                                  |
+| factionRelationships   | 4        | `src/main/ipc/registerFactionRelationshipHandlers.ts`                                    |
+| settings               | 2        | `src/main/ipc/registerSettingsHandlers.ts`                                               |
 
 <!-- END GENERATED IPC SUMMARY -->
 
@@ -58,6 +58,8 @@ This document is a current-state contract index. It is generated from `src/share
 | `IPC.WORLDS_DELETE`                                | `db:worlds:delete`                            | `window.db.worlds.delete`                            | `src/main/ipc/registerWorldHandlers.ts`                 | `DbApi.worlds.delete`                            |
 | `IPC.WORLDS_MARK_VIEWED`                           | `db:worlds:markViewed`                        | `window.db.worlds.markViewed`                        | `src/main/ipc/registerWorldHandlers.ts`                 | `DbApi.worlds.markViewed`                        |
 | `IPC.WORLDS_IMPORT_IMAGE`                          | `db:worlds:importImage`                       | `window.db.worlds.importImage`                       | `src/main/ipc/registerWorldHandlers.ts`                 | `DbApi.worlds.importImage`                       |
+| `IPC.WORLDS_EXPORT`                                | `db:worlds:export`                            | `window.db.worlds.export`                            | `src/main/ipc/registerWorldTransferHandlers.ts`         | `DbApi.worlds.export`                            |
+| `IPC.WORLDS_IMPORT`                                | `db:worlds:import`                            | `window.db.worlds.import`                            | `src/main/ipc/registerWorldTransferHandlers.ts`         | `DbApi.worlds.import`                            |
 | `IPC.LEVELS_GET_ALL_BY_WORLD`                      | `db:levels:getAllByWorld`                     | `window.db.levels.getAllByWorld`                     | `src/main/ipc/registerLevelHandlers.ts`                 | `DbApi.levels.getAllByWorld`                     |
 | `IPC.LEVELS_GET_BY_ID`                             | `db:levels:getById`                           | `window.db.levels.getById`                           | `src/main/ipc/registerLevelHandlers.ts`                 | `DbApi.levels.getById`                           |
 | `IPC.LEVELS_ADD`                                   | `db:levels:add`                               | `window.db.levels.add`                               | `src/main/ipc/registerLevelHandlers.ts`                 | `DbApi.levels.add`                               |

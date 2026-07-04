@@ -19,6 +19,7 @@ export interface IpcCatalogEntry {
 const HANDLERS = {
   verses: 'src/main/ipc/registerVerseHandlers.ts',
   worlds: 'src/main/ipc/registerWorldHandlers.ts',
+  worldTransfer: 'src/main/ipc/registerWorldTransferHandlers.ts',
   levels: 'src/main/ipc/registerLevelHandlers.ts',
   abilities: 'src/main/ipc/registerAbilityHandlers.ts',
   campaigns: 'src/main/ipc/registerCampaignHandlers.ts',
@@ -80,6 +81,20 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
     ['WORLDS_DELETE', 'window.db.worlds.delete', 'DbApi.worlds.delete'],
     ['WORLDS_MARK_VIEWED', 'window.db.worlds.markViewed', 'DbApi.worlds.markViewed'],
     ['WORLDS_IMPORT_IMAGE', 'window.db.worlds.importImage', 'DbApi.worlds.importImage'],
+  ]),
+  ...entries('worlds', HANDLERS.worldTransfer, [
+    [
+      'WORLDS_EXPORT',
+      'window.db.worlds.export',
+      'DbApi.worlds.export',
+      'Export one world to a .zip bundle',
+    ],
+    [
+      'WORLDS_IMPORT',
+      'window.db.worlds.import',
+      'DbApi.worlds.import',
+      'Import a world .zip bundle as a new world',
+    ],
   ]),
   ...entries('levels', HANDLERS.levels, [
     ['LEVELS_GET_ALL_BY_WORLD', 'window.db.levels.getAllByWorld', 'DbApi.levels.getAllByWorld'],

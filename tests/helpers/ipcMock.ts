@@ -20,6 +20,8 @@ export function createMockDb(): DbApi {
       delete: vi.fn().mockResolvedValue(undefined),
       markViewed: vi.fn().mockResolvedValue(undefined),
       importImage: vi.fn().mockResolvedValue({ image_src: 'vv-media://world-images/mock.png' }),
+      export: vi.fn().mockResolvedValue({ canceled: true }),
+      import: vi.fn().mockResolvedValue({ canceled: true }),
     },
     levels: {
       getAllByWorld: vi.fn().mockResolvedValue([]),
