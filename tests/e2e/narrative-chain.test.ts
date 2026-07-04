@@ -161,4 +161,39 @@ test.describe.serial('@critical Narrative chain roll-ups and moves', () => {
 
     await page.evaluate(async (wid) => window.db.worlds.delete(wid), worldId);
   });
+
+  test('deleting a middle act compacts sibling sort_order to stay contiguous', async () => {
+    const { page } = context;
+    const { worldId } = await createWorld(page);
+    const { campaignId } = await createCampaign(page, worldId);
+    const { arcId } = await createArc(page, campaignId);
+    const { actId: firstId } = await createAct(page, arcId, `First ${Date.now()}`);
+    const { actId: middleId } = await createAct(page, arcId, `Middle ${Date.now()}`);
+    const { actId: lastId } = await createAct(page, arcId, `Last ${Date.now()}`);
+
+    const initial = await page.evaluate(
+      async (id) => (await window.db.acts.getAllByArc(id)).map((act) => act.sort_order),
+      arcId,
+    );
+    expect(initial).toEqual([0, 1, 2]);
+
+    await page.evaluate(async (id) => window.db.acts.delete(id), middleId);
+
+    // The delete handler resequences the arc so remaining acts keep a dense,
+    // gap-free 0..n order rather than leaving a hole where the middle act was.
+    const after = await page.evaluate(
+      async (id) =>
+        (await window.db.acts.getAllByArc(id)).map((act) => ({
+          id: act.id,
+          sort_order: act.sort_order,
+        })),
+      arcId,
+    );
+    expect(after).toEqual([
+      { id: firstId, sort_order: 0 },
+      { id: lastId, sort_order: 1 },
+    ]);
+
+    await page.evaluate(async (wid) => window.db.worlds.delete(wid), worldId);
+  });
 });

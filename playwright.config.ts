@@ -55,6 +55,9 @@ export default defineConfig({
         'campaign-notes.test.ts',
         'narrative-chain.test.ts',
         'statblock-links.test.ts',
+        'restart-persistence.test.ts',
+        'media-import-roundtrip.test.ts',
+        'token-move-scope.test.ts',
       ],
       use: { ...devices['Desktop Chrome'] },
       // Higher parallelization for fast tests

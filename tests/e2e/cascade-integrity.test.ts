@@ -263,6 +263,133 @@ test.describe.serial('@critical Referential cascade integrity', () => {
 
     await page.evaluate(async (id) => window.db.worlds.delete(id), worldId);
   });
+
+  test('deleting a level nulls abilities.level_id without deleting the ability', async () => {
+    const { page } = context;
+    const { worldId } = await createWorld(page);
+    const { levelId } = await createLevel(page, worldId, { name: 'L1', category: 'General' });
+
+    const abilityId = await page.evaluate(async ({ wId, lId }) => {
+      const ability = await window.db.abilities.add({
+        world_id: wId,
+        name: `Leveled Ability ${Date.now()}`,
+        type: 'active',
+        level_id: lId,
+      });
+      return ability.id;
+    }, { wId: worldId, lId: levelId });
+
+    await page.evaluate(async (id) => window.db.levels.delete(id), levelId);
+
+    const ability = await page.evaluate(async (id) => window.db.abilities.getById(id), abilityId);
+    expect(ability).not.toBeNull();
+    expect(ability?.level_id).toBeNull();
+
+    await page.evaluate(async (id) => window.db.worlds.delete(id), worldId);
+  });
+
+  test('deleting an ability removes its ability_children links in both directions', async () => {
+    const { page } = context;
+    const { worldId } = await createWorld(page);
+    const parentId = await addAbility(page, worldId);
+    const childId = await addAbility(page, worldId);
+    const grandchildId = await addAbility(page, worldId);
+
+    await page.evaluate(
+      async ({ p, c, g }) => {
+        await window.db.abilities.addChild({ parent_id: p, child_id: c });
+        await window.db.abilities.addChild({ parent_id: c, child_id: g });
+      },
+      { p: parentId, c: childId, g: grandchildId },
+    );
+
+    const before = await page.evaluate(
+      async ({ p, c }) => ({
+        parentChildren: (await window.db.abilities.getChildren(p)).length,
+        childChildren: (await window.db.abilities.getChildren(c)).length,
+      }),
+      { p: parentId, c: childId },
+    );
+    expect(before).toEqual({ parentChildren: 1, childChildren: 1 });
+
+    // Deleting the middle ability drops both the link where it is a child (parent
+    // -> child) and the link where it is a parent (child -> grandchild).
+    await page.evaluate(async (id) => window.db.abilities.delete(id), childId);
+
+    const after = await page.evaluate(
+      async ({ p, g }) => ({
+        parentChildren: (await window.db.abilities.getChildren(p)).length,
+        parentSurvives: (await window.db.abilities.getById(p)) !== null,
+        grandchildSurvives: (await window.db.abilities.getById(g)) !== null,
+      }),
+      { p: parentId, g: grandchildId },
+    );
+    expect(after).toEqual({
+      parentChildren: 0,
+      parentSurvives: true,
+      grandchildSurvives: true,
+    });
+
+    await page.evaluate(async (id) => window.db.worlds.delete(id), worldId);
+  });
+
+  test('deleting a faction removes its faction relationships from both sides', async () => {
+    const { page } = context;
+    const { worldId } = await createWorld(page);
+    const { factionId: subjectId } = await createFaction(page, worldId, {
+      name: `Rel Subject ${Date.now()}`,
+    });
+    const { factionId: allyId } = await createFaction(page, worldId, {
+      name: `Rel Ally ${Date.now()}`,
+    });
+    const { factionId: rivalId } = await createFaction(page, worldId, {
+      name: `Rel Rival ${Date.now()}`,
+    });
+
+    await page.evaluate(
+      async ({ subject, ally, rival }) => {
+        // subject is the `faction_id` on one row and the `related_faction_id` on
+        // the other, so its delete must cascade from whichever side it sits on.
+        await window.db.factionRelationships.add({
+          faction_id: subject,
+          related_faction_id: ally,
+          faction_label: 'Ally',
+          related_label: 'Ally',
+        });
+        await window.db.factionRelationships.add({
+          faction_id: rival,
+          related_faction_id: subject,
+          faction_label: 'Rival',
+          related_label: 'Rival',
+        });
+      },
+      { subject: subjectId, ally: allyId, rival: rivalId },
+    );
+
+    const before = await page.evaluate(
+      async (id) => (await window.db.factionRelationships.getAllByFaction(id)).length,
+      subjectId,
+    );
+    expect(before).toBe(2);
+
+    await page.evaluate(async (id) => window.db.factions.delete(id), subjectId);
+
+    const after = await page.evaluate(
+      async ({ ally, rival }) => ({
+        allyRelationships: (await window.db.factionRelationships.getAllByFaction(ally)).length,
+        rivalRelationships: (await window.db.factionRelationships.getAllByFaction(rival)).length,
+        allySurvives: (await window.db.factions.getById(ally)) !== null,
+      }),
+      { ally: allyId, rival: rivalId },
+    );
+    expect(after).toEqual({
+      allyRelationships: 0,
+      rivalRelationships: 0,
+      allySurvives: true,
+    });
+
+    await page.evaluate(async (id) => window.db.worlds.delete(id), worldId);
+  });
 });
 
 async function readWorldChildCounts(
