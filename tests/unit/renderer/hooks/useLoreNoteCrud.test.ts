@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLoreNoteCrud } from '../../../../src/renderer/hooks/useLoreNoteCrud';
+import type { ImageEditDraft } from '../../../../src/renderer/lib/imageCrop';
 import { buildLoreNote, resetFactoryIds } from '../../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../../helpers/ipcMock';
 
@@ -8,6 +9,23 @@ function createToastMock() {
   return {
     success: vi.fn(),
     error: vi.fn(),
+  };
+}
+
+function createImageEditDraft(
+  overrides: Partial<ImageEditDraft> = {},
+): ImageEditDraft {
+  return {
+    cropped_upload: {
+      fileName: 'myth.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    },
+    crop_json:
+      '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
+    preview_url: 'blob:preview',
+    source_image_src: 'blob:source',
+    ...overrides,
   };
 }
 
@@ -70,15 +88,26 @@ describe('useLoreNoteCrud', () => {
         content: 'Long ago...',
         canvas_enabled: false,
         tags: ['Economics'],
-        image_upload: {
-          fileName: 'myth.png',
-          mimeType: 'image/png',
-          bytes: new Uint8Array([1, 2, 3]),
-        },
+        image_edit_draft: createImageEditDraft({
+          original_upload: {
+            fileName: 'myth-original.png',
+            mimeType: 'image/png',
+            bytes: new Uint8Array([4, 5, 6]),
+          },
+        }),
       });
     });
 
-    expect(window.db.loreNotes.importImage).toHaveBeenCalled();
+    expect(window.db.loreNotes.importImage).toHaveBeenNthCalledWith(1, {
+      fileName: 'myth.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    });
+    expect(window.db.loreNotes.importImage).toHaveBeenNthCalledWith(2, {
+      fileName: 'myth-original.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([4, 5, 6]),
+    });
     expect(window.db.loreNotes.add).toHaveBeenCalledWith({
       world_id: 9,
       name: 'Founding Myth',
@@ -88,6 +117,9 @@ describe('useLoreNoteCrud', () => {
       canvas_preview_image: null,
       tags: ['Economics'],
       image_src: 'vv-media://lore-note-images/new.png',
+      original_image_src: 'vv-media://lore-note-images/new.png',
+      image_crop:
+        '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
     });
     expect(reloadLoreNotes).toHaveBeenCalledTimes(1);
     expect(onCreateSaved).toHaveBeenCalledTimes(1);
@@ -127,20 +159,31 @@ describe('useLoreNoteCrud', () => {
         content: 'Restored',
         canvas_enabled: false,
         tags: ['Magic'],
-        image_upload: {
-          fileName: 'replaced.png',
-          mimeType: 'image/png',
-          bytes: new Uint8Array([3, 2, 1]),
-        },
+        image_edit_draft: createImageEditDraft({
+          cropped_upload: {
+            fileName: 'replaced.png',
+            mimeType: 'image/png',
+            bytes: new Uint8Array([3, 2, 1]),
+          },
+          source_image_src: 'vv-media://lore-note-images/original.png',
+        }),
       });
     });
 
+    expect(window.db.loreNotes.importImage).toHaveBeenCalledWith({
+      fileName: 'replaced.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([3, 2, 1]),
+    });
     expect(window.db.loreNotes.update).toHaveBeenCalledWith(12, {
       name: 'Old Myth',
       content: 'Restored',
       canvas_enabled: false,
       tags: ['Magic'],
       image_src: 'vv-media://lore-note-images/replaced.png',
+      original_image_src: 'vv-media://lore-note-images/original.png',
+      image_crop:
+        '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
     });
     expect(onUpdateSaved).toHaveBeenCalledTimes(1);
     expect(toast.success).toHaveBeenCalledWith('Lore note updated.', '"Old Myth" was saved.');

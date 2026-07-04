@@ -12,6 +12,7 @@ import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
 import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
 import { getDefaultWorldConfig } from '../../shared/statisticsTypes';
+import { normalizeOptionalJsonText } from './validation';
 
 const TOKEN_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -26,6 +27,8 @@ const WORLD_IMAGE_HOST = 'world-images';
 type WorldUpsertData = {
   name?: string;
   thumbnail?: string | null;
+  original_thumbnail_src?: string | null;
+  thumbnail_crop?: string | null;
   short_description?: string | null;
   config?: string;
 };
@@ -55,6 +58,14 @@ function registerWorldMutationHandlers(
     }
 
     const thumbnail = normalizeMediaImageSrcForHost(data.thumbnail, WORLD_IMAGE_HOST);
+    const originalThumbnailSrc = normalizeMediaImageSrcForHost(
+      data.original_thumbnail_src,
+      WORLD_IMAGE_HOST,
+    );
+    const thumbnailCrop = normalizeOptionalJsonText(
+      data.thumbnail_crop,
+      'World thumbnail_crop',
+    );
     const shortDescription = typeof data.short_description === 'string'
       ? data.short_description
       : null;
@@ -62,9 +73,16 @@ function registerWorldMutationHandlers(
     const config = ensureWorldConfigJson(data.config);
 
     const stmt = db.prepare(
-      'INSERT INTO worlds (name, thumbnail, short_description, config) VALUES (?, ?, ?, ?)',
+      'INSERT INTO worlds (name, thumbnail, original_thumbnail_src, thumbnail_crop, short_description, config) VALUES (?, ?, ?, ?, ?, ?)',
     );
-    const result = stmt.run(name, thumbnail, shortDescription, config);
+    const result = stmt.run(
+      name,
+      thumbnail,
+      originalThumbnailSrc,
+      thumbnailCrop,
+      shortDescription,
+      config,
+    );
 
     const world = db
       .prepare('SELECT * FROM worlds WHERE id = ?')
@@ -211,6 +229,18 @@ function buildWorldUpdateStatement(data: WorldUpsertData): {
   if (Object.prototype.hasOwnProperty.call(data, 'thumbnail')) {
     setClauses.push('thumbnail = ?');
     values.push(normalizeMediaImageSrcForHost(data.thumbnail, WORLD_IMAGE_HOST));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'original_thumbnail_src')) {
+    setClauses.push('original_thumbnail_src = ?');
+    values.push(
+      normalizeMediaImageSrcForHost(data.original_thumbnail_src, WORLD_IMAGE_HOST),
+    );
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'thumbnail_crop')) {
+    setClauses.push('thumbnail_crop = ?');
+    values.push(normalizeOptionalJsonText(data.thumbnail_crop, 'World thumbnail_crop'));
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'short_description')) {

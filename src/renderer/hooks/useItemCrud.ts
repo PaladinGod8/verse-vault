@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ItemFormValues } from '../components/items/ItemForm';
-import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
+import { persistImageEditDraft } from '../lib/imageCrop';
 
 type ItemMutationToast = {
   success: (title: string, description?: string) => void;
@@ -25,26 +25,19 @@ function toItemErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Please try again.';
 }
 
-async function resolveItemImageSrc(
-  data: ItemFormValues,
-): Promise<string | null | undefined> {
-  if (!data.image_upload) {
-    return data.image_src;
-  }
-
-  const importResult = await window.db.items.importImage(data.image_upload);
-  return normalizeTokenImageSrc(importResult.image_src);
-}
-
 function buildItemUpdatePayload(data: ItemFormValues): {
   name: string;
   description: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
 } {
   const updatePayload: {
     name: string;
     description: string | null;
     image_src?: string | null;
+    original_image_src?: string | null;
+    image_crop?: string | null;
   } = {
     name: data.name,
     description: data.description ?? null,
@@ -52,6 +45,8 @@ function buildItemUpdatePayload(data: ItemFormValues): {
 
   if (data.clear_image) {
     updatePayload.image_src = null;
+    updatePayload.original_image_src = null;
+    updatePayload.image_crop = null;
   }
 
   return updatePayload;
@@ -71,12 +66,19 @@ function createHandleCreate(params: {
 
     params.setIsSaving(true);
     try {
-      const imageSrc = await resolveItemImageSrc(data);
+      const persistedImage = data.image_edit_draft
+        ? await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          importImage: window.db.items.importImage,
+        })
+        : null;
       await window.db.items.add({
         world_id: params.worldId,
         name: data.name,
         description: data.description ?? null,
-        image_src: imageSrc,
+        image_src: persistedImage?.imageSrc ?? data.image_src,
+        original_image_src: persistedImage?.originalImageSrc,
+        image_crop: persistedImage?.imageCrop,
       });
       await params.reloadItems();
       params.onCreateSaved();
@@ -104,8 +106,15 @@ function createHandleUpdate(params: {
     params.setIsSaving(true);
     try {
       const updatePayload = buildItemUpdatePayload(data);
-      if (data.image_upload) {
-        updatePayload.image_src = await resolveItemImageSrc(data);
+      if (data.image_edit_draft) {
+        const persistedImage = await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          currentOriginalImageSrc: params.editingItem.original_image_src ?? null,
+          importImage: window.db.items.importImage,
+        });
+        updatePayload.image_src = persistedImage.imageSrc;
+        updatePayload.original_image_src = persistedImage.originalImageSrc;
+        updatePayload.image_crop = persistedImage.imageCrop;
       }
 
       await window.db.items.update(params.editingItem.id, updatePayload);

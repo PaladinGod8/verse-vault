@@ -9,12 +9,18 @@ type MediaImageTable = {
 
 const MEDIA_IMAGE_TABLES: MediaImageTable[] = [
   { table: 'worlds', column: 'thumbnail', host: 'world-images' },
+  { table: 'worlds', column: 'original_thumbnail_src', host: 'world-images' },
   { table: 'tokens', column: 'image_src', host: 'token-images' },
   { table: 'characters', column: 'image_src', host: 'character-images' },
+  { table: 'characters', column: 'original_image_src', host: 'character-images' },
   { table: 'backgrounds', column: 'image_src', host: 'background-images' },
+  { table: 'backgrounds', column: 'original_image_src', host: 'background-images' },
   { table: 'items', column: 'image_src', host: 'item-images' },
+  { table: 'items', column: 'original_image_src', host: 'item-images' },
   { table: 'factions', column: 'image_src', host: 'faction-images' },
+  { table: 'factions', column: 'original_image_src', host: 'faction-images' },
   { table: 'lore_notes', column: 'image_src', host: 'lore-note-images' },
+  { table: 'lore_notes', column: 'original_image_src', host: 'lore-note-images' },
 ];
 
 function isMissingTableError(error: unknown): boolean {

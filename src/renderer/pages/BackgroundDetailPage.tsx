@@ -151,6 +151,8 @@ export default function BackgroundDetailPage() {
                 name: background.name,
                 description: background.description,
                 image_src: imageSrc,
+                original_image_src: normalizeTokenImageSrc(background.original_image_src),
+                image_crop: background.image_crop,
               }}
               onSave={(data) => void handleUpdate(data)}
               onClose={() => setIsEditOpen(false)}

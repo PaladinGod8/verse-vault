@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { LoreNoteFormValues } from '../components/loreNotes/LoreNoteForm';
-import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
+import { persistImageEditDraft } from '../lib/imageCrop';
 
 type LoreNoteMutationToast = {
   success: (title: string, description?: string) => void;
@@ -25,23 +25,14 @@ function toLoreNoteErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Please try again.';
 }
 
-async function resolveLoreNoteImageSrc(
-  data: LoreNoteFormValues,
-): Promise<string | null | undefined> {
-  if (!data.image_upload) {
-    return data.image_src;
-  }
-
-  const importResult = await window.db.loreNotes.importImage(data.image_upload);
-  return normalizeTokenImageSrc(importResult.image_src);
-}
-
 function buildLoreNoteUpdatePayload(data: LoreNoteFormValues): {
   name: string;
   content: string | null;
   canvas_enabled: boolean;
   tags: string[];
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
 } {
   const updatePayload: {
     name: string;
@@ -49,6 +40,8 @@ function buildLoreNoteUpdatePayload(data: LoreNoteFormValues): {
     canvas_enabled: boolean;
     tags: string[];
     image_src?: string | null;
+    original_image_src?: string | null;
+    image_crop?: string | null;
   } = {
     name: data.name,
     content: data.content ?? null,
@@ -58,6 +51,8 @@ function buildLoreNoteUpdatePayload(data: LoreNoteFormValues): {
 
   if (data.clear_image) {
     updatePayload.image_src = null;
+    updatePayload.original_image_src = null;
+    updatePayload.image_crop = null;
   }
 
   return updatePayload;
@@ -77,7 +72,12 @@ function createHandleCreate(params: {
 
     params.setIsSaving(true);
     try {
-      const imageSrc = await resolveLoreNoteImageSrc(data);
+      const persistedImage = data.image_edit_draft
+        ? await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          importImage: window.db.loreNotes.importImage,
+        })
+        : null;
       await window.db.loreNotes.add({
         world_id: params.worldId,
         name: data.name,
@@ -86,7 +86,9 @@ function createHandleCreate(params: {
         canvas_scene: null,
         canvas_preview_image: null,
         tags: data.tags,
-        image_src: imageSrc,
+        image_src: persistedImage?.imageSrc ?? data.image_src,
+        original_image_src: persistedImage?.originalImageSrc,
+        image_crop: persistedImage?.imageCrop,
       });
       await params.reloadLoreNotes();
       params.onCreateSaved();
@@ -114,8 +116,15 @@ function createHandleUpdate(params: {
     params.setIsSaving(true);
     try {
       const updatePayload = buildLoreNoteUpdatePayload(data);
-      if (data.image_upload) {
-        updatePayload.image_src = await resolveLoreNoteImageSrc(data);
+      if (data.image_edit_draft) {
+        const persistedImage = await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          currentOriginalImageSrc: params.editingLoreNote.original_image_src ?? null,
+          importImage: window.db.loreNotes.importImage,
+        });
+        updatePayload.image_src = persistedImage.imageSrc;
+        updatePayload.original_image_src = persistedImage.originalImageSrc;
+        updatePayload.image_crop = persistedImage.imageCrop;
       }
 
       await window.db.loreNotes.update(params.editingLoreNote.id, updatePayload);

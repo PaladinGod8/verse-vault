@@ -204,6 +204,8 @@ export default function BackgroundsPage() {
                 name: editingBackground.name,
                 description: editingBackground.description,
                 image_src: normalizeTokenImageSrc(editingBackground.image_src),
+                original_image_src: normalizeTokenImageSrc(editingBackground.original_image_src),
+                image_crop: editingBackground.image_crop,
               }}
               onSave={(data) => void handleUpdate(data)}
               onClose={() => setEditingBackground(null)}

@@ -109,6 +109,8 @@ describe('Characters schema migration', () => {
         { name: 'owner' },
         { name: 'author' },
         { name: 'image_src' },
+        { name: 'original_image_src' },
+        { name: 'image_crop' },
         { name: 'sections' },
         { name: 'wiki_summary' },
         { name: 'last_viewed_at' },

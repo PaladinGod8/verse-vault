@@ -11,6 +11,8 @@ export interface World {
   id: number;
   name: string;
   thumbnail: string | null;
+  original_thumbnail_src?: string | null;
+  thumbnail_crop?: string | null;
   short_description: string | null;
   last_viewed_at: string | null;
   config: string;
@@ -331,6 +333,8 @@ export interface Character {
   owner: string | null;
   author: string | null;
   image_src: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections: string; // JSON text of CharacterSections
   wiki_summary: string; // JSON text of CharacterWikiSummary
   last_viewed_at: string | null;
@@ -344,6 +348,8 @@ export interface Background {
   name: string;
   description: string | null;
   image_src: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   last_viewed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -355,6 +361,8 @@ export interface Item {
   name: string;
   description: string | null;
   image_src: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   last_viewed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -366,6 +374,8 @@ export interface LoreNote {
   name: string;
   content: string | null;
   image_src: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   canvas_enabled: boolean;
   canvas_scene: CanvasSceneData | null;
   canvas_preview_image: string | null;
@@ -381,6 +391,8 @@ export interface Faction {
   name: string;
   profile: string | null;
   image_src: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections: string; // JSON text of FactionSections
   wiki_summary: string; // JSON text of FactionWikiSummary
   type_id: number | null;

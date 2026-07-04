@@ -6,6 +6,46 @@ vi.mock(
   '../../../src/renderer/components/ui/RichTextEditor',
   () => import('../../helpers/richTextEditorMock'),
 );
+vi.mock('../../../src/renderer/components/media/ImageCropModal', () => ({
+  default: ({
+    isOpen,
+    onCancel,
+    onApply,
+  }: {
+    isOpen: boolean;
+    onCancel: () => void;
+    onApply: (result: {
+      croppedBlob: Blob;
+      crop: StoredImageCrop;
+    }) => Promise<void> | void;
+  }) =>
+    isOpen
+      ? (
+        <div role='dialog' aria-label='Crop lore note image'>
+          <button type='button' onClick={onCancel}>Cancel crop</button>
+          <button
+            type='button'
+            onClick={() =>
+              void onApply({
+                croppedBlob: new Blob([new Uint8Array([9, 9, 9])], {
+                  type: 'image/png',
+                }),
+                crop: {
+                  version: 1,
+                  aspect_ratio: 2,
+                  selection: { x: 0, y: 0, width: 320, height: 160 },
+                  transform: { matrix: [1, 0, 0, 1, 0, 0] },
+                  source: { natural_width: 640, natural_height: 320 },
+                  output: { mime_type: 'image/png' },
+                },
+              })}
+          >
+            Apply crop
+          </button>
+        </div>
+      )
+      : null,
+}));
 
 import LoreNoteForm from '../../../src/renderer/components/loreNotes/LoreNoteForm';
 
@@ -227,11 +267,12 @@ describe('LoreNoteForm', () => {
     const input = getFileInput(container);
     const file = new File([new Uint8Array([1, 2, 3])], 'myth.png', { type: 'image/png' });
     fireEvent.change(input, { target: { files: [file] } });
-    expect(screen.getByText('myth.png')).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Apply crop' }));
+    expect(screen.getByRole('img', { name: 'Current lore note' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove selected file' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear image on save' }));
 
-    expect(screen.queryByText('myth.png')).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Current lore note' })).not.toBeInTheDocument();
   });
 
   it('shows read failure when selected image cannot be read', async () => {
@@ -248,8 +289,7 @@ describe('LoreNoteForm', () => {
     });
 
     fireEvent.change(input, { target: { files: [file] } });
-    await user.type(screen.getByLabelText('Name *'), 'Broken Myth');
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Apply crop' }));
 
     await waitFor(() =>
       expect(screen.getByText('Unable to read the selected image file. Try a different image.'))

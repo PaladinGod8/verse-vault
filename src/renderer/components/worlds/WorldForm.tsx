@@ -1,22 +1,113 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import type { ImageEditDraft } from '../../lib/imageCrop';
+import {
+  buildImageEditDraft,
+  guessFileNameFromImageSrc,
+  validateImageFile,
+} from '../../lib/imageCrop';
+import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
+import ImageCropModal from '../media/ImageCropModal';
 import EditorActionBar from '../ui/EditorActionBar';
 import RichTextEditor from '../ui/RichTextEditor';
 import WorldImageDropzone from './WorldImageDropzone';
 
-type AddWorldInput = Parameters<DbApi['worlds']['add']>[0];
+export type WorldFormValues = {
+  name: string;
+  thumbnail?: string | null;
+  original_thumbnail_src?: string | null;
+  thumbnail_crop?: string | null;
+  short_description?: string | null;
+  image_edit_draft?: ImageEditDraft;
+  clear_thumbnail?: boolean;
+};
 
 type WorldFormInitialValues = {
   name: string;
   thumbnail: string | null;
+  original_thumbnail_src: string | null;
+  thumbnail_crop: string | null;
   short_description: string | null;
 };
 
 type WorldFormProps = {
   mode?: 'create' | 'edit';
   initialValues?: Partial<WorldFormInitialValues>;
-  onSubmit: (data: AddWorldInput) => Promise<void>;
+  onSubmit: (data: WorldFormValues) => Promise<void>;
   onCancel: () => void;
 };
+
+type CropSourceState = {
+  sourceImageSrc: string;
+  sourceFileName: string;
+  sourceMimeType: string;
+  originalFile?: File | null;
+  sourceImageRecordSrc?: string | null;
+};
+
+type WorldCurrentThumbnailSectionProps = {
+  imageSrc: string;
+  label: string;
+  clearThumbnail: boolean;
+  disabled: boolean;
+  onEditCrop: () => void;
+  onReplaceImage: () => void;
+  onClear: () => void;
+};
+
+function WorldCurrentThumbnailSection({
+  imageSrc,
+  label,
+  clearThumbnail,
+  disabled,
+  onEditCrop,
+  onReplaceImage,
+  onClear,
+}: WorldCurrentThumbnailSectionProps) {
+  return (
+    <div className='space-y-2'>
+      <p className='text-sm font-medium text-slate-800'>{label}</p>
+      {clearThumbnail
+        ? (
+          <div className='rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800'>
+            Thumbnail will be cleared when you save.
+          </div>
+        )
+        : (
+          <img
+            src={imageSrc}
+            alt='Current world thumbnail'
+            className='h-24 w-auto rounded-lg border border-slate-200 object-cover'
+          />
+        )}
+      <div className='flex flex-wrap gap-3 text-xs font-medium'>
+        <button
+          type='button'
+          className='text-slate-700 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onEditCrop}
+          disabled={disabled}
+        >
+          Edit crop
+        </button>
+        <button
+          type='button'
+          className='text-slate-700 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onReplaceImage}
+          disabled={disabled}
+        >
+          Replace image
+        </button>
+        <button
+          type='button'
+          className='text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onClear}
+          disabled={disabled}
+        >
+          Clear image on save
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function WorldForm({
   mode = 'create',
@@ -25,46 +116,77 @@ export default function WorldForm({
   onCancel,
 }: WorldFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '');
+  const initialThumbnailSrc = normalizeTokenImageSrc(initialValues?.thumbnail);
+  const initialOriginalThumbnailSrc = normalizeTokenImageSrc(
+    initialValues?.original_thumbnail_src,
+  ) ?? initialThumbnailSrc;
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [thumbnailSrc, setThumbnailSrc] = useState<string | null>(
-    initialValues?.thumbnail ?? null,
-  );
-  const [thumbnailUploadError, setThumbnailUploadError] = useState<
-    string | null
-  >(null);
-  const [isImportingImage, setIsImportingImage] = useState(false);
+  const [imageEditDraft, setImageEditDraft] = useState<ImageEditDraft | null>(null);
+  const [cropSource, setCropSource] = useState<CropSourceState | null>(null);
+  const [thumbnailUploadError, setThumbnailUploadError] = useState<string | null>(null);
+  const [clearThumbnail, setClearThumbnail] = useState(false);
   const [shortDescription, setShortDescription] = useState(
     initialValues?.short_description ?? '',
   );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const isEditMode = mode === 'edit';
 
-  const handleThumbnailFileSelect = async (file: File) => {
-    setThumbnailUploadError(null);
-    setIsImportingImage(true);
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const result = await window.db.worlds.importImage({
-        fileName: file.name,
-        mimeType: file.type,
-        bytes,
-      });
-      setThumbnailFile(file);
-      setThumbnailSrc(result.image_src);
-    } catch (err) {
-      setThumbnailUploadError(
-        err instanceof Error ? err.message : 'Failed to upload thumbnail.',
-      );
-      setThumbnailFile(null);
-    } finally {
-      setIsImportingImage(false);
+  useEffect(() => {
+    return () => {
+      if (imageEditDraft?.preview_url) {
+        URL.revokeObjectURL(imageEditDraft.preview_url);
+      }
+    };
+  }, [imageEditDraft?.preview_url]);
+
+  useEffect(() => {
+    return () => {
+      if (cropSource?.originalFile) {
+        URL.revokeObjectURL(cropSource.sourceImageSrc);
+      }
+    };
+  }, [cropSource?.originalFile, cropSource?.sourceImageSrc]);
+
+  const activeThumbnailSrc = imageEditDraft?.preview_url ?? initialThumbnailSrc;
+
+  const closeCropSource = () => {
+    if (cropSource?.originalFile) {
+      URL.revokeObjectURL(cropSource.sourceImageSrc);
     }
+    setCropSource(null);
+  };
+
+  const openCropperForFile = (file: File) => {
+    setCropSource({
+      sourceImageSrc: URL.createObjectURL(file),
+      sourceFileName: file.name,
+      sourceMimeType: file.type.toLowerCase(),
+      originalFile: file,
+    });
+  };
+
+  const openCropperForExistingImage = () => {
+    const sourceImageSrc = imageEditDraft?.source_image_src
+      ?? initialOriginalThumbnailSrc
+      ?? activeThumbnailSrc;
+    if (!sourceImageSrc) {
+      return;
+    }
+
+    setCropSource({
+      sourceImageSrc,
+      sourceFileName: guessFileNameFromImageSrc(sourceImageSrc),
+      sourceMimeType: 'image/png',
+      sourceImageRecordSrc: sourceImageSrc,
+    });
   };
 
   const handleThumbnailClear = () => {
     setThumbnailFile(null);
-    setThumbnailSrc(null);
+    setImageEditDraft(null);
+    setClearThumbnail(true);
     setThumbnailUploadError(null);
   };
 
@@ -83,8 +205,12 @@ export default function WorldForm({
     try {
       await onSubmit({
         name: trimmedName,
-        thumbnail: thumbnailSrc,
+        thumbnail: clearThumbnail ? null : undefined,
+        original_thumbnail_src: clearThumbnail ? null : undefined,
+        thumbnail_crop: clearThumbnail ? null : undefined,
         short_description: shortDescription.trim() || null,
+        image_edit_draft: imageEditDraft ?? undefined,
+        clear_thumbnail: clearThumbnail,
       });
     } catch (error) {
       setSubmitError(
@@ -106,14 +232,14 @@ export default function WorldForm({
           type='button'
           onClick={onCancel}
           className='rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
-          disabled={isSubmitting || isImportingImage}
+          disabled={isSubmitting}
         >
           Cancel
         </button>
         <button
           type='submit'
           className='rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
-          disabled={isSubmitting || isImportingImage}
+          disabled={isSubmitting}
         >
           {isSubmitting
             ? isEditMode
@@ -145,35 +271,47 @@ export default function WorldForm({
         />
       </div>
 
-      {thumbnailSrc && !thumbnailFile
+      {activeThumbnailSrc
         ? (
-          <div className='space-y-1'>
-            <p className='text-sm font-medium text-slate-800'>
-              Current thumbnail
-            </p>
-            <img
-              src={thumbnailSrc}
-              alt='Current world thumbnail'
-              className='h-24 w-auto rounded-lg border border-slate-200 object-cover'
-            />
-            <button
-              type='button'
-              className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
-              onClick={handleThumbnailClear}
-              disabled={isSubmitting || isImportingImage}
-            >
-              Remove thumbnail
-            </button>
-          </div>
+          <WorldCurrentThumbnailSection
+            imageSrc={activeThumbnailSrc}
+            label={imageEditDraft ? 'Cropped Preview' : 'Current thumbnail'}
+            clearThumbnail={clearThumbnail}
+            disabled={isSubmitting}
+            onEditCrop={() => {
+              if (thumbnailFile) {
+                openCropperForFile(thumbnailFile);
+                return;
+              }
+              openCropperForExistingImage();
+            }}
+            onReplaceImage={() => imageInputRef.current?.click()}
+            onClear={handleThumbnailClear}
+          />
         )
         : null}
 
       <WorldImageDropzone
         selectedFile={thumbnailFile}
-        onFileSelect={handleThumbnailFileSelect}
-        onClearFile={handleThumbnailClear}
+        inputRef={imageInputRef}
+        onFileSelect={(file) => {
+          const validationError = validateImageFile(file);
+          if (validationError) {
+            setThumbnailFile(null);
+            setImageEditDraft(null);
+            setThumbnailUploadError(validationError);
+            return;
+          }
+          setThumbnailUploadError(null);
+          openCropperForFile(file);
+        }}
+        onClearFile={() => {
+          setThumbnailFile(null);
+          setImageEditDraft(null);
+          setThumbnailUploadError(null);
+        }}
         error={thumbnailUploadError}
-        disabled={isSubmitting || isImportingImage}
+        disabled={isSubmitting}
       />
 
       <div className='space-y-1'>
@@ -201,6 +339,39 @@ export default function WorldForm({
           </p>
         )
         : null}
+
+      <ImageCropModal
+        isOpen={cropSource !== null}
+        title='Crop world thumbnail'
+        sourceImageSrc={cropSource?.sourceImageSrc ?? ''}
+        sourceFileName={cropSource?.sourceFileName ?? 'world-thumbnail.png'}
+        sourceMimeType={cropSource?.sourceMimeType ?? 'image/png'}
+        initialCropJson={imageEditDraft?.crop_json ?? initialValues?.thumbnail_crop ?? null}
+        onCancel={closeCropSource}
+        onApply={async (cropResult) => {
+          if (!cropSource) {
+            return;
+          }
+
+          try {
+            const nextDraft = await buildImageEditDraft({
+              cropResult,
+              sourceFileName: cropSource.sourceFileName,
+              originalFile: cropSource.originalFile,
+              sourceImageSrc: cropSource.sourceImageRecordSrc ?? cropSource.sourceImageSrc,
+            });
+            setThumbnailFile(cropSource.originalFile ?? null);
+            setImageEditDraft(nextDraft);
+            setClearThumbnail(false);
+            closeCropSource();
+          } catch {
+            setThumbnailUploadError(
+              'Unable to read the selected image file. Try a different image.',
+            );
+            closeCropSource();
+          }
+        }}
+      />
     </form>
   );
 }

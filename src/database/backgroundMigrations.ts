@@ -5,13 +5,15 @@ export function runBackgroundsSchemaMigration(db: Database.Database): void {
     db.exec(`
       CREATE TABLE IF NOT EXISTS backgrounds (
         id             INTEGER PRIMARY KEY AUTOINCREMENT,
-        world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
-        name           TEXT    NOT NULL,
-        description    TEXT,
-        image_src      TEXT,
-        last_viewed_at TEXT,
-        created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
-        updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+      world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name           TEXT    NOT NULL,
+      description    TEXT,
+      image_src      TEXT,
+      original_image_src TEXT,
+      image_crop     TEXT,
+      last_viewed_at TEXT,
+      created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
       CREATE INDEX IF NOT EXISTS idx_backgrounds_world_id ON backgrounds(world_id);
@@ -22,7 +24,15 @@ export function runBackgroundsSchemaMigration(db: Database.Database): void {
   }
 
   const cols = db.pragma('table_info(backgrounds)') as Array<{ name: string; }>;
-  if (Array.isArray(cols) && cols.length > 0 && !cols.some((c) => c.name === 'last_viewed_at')) {
-    db.exec('ALTER TABLE backgrounds ADD COLUMN last_viewed_at TEXT');
+  if (Array.isArray(cols) && cols.length > 0) {
+    if (!cols.some((c) => c.name === 'original_image_src')) {
+      db.exec('ALTER TABLE backgrounds ADD COLUMN original_image_src TEXT');
+    }
+    if (!cols.some((c) => c.name === 'image_crop')) {
+      db.exec('ALTER TABLE backgrounds ADD COLUMN image_crop TEXT');
+    }
+    if (!cols.some((c) => c.name === 'last_viewed_at')) {
+      db.exec('ALTER TABLE backgrounds ADD COLUMN last_viewed_at TEXT');
+    }
   }
 }

@@ -34,6 +34,7 @@ Update rule:
 | tiptap-markdown | Markdown serialize/parse bridge so TipTap round-trips markdown strings          |
 | markdown-it     | Markdown-to-HTML rendering for the read-only `MarkdownView`                     |
 | DOMPurify       | HTML sanitization guard before injecting rendered markdown                      |
+| Cropper.js 2    | Non-destructive image crop/edit modal for world and wiki-entity card images     |
 | Azgaar FMG      | Vendored offline world-map editor (`vendor/azgaar-fmg/`), pinned upstream build |
 
 ## Packaging And Desktop Build

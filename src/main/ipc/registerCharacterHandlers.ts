@@ -15,6 +15,7 @@ import type {
 } from '../../shared/contracts/dbApiPayloads';
 import { IPC } from '../../shared/ipcChannels';
 import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
+import { normalizeOptionalJsonText } from './validation';
 
 const CHARACTER_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -34,6 +35,8 @@ type CharacterUpsertData = {
   owner?: string | null;
   author?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections?: string;
   wiki_summary?: string;
 };
@@ -131,11 +134,16 @@ function registerCharacterMutationHandlers(db: Database.Database): void {
     );
     const author = typeof data.author === 'string' ? data.author.trim() || null : null;
     const imageSrc = normalizeMediaImageSrcForHost(data.image_src, CHARACTER_IMAGE_HOST);
+    const originalImageSrc = normalizeMediaImageSrcForHost(
+      data.original_image_src,
+      CHARACTER_IMAGE_HOST,
+    );
+    const imageCrop = normalizeOptionalJsonText(data.image_crop, 'Character image_crop');
     const sections = ensureCharacterJson(data.sections, 'sections');
     const wikiSummary = ensureCharacterJson(data.wiki_summary, 'wiki_summary');
 
     const stmt = db.prepare(
-      'INSERT INTO characters (world_id, name, profile, is_player_character, owner, author, image_src, sections, wiki_summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO characters (world_id, name, profile, is_player_character, owner, author, image_src, original_image_src, image_crop, sections, wiki_summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const result = stmt.run(
       worldId,
@@ -145,6 +153,8 @@ function registerCharacterMutationHandlers(db: Database.Database): void {
       owner,
       author,
       imageSrc,
+      originalImageSrc,
+      imageCrop,
       sections,
       wikiSummary,
     );
@@ -312,9 +322,11 @@ function appendOptionalTrimmedNameUpdate(
 
 function appendOptionalNullableStringUpdate(
   data: CharacterUpsertData,
-  key: 'profile' | 'author' | 'image_src',
+  key: 'profile' | 'author' | 'image_src' | 'original_image_src',
   clause: string,
-  normalize: (value: CharacterUpsertData['profile' | 'author' | 'image_src']) => string | null,
+  normalize: (
+    value: CharacterUpsertData['profile' | 'author' | 'image_src' | 'original_image_src'],
+  ) => string | null,
   setClauses: string[],
   values: Array<string | number | null>,
 ): void {
@@ -393,6 +405,22 @@ function buildCharacterUpdateStatement(
     setClauses,
     values,
   );
+  appendOptionalNullableStringUpdate(
+    data,
+    'original_image_src',
+    'original_image_src = ?',
+    (value) => normalizeMediaImageSrcForHost(value, CHARACTER_IMAGE_HOST),
+    setClauses,
+    values,
+  );
+  if (hasOwnCharacterField(data, 'image_crop')) {
+    pushCharacterUpdate(
+      setClauses,
+      values,
+      'image_crop = ?',
+      normalizeOptionalJsonText(data.image_crop, 'Character image_crop'),
+    );
+  }
   appendOptionalCharacterJsonUpdate(data, 'sections', 'sections = ?', setClauses, values);
   appendOptionalCharacterJsonUpdate(data, 'wiki_summary', 'wiki_summary = ?', setClauses, values);
 

@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBackgroundCrud } from '../../../../src/renderer/hooks/useBackgroundCrud';
+import type { ImageEditDraft } from '../../../../src/renderer/lib/imageCrop';
 import { buildBackground, resetFactoryIds } from '../../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../../helpers/ipcMock';
 
@@ -8,6 +9,23 @@ function createToastMock() {
   return {
     success: vi.fn(),
     error: vi.fn(),
+  };
+}
+
+function createImageEditDraft(
+  overrides: Partial<ImageEditDraft> = {},
+): ImageEditDraft {
+  return {
+    cropped_upload: {
+      fileName: 'skyline.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    },
+    crop_json:
+      '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
+    preview_url: 'blob:preview',
+    source_image_src: 'blob:source',
+    ...overrides,
   };
 }
 
@@ -68,20 +86,34 @@ describe('useBackgroundCrud', () => {
       await result.current.handleCreate({
         name: 'Skyline',
         description: 'Tall towers',
-        image_upload: {
-          fileName: 'skyline.png',
-          mimeType: 'image/png',
-          bytes: new Uint8Array([1, 2, 3]),
-        },
+        image_edit_draft: createImageEditDraft({
+          original_upload: {
+            fileName: 'skyline-original.png',
+            mimeType: 'image/png',
+            bytes: new Uint8Array([4, 5, 6]),
+          },
+        }),
       });
     });
 
-    expect(window.db.backgrounds.importImage).toHaveBeenCalled();
+    expect(window.db.backgrounds.importImage).toHaveBeenNthCalledWith(1, {
+      fileName: 'skyline.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    });
+    expect(window.db.backgrounds.importImage).toHaveBeenNthCalledWith(2, {
+      fileName: 'skyline-original.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([4, 5, 6]),
+    });
     expect(window.db.backgrounds.add).toHaveBeenCalledWith({
       world_id: 9,
       name: 'Skyline',
       description: 'Tall towers',
       image_src: 'vv-media://background-images/new.png',
+      original_image_src: 'vv-media://background-images/new.png',
+      image_crop:
+        '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
     });
     expect(reloadBackgrounds).toHaveBeenCalledTimes(1);
     expect(onCreateSaved).toHaveBeenCalledTimes(1);
@@ -116,18 +148,29 @@ describe('useBackgroundCrud', () => {
       await result.current.handleUpdate({
         name: 'Old Hall',
         description: 'Restored',
-        image_upload: {
-          fileName: 'replaced.png',
-          mimeType: 'image/png',
-          bytes: new Uint8Array([3, 2, 1]),
-        },
+        image_edit_draft: createImageEditDraft({
+          cropped_upload: {
+            fileName: 'replaced.png',
+            mimeType: 'image/png',
+            bytes: new Uint8Array([3, 2, 1]),
+          },
+          source_image_src: 'vv-media://background-images/original.png',
+        }),
       });
     });
 
+    expect(window.db.backgrounds.importImage).toHaveBeenCalledWith({
+      fileName: 'replaced.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([3, 2, 1]),
+    });
     expect(window.db.backgrounds.update).toHaveBeenCalledWith(12, {
       name: 'Old Hall',
       description: 'Restored',
       image_src: 'vv-media://background-images/replaced.png',
+      original_image_src: 'vv-media://background-images/original.png',
+      image_crop:
+        '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
     });
     expect(onUpdateSaved).toHaveBeenCalledTimes(1);
     expect(toast.success).toHaveBeenCalledWith('Background updated.', '"Old Hall" was saved.');

@@ -11,6 +11,8 @@ import type {
 type RichEntityUpsertPayload = {
   profile?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections?: string;
   wiki_summary?: string;
 };
@@ -32,12 +34,16 @@ export type BackgroundUpsertPayload = {
   name?: string;
   description?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
 };
 
 export type ItemUpsertPayload = {
   name?: string;
   description?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
 };
 
 export type CampaignNoteUpsertPayload = {
@@ -51,6 +57,8 @@ export type LoreNoteUpsertPayload = {
   name?: string;
   content?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   canvas_enabled?: boolean;
   canvas_scene?: CanvasSceneData | null;
   canvas_preview_image?: string | null;

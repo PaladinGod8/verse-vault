@@ -151,6 +151,8 @@ export default function ItemDetailPage() {
                 name: item.name,
                 description: item.description,
                 image_src: imageSrc,
+                original_image_src: normalizeTokenImageSrc(item.original_image_src),
+                image_crop: item.image_crop ?? null,
               }}
               onSave={(data) => void handleUpdate(data)}
               onClose={() => setIsEditOpen(false)}

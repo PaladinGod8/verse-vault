@@ -59,7 +59,10 @@ test('@ux worlds persist thumbnail upload, replacement, and clearing', async () 
       mimeType: 'image/png',
       buffer: ONE_PIXEL_PNG,
     });
-    await expect(createDialog.getByText('first.png')).toBeVisible();
+    await page
+      .getByRole('dialog', { name: 'Crop world thumbnail' })
+      .getByRole('button', { name: 'Apply' })
+      .click();
     await createDialog.getByRole('button', { name: 'Create world' }).click();
 
     const cardImage = page.getByRole('img', { name: `${worldName} thumbnail` });
@@ -74,7 +77,10 @@ test('@ux worlds persist thumbnail upload, replacement, and clearing', async () 
       mimeType: 'image/png',
       buffer: ONE_PIXEL_PNG,
     });
-    await expect(editDialog.getByText('second.png')).toBeVisible();
+    await page
+      .getByRole('dialog', { name: 'Crop world thumbnail' })
+      .getByRole('button', { name: 'Apply' })
+      .click();
     await editDialog.getByRole('button', { name: 'Save changes' }).click();
 
     await expect(cardImage).toBeVisible();
@@ -86,7 +92,7 @@ test('@ux worlds persist thumbnail upload, replacement, and clearing', async () 
 
     await page.getByRole('button', { name: 'Edit' }).click();
     editDialog = page.getByRole('dialog', { name: 'Edit world' });
-    await editDialog.getByRole('button', { name: 'Remove thumbnail' }).click();
+    await editDialog.getByRole('button', { name: 'Clear image on save' }).click();
     await editDialog.getByRole('button', { name: 'Save changes' }).click();
 
     await expect(page.getByText('No thumbnail')).toBeVisible();

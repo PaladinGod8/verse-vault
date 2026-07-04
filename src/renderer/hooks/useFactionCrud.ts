@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FactionFormValues } from '../components/factions/FactionForm';
-import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
+import { persistImageEditDraft } from '../lib/imageCrop';
 
 type FactionMutationToast = {
   success: (title: string, description?: string) => void;
@@ -25,21 +25,12 @@ function toFactionErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Please try again.';
 }
 
-async function resolveFactionImageSrc(
-  data: FactionFormValues,
-): Promise<string | null | undefined> {
-  if (!data.image_upload) {
-    return data.image_src;
-  }
-
-  const importResult = await window.db.factions.importImage(data.image_upload);
-  return normalizeTokenImageSrc(importResult.image_src);
-}
-
 function buildFactionUpdatePayload(data: FactionFormValues): {
   name: string;
   profile: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections: string;
   wiki_summary: string;
   type_id: number | null;
@@ -49,6 +40,8 @@ function buildFactionUpdatePayload(data: FactionFormValues): {
     name: string;
     profile: string | null;
     image_src?: string | null;
+    original_image_src?: string | null;
+    image_crop?: string | null;
     sections: string;
     wiki_summary: string;
     type_id: number | null;
@@ -64,6 +57,8 @@ function buildFactionUpdatePayload(data: FactionFormValues): {
 
   if (data.clear_image) {
     updatePayload.image_src = null;
+    updatePayload.original_image_src = null;
+    updatePayload.image_crop = null;
   }
 
   return updatePayload;
@@ -83,12 +78,19 @@ function createHandleCreate(params: {
 
     params.setIsSaving(true);
     try {
-      const imageSrc = await resolveFactionImageSrc(data);
+      const persistedImage = data.image_edit_draft
+        ? await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          importImage: window.db.factions.importImage,
+        })
+        : null;
       const faction = await window.db.factions.add({
         world_id: params.worldId,
         name: data.name,
         profile: data.profile ?? null,
-        image_src: imageSrc,
+        image_src: persistedImage?.imageSrc ?? data.image_src,
+        original_image_src: persistedImage?.originalImageSrc,
+        image_crop: persistedImage?.imageCrop,
         sections: JSON.stringify(data.sections),
         wiki_summary: JSON.stringify(data.wiki_summary),
         type_id: data.type_id,
@@ -121,8 +123,15 @@ function createHandleUpdate(params: {
     params.setIsSaving(true);
     try {
       const updatePayload = buildFactionUpdatePayload(data);
-      if (data.image_upload) {
-        updatePayload.image_src = await resolveFactionImageSrc(data);
+      if (data.image_edit_draft) {
+        const persistedImage = await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          currentOriginalImageSrc: params.editingFaction.original_image_src ?? null,
+          importImage: window.db.factions.importImage,
+        });
+        updatePayload.image_src = persistedImage.imageSrc;
+        updatePayload.original_image_src = persistedImage.originalImageSrc;
+        updatePayload.image_crop = persistedImage.imageCrop;
       }
 
       await window.db.factions.update(params.editingFaction.id, updatePayload);

@@ -5,12 +5,12 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldCard from '../components/worlds/WorldCard';
-import WorldForm from '../components/worlds/WorldForm';
+import WorldForm, { type WorldFormValues } from '../components/worlds/WorldForm';
 import { useCardSortPreference } from '../hooks/useCardSortPreference';
+import { persistImageEditDraft } from '../lib/imageCrop';
 import { sortCardRecords } from '../lib/sortCardRecords';
 
 export default function WorldsHomePage() {
-  type WorldInput = Parameters<DbApi['worlds']['add']>[0];
   const navigate = useNavigate();
   const toast = useToast();
   const { method: sortMethod, setMethod: setSortMethod } = useCardSortPreference('worlds');
@@ -62,9 +62,22 @@ export default function WorldsHomePage() {
     ]);
   };
 
-  const handleCreateWorld = async (data: WorldInput) => {
+  const handleCreateWorld = async (data: WorldFormValues) => {
     try {
-      const createdWorld = await window.db.worlds.add(data);
+      const persistedImage = data.image_edit_draft
+        ? await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          importImage: window.db.worlds.importImage,
+        })
+        : null;
+      const createdWorld = await window.db.worlds.add({
+        name: data.name,
+        thumbnail: persistedImage?.imageSrc ?? data.thumbnail ?? null,
+        original_thumbnail_src: persistedImage?.originalImageSrc ?? data.original_thumbnail_src
+          ?? null,
+        thumbnail_crop: persistedImage?.imageCrop ?? data.thumbnail_crop ?? null,
+        short_description: data.short_description ?? null,
+      });
       upsertWorld(createdWorld);
       setLoadError(null);
       setIsCreateOpen(false);
@@ -80,13 +93,38 @@ export default function WorldsHomePage() {
     }
   };
 
-  const handleUpdateWorld = async (data: WorldInput) => {
+  const handleUpdateWorld = async (data: WorldFormValues) => {
     if (!editingWorld) {
       return;
     }
 
     try {
-      const updatedWorld = await window.db.worlds.update(editingWorld.id, data);
+      const persistedImage = data.image_edit_draft
+        ? await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          currentOriginalImageSrc: editingWorld.original_thumbnail_src ?? null,
+          importImage: window.db.worlds.importImage,
+        })
+        : null;
+      const updatedWorld = await window.db.worlds.update(editingWorld.id, {
+        name: data.name,
+        thumbnail: data.clear_thumbnail
+          ? null
+          : persistedImage?.imageSrc
+            ?? data.thumbnail
+            ?? editingWorld.thumbnail,
+        original_thumbnail_src: data.clear_thumbnail
+          ? null
+          : persistedImage?.originalImageSrc
+            ?? data.original_thumbnail_src
+            ?? editingWorld.original_thumbnail_src,
+        thumbnail_crop: data.clear_thumbnail
+          ? null
+          : persistedImage?.imageCrop
+            ?? data.thumbnail_crop
+            ?? editingWorld.thumbnail_crop,
+        short_description: data.short_description ?? null,
+      });
       upsertWorld(updatedWorld);
       setLoadError(null);
       setEditingWorld(null);

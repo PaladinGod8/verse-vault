@@ -64,6 +64,7 @@ declare global {
   type AppThemePreference = SettingsTypes.AppThemePreference;
   type AppCardSize = SettingsTypes.AppCardSize;
   type AppSettingsConfig = SettingsTypes.AppSettingsConfig;
+  type StoredImageCrop = import('./src/shared/contracts/imageCropTypes').StoredImageCrop;
   type DbApi = import('./src/shared/contracts/dbApi').DbApi;
 
   interface Window {

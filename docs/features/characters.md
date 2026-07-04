@@ -19,7 +19,8 @@ and any Wiki Summary value), and are listed as cards.
 - Standardized Wiki Summary groups: Biographic Information, Aliases, Titles, Personal
   Description, Ages & Timeline, Conditions, Status & Demographics, Educational History,
   Occupational History, Trivia. All fields are optional.
-- Optional character image upload via the shared `vv-media://` media protocol.
+- Optional non-destructive character image crop/upload via the shared `vv-media://`
+  media protocol.
 - Client-side substring search across name, profile, player-character label, owner,
   sections, and every Wiki Summary value (including faction).
 - Out of scope: SQLite full-text search (FTS5), per-field structured search UI,
@@ -79,10 +80,12 @@ and any Wiki Summary value), and are listed as cards.
 
 - Powered by `CharacterImageDropzone` (same dnd-kit + hidden file input pattern as
   `WorldImageDropzone`/`TokenImageDropzone`).
-- On file selection, `CharacterForm` calls
-  `window.db.characters.importImage({ fileName, mimeType, bytes })`, which writes the
-  file to `userData/character-images/<timestamp>-<uuid>.<ext>` and returns a
-  `vv-media://character-images/<encoded-filename>` URL stored in `characters.image_src`.
+- On file selection, `CharacterForm` opens the shared `ImageCropModal` immediately.
+- Save persists cropped display bytes plus original source bytes through
+  `window.db.characters.importImage(...)`.
+- Rows keep both `characters.image_src` and `characters.original_image_src`, plus
+  `characters.image_crop` JSON so `Edit crop` can restore the previous framing.
+- Shared crop details live in `docs/features/image-cropping.md`.
 - Main process validates mime type (PNG/JPEG/WEBP/GIF) and size (≤ 5 MB).
 - The shared `vv-media://` protocol handler in `src/main.ts` serves character images
   from `userData/character-images/` alongside token/world images, with the same
@@ -168,6 +171,8 @@ interface Character {
   owner: string | null;
   author: string | null;
   image_src: string | null;
+  original_image_src: string | null;
+  image_crop: string | null;
   sections: string; // JSON text of CharacterSections
   wiki_summary: string; // JSON text of CharacterWikiSummary
   created_at: string;
@@ -215,6 +220,9 @@ Main-process rules (`registerCharacterHandlers.ts`):
   (`Character owner is required for player characters`).
 - When `is_player_character` is `0`, `owner` is normalized to `NULL`.
 - `author` is optional freeform text; whitespace-only values are normalized to `NULL`.
+- `original_image_src` is optional; blank values normalize to `NULL`.
+- `image_crop` is optional; blank values normalize to `NULL`, otherwise must be valid
+  JSON text.
 - `sections` and `wiki_summary` must be valid JSON text when provided
   (`Character sections must be valid JSON` / `Character wiki_summary must be valid
   JSON`); they default to `'{}'`.

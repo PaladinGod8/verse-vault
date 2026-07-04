@@ -202,6 +202,8 @@ export default function ItemsPage() {
                 name: editingItem.name,
                 description: editingItem.description,
                 image_src: normalizeTokenImageSrc(editingItem.image_src),
+                original_image_src: normalizeTokenImageSrc(editingItem.original_image_src),
+                image_crop: editingItem.image_crop ?? null,
               }}
               onSave={(data) => void handleUpdate(data)}
               onClose={() => setEditingItem(null)}

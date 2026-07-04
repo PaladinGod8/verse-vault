@@ -55,7 +55,7 @@ export interface WorldTableSpec {
   select: TableSelect;
   foreignKeys?: TableForeignKey[];
   jsonForeignKeys?: TableJsonForeignKey[];
-  media?: TableMedia;
+  media?: TableMedia[];
   /** `world_maps` only: its `storage_key` points at a `.map.gz` snapshot file. */
   snapshot?: boolean;
 }
@@ -70,7 +70,14 @@ const worldFk: TableForeignKey = { column: 'world_id', references: 'worlds' };
  * old->new id map per table and remapping each row's FK columns as it goes.
  */
 export const WORLD_TABLE_REGISTRY: WorldTableSpec[] = [
-  { name: 'worlds', select: { by: 'root' }, media: { column: 'thumbnail', host: 'world-images' } },
+  {
+    name: 'worlds',
+    select: { by: 'root' },
+    media: [
+      { column: 'thumbnail', host: 'world-images' },
+      { column: 'original_thumbnail_src', host: 'world-images' },
+    ],
+  },
 
   { name: 'levels', select: { by: 'world' }, foreignKeys: [worldFk] },
   { name: 'campaigns', select: { by: 'world' }, foreignKeys: [worldFk] },
@@ -79,7 +86,7 @@ export const WORLD_TABLE_REGISTRY: WorldTableSpec[] = [
     name: 'tokens',
     select: { by: 'world' },
     foreignKeys: [worldFk, { column: 'campaign_id', references: 'campaigns' }],
-    media: { column: 'image_src', host: 'token-images' },
+    media: [{ column: 'image_src', host: 'token-images' }],
   },
   {
     name: 'abilities',
@@ -90,7 +97,10 @@ export const WORLD_TABLE_REGISTRY: WorldTableSpec[] = [
     name: 'characters',
     select: { by: 'world' },
     foreignKeys: [worldFk],
-    media: { column: 'image_src', host: 'character-images' },
+    media: [
+      { column: 'image_src', host: 'character-images' },
+      { column: 'original_image_src', host: 'character-images' },
+    ],
   },
   { name: 'faction_types', select: { by: 'world' }, foreignKeys: [worldFk] },
   {
@@ -101,25 +111,37 @@ export const WORLD_TABLE_REGISTRY: WorldTableSpec[] = [
       { column: 'type_id', references: 'faction_types' },
       { column: 'parent_faction_id', references: 'factions', deferred: true },
     ],
-    media: { column: 'image_src', host: 'faction-images' },
+    media: [
+      { column: 'image_src', host: 'faction-images' },
+      { column: 'original_image_src', host: 'faction-images' },
+    ],
   },
   {
     name: 'backgrounds',
     select: { by: 'world' },
     foreignKeys: [worldFk],
-    media: { column: 'image_src', host: 'background-images' },
+    media: [
+      { column: 'image_src', host: 'background-images' },
+      { column: 'original_image_src', host: 'background-images' },
+    ],
   },
   {
     name: 'items',
     select: { by: 'world' },
     foreignKeys: [worldFk],
-    media: { column: 'image_src', host: 'item-images' },
+    media: [
+      { column: 'image_src', host: 'item-images' },
+      { column: 'original_image_src', host: 'item-images' },
+    ],
   },
   {
     name: 'lore_notes',
     select: { by: 'world' },
     foreignKeys: [worldFk],
-    media: { column: 'image_src', host: 'lore-note-images' },
+    media: [
+      { column: 'image_src', host: 'lore-note-images' },
+      { column: 'original_image_src', host: 'lore-note-images' },
+    ],
   },
   {
     name: 'lore_note_tags',

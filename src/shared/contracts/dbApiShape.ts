@@ -65,6 +65,8 @@ export interface DbApi extends DbApiRelationships {
       data: {
         name: string;
         thumbnail?: string | null;
+        original_thumbnail_src?: string | null;
+        thumbnail_crop?: string | null;
         short_description?: string | null;
         config?: string;
       },
@@ -74,6 +76,8 @@ export interface DbApi extends DbApiRelationships {
       data: {
         name?: string;
         thumbnail?: string | null;
+        original_thumbnail_src?: string | null;
+        thumbnail_crop?: string | null;
         short_description?: string | null;
         config?: string;
       },

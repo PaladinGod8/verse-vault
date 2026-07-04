@@ -38,7 +38,10 @@ test('@critical @offline airplane-mode smoke keeps core local flows working', as
       mimeType: 'image/png',
       buffer: ONE_PIXEL_PNG,
     });
-    await expect(createDialog.getByText('offline.png')).toBeVisible();
+    await page
+      .getByRole('dialog', { name: 'Crop world thumbnail' })
+      .getByRole('button', { name: 'Apply' })
+      .click();
     await createDialog.getByRole('button', { name: 'Create world' }).click();
 
     await expect(

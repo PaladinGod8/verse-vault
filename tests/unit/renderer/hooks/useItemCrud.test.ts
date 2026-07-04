@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useItemCrud } from '../../../../src/renderer/hooks/useItemCrud';
+import type { ImageEditDraft } from '../../../../src/renderer/lib/imageCrop';
 import { buildItem, resetFactoryIds } from '../../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../../helpers/ipcMock';
 
@@ -8,6 +9,23 @@ function createToastMock() {
   return {
     success: vi.fn(),
     error: vi.fn(),
+  };
+}
+
+function createImageEditDraft(
+  overrides: Partial<ImageEditDraft> = {},
+): ImageEditDraft {
+  return {
+    cropped_upload: {
+      fileName: 'sunblade.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    },
+    crop_json:
+      '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
+    preview_url: 'blob:preview',
+    source_image_src: 'blob:source',
+    ...overrides,
   };
 }
 
@@ -68,20 +86,34 @@ describe('useItemCrud', () => {
       await result.current.handleCreate({
         name: 'Sunblade',
         description: 'Ancient radiant sword',
-        image_upload: {
-          fileName: 'sunblade.png',
-          mimeType: 'image/png',
-          bytes: new Uint8Array([1, 2, 3]),
-        },
+        image_edit_draft: createImageEditDraft({
+          original_upload: {
+            fileName: 'sunblade-original.png',
+            mimeType: 'image/png',
+            bytes: new Uint8Array([4, 5, 6]),
+          },
+        }),
       });
     });
 
-    expect(window.db.items.importImage).toHaveBeenCalled();
+    expect(window.db.items.importImage).toHaveBeenNthCalledWith(1, {
+      fileName: 'sunblade.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2, 3]),
+    });
+    expect(window.db.items.importImage).toHaveBeenNthCalledWith(2, {
+      fileName: 'sunblade-original.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([4, 5, 6]),
+    });
     expect(window.db.items.add).toHaveBeenCalledWith({
       world_id: 9,
       name: 'Sunblade',
       description: 'Ancient radiant sword',
       image_src: 'vv-media://item-images/new.png',
+      original_image_src: 'vv-media://item-images/new.png',
+      image_crop:
+        '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
     });
     expect(reloadItems).toHaveBeenCalledTimes(1);
     expect(onCreateSaved).toHaveBeenCalledTimes(1);
@@ -116,18 +148,29 @@ describe('useItemCrud', () => {
       await result.current.handleUpdate({
         name: 'Old Relic',
         description: 'Restored',
-        image_upload: {
-          fileName: 'replaced.png',
-          mimeType: 'image/png',
-          bytes: new Uint8Array([3, 2, 1]),
-        },
+        image_edit_draft: createImageEditDraft({
+          cropped_upload: {
+            fileName: 'replaced.png',
+            mimeType: 'image/png',
+            bytes: new Uint8Array([3, 2, 1]),
+          },
+          source_image_src: 'vv-media://item-images/original.png',
+        }),
       });
     });
 
+    expect(window.db.items.importImage).toHaveBeenCalledWith({
+      fileName: 'replaced.png',
+      mimeType: 'image/png',
+      bytes: new Uint8Array([3, 2, 1]),
+    });
     expect(window.db.items.update).toHaveBeenCalledWith(12, {
       name: 'Old Relic',
       description: 'Restored',
       image_src: 'vv-media://item-images/replaced.png',
+      original_image_src: 'vv-media://item-images/original.png',
+      image_crop:
+        '{"version":1,"aspect_ratio":2,"selection":{"x":0,"y":0,"width":320,"height":160},"transform":{"matrix":[1,0,0,1,0,0]},"source":{"natural_width":640,"natural_height":320},"output":{"mime_type":"image/png"}}',
     });
     expect(onUpdateSaved).toHaveBeenCalledTimes(1);
     expect(toast.success).toHaveBeenCalledWith('Item updated.', '"Old Relic" was saved.');

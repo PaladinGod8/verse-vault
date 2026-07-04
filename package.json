@@ -162,6 +162,7 @@
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
     "better-sqlite3": "^12.11.1",
+    "cropperjs": "^2.1.1",
     "electron-squirrel-startup": "^1.0.1",
     "fflate": "^0.8.3"
   },

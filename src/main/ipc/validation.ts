@@ -31,3 +31,25 @@ export function isSqliteUniqueConstraintError(error: unknown): boolean {
 
   return error.message.includes('UNIQUE constraint failed');
 }
+
+export function normalizeOptionalJsonText(
+  value: unknown,
+  fieldName: string,
+): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    JSON.parse(trimmed);
+  } catch {
+    throw new Error(`${fieldName} must be valid JSON`);
+  }
+
+  return trimmed;
+}

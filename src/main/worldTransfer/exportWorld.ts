@@ -103,12 +103,12 @@ function collectMediaFor(
   files: Record<string, Uint8Array>,
 ): void {
   for (const row of rows) {
-    if (spec.media) {
-      const fileName = parseMediaFileName(row[spec.media.column], spec.media.host);
+    for (const mediaColumn of spec.media ?? []) {
+      const fileName = parseMediaFileName(row[mediaColumn.column], mediaColumn.host);
       if (fileName) {
-        const zipPath = mediaZipPath(spec.media.host, fileName);
+        const zipPath = mediaZipPath(mediaColumn.host, fileName);
         if (!files[zipPath]) {
-          const bytes = media.readMedia(spec.media.host, fileName);
+          const bytes = media.readMedia(mediaColumn.host, fileName);
           if (bytes) {
             files[zipPath] = bytes;
           }

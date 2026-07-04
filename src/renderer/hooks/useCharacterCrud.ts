@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { CharacterFormValues } from '../components/characters/CharacterForm';
-import { normalizeTokenImageSrc } from '../lib/tokenImageSrc';
+import { persistImageEditDraft } from '../lib/imageCrop';
 
 type CharacterMutationToast = {
   success: (title: string, description?: string) => void;
@@ -25,17 +25,6 @@ function toCharacterErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Please try again.';
 }
 
-async function resolveCharacterImageSrc(
-  data: CharacterFormValues,
-): Promise<string | null | undefined> {
-  if (!data.image_upload) {
-    return data.image_src;
-  }
-
-  const importResult = await window.db.characters.importImage(data.image_upload);
-  return normalizeTokenImageSrc(importResult.image_src);
-}
-
 function buildCharacterUpdatePayload(data: CharacterFormValues): {
   name: string;
   profile: string | null;
@@ -43,6 +32,8 @@ function buildCharacterUpdatePayload(data: CharacterFormValues): {
   owner: string | null;
   author: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections: string;
   wiki_summary: string;
 } {
@@ -53,6 +44,8 @@ function buildCharacterUpdatePayload(data: CharacterFormValues): {
     owner: string | null;
     author: string | null;
     image_src?: string | null;
+    original_image_src?: string | null;
+    image_crop?: string | null;
     sections: string;
     wiki_summary: string;
   } = {
@@ -67,6 +60,8 @@ function buildCharacterUpdatePayload(data: CharacterFormValues): {
 
   if (data.clear_image) {
     updatePayload.image_src = null;
+    updatePayload.original_image_src = null;
+    updatePayload.image_crop = null;
   }
 
   return updatePayload;
@@ -86,7 +81,12 @@ function createHandleCreate(params: {
 
     params.setIsSaving(true);
     try {
-      const imageSrc = await resolveCharacterImageSrc(data);
+      const persistedImage = data.image_edit_draft
+        ? await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          importImage: window.db.characters.importImage,
+        })
+        : null;
       await window.db.characters.add({
         world_id: params.worldId,
         name: data.name,
@@ -94,7 +94,9 @@ function createHandleCreate(params: {
         is_player_character: data.is_player_character,
         owner: data.owner ?? null,
         author: data.author ?? null,
-        image_src: imageSrc,
+        image_src: persistedImage?.imageSrc ?? data.image_src,
+        original_image_src: persistedImage?.originalImageSrc,
+        image_crop: persistedImage?.imageCrop,
         sections: JSON.stringify(data.sections),
         wiki_summary: JSON.stringify(data.wiki_summary),
       });
@@ -124,8 +126,15 @@ function createHandleUpdate(params: {
     params.setIsSaving(true);
     try {
       const updatePayload = buildCharacterUpdatePayload(data);
-      if (data.image_upload) {
-        updatePayload.image_src = await resolveCharacterImageSrc(data);
+      if (data.image_edit_draft) {
+        const persistedImage = await persistImageEditDraft({
+          draft: data.image_edit_draft,
+          currentOriginalImageSrc: params.editingCharacter.original_image_src ?? null,
+          importImage: window.db.characters.importImage,
+        });
+        updatePayload.image_src = persistedImage.imageSrc;
+        updatePayload.original_image_src = persistedImage.originalImageSrc;
+        updatePayload.image_crop = persistedImage.imageCrop;
       }
 
       await window.db.characters.update(params.editingCharacter.id, updatePayload);

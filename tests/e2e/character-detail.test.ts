@@ -48,7 +48,11 @@ test('@critical @ux character detail supports edit, image persistence, and prima
       mimeType: 'image/png',
       buffer: ONE_PIXEL_PNG,
     });
-    await editDialog.getByRole('button', { name: 'Save' }).click();
+    await page
+      .getByRole('dialog', { name: 'Crop character image' })
+      .getByRole('button', { name: 'Apply' })
+      .click();
+    await editDialog.getByTestId('editor-action-bar').getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByText('Updated dragonborn profile.')).toBeVisible();
     await expect(page.getByText('Author: Storykeeper')).toBeVisible();

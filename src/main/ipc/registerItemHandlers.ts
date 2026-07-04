@@ -11,6 +11,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
 import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
+import { normalizeOptionalJsonText } from './validation';
 
 const ITEM_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -27,6 +28,8 @@ type ItemUpsertData = {
   name?: string;
   description?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
 };
 
 function normalizeOptionalText(value: string | null | undefined): string | null {
@@ -70,11 +73,16 @@ function registerItemMutationHandlers(db: Database.Database): void {
 
     const description = normalizeOptionalText(data.description);
     const imageSrc = normalizeMediaImageSrcForHost(data.image_src, ITEM_IMAGE_HOST);
+    const originalImageSrc = normalizeMediaImageSrcForHost(
+      data.original_image_src,
+      ITEM_IMAGE_HOST,
+    );
+    const imageCrop = normalizeOptionalJsonText(data.image_crop, 'Item image_crop');
 
     const stmt = db.prepare(
-      'INSERT INTO items (world_id, name, description, image_src) VALUES (?, ?, ?, ?)',
+      'INSERT INTO items (world_id, name, description, image_src, original_image_src, image_crop) VALUES (?, ?, ?, ?, ?, ?)',
     );
-    const result = stmt.run(worldId, name, description, imageSrc);
+    const result = stmt.run(worldId, name, description, imageSrc, originalImageSrc, imageCrop);
 
     const item = db.prepare('SELECT * FROM items WHERE id = ?').get(result.lastInsertRowid);
     if (!item) {
@@ -111,6 +119,18 @@ function registerItemMutationHandlers(db: Database.Database): void {
     if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
       setClauses.push('image_src = ?');
       values.push(normalizeMediaImageSrcForHost(data.image_src, ITEM_IMAGE_HOST));
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'original_image_src')) {
+      setClauses.push('original_image_src = ?');
+      values.push(
+        normalizeMediaImageSrcForHost(data.original_image_src, ITEM_IMAGE_HOST),
+      );
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'image_crop')) {
+      setClauses.push('image_crop = ?');
+      values.push(normalizeOptionalJsonText(data.image_crop, 'Item image_crop'));
     }
 
     const updateSql = setClauses.length > 0

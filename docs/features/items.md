@@ -9,7 +9,7 @@ other named objects that need a minimal record now and room to grow later.
 
 - World-scoped item CRUD (`world_id` required on create).
 - Fields: required `name`, optional `description`, optional `image_src`.
-- Optional image upload via shared `vv-media://` media protocol.
+- Optional non-destructive image crop/upload via shared `vv-media://` media protocol.
 - Client-side substring search across `name` and `description`.
 - Card-grid list page with shared count badge, sort toggle, page-size selector, and
   pagination.
@@ -46,13 +46,15 @@ other named objects that need a minimal record now and room to grow later.
 
 - Powered by `ItemImageDropzone`, using same drag/drop + hidden file-input pattern as
   world/character/faction/background image forms.
-- On file selection, `ItemForm` calls
-  `window.db.items.importImage({ fileName, mimeType, bytes })`, which writes file under
-  `userData/item-images/` and returns a
-  `vv-media://item-images/<encoded-filename>` URL stored in `items.image_src`.
+- On file selection, `ItemForm` opens the shared `ImageCropModal` immediately. Save
+  persists cropped display bytes plus original source bytes through
+  `window.db.items.importImage(...)`.
+- Rows keep both `items.image_src` and `items.original_image_src`, plus
+  `items.image_crop` JSON so `Edit crop` can restore the previous framing.
 - Main process validates mime type (PNG/JPEG/WEBP/GIF) and size (<= 5 MB).
 - Shared `vv-media://` protocol handler in `src/main.ts` serves item images from
   `userData/item-images/` alongside world/character/faction/background/token images.
+- Shared crop details live in `docs/features/image-cropping.md`.
 
 ## Architecture Notes
 
@@ -81,15 +83,18 @@ interface Item {
   name: string;
   description: string | null;
   image_src: string | null;
+  original_image_src: string | null;
+  image_crop: string | null;
   last_viewed_at: string | null;
   created_at: string;
   updated_at: string;
 }
 ```
 
-`ItemUpsertPayload` carries `name`, `description`, and `image_src`. Main-process
-handler requires `world_id` on create, trims `name`, normalizes blank
-description/image to `NULL`, and updates `last_viewed_at` through a dedicated
+`ItemUpsertPayload` carries `name`, `description`, `image_src`,
+`original_image_src`, and `image_crop`. Main-process handler requires `world_id` on
+create, trims `name`, normalizes blank description/image fields to `NULL`, validates
+`image_crop` as JSON when present, and updates `last_viewed_at` through a dedicated
 `markViewed` mutation.
 
 `items` table lives in `src/database/schema.ts` and additive migration logic lives in
@@ -103,6 +108,8 @@ Main-process rules (`registerItemHandlers.ts`):
 - `name` required and trimmed on create/update (`Item name is required`).
 - `description` optional; whitespace-only values normalize to `NULL`.
 - `image_src` optional; blank values normalize to `NULL`.
+- `original_image_src` optional; blank values normalize to `NULL`.
+- `image_crop` optional; blank values normalize to `NULL`, otherwise must be valid JSON.
 - Image import rejects unsupported mime types, empty byte arrays, oversized files, and
   non-`Uint8Array` payloads.
 

@@ -194,6 +194,8 @@ describe('WorldsHomePage renderer behaviors', () => {
     expect(worldsAddMock).toHaveBeenCalledWith({
       name: 'New Realm',
       thumbnail: null,
+      original_thumbnail_src: null,
+      thumbnail_crop: null,
       short_description: 'Created in test',
     });
     expect(

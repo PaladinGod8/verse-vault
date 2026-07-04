@@ -11,6 +11,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'path';
 import { IPC } from '../../shared/ipcChannels';
 import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
+import { normalizeOptionalJsonText } from './validation';
 
 const BACKGROUND_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -27,6 +28,8 @@ type BackgroundUpsertData = {
   name?: string;
   description?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
 };
 
 function registerBackgroundReadHandlers(db: Database.Database): void {
@@ -48,78 +51,119 @@ function registerBackgroundReadHandlers(db: Database.Database): void {
   });
 }
 
-function registerBackgroundMutationHandlers(db: Database.Database): void {
-  ipcMain.handle(IPC.BACKGROUNDS_ADD, (_event, data: BackgroundUpsertData) => {
-    const worldId = typeof data.world_id === 'number' ? data.world_id : null;
-    if (!worldId) {
-      throw new Error('Background world_id is required');
-    }
+function handleBackgroundAdd(db: Database.Database, data: BackgroundUpsertData) {
+  const worldId = typeof data.world_id === 'number' ? data.world_id : null;
+  if (!worldId) {
+    throw new Error('Background world_id is required');
+  }
 
-    const name = typeof data.name === 'string' ? data.name.trim() : '';
-    if (!name) {
+  const name = typeof data.name === 'string' ? data.name.trim() : '';
+  if (!name) {
+    throw new Error('Background name is required');
+  }
+
+  const description = typeof data.description === 'string' ? data.description : null;
+  const imageSrc = normalizeMediaImageSrcForHost(data.image_src, BACKGROUND_IMAGE_HOST);
+  const originalImageSrc = normalizeMediaImageSrcForHost(
+    data.original_image_src,
+    BACKGROUND_IMAGE_HOST,
+  );
+  const imageCrop = normalizeOptionalJsonText(
+    data.image_crop,
+    'Background image_crop',
+  );
+
+  const stmt = db.prepare(
+    'INSERT INTO backgrounds (world_id, name, description, image_src, original_image_src, image_crop) VALUES (?, ?, ?, ?, ?, ?)',
+  );
+  const result = stmt.run(
+    worldId,
+    name,
+    description,
+    imageSrc,
+    originalImageSrc,
+    imageCrop,
+  );
+
+  const background = db
+    .prepare('SELECT * FROM backgrounds WHERE id = ?')
+    .get(result.lastInsertRowid);
+  if (!background) {
+    throw new Error('Failed to create background');
+  }
+  return background;
+}
+
+function handleBackgroundUpdate(
+  db: Database.Database,
+  id: number,
+  data: BackgroundUpsertData,
+) {
+  const existingBackground = db.prepare('SELECT * FROM backgrounds WHERE id = ?').get(id) as
+    | Background
+    | undefined;
+  if (!existingBackground) {
+    throw new Error('Background not found');
+  }
+
+  const setClauses: string[] = [];
+  const values: Array<string | number | null> = [];
+
+  if (Object.prototype.hasOwnProperty.call(data, 'name')) {
+    const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
+    if (!trimmedName) {
       throw new Error('Background name is required');
     }
+    setClauses.push('name = ?');
+    values.push(trimmedName);
+  }
 
-    const description = typeof data.description === 'string' ? data.description : null;
-    const imageSrc = normalizeMediaImageSrcForHost(data.image_src, BACKGROUND_IMAGE_HOST);
+  if (Object.prototype.hasOwnProperty.call(data, 'description')) {
+    setClauses.push('description = ?');
+    values.push(typeof data.description === 'string' ? data.description : null);
+  }
 
-    const stmt = db.prepare(
-      'INSERT INTO backgrounds (world_id, name, description, image_src) VALUES (?, ?, ?, ?)',
+  if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
+    setClauses.push('image_src = ?');
+    values.push(
+      normalizeMediaImageSrcForHost(data.image_src, BACKGROUND_IMAGE_HOST),
     );
-    const result = stmt.run(worldId, name, description, imageSrc);
+  }
 
-    const background = db
-      .prepare('SELECT * FROM backgrounds WHERE id = ?')
-      .get(result.lastInsertRowid);
-    if (!background) {
-      throw new Error('Failed to create background');
-    }
-    return background;
-  });
+  if (Object.prototype.hasOwnProperty.call(data, 'original_image_src')) {
+    setClauses.push('original_image_src = ?');
+    values.push(
+      normalizeMediaImageSrcForHost(data.original_image_src, BACKGROUND_IMAGE_HOST),
+    );
+  }
 
-  ipcMain.handle(IPC.BACKGROUNDS_UPDATE, (_event, id: number, data: BackgroundUpsertData) => {
-    const existingBackground = db.prepare('SELECT * FROM backgrounds WHERE id = ?').get(id) as
-      | Background
-      | undefined;
-    if (!existingBackground) {
-      throw new Error('Background not found');
-    }
+  if (Object.prototype.hasOwnProperty.call(data, 'image_crop')) {
+    setClauses.push('image_crop = ?');
+    values.push(normalizeOptionalJsonText(data.image_crop, 'Background image_crop'));
+  }
 
-    const setClauses: string[] = [];
-    const values: Array<string | number | null> = [];
+  const updateSql = setClauses.length > 0
+    ? `UPDATE backgrounds SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+    : "UPDATE backgrounds SET updated_at = datetime('now') WHERE id = ?";
+  db.prepare(updateSql).run(...values, id);
 
-    if (Object.prototype.hasOwnProperty.call(data, 'name')) {
-      const trimmedName = typeof data.name === 'string' ? data.name.trim() : '';
-      if (!trimmedName) {
-        throw new Error('Background name is required');
-      }
-      setClauses.push('name = ?');
-      values.push(trimmedName);
-    }
+  const background = db.prepare('SELECT * FROM backgrounds WHERE id = ?').get(id);
+  if (!background) {
+    throw new Error('Background not found');
+  }
+  return background;
+}
 
-    if (Object.prototype.hasOwnProperty.call(data, 'description')) {
-      setClauses.push('description = ?');
-      values.push(typeof data.description === 'string' ? data.description : null);
-    }
+function registerBackgroundMutationHandlers(db: Database.Database): void {
+  ipcMain.handle(
+    IPC.BACKGROUNDS_ADD,
+    (_event, data: BackgroundUpsertData) => handleBackgroundAdd(db, data),
+  );
 
-    if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
-      setClauses.push('image_src = ?');
-      values.push(
-        normalizeMediaImageSrcForHost(data.image_src, BACKGROUND_IMAGE_HOST),
-      );
-    }
-
-    const updateSql = setClauses.length > 0
-      ? `UPDATE backgrounds SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-      : "UPDATE backgrounds SET updated_at = datetime('now') WHERE id = ?";
-    db.prepare(updateSql).run(...values, id);
-
-    const background = db.prepare('SELECT * FROM backgrounds WHERE id = ?').get(id);
-    if (!background) {
-      throw new Error('Background not found');
-    }
-    return background;
-  });
+  ipcMain.handle(
+    IPC.BACKGROUNDS_UPDATE,
+    (_event, id: number, data: BackgroundUpsertData) => handleBackgroundUpdate(db, id, data),
+  );
 
   ipcMain.handle(IPC.BACKGROUNDS_DELETE, (_event, id: number) => {
     db.prepare('DELETE FROM backgrounds WHERE id = ?').run(id);

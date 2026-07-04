@@ -2,6 +2,8 @@ type FactionCurrentImagePreviewProps = {
   imageSrc: string;
   previewUrl?: string;
   isCleared: boolean;
+  onEditCrop: () => void;
+  onReplaceImage: () => void;
   onClear: () => void;
   disabled?: boolean;
 };
@@ -10,6 +12,8 @@ export default function FactionCurrentImagePreview({
   imageSrc,
   previewUrl,
   isCleared,
+  onEditCrop,
+  onReplaceImage,
   onClear,
   disabled = false,
 }: FactionCurrentImagePreviewProps) {
@@ -31,14 +35,32 @@ export default function FactionCurrentImagePreview({
             />
           </div>
         )}
-      <button
-        type='button'
-        className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
-        onClick={onClear}
-        disabled={disabled}
-      >
-        Clear image on save
-      </button>
+      <div className='flex flex-wrap gap-3 text-xs font-medium'>
+        <button
+          type='button'
+          className='text-slate-700 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onEditCrop}
+          disabled={disabled}
+        >
+          Edit crop
+        </button>
+        <button
+          type='button'
+          className='text-slate-700 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onReplaceImage}
+          disabled={disabled}
+        >
+          Replace image
+        </button>
+        <button
+          type='button'
+          className='text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onClear}
+          disabled={disabled}
+        >
+          Clear image on save
+        </button>
+      </div>
     </div>
   );
 }

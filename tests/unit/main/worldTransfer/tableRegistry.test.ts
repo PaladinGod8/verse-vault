@@ -76,8 +76,8 @@ describe('WORLD_TABLE_REGISTRY', () => {
 
   it('only uses known media hosts', () => {
     for (const spec of WORLD_TABLE_REGISTRY) {
-      if (spec.media) {
-        expect(MEDIA_IMAGE_HOSTS).toContain(spec.media.host);
+      for (const media of spec.media ?? []) {
+        expect(MEDIA_IMAGE_HOSTS).toContain(media.host);
       }
     }
   });

@@ -12,6 +12,7 @@ import path from 'path';
 import { wouldCreateCycle } from '../../shared/factionHierarchy';
 import { IPC } from '../../shared/ipcChannels';
 import { normalizeMediaImageSrcForHost } from '../../shared/media/imageSource';
+import { normalizeOptionalJsonText } from './validation';
 
 const FACTION_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -28,6 +29,8 @@ type FactionUpsertData = {
   name?: string;
   profile?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   sections?: string;
   wiki_summary?: string;
   type_id?: number | null;
@@ -88,6 +91,11 @@ function registerFactionMutationHandlers(db: Database.Database): void {
 
     const profile = typeof data.profile === 'string' ? data.profile : null;
     const imageSrc = normalizeMediaImageSrcForHost(data.image_src, FACTION_IMAGE_HOST);
+    const originalImageSrc = normalizeMediaImageSrcForHost(
+      data.original_image_src,
+      FACTION_IMAGE_HOST,
+    );
+    const imageCrop = normalizeOptionalJsonText(data.image_crop, 'Faction image_crop');
     const sections = ensureFactionJson(data.sections, 'sections');
     const wikiSummary = ensureFactionJson(data.wiki_summary, 'wiki_summary');
     const typeId = typeof data.type_id === 'number' ? data.type_id : null;
@@ -96,13 +104,15 @@ function registerFactionMutationHandlers(db: Database.Database): void {
       : null;
 
     const stmt = db.prepare(
-      'INSERT INTO factions (world_id, name, profile, image_src, sections, wiki_summary, type_id, parent_faction_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO factions (world_id, name, profile, image_src, original_image_src, image_crop, sections, wiki_summary, type_id, parent_faction_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const result = stmt.run(
       worldId,
       name,
       profile,
       imageSrc,
+      originalImageSrc,
+      imageCrop,
       sections,
       wikiSummary,
       typeId,
@@ -260,6 +270,18 @@ function buildFactionUpdateStatement(data: FactionUpsertData): {
   if (Object.prototype.hasOwnProperty.call(data, 'image_src')) {
     setClauses.push('image_src = ?');
     values.push(normalizeMediaImageSrcForHost(data.image_src, FACTION_IMAGE_HOST));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'original_image_src')) {
+    setClauses.push('original_image_src = ?');
+    values.push(
+      normalizeMediaImageSrcForHost(data.original_image_src, FACTION_IMAGE_HOST),
+    );
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'image_crop')) {
+    setClauses.push('image_crop = ?');
+    values.push(normalizeOptionalJsonText(data.image_crop, 'Faction image_crop'));
   }
 
   if (Object.prototype.hasOwnProperty.call(data, 'sections')) {

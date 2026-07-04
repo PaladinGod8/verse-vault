@@ -181,6 +181,8 @@ export default function FactionDetailPage() {
                 name: faction.name,
                 profile: faction.profile,
                 image_src: imageSrc,
+                original_image_src: normalizeTokenImageSrc(faction.original_image_src),
+                image_crop: faction.image_crop,
                 sections: parseJson<FactionSections>(faction.sections),
                 wiki_summary: parseJson<FactionWikiSummary>(faction.wiki_summary),
                 type_id: faction.type_id,

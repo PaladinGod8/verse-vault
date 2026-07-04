@@ -18,6 +18,7 @@ import {
   serializeCanvasScene,
 } from './canvasPersistence';
 import { normalizeTags } from './noteTagUtils';
+import { normalizeOptionalJsonText } from './validation';
 
 const LORE_NOTE_IMAGE_MIME_TO_EXTENSION = {
   'image/png': 'png',
@@ -34,6 +35,8 @@ type LoreNoteUpsertData = {
   name?: string;
   content?: string | null;
   image_src?: string | null;
+  original_image_src?: string | null;
+  image_crop?: string | null;
   canvas_enabled?: boolean;
   canvas_scene?: unknown;
   canvas_preview_image?: string | null;
@@ -135,6 +138,18 @@ function buildLoreNoteUpdateStatement(data: LoreNoteUpsertData): {
     values.push(normalizeMediaImageSrcForHost(data.image_src, LORE_NOTE_IMAGE_HOST));
   }
 
+  if (Object.prototype.hasOwnProperty.call(data, 'original_image_src')) {
+    setClauses.push('original_image_src = ?');
+    values.push(
+      normalizeMediaImageSrcForHost(data.original_image_src, LORE_NOTE_IMAGE_HOST),
+    );
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, 'image_crop')) {
+    setClauses.push('image_crop = ?');
+    values.push(normalizeOptionalJsonText(data.image_crop, 'Lore note image_crop'));
+  }
+
   if (Object.prototype.hasOwnProperty.call(data, 'canvas_enabled')) {
     setClauses.push('canvas_enabled = ?');
     values.push(data.canvas_enabled ? '1' : '0');
@@ -194,85 +209,106 @@ function registerLoreNoteReadHandlers(db: Database.Database): void {
   });
 }
 
-function registerLoreNoteMutationHandlers(db: Database.Database): void {
-  ipcMain.handle(IPC.LORE_NOTES_ADD, (_event, data: LoreNoteUpsertData) => {
-    const worldId = typeof data.world_id === 'number' ? data.world_id : null;
-    if (!worldId) {
-      throw new Error('Lore note world_id is required');
-    }
+function handleLoreNoteAdd(db: Database.Database, data: LoreNoteUpsertData) {
+  const worldId = typeof data.world_id === 'number' ? data.world_id : null;
+  if (!worldId) {
+    throw new Error('Lore note world_id is required');
+  }
 
-    const name = typeof data.name === 'string' ? data.name.trim() : '';
-    if (!name) {
-      throw new Error('Lore note name is required');
-    }
+  const name = typeof data.name === 'string' ? data.name.trim() : '';
+  if (!name) {
+    throw new Error('Lore note name is required');
+  }
 
-    const content = normalizeOptionalText(data.content);
-    const imageSrc = normalizeMediaImageSrcForHost(
-      data.image_src,
-      LORE_NOTE_IMAGE_HOST,
+  const content = normalizeOptionalText(data.content);
+  const imageSrc = normalizeMediaImageSrcForHost(
+    data.image_src,
+    LORE_NOTE_IMAGE_HOST,
+  );
+  const originalImageSrc = normalizeMediaImageSrcForHost(
+    data.original_image_src,
+    LORE_NOTE_IMAGE_HOST,
+  );
+  const imageCrop = normalizeOptionalJsonText(data.image_crop, 'Lore note image_crop');
+  const canvasEnabled = data.canvas_enabled ? 1 : 0;
+  const canvasScene = serializeCanvasScene(data.canvas_scene);
+  const canvasPreviewImage = normalizeCanvasPreviewImage(data.canvas_preview_image);
+  const tags = normalizeTags(data.tags);
+
+  const insertLoreNote = db.transaction(() => {
+    const stmt = db.prepare(
+      'INSERT INTO lore_notes (world_id, name, content, image_src, original_image_src, image_crop, canvas_enabled, canvas_scene, canvas_preview_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    const canvasEnabled = data.canvas_enabled ? 1 : 0;
-    const canvasScene = serializeCanvasScene(data.canvas_scene);
-    const canvasPreviewImage = normalizeCanvasPreviewImage(data.canvas_preview_image);
-    const tags = normalizeTags(data.tags);
-
-    const insertLoreNote = db.transaction(() => {
-      const stmt = db.prepare(
-        'INSERT INTO lore_notes (world_id, name, content, image_src, canvas_enabled, canvas_scene, canvas_preview_image) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      );
-      const result = stmt.run(
-        worldId,
-        name,
-        content,
-        imageSrc,
-        canvasEnabled,
-        canvasScene,
-        canvasPreviewImage,
-      );
-      const loreNoteId = result.lastInsertRowid as number;
-      replaceTagsForNote(db, loreNoteId, worldId, tags);
-      return loreNoteId;
-    });
-    const loreNoteId = insertLoreNote();
-
-    const note = db.prepare('SELECT * FROM lore_notes WHERE id = ?').get(loreNoteId) as
-      | Record<string, unknown>
-      | undefined;
-    if (!note) {
-      throw new Error('Failed to create lore note');
-    }
-    return mapLoreNoteRow(note, tags);
+    const result = stmt.run(
+      worldId,
+      name,
+      content,
+      imageSrc,
+      originalImageSrc,
+      imageCrop,
+      canvasEnabled,
+      canvasScene,
+      canvasPreviewImage,
+    );
+    const loreNoteId = result.lastInsertRowid as number;
+    replaceTagsForNote(db, loreNoteId, worldId, tags);
+    return loreNoteId;
   });
+  const loreNoteId = insertLoreNote();
 
-  ipcMain.handle(IPC.LORE_NOTES_UPDATE, (_event, id: number, data: LoreNoteUpsertData) => {
-    const existingNote = db.prepare('SELECT * FROM lore_notes WHERE id = ?').get(id) as
-      | { world_id: number; }
-      | undefined;
-    if (!existingNote) {
-      throw new Error('Lore note not found');
-    }
+  const note = db.prepare('SELECT * FROM lore_notes WHERE id = ?').get(loreNoteId) as
+    | Record<string, unknown>
+    | undefined;
+  if (!note) {
+    throw new Error('Failed to create lore note');
+  }
+  return mapLoreNoteRow(note, tags);
+}
 
-    const { setClauses, values } = buildLoreNoteUpdateStatement(data);
+function handleLoreNoteUpdate(
+  db: Database.Database,
+  id: number,
+  data: LoreNoteUpsertData,
+) {
+  const existingNote = db.prepare('SELECT * FROM lore_notes WHERE id = ?').get(id) as
+    | { world_id: number; }
+    | undefined;
+  if (!existingNote) {
+    throw new Error('Lore note not found');
+  }
 
-    const updateSql = setClauses.length > 0
-      ? `UPDATE lore_notes SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-      : "UPDATE lore_notes SET updated_at = datetime('now') WHERE id = ?";
-    db.prepare(updateSql).run(...values, id);
+  const { setClauses, values } = buildLoreNoteUpdateStatement(data);
 
-    let tags: string[] | undefined;
-    if (Object.prototype.hasOwnProperty.call(data, 'tags')) {
-      tags = normalizeTags(data.tags);
-      replaceTagsForNote(db, id, existingNote.world_id, tags);
-    }
+  const updateSql = setClauses.length > 0
+    ? `UPDATE lore_notes SET ${setClauses.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+    : "UPDATE lore_notes SET updated_at = datetime('now') WHERE id = ?";
+  db.prepare(updateSql).run(...values, id);
 
-    const note = db.prepare('SELECT * FROM lore_notes WHERE id = ?').get(id) as
-      | Record<string, unknown>
-      | undefined;
-    if (!note) {
-      throw new Error('Lore note not found');
-    }
-    return mapLoreNoteRow(note, tags ?? fetchTagsForNote(db, id));
-  });
+  let tags: string[] | undefined;
+  if (Object.prototype.hasOwnProperty.call(data, 'tags')) {
+    tags = normalizeTags(data.tags);
+    replaceTagsForNote(db, id, existingNote.world_id, tags);
+  }
+
+  const note = db.prepare('SELECT * FROM lore_notes WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!note) {
+    throw new Error('Lore note not found');
+  }
+  return mapLoreNoteRow(note, tags ?? fetchTagsForNote(db, id));
+}
+
+function registerLoreNoteMutationHandlers(db: Database.Database): void {
+  ipcMain.handle(
+    IPC.LORE_NOTES_ADD,
+    (_event, data: LoreNoteUpsertData) => handleLoreNoteAdd(db, data),
+  );
+
+  ipcMain.handle(
+    IPC.LORE_NOTES_UPDATE,
+    (_event, id: number, data: LoreNoteUpsertData) => handleLoreNoteUpdate(db, id, data),
+  );
 
   ipcMain.handle(IPC.LORE_NOTES_DELETE, (_event, id: number) => {
     db.prepare('DELETE FROM lore_note_tags WHERE lore_note_id = ?').run(id);

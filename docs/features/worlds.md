@@ -13,15 +13,17 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
 - Supports world creation from a modal form:
   - Name is required.
   - Thumbnail (optional): drag-and-drop or click-to-select a local image file (PNG, JPEG,
-    WEBP, or GIF; max 5 MB). The image is uploaded immediately on selection via
-    `window.db.worlds.importImage()` and stored locally. The returned `vv-media://` URL is
-    submitted with the form. No URL text input is present — file upload is the sole mechanism.
+    WEBP, or GIF; max 5 MB). File select opens the shared crop modal immediately. Save
+    persists both original source bytes and cropped display bytes through
+    `window.db.worlds.importImage()`.
+  - Rows keep both `worlds.thumbnail` and `worlds.original_thumbnail_src`, plus
+    `worlds.thumbnail_crop` JSON so `Edit crop` can restore the previous framing.
   - Short description is optional.
   - Successful create inserts or moves the returned world to the top of local state.
 - Supports world editing from a modal form with prefilled values:
-  - Same validation as create. In edit mode, the current thumbnail is shown as a preview image
-    above the dropzone; the user can clear it (sets `thumbnail` to `null`) or upload a new
-    file (replaces the stored URL). If no action is taken the existing URL is preserved.
+  - Same validation as create. In edit mode, the current thumbnail preview shows `Edit crop`,
+    `Replace image`, and `Clear image on save`. If no action is taken, existing display,
+    original, and crop metadata fields are preserved.
   - Successful edit inserts or moves the returned world to the top of local state.
 - Supports world deletion from each card:
   - Requires confirmation (`Delete "<name>"? This cannot be undone.`).
@@ -33,15 +35,18 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
 
 - Powered by `WorldImageDropzone` (dnd-kit `useDroppable` + native drag events + hidden
   `<input type="file">` fallback) inside `WorldForm`.
-- On file selection the form calls `window.db.worlds.importImage({ fileName, mimeType, bytes })`
-  which writes the file to `userData/world-images/<timestamp>-<uuid>.<ext>`.
+- On file selection the form opens the shared `ImageCropModal` immediately.
+- On save, the page resolves the form's `ImageEditDraft` through
+  `window.db.worlds.importImage({ fileName, mimeType, bytes })`, which writes files to
+  `userData/world-images/<timestamp>-<uuid>.<ext>`.
 - The main process validates mime type (PNG/JPEG/WEBP/GIF) and size (≤ 5 MB) before writing.
-- Returns a `vv-media://world-images/<encoded-filename>` URL stored in `worlds.thumbnail`.
+- Cropped bytes are stored as `worlds.thumbnail`; original bytes are stored as
+  `worlds.original_thumbnail_src`; crop metadata is stored as `worlds.thumbnail_crop`.
 - The `vv-media://` Electron protocol handler serves world image files from `userData/world-images/`
   alongside token images from `userData/token-images/` — both are secured by basename-only path
   checks against their respective directories.
 - Upload errors (bad mime type, oversized file) are displayed inline in the dropzone error slot.
-- The submit button is disabled while an upload is in progress (`isImportingImage`).
+- Shared crop details live in `docs/features/image-cropping.md`.
 - Orphaned images (from cancelled forms or cleared thumbnails) are not cleaned up automatically.
   This is a known accepted limitation.
 
@@ -82,6 +87,8 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
 - `id`
 - `name`
 - `thumbnail`
+- `original_thumbnail_src`
+- `thumbnail_crop`
 - `short_description`
 - `last_viewed_at`
 - `created_at`
@@ -90,6 +97,8 @@ The Worlds feature provides a local-first workflow to create, view, edit, and de
 ## Validation and Error Rules
 
 - `name` is trimmed and required on create and on update when `name` is provided.
+- `original_thumbnail_src` is optional; blank values normalize to `NULL`.
+- `thumbnail_crop` is optional; blank values normalize to `NULL`, otherwise must be valid JSON.
 - Create throws when the inserted row cannot be read back.
 - Update throws `World not found` when the row does not exist after update.
 - Renderer forms surface thrown `Error.message` values and fallback generic messages for non-Error throws.

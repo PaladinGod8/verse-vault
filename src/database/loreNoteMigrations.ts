@@ -5,13 +5,15 @@ export function runLoreNotesSchemaMigration(db: Database.Database): void {
     db.exec(`
       CREATE TABLE IF NOT EXISTS lore_notes (
         id             INTEGER PRIMARY KEY AUTOINCREMENT,
-        world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
-        name           TEXT    NOT NULL,
-        content        TEXT,
-        image_src      TEXT,
-        canvas_enabled INTEGER NOT NULL DEFAULT 0,
-        canvas_scene   TEXT,
-        canvas_preview_image TEXT,
+      world_id       INTEGER NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+      name           TEXT    NOT NULL,
+      content        TEXT,
+      image_src      TEXT,
+      original_image_src TEXT,
+      image_crop     TEXT,
+      canvas_enabled INTEGER NOT NULL DEFAULT 0,
+      canvas_scene   TEXT,
+      canvas_preview_image TEXT,
         last_viewed_at TEXT,
         created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
         updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -39,6 +41,12 @@ export function runLoreNotesSchemaMigration(db: Database.Database): void {
 
   const cols = db.pragma('table_info(lore_notes)') as Array<{ name: string; }>;
   if (Array.isArray(cols) && cols.length > 0) {
+    if (!cols.some((c) => c.name === 'original_image_src')) {
+      db.exec('ALTER TABLE lore_notes ADD COLUMN original_image_src TEXT');
+    }
+    if (!cols.some((c) => c.name === 'image_crop')) {
+      db.exec('ALTER TABLE lore_notes ADD COLUMN image_crop TEXT');
+    }
     if (!cols.some((c) => c.name === 'canvas_enabled')) {
       db.exec('ALTER TABLE lore_notes ADD COLUMN canvas_enabled INTEGER NOT NULL DEFAULT 0');
     }

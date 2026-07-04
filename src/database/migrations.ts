@@ -61,6 +61,8 @@ function runFactionsSchemaMigration(db: Database.Database): void {
         name              TEXT    NOT NULL,
         profile           TEXT,
         image_src         TEXT,
+        original_image_src TEXT,
+        image_crop        TEXT,
         sections          TEXT    NOT NULL DEFAULT '{}',
         wiki_summary      TEXT    NOT NULL DEFAULT '{}',
         type_id           INTEGER REFERENCES faction_types(id) ON DELETE SET NULL,
@@ -77,6 +79,16 @@ function runFactionsSchemaMigration(db: Database.Database): void {
   } catch (err) {
     console.error('[db] Error running factions schema migration:', err);
     throw err;
+  }
+
+  const cols = db.pragma('table_info(factions)') as Array<{ name: string; }>;
+  if (Array.isArray(cols) && cols.length > 0) {
+    if (!cols.some((c) => c.name === 'original_image_src')) {
+      db.exec('ALTER TABLE factions ADD COLUMN original_image_src TEXT');
+    }
+    if (!cols.some((c) => c.name === 'image_crop')) {
+      db.exec('ALTER TABLE factions ADD COLUMN image_crop TEXT');
+    }
   }
 }
 
@@ -133,6 +145,11 @@ function runCharactersSchemaMigration(db: Database.Database): void {
   addColumn('owner', 'ALTER TABLE characters ADD COLUMN owner TEXT');
   addColumn('author', 'ALTER TABLE characters ADD COLUMN author TEXT');
   addColumn('image_src', 'ALTER TABLE characters ADD COLUMN image_src TEXT');
+  addColumn(
+    'original_image_src',
+    'ALTER TABLE characters ADD COLUMN original_image_src TEXT',
+  );
+  addColumn('image_crop', 'ALTER TABLE characters ADD COLUMN image_crop TEXT');
   addColumn('sections', "ALTER TABLE characters ADD COLUMN sections TEXT NOT NULL DEFAULT '{}'");
   addColumn(
     'wiki_summary',
@@ -220,6 +237,8 @@ function runWorldConfigMigration(db: Database.Database): void {
     }
 
     const hasConfig = tableInfo.some((col) => col.name === 'config');
+    const hasOriginalThumbnailSrc = tableInfo.some((col) => col.name === 'original_thumbnail_src');
+    const hasThumbnailCrop = tableInfo.some((col) => col.name === 'thumbnail_crop');
 
     if (!hasConfig) {
       console.log('[db] Adding config column to worlds table...');
@@ -227,6 +246,14 @@ function runWorldConfigMigration(db: Database.Database): void {
         `ALTER TABLE worlds ADD COLUMN config TEXT NOT NULL DEFAULT '{}'`,
       );
       console.log('[db] World config column added successfully.');
+    }
+
+    if (!hasOriginalThumbnailSrc) {
+      db.exec('ALTER TABLE worlds ADD COLUMN original_thumbnail_src TEXT');
+    }
+
+    if (!hasThumbnailCrop) {
+      db.exec('ALTER TABLE worlds ADD COLUMN thumbnail_crop TEXT');
     }
   } catch (err) {
     console.error('[db] Error running world config migration:', err);

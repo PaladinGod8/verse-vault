@@ -13,7 +13,7 @@ freeform visual ideation.
 - Fields: required `name`, optional `content` (plain textarea), optional `image_src`,
   optional list of `tags`, optional `canvas_enabled`, optional saved Excalidraw scene, and
   optional saved canvas preview image.
-- Optional image upload via shared `vv-media://` media protocol.
+- Optional non-destructive image crop/upload via shared `vv-media://` media protocol.
 - Optional canvas route for enabled notes; disabling canvas hides canvas UI but preserves
   stored scene/preview so re-enable restores the prior drawing.
 - Per-world tag vocabulary, derived entirely from tags currently attached to at least one
@@ -85,12 +85,18 @@ freeform visual ideation.
 
 - Image upload stays powered by `LoreNoteImageDropzone`, using the shared drag/drop + hidden
   file-input pattern.
+- On file selection, `LoreNoteForm` opens the shared `ImageCropModal` immediately. Save
+  persists cropped display bytes plus original source bytes through
+  `window.db.loreNotes.importImage(...)`.
+- Rows keep both `lore_notes.image_src` and `lore_notes.original_image_src`, plus
+  `lore_notes.image_crop` JSON so `Edit crop` can restore the previous framing.
 - Canvas uses shared `ExcalidrawCanvasEditor`, with self-hosted Excalidraw font assets for
   offline packaging.
 - Scene data is stored as JSON-safe `{ elements, appState, files }`, so embedded Excalidraw
   files persist with the note.
 - Preview image is stored as PNG data URL and refreshed only on explicit save, not per
   pointer move.
+- Shared crop details live in `docs/features/image-cropping.md`.
 
 ## Architecture Notes
 
@@ -121,6 +127,8 @@ interface LoreNote {
   name: string;
   content: string | null;
   image_src: string | null;
+  original_image_src: string | null;
+  image_crop: string | null;
   canvas_enabled: boolean;
   canvas_scene: CanvasSceneData | null;
   canvas_preview_image: string | null;
@@ -151,6 +159,8 @@ updates `last_viewed_at` through dedicated `markViewed` mutation.
 - `name` required and trimmed on create/update (`Lore note name is required`).
 - `content` optional; whitespace-only values normalize to `NULL`.
 - `image_src` optional; blank values normalize to `NULL`.
+- `original_image_src` optional; blank values normalize to `NULL`.
+- `image_crop` optional; blank values normalize to `NULL`, otherwise must be valid JSON.
 - `canvas_enabled` optional boolean; defaults false on fresh rows.
 - `canvas_scene` optional JSON-safe payload; invalid or missing shapes normalize to `NULL`.
 - `canvas_preview_image` optional string; blank values normalize to `NULL`.

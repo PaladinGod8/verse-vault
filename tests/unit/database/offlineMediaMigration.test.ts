@@ -9,9 +9,19 @@ describe('runOfflineMediaImageMigration', () => {
         {
           id: 1,
           thumbnail: 'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/world-images/alpha.png',
+          original_thumbnail_src:
+            'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/world-images/alpha.png',
         },
-        { id: 2, thumbnail: 'https://cdn.example.com/world.png' },
-        { id: 3, thumbnail: 'vv-media://world-images/current.png' },
+        {
+          id: 2,
+          thumbnail: 'https://cdn.example.com/world.png',
+          original_thumbnail_src: 'https://cdn.example.com/world.png',
+        },
+        {
+          id: 3,
+          thumbnail: 'vv-media://world-images/current.png',
+          original_thumbnail_src: 'vv-media://world-images/current.png',
+        },
       ],
       tokens: [
         {
@@ -25,6 +35,8 @@ describe('runOfflineMediaImageMigration', () => {
           id: 20,
           image_src:
             'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/character-images/mage.png',
+          original_image_src:
+            'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/character-images/mage.png',
         },
       ],
       backgrounds: [
@@ -32,12 +44,16 @@ describe('runOfflineMediaImageMigration', () => {
           id: 30,
           image_src:
             'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/background-images/mist.png',
+          original_image_src:
+            'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/background-images/mist.png',
         },
       ],
       items: [
         {
           id: 40,
           image_src: 'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/item-images/blade.png',
+          original_image_src:
+            'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/item-images/blade.png',
         },
       ],
       factions: [
@@ -45,12 +61,16 @@ describe('runOfflineMediaImageMigration', () => {
           id: 50,
           image_src:
             'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/faction-images/banner.png',
+          original_image_src:
+            'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/faction-images/banner.png',
         },
       ],
       lore_notes: [
         {
           id: 60,
           image_src:
+            'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/lore-note-images/history.png',
+          original_image_src:
             'file:///C:/Users/Bill/AppData/Roaming/Verse%20Vault/lore-note-images/history.png',
         },
       ],
@@ -60,12 +80,12 @@ describe('runOfflineMediaImageMigration', () => {
     const prepareMock = vi.fn((sql: string) => {
       const tableMatch = sql.match(/^SELECT id, (\w+) AS image_src FROM (\w+)/);
       if (tableMatch) {
-        const [, , table] = tableMatch;
+        const [, column, table] = tableMatch;
         return {
           all: () =>
             (rowsByTable[table as keyof typeof rowsByTable] ?? []).map((row) => ({
               id: row.id,
-              image_src: 'thumbnail' in row ? row.thumbnail : row.image_src,
+              image_src: row[column as keyof typeof row] as unknown as string | null,
             })),
         };
       }
@@ -87,12 +107,19 @@ describe('runOfflineMediaImageMigration', () => {
     expect(runMock.mock.calls).toEqual([
       ['vv-media://world-images/alpha.png', 1],
       [null, 2],
+      ['vv-media://world-images/alpha.png', 1],
+      [null, 2],
       ['vv-media://token-images/wolf.png', 10],
       [null, 11],
       ['vv-media://character-images/mage.png', 20],
+      ['vv-media://character-images/mage.png', 20],
+      ['vv-media://background-images/mist.png', 30],
       ['vv-media://background-images/mist.png', 30],
       ['vv-media://item-images/blade.png', 40],
+      ['vv-media://item-images/blade.png', 40],
       ['vv-media://faction-images/banner.png', 50],
+      ['vv-media://faction-images/banner.png', 50],
+      ['vv-media://lore-note-images/history.png', 60],
       ['vv-media://lore-note-images/history.png', 60],
     ]);
   });

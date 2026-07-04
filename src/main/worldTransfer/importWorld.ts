@@ -21,7 +21,7 @@ import {
 } from './idRemap';
 import { validateManifest, WorldImportError } from './manifest';
 import { mediaZipPath, parseMediaFileName, snapshotZipPath } from './mediaRef';
-import { WORLD_TABLE_REGISTRY, type WorldTableSpec } from './tableRegistry';
+import { type TableMedia, WORLD_TABLE_REGISTRY, type WorldTableSpec } from './tableRegistry';
 
 /** Writes the binary bytes that live outside the DB, returning their new refs. */
 export interface WorldMediaWriter {
@@ -109,8 +109,11 @@ function insertRegistryRow(
   if (spec.select.by === 'root') {
     row = { ...row, name: finalName };
   }
-  if (spec.media) {
-    row = { ...row, [spec.media.column]: rewriteMedia(original, spec, media, unzipped) };
+  for (const mediaColumn of spec.media ?? []) {
+    row = {
+      ...row,
+      [mediaColumn.column]: rewriteMedia(original, mediaColumn, media, unzipped),
+    };
   }
 
   const newId = insertRow(db, spec.name, row);
@@ -124,14 +127,11 @@ function insertRegistryRow(
 /** Returns the new media URL for a row's media column, or the original if it is not a copied file. */
 function rewriteMedia(
   original: Row,
-  spec: WorldTableSpec,
+  mediaSpec: TableMedia,
   media: WorldMediaWriter,
   unzipped: Record<string, Uint8Array>,
 ): unknown {
-  if (!spec.media) {
-    return null;
-  }
-  const { column, host } = spec.media;
+  const { column, host } = mediaSpec;
   const fileName = parseMediaFileName(original[column], host);
   if (!fileName) {
     return original[column] ?? null;

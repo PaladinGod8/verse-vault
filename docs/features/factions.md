@@ -29,7 +29,8 @@ characters.
 - Character membership: a `faction_members` junction table (`role` free text, `is_primary`
   flag). Membership rows (add/remove/role) are managed only from the Faction's edit
   form; the Character side can only toggle which one of its memberships is primary.
-- Optional faction image upload via the shared `vv-media://` media protocol.
+- Optional non-destructive faction image crop/upload via the shared `vv-media://`
+  media protocol.
 - Client-side substring search across name, profile, sections, and every Wiki Summary
   value, plus an exact-name-match rule that also surfaces all descendants of a matched
   ancestor, plus an independent Type filter dropdown.
@@ -88,10 +89,12 @@ characters.
 
 - Powered by `FactionImageDropzone` (same dnd-kit + hidden file input pattern as
   `CharacterImageDropzone`/`WorldImageDropzone`/`TokenImageDropzone`).
-- On file selection, `FactionForm` calls
-  `window.db.factions.importImage({ fileName, mimeType, bytes })`, which writes the
-  file to `userData/faction-images/<timestamp>-<uuid>.<ext>` and returns a
-  `vv-media://faction-images/<encoded-filename>` URL stored in `factions.image_src`.
+- On file selection, `FactionForm` opens the shared `ImageCropModal` immediately.
+- Save persists cropped display bytes plus original source bytes through
+  `window.db.factions.importImage(...)`.
+- Rows keep both `factions.image_src` and `factions.original_image_src`, plus
+  `factions.image_crop` JSON so `Edit crop` can restore the previous framing.
+- Shared crop details live in `docs/features/image-cropping.md`.
 - Main process validates mime type (PNG/JPEG/WEBP/GIF) and size (≤ 5 MB).
 - The shared `vv-media://` protocol handler in `src/main.ts` serves faction images from
   `userData/faction-images/` alongside character/token/world images.
@@ -185,6 +188,8 @@ interface Faction {
   name: string;
   profile: string | null;
   image_src: string | null;
+  original_image_src: string | null;
+  image_crop: string | null;
   sections: string; // JSON text of FactionSections
   wiki_summary: string; // JSON text of FactionWikiSummary
   type_id: number | null; // FK -> faction_types.id, ON DELETE SET NULL
@@ -233,6 +238,9 @@ Main-process rules (`registerFactionHandlers.ts`):
 
 - `world_id` is required on create (`Faction world_id is required`).
 - `name` is required and trimmed for create/update (`Faction name is required`).
+- `original_image_src` is optional; blank values normalize to `NULL`.
+- `image_crop` is optional; blank values normalize to `NULL`, otherwise must be valid
+  JSON text.
 - `sections` and `wiki_summary` must be valid JSON text when provided; default to `'{}'`.
 - On update, if `parent_faction_id` is set to a number, the handler loads all factions
   in the same world and rejects the update with `'A faction cannot be its own

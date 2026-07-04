@@ -251,6 +251,8 @@ export default function CharactersPage() {
                 owner: editingCharacter.owner,
                 author: editingCharacter.author,
                 image_src: normalizeTokenImageSrc(editingCharacter.image_src),
+                original_image_src: normalizeTokenImageSrc(editingCharacter.original_image_src),
+                image_crop: editingCharacter.image_crop,
                 sections: parseCharacterJson(editingCharacter.sections),
                 wiki_summary: parseCharacterJson(editingCharacter.wiki_summary),
               }}

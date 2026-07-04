@@ -207,6 +207,8 @@ export default function LoreNoteDetailPage() {
                 name: loreNote.name,
                 content: loreNote.content,
                 image_src: normalizeTokenImageSrc(loreNote.image_src),
+                original_image_src: normalizeTokenImageSrc(loreNote.original_image_src),
+                image_crop: loreNote.image_crop,
                 canvas_enabled: loreNote.canvas_enabled,
                 tags: loreNote.tags,
               }}

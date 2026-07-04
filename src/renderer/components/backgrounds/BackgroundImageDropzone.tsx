@@ -1,5 +1,5 @@
 import { DndContext, useDroppable } from '@dnd-kit/core';
-import { useId, useRef, useState } from 'react';
+import { type RefObject, useId, useRef, useState } from 'react';
 
 type BackgroundImageDropzoneProps = {
   selectedFile: File | null;
@@ -7,6 +7,7 @@ type BackgroundImageDropzoneProps = {
   onClearFile: () => void;
   error?: string | null;
   disabled?: boolean;
+  inputRef?: RefObject<HTMLInputElement | null>;
 };
 
 function formatFileSize(bytes: number): string {
@@ -21,9 +22,11 @@ export default function BackgroundImageDropzone({
   onClearFile,
   error,
   disabled = false,
+  inputRef,
 }: BackgroundImageDropzoneProps) {
   const inputId = useId();
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const fallbackInputRef = useRef<HTMLInputElement | null>(null);
+  const resolvedInputRef = inputRef ?? fallbackInputRef;
   const [isNativeDragOver, setIsNativeDragOver] = useState(false);
   const { setNodeRef, isOver } = useDroppable({
     id: 'background-image-dropzone',
@@ -54,13 +57,13 @@ export default function BackgroundImageDropzone({
             disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
           ].join(' ')}
           onClick={() => {
-            if (!disabled) inputRef.current?.click();
+            if (!disabled) resolvedInputRef.current?.click();
           }}
           onKeyDown={(event) => {
             if (disabled) return;
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
-              inputRef.current?.click();
+              resolvedInputRef.current?.click();
             }
           }}
           onDragEnter={(event) => {
@@ -124,7 +127,7 @@ export default function BackgroundImageDropzone({
 
       <input
         id={inputId}
-        ref={inputRef}
+        ref={resolvedInputRef}
         type='file'
         accept='image/*'
         className='hidden'

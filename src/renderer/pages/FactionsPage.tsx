@@ -250,6 +250,8 @@ export default function FactionsPage() {
                 name: editingFaction.name,
                 profile: editingFaction.profile,
                 image_src: normalizeTokenImageSrc(editingFaction.image_src),
+                original_image_src: normalizeTokenImageSrc(editingFaction.original_image_src),
+                image_crop: editingFaction.image_crop,
                 sections: parseFactionJson<FactionSections>(editingFaction.sections),
                 wiki_summary: parseFactionJson<FactionWikiSummary>(editingFaction.wiki_summary),
                 type_id: editingFaction.type_id,

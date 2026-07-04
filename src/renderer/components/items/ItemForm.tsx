@@ -1,28 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ImageEditDraft } from '../../lib/imageCrop';
+import {
+  buildImageEditDraft,
+  guessFileNameFromImageSrc,
+  validateImageFile,
+} from '../../lib/imageCrop';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
+import ImageCropModal from '../media/ImageCropModal';
 import EditorActionBar from '../ui/EditorActionBar';
 import RichTextEditor from '../ui/RichTextEditor';
 import ItemImageDropzone from './ItemImageDropzone';
-
-const ITEM_IMAGE_ALLOWED_MIME_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-]);
-const ITEM_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
-
-export type ItemImageUploadPayload = {
-  fileName: string;
-  mimeType: string;
-  bytes: Uint8Array;
-};
 
 export type ItemFormValues = {
   name: string;
   description?: string | null;
   image_src?: string | null;
-  image_upload?: ItemImageUploadPayload;
+  original_image_src?: string | null;
+  image_crop?: string | null;
+  image_edit_draft?: ImageEditDraft;
   clear_image?: boolean;
 };
 
@@ -33,69 +28,36 @@ type ItemFormProps = {
   isSaving: boolean;
 };
 
-function validateItemImageFile(file: File): string | null {
-  const mimeType = file.type.toLowerCase();
-  if (!ITEM_IMAGE_ALLOWED_MIME_TYPES.has(mimeType)) {
-    return 'Unsupported image type. Use PNG, JPEG, WEBP, or GIF.';
-  }
-  if (file.size === 0) {
-    return 'Selected file is empty.';
-  }
-  if (file.size > ITEM_IMAGE_MAX_SIZE_BYTES) {
-    return 'Image exceeds 5 MB limit.';
-  }
-  return null;
-}
-
-async function readItemImageUpload(
-  selectedImageFile: File | null,
-): Promise<{
-  imageUpload?: ItemImageUploadPayload;
-  error?: string;
-}> {
-  if (!selectedImageFile) {
-    return {};
-  }
-
-  const validationError = validateItemImageFile(selectedImageFile);
-  if (validationError) {
-    return { error: validationError };
-  }
-
-  try {
-    const buffer = await selectedImageFile.arrayBuffer();
-    return {
-      imageUpload: {
-        fileName: selectedImageFile.name,
-        mimeType: selectedImageFile.type.toLowerCase(),
-        bytes: new Uint8Array(buffer),
-      },
-    };
-  } catch {
-    return {
-      error: 'Unable to read the selected image file. Try a different image.',
-    };
-  }
-}
+type CropSourceState = {
+  sourceImageSrc: string;
+  sourceFileName: string;
+  sourceMimeType: string;
+  originalFile?: File | null;
+  sourceImageRecordSrc?: string | null;
+};
 
 type ItemCurrentImageSectionProps = {
-  initialImageSrc: string;
-  previewUrl?: string;
+  imageSrc: string;
+  label: string;
   clearImage: boolean;
   isSaving: boolean;
+  onEditCrop: () => void;
+  onReplaceImage: () => void;
   onClear: () => void;
 };
 
 function ItemCurrentImageSection({
-  initialImageSrc,
-  previewUrl,
+  imageSrc,
+  label,
   clearImage,
   isSaving,
+  onEditCrop,
+  onReplaceImage,
   onClear,
 }: ItemCurrentImageSectionProps) {
   return (
     <div className='space-y-2'>
-      <label className='block text-sm font-medium text-slate-700'>Current Image</label>
+      <label className='block text-sm font-medium text-slate-700'>{label}</label>
       {clearImage
         ? (
           <div className='rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800'>
@@ -105,20 +67,38 @@ function ItemCurrentImageSection({
         : (
           <div className='rounded-md border border-slate-200 bg-slate-50 p-3'>
             <img
-              src={previewUrl ?? initialImageSrc}
+              src={imageSrc}
               alt='Current item'
               className='h-20 w-20 rounded object-cover'
             />
           </div>
         )}
-      <button
-        type='button'
-        className='text-xs font-medium text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
-        onClick={onClear}
-        disabled={isSaving}
-      >
-        Clear image on save
-      </button>
+      <div className='flex flex-wrap gap-3 text-xs font-medium'>
+        <button
+          type='button'
+          className='text-slate-700 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onEditCrop}
+          disabled={isSaving}
+        >
+          Edit crop
+        </button>
+        <button
+          type='button'
+          className='text-slate-700 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onReplaceImage}
+          disabled={isSaving}
+        >
+          Replace image
+        </button>
+        <button
+          type='button'
+          className='text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60'
+          onClick={onClear}
+          disabled={isSaving}
+        >
+          Clear image on save
+        </button>
+      </div>
     </div>
   );
 }
@@ -129,39 +109,75 @@ export default function ItemForm({
   onClose,
   isSaving,
 }: ItemFormProps) {
-  const isCreateMode = !initialValues;
   const initialImageSrc = normalizeTokenImageSrc(initialValues?.image_src);
+  const initialOriginalImageSrc = normalizeTokenImageSrc(
+    initialValues?.original_image_src,
+  ) ?? initialImageSrc;
   const [name, setName] = useState(initialValues?.name ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [nameError, setNameError] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imageEditDraft, setImageEditDraft] = useState<ImageEditDraft | null>(null);
+  const [cropSource, setCropSource] = useState<CropSourceState | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [clearImage, setClearImage] = useState(false);
-
-  const selectedImagePreviewUrl = useMemo(
-    () => selectedImageFile ? URL.createObjectURL(selectedImageFile) : undefined,
-    [selectedImageFile],
-  );
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     return () => {
-      if (selectedImagePreviewUrl) {
-        URL.revokeObjectURL(selectedImagePreviewUrl);
+      if (imageEditDraft?.preview_url) {
+        URL.revokeObjectURL(imageEditDraft.preview_url);
       }
     };
-  }, [selectedImagePreviewUrl]);
+  }, [imageEditDraft?.preview_url]);
+
+  useEffect(() => {
+    return () => {
+      if (cropSource?.originalFile) {
+        URL.revokeObjectURL(cropSource.sourceImageSrc);
+      }
+    };
+  }, [cropSource?.originalFile, cropSource?.sourceImageSrc]);
+
+  const activePreviewSrc = imageEditDraft?.preview_url ?? initialImageSrc;
+
+  const closeCropSource = () => {
+    if (cropSource?.originalFile) {
+      URL.revokeObjectURL(cropSource.sourceImageSrc);
+    }
+    setCropSource(null);
+  };
+
+  const openCropperForFile = (file: File) => {
+    setCropSource({
+      sourceImageSrc: URL.createObjectURL(file),
+      sourceFileName: file.name,
+      sourceMimeType: file.type.toLowerCase(),
+      originalFile: file,
+    });
+  };
+
+  const openCropperForExistingImage = () => {
+    const sourceImageSrc = imageEditDraft?.source_image_src
+      ?? initialOriginalImageSrc
+      ?? activePreviewSrc;
+    if (!sourceImageSrc) {
+      return;
+    }
+
+    setCropSource({
+      sourceImageSrc,
+      sourceFileName: guessFileNameFromImageSrc(sourceImageSrc),
+      sourceMimeType: 'image/png',
+      sourceImageRecordSrc: sourceImageSrc,
+    });
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
       setNameError('Name is required.');
-      return;
-    }
-
-    const { imageUpload, error } = await readItemImageUpload(selectedImageFile);
-    if (error) {
-      setImageUploadError(error);
       return;
     }
 
@@ -172,7 +188,9 @@ export default function ItemForm({
       name: trimmedName,
       description: description.trim() ? description : null,
       image_src: clearImage ? null : undefined,
-      image_upload: imageUpload,
+      original_image_src: clearImage ? null : undefined,
+      image_crop: clearImage ? null : undefined,
+      image_edit_draft: imageEditDraft ?? undefined,
       clear_image: clearImage,
     });
   };
@@ -207,7 +225,9 @@ export default function ItemForm({
           value={name}
           onChange={(event) => {
             setName(event.target.value);
-            if (nameError) setNameError(null);
+            if (nameError) {
+              setNameError(null);
+            }
           }}
           className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
           placeholder='Item name'
@@ -234,16 +254,25 @@ export default function ItemForm({
         />
       </div>
 
-      {!isCreateMode && initialImageSrc
+      {activePreviewSrc
         ? (
           <ItemCurrentImageSection
-            initialImageSrc={initialImageSrc}
-            previewUrl={selectedImagePreviewUrl}
+            imageSrc={activePreviewSrc}
+            label={imageEditDraft ? 'Cropped Preview' : 'Current Image'}
             clearImage={clearImage}
             isSaving={isSaving}
+            onEditCrop={() => {
+              if (selectedImageFile) {
+                openCropperForFile(selectedImageFile);
+                return;
+              }
+              openCropperForExistingImage();
+            }}
+            onReplaceImage={() => imageInputRef.current?.click()}
             onClear={() => {
               setClearImage(true);
               setSelectedImageFile(null);
+              setImageEditDraft(null);
               setImageUploadError(null);
             }}
           />
@@ -252,23 +281,57 @@ export default function ItemForm({
 
       <ItemImageDropzone
         selectedFile={selectedImageFile}
+        inputRef={imageInputRef}
         onFileSelect={(file) => {
-          const validationError = validateItemImageFile(file);
+          const validationError = validateImageFile(file);
           if (validationError) {
             setSelectedImageFile(null);
+            setImageEditDraft(null);
             setImageUploadError(validationError);
             return;
           }
-          setSelectedImageFile(file);
-          setClearImage(false);
+
           setImageUploadError(null);
+          openCropperForFile(file);
         }}
         onClearFile={() => {
           setSelectedImageFile(null);
+          setImageEditDraft(null);
           setImageUploadError(null);
         }}
         error={imageUploadError}
         disabled={isSaving}
+      />
+
+      <ImageCropModal
+        isOpen={cropSource !== null}
+        title='Crop item image'
+        sourceImageSrc={cropSource?.sourceImageSrc ?? ''}
+        sourceFileName={cropSource?.sourceFileName ?? 'item-image.png'}
+        sourceMimeType={cropSource?.sourceMimeType ?? 'image/png'}
+        initialCropJson={imageEditDraft?.crop_json ?? initialValues?.image_crop ?? null}
+        onCancel={closeCropSource}
+        onApply={async (cropResult) => {
+          if (!cropSource) {
+            return;
+          }
+
+          try {
+            const nextDraft = await buildImageEditDraft({
+              cropResult,
+              sourceFileName: cropSource.sourceFileName,
+              originalFile: cropSource.originalFile,
+              sourceImageSrc: cropSource.sourceImageRecordSrc ?? cropSource.sourceImageSrc,
+            });
+            setSelectedImageFile(cropSource.originalFile ?? null);
+            setImageEditDraft(nextDraft);
+            setClearImage(false);
+            closeCropSource();
+          } catch {
+            setImageUploadError('Unable to read the selected image file. Try a different image.');
+            closeCropSource();
+          }
+        }}
       />
     </form>
   );
