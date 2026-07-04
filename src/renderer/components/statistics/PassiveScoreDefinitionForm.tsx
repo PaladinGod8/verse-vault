@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PassiveScoreDefinition, PassiveScoreType } from '../../../shared/statisticsTypes';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 
 type Props = {
   mode: 'create' | 'edit';
@@ -204,14 +205,14 @@ export default function PassiveScoreDefinitionForm({
         >
           Description
         </label>
-        <textarea
+        <RichTextEditor
           id='passive-description'
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={isPending}
+          onChange={setDescription}
+          variant='full'
           placeholder='Optional description...'
-          rows={2}
-          className='w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-50'
+          editable={!isPending}
+          aria-label='Description'
         />
       </div>
 

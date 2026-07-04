@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 
 type AddLevelInput = Parameters<DbApi['levels']['add']>[0];
 
@@ -143,13 +144,14 @@ export default function LevelForm({
         >
           Description (optional)
         </label>
-        <textarea
+        <RichTextEditor
           id='level-description'
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          className='min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          onChange={setDescription}
+          variant='full'
           placeholder='A quick summary of this level.'
-          disabled={isSubmitting}
+          editable={!isSubmitting}
+          aria-label='Description (optional)'
         />
       </div>
 

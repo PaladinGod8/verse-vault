@@ -11,6 +11,7 @@ import {
   parseStatBlockStatistics,
 } from '../../lib/statblockStatisticsUtils';
 import { formatModifier } from '../../lib/statisticsCalculations';
+import { markdownToPlainText } from '../ui/MarkdownView';
 
 interface StatBlockCardProps {
   statBlock: StatBlock;
@@ -80,7 +81,7 @@ export default function StatBlockCard({
             {statBlock.name}
           </h2>
           {statBlock.description
-            ? <p className='text-sm text-slate-500'>{statBlock.description}</p>
+            ? <p className='text-sm text-slate-500'>{markdownToPlainText(statBlock.description)}</p>
             : null}
           {statBlock.default_token_id !== null
             ? (

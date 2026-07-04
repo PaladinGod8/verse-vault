@@ -4,6 +4,11 @@ import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SessionsPage from '../../../src/renderer/pages/SessionsPage';
+
+vi.mock(
+  '../../../src/renderer/components/ui/RichTextEditor',
+  () => import('../../helpers/richTextEditorMock'),
+);
 import {
   buildAct as buildActFactory,
   buildSession as buildSessionFactory,

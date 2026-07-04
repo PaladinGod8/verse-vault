@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { markdownToPlainText } from '../components/ui/MarkdownView';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 
@@ -166,7 +167,7 @@ export default function WorldPage() {
                 {world.name}
               </h2>
               <p className='mt-2 text-sm text-slate-600'>
-                {world.short_description?.trim() || 'No description yet.'}
+                {markdownToPlainText(world.short_description) || 'No description yet.'}
               </p>
               <dl className='mt-4 space-y-2 text-sm text-slate-600'>
                 <div className='flex items-start justify-between gap-3'>

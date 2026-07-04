@@ -30,6 +30,10 @@ Update rule:
 | PixiJS 8        | Battlemap rendering and graphics runtime                                        |
 | phonemize       | English-to-IPA phonemization in the renderer IPA tool                           |
 | Excalidraw      | Infinite-canvas whiteboard editor for campaign/lore note canvases               |
+| TipTap 3        | ProseMirror-based rich-text editor for prose fields (`RichTextEditor`)          |
+| tiptap-markdown | Markdown serialize/parse bridge so TipTap round-trips markdown strings          |
+| markdown-it     | Markdown-to-HTML rendering for the read-only `MarkdownView`                     |
+| DOMPurify       | HTML sanitization guard before injecting rendered markdown                      |
 | Azgaar FMG      | Vendored offline world-map editor (`vendor/azgaar-fmg/`), pinned upstream build |
 
 ## Packaging And Desktop Build

@@ -6,6 +6,7 @@ import {
   optionalNumberToFieldString,
 } from '../../lib/abilityFormHelpers';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 import ActiveAbilityFields from './ActiveAbilityFields';
 import PassiveAbilityFields from './PassiveAbilityFields';
 
@@ -363,13 +364,14 @@ export default function AbilityForm({
         >
           Description (optional)
         </label>
-        <textarea
+        <RichTextEditor
           id='ability-description'
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          className='min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          onChange={setDescription}
+          variant='full'
           placeholder='A quick summary of this ability.'
-          disabled={isSubmitting}
+          editable={!isSubmitting}
+          aria-label='Description (optional)'
         />
       </div>
 

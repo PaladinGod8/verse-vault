@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router-dom';
 import { formatPlannedAt } from '../../lib/formatPlannedAt';
+import { markdownToPlainText } from '../ui/MarkdownView';
 
 type SortableSessionRowProps = {
   session: Session;
@@ -70,7 +71,7 @@ export default function SortableSessionRow({
         </div>
       </td>
       <td className='px-4 py-3 font-medium'>{session.name}</td>
-      <td className='px-4 py-3 text-slate-500'>{session.notes ?? '-'}</td>
+      <td className='px-4 py-3 text-slate-500'>{markdownToPlainText(session.notes) || '-'}</td>
       <td className='px-4 py-3 text-slate-500'>
         {formatPlannedAt(session.planned_at)}
       </td>

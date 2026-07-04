@@ -4,6 +4,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppSettingsProvider } from '../../../src/renderer/hooks/useAppSettings';
 import ItemDetailPage from '../../../src/renderer/pages/ItemDetailPage';
+
+vi.mock(
+  '../../../src/renderer/components/ui/RichTextEditor',
+  () => import('../../helpers/richTextEditorMock'),
+);
 import { buildItem, resetFactoryIds } from '../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
 

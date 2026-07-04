@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import MarkdownView from '../ui/MarkdownView';
 
 type DetailInfoRow = {
   label: string;
@@ -78,7 +79,7 @@ export function WikiDetailSummaryListSection({
     <section className='overflow-hidden rounded-lg border border-slate-200'>
       <WikiDetailSectionHeading title={title} />
       {summary
-        ? <p className='whitespace-pre-wrap px-4 py-3 text-sm text-slate-600'>{summary}</p>
+        ? <MarkdownView markdown={summary} className='px-4 py-3 text-sm text-slate-600' />
         : null}
       {items.length > 0
         ? (
@@ -133,7 +134,7 @@ export function WikiDetailVicesVirtuesSection({
     <section className='overflow-hidden rounded-lg border border-slate-200'>
       <WikiDetailSectionHeading title='Vices & Virtues' />
       {summary
-        ? <p className='whitespace-pre-wrap px-4 pt-3 text-sm text-slate-600'>{summary}</p>
+        ? <MarkdownView markdown={summary} className='px-4 pt-3 text-sm text-slate-600' />
         : null}
       <WikiDetailSubList label='Vices' items={vices} />
       <div className='border-t border-slate-100'>

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 
 type AddSceneInput = Parameters<DbApi['scenes']['add']>[0];
 
@@ -126,13 +127,14 @@ export default function SceneForm({
         >
           Notes (optional)
         </label>
-        <textarea
+        <RichTextEditor
           id='scene-notes'
           value={notes}
-          onChange={(event) => setNotes(event.target.value)}
-          className='min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          onChange={setNotes}
+          variant='full'
           placeholder='Notes for this scene.'
-          disabled={isSubmitting}
+          editable={!isSubmitting}
+          aria-label='Notes (optional)'
         />
       </div>
 

@@ -1,6 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+vi.mock(
+  '../../../src/renderer/components/ui/RichTextEditor',
+  () => import('../../helpers/richTextEditorMock'),
+);
+
 import LevelForm from '../../../src/renderer/components/levels/LevelForm';
 
 describe('LevelForm', () => {

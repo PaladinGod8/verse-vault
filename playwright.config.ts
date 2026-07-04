@@ -41,6 +41,7 @@ export default defineConfig({
         'backgrounds.test.ts',
         'items.test.ts',
         'loreNotes.test.ts',
+        'rich-text-editor.test.ts',
         'settings.test.ts',
         'worlds.test.ts',
         'world-import-export.test.ts',

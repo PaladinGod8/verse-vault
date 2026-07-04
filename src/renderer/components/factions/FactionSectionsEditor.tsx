@@ -1,4 +1,5 @@
 import type { FactionSections } from '../../../shared/contracts/factionTypes';
+import RichTextEditor from '../ui/RichTextEditor';
 
 const SECTION_FIELDS: Array<{ key: keyof FactionSections; label: string; }> = [
   { key: 'history', label: 'History' },
@@ -29,13 +30,13 @@ export default function FactionSectionsEditor({
           >
             {label}
           </label>
-          <textarea
+          <RichTextEditor
             id={`faction-section-${key}`}
             value={sections[key] ?? ''}
-            onChange={(e) => onChange({ ...sections, [key]: e.target.value })}
-            className='w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-            rows={3}
-            disabled={disabled}
+            onChange={(md) => onChange({ ...sections, [key]: md })}
+            variant='full'
+            editable={!disabled}
+            aria-label={label}
           />
         </div>
       ))}

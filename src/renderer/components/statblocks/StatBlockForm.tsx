@@ -18,6 +18,7 @@ import {
 import PassiveScoreInput from '../statistics/PassiveScoreInput';
 import ResourceStatisticInput from '../statistics/ResourceStatisticInput';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 
 type StatBlockAddData = Parameters<DbApi['statblocks']['add']>[0];
 
@@ -274,13 +275,14 @@ export default function StatBlockForm({
         >
           Description (optional)
         </label>
-        <textarea
+        <RichTextEditor
           id='statblock-description'
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          className='min-h-20 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          onChange={setDescription}
+          variant='full'
           placeholder='Optional lore or notes'
-          disabled={isSubmitting}
+          editable={!isSubmitting}
+          aria-label='Description (optional)'
         />
       </div>
 

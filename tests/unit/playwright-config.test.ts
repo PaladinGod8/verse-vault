@@ -40,6 +40,7 @@ describe('playwright project worker grouping', () => {
       'characters.test.ts',
       'items.test.ts',
       'loreNotes.test.ts',
+      'rich-text-editor.test.ts',
       'narrative-chain.test.ts',
       'statblock-links.test.ts',
       'restart-persistence.test.ts',

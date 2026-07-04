@@ -7,6 +7,11 @@ import LoreNoteDetailPage from '../../../src/renderer/pages/LoreNoteDetailPage';
 import { buildLoreNote, resetFactoryIds } from '../../helpers/factories';
 import { resetWindowDb, setupWindowDb } from '../../helpers/ipcMock';
 
+vi.mock(
+  '../../../src/renderer/components/ui/RichTextEditor',
+  () => import('../../helpers/richTextEditorMock'),
+);
+
 vi.mock('../../../src/renderer/components/ui/ToastProvider', () => ({
   useToast: () => ({
     showToast: vi.fn(),

@@ -159,7 +159,9 @@ test.describe('@ux @db World Statistics Configuration', () => {
       const reopenedDialog = page.getByRole('dialog', {
         name: 'Edit Resource',
       });
-      await expect(reopenedDialog.getByLabel('Description')).toHaveValue(
+      // Description is now a rich-text (contenteditable) surface, not a
+      // textarea, so assert its rendered text rather than a form value.
+      await expect(reopenedDialog.getByLabel('Description')).toHaveText(
         'Total health of the character',
       );
     });

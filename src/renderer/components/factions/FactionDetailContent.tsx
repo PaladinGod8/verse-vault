@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { FactionSections, FactionWikiSummary } from '../../../shared/contracts/factionTypes';
 import { buildDetailImageStyle } from '../../lib/cardDisplaySettings';
 import { FACTION_BASIC_INFO_FIELDS } from '../../lib/factionWikiSummaryFieldConfig';
+import MarkdownView from '../ui/MarkdownView';
 import { WikiDetailListSection, WikiDetailTableSection } from '../wiki/WikiDetailSections';
 import FactionRelationshipsPanel from './FactionRelationshipsPanel';
 
@@ -90,9 +91,7 @@ export default function FactionDetailContent({
             <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
               {faction.name}
             </h1>
-            {faction.profile
-              ? <p className='mt-1 text-sm text-slate-600'>{faction.profile}</p>
-              : null}
+            <MarkdownView markdown={faction.profile} className='mt-1 text-sm text-slate-600' />
           </div>
         </div>
         <button
@@ -118,7 +117,7 @@ export default function FactionDetailContent({
         {SECTION_LABELS.filter(({ key }) => sections[key]).map(({ key, label }) => (
           <div key={key}>
             <h2 className='text-sm font-semibold text-slate-900'>{label}</h2>
-            <p className='mt-1 text-sm text-slate-600 whitespace-pre-wrap'>{sections[key]}</p>
+            <MarkdownView markdown={sections[key]} className='mt-1 text-sm text-slate-600' />
           </div>
         ))}
       </div>

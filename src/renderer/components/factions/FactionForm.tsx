@@ -6,6 +6,7 @@ import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 import CharacterWikiSummaryGroupFields from '../characters/CharacterWikiSummaryGroupFields';
 import CharacterWikiSummaryListEditor from '../characters/CharacterWikiSummaryListEditor';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 import FactionCurrentImagePreview from './FactionCurrentImagePreview';
 import FactionImageDropzone from './FactionImageDropzone';
 import FactionMembersEditor from './FactionMembersEditor';
@@ -212,14 +213,14 @@ export default function FactionForm({
         <label htmlFor='faction-profile' className='mb-1 block text-sm font-medium text-slate-700'>
           Profile
         </label>
-        <textarea
+        <RichTextEditor
           id='faction-profile'
           value={profile ?? ''}
-          onChange={(e) => setProfile(e.target.value)}
-          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-          rows={4}
+          onChange={setProfile}
+          variant='full'
           placeholder='A short description of this faction'
-          disabled={isSaving}
+          editable={!isSaving}
+          aria-label='Profile'
         />
       </div>
 

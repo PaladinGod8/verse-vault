@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 
 type AddCampaignInput = Parameters<DbApi['campaigns']['add']>[0];
 
@@ -113,13 +114,14 @@ export default function CampaignForm({
         >
           Summary (optional)
         </label>
-        <textarea
+        <RichTextEditor
           id='campaign-summary'
           value={summary}
-          onChange={(event) => setSummary(event.target.value)}
-          className='min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200'
+          onChange={setSummary}
+          variant='compact'
           placeholder='A brief summary of this campaign.'
-          disabled={isSubmitting}
+          editable={!isSubmitting}
+          aria-label='Summary (optional)'
         />
       </div>
 

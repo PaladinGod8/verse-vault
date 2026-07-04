@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import LoreNoteForm from '../components/loreNotes/LoreNoteForm';
+import MarkdownView from '../components/ui/MarkdownView';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -121,13 +122,10 @@ export default function LoreNoteDetailPage() {
                     <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
                       {loreNote.name}
                     </h1>
-                    {loreNote.content
-                      ? (
-                        <p className='mt-1 text-sm text-slate-600 whitespace-pre-wrap'>
-                          {loreNote.content}
-                        </p>
-                      )
-                      : null}
+                    <MarkdownView
+                      markdown={loreNote.content}
+                      className='mt-1 text-sm text-slate-600'
+                    />
                     {loreNote.tags.length > 0
                       ? (
                         <div className='mt-2 flex flex-wrap gap-1'>

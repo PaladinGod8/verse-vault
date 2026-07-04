@@ -1,4 +1,5 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useState } from 'react';
+import { markdownToPlainText } from '../ui/MarkdownView';
 
 type WorldCardProps = {
   world: World;
@@ -105,7 +106,7 @@ export default function WorldCard({
         </h2>
 
         <p className='min-h-12 text-sm text-slate-600'>
-          {world.short_description?.trim() || 'No description yet.'}
+          {markdownToPlainText(world.short_description) || 'No description yet.'}
         </p>
 
         <dl className='space-y-1 text-xs text-slate-500'>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CampaignForm from '../components/campaigns/CampaignForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { markdownToPlainText } from '../components/ui/MarkdownView';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -244,7 +245,7 @@ export default function CampaignsPage() {
                     >
                       <td className='px-4 py-3 font-medium'>{campaign.name}</td>
                       <td className='px-4 py-3 text-slate-500'>
-                        {campaign.summary ?? '—'}
+                        {markdownToPlainText(campaign.summary) || '—'}
                       </td>
                       <td className='px-4 py-3'>
                         <div className='flex gap-3'>

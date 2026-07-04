@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ItemForm from '../components/items/ItemForm';
+import MarkdownView from '../components/ui/MarkdownView';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -112,13 +113,10 @@ export default function ItemDetailPage() {
                     <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
                       {item.name}
                     </h1>
-                    {item.description
-                      ? (
-                        <p className='mt-1 text-sm text-slate-600 whitespace-pre-wrap'>
-                          {item.description}
-                        </p>
-                      )
-                      : null}
+                    <MarkdownView
+                      markdown={item.description}
+                      className='mt-1 text-sm text-slate-600'
+                    />
                   </div>
                 </div>
                 <button

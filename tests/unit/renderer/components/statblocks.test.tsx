@@ -1,5 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock(
+  '../../../../src/renderer/components/ui/RichTextEditor',
+  () => import('../../../helpers/richTextEditorMock'),
+);
+
 import StatBlockCard from '../../../../src/renderer/components/statblocks/StatBlockCard';
 import StatBlockForm, {
   type StatBlockFormSubmitData,

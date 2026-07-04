@@ -7,6 +7,7 @@ import type {
 import CharacterForm from '../components/characters/CharacterForm';
 import CharacterRelationshipsPanel from '../components/characters/CharacterRelationshipsPanel';
 import CharacterWikiSummaryDetail from '../components/characters/CharacterWikiSummaryDetail';
+import MarkdownView from '../components/ui/MarkdownView';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -138,9 +139,10 @@ export default function CharacterDetailPage() {
                     <h1 className='text-2xl font-semibold tracking-tight text-slate-900'>
                       {character.name}
                     </h1>
-                    {character.profile
-                      ? <p className='mt-1 text-sm text-slate-600'>{character.profile}</p>
-                      : null}
+                    <MarkdownView
+                      markdown={character.profile}
+                      className='mt-1 text-sm text-slate-600'
+                    />
                     {character.is_player_character
                       ? <p className='mt-1 text-sm font-medium text-sky-700'>Player Character</p>
                       : null}
@@ -171,9 +173,10 @@ export default function CharacterDetailPage() {
                     ? (
                       <div key={key}>
                         <h2 className='text-sm font-semibold text-slate-900'>{label}</h2>
-                        <p className='mt-1 text-sm text-slate-600 whitespace-pre-wrap'>
-                          {sections[key]}
-                        </p>
+                        <MarkdownView
+                          markdown={sections[key]}
+                          className='mt-1 text-sm text-slate-600'
+                        />
                       </div>
                     )
                     : null

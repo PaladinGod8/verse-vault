@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 import BackgroundImageDropzone from './BackgroundImageDropzone';
 
 const BACKGROUND_IMAGE_ALLOWED_MIME_TYPES = new Set([
@@ -222,14 +223,14 @@ export default function BackgroundForm({
         >
           Description
         </label>
-        <textarea
+        <RichTextEditor
           id='background-description'
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-          rows={6}
+          onChange={setDescription}
+          variant='full'
           placeholder='Describe this background'
-          disabled={isSaving}
+          editable={!isSaving}
+          aria-label='Description'
         />
       </div>
 

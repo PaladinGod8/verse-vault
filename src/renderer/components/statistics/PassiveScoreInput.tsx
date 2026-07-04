@@ -8,6 +8,7 @@ import {
   calculateSaveModifier,
   formatModifier,
 } from '../../lib/statisticsCalculations';
+import { markdownToPlainText } from '../ui/MarkdownView';
 
 type Props = {
   definition: PassiveScoreDefinition;
@@ -63,7 +64,7 @@ export default function PassiveScoreInput({
         {definition.name} ({definition.abbreviation})
       </label>
       {definition.description
-        ? <p className='text-xs text-slate-500'>{definition.description}</p>
+        ? <p className='text-xs text-slate-500'>{markdownToPlainText(definition.description)}</p>
         : null}
 
       <div className='flex gap-2'>

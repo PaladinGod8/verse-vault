@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import RichTextEditor from '../ui/RichTextEditor';
 import CharacterWikiSummaryListEditor from './CharacterWikiSummaryListEditor';
 
 type CharacterWikiSummaryVicesVirtuesEditorProps = {
@@ -29,13 +30,13 @@ export default function CharacterWikiSummaryVicesVirtuesEditor({
         <label htmlFor={summaryId} className='mb-1 block text-xs font-medium text-slate-600'>
           Summary
         </label>
-        <textarea
+        <RichTextEditor
           id={summaryId}
           value={summary ?? ''}
-          onChange={(event) => onSummaryChange(event.target.value)}
-          className='w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-          rows={3}
-          disabled={disabled}
+          onChange={onSummaryChange}
+          variant='compact'
+          editable={!disabled}
+          aria-label='Summary'
         />
       </div>
       <CharacterWikiSummaryListEditor

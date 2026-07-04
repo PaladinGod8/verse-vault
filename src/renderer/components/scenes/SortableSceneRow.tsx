@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { markdownToPlainText } from '../ui/MarkdownView';
 
 type SortableSceneRowProps = {
   scene: Scene;
@@ -60,7 +61,7 @@ export default function SortableSceneRow({
         </div>
       </td>
       <td className='px-4 py-3 font-medium'>{scene.name}</td>
-      <td className='px-4 py-3 text-slate-500'>{scene.notes ?? '-'}</td>
+      <td className='px-4 py-3 text-slate-500'>{markdownToPlainText(scene.notes) || '-'}</td>
       <td className='px-4 py-3'>
         <div className='flex gap-3'>
           <button

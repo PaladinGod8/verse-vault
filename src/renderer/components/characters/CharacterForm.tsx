@@ -5,6 +5,7 @@ import type {
 } from '../../../shared/contracts/characterTypes';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 import CharacterImageDropzone from './CharacterImageDropzone';
 import CharacterWikiSummaryEditor from './CharacterWikiSummaryEditor';
 
@@ -295,14 +296,14 @@ export default function CharacterForm({
         >
           Profile
         </label>
-        <textarea
+        <RichTextEditor
           id='character-profile'
           value={profile ?? ''}
-          onChange={(e) => setProfile(e.target.value)}
-          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-          rows={4}
+          onChange={setProfile}
+          variant='full'
           placeholder='A short description of this character'
-          disabled={isSaving}
+          editable={!isSaving}
+          aria-label='Profile'
         />
       </div>
 
@@ -404,13 +405,13 @@ export default function CharacterForm({
             >
               {label}
             </label>
-            <textarea
+            <RichTextEditor
               id={`character-section-${key}`}
               value={sections[key] ?? ''}
-              onChange={(e) => setSections({ ...sections, [key]: e.target.value })}
-              className='w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-              rows={3}
-              disabled={isSaving}
+              onChange={(md) => setSections({ ...sections, [key]: md })}
+              variant='full'
+              editable={!isSaving}
+              aria-label={label}
             />
           </div>
         ))}

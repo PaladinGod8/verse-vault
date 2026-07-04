@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import LevelForm from '../components/levels/LevelForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { markdownToPlainText } from '../components/ui/MarkdownView';
 import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
@@ -248,7 +249,7 @@ export default function LevelsPage() {
                       <td className='px-4 py-3 font-medium'>{level.name}</td>
                       <td className='px-4 py-3'>{level.category}</td>
                       <td className='px-4 py-3 text-slate-500'>
-                        {level.description ?? '—'}
+                        {markdownToPlainText(level.description) || '—'}
                       </td>
                       <td className='px-4 py-3'>
                         <div className='flex gap-3'>

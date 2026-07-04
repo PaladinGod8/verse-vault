@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { parseStatBlockSkills, parseStatBlockStatistics } from '../../lib/statblockStatisticsUtils';
+import MarkdownView from '../ui/MarkdownView';
 import ModalShell from '../ui/ModalShell';
 
 type StatBlockPopupProps = {
@@ -174,7 +175,12 @@ export default function StatBlockPopup({
                   {statBlock.name}
                 </h3>
                 {statBlock.description
-                  ? <p className='mt-1 text-sm text-slate-600'>{statBlock.description}</p>
+                  ? (
+                    <MarkdownView
+                      markdown={statBlock.description}
+                      className='mt-1 text-sm text-slate-600'
+                    />
+                  )
                   : <p className='mt-1 text-sm text-slate-500'>No description.</p>}
               </section>
 

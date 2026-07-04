@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildCardFrameStyle, buildCardMediaStyle } from '../../lib/cardDisplaySettings';
+import { markdownToPlainText } from '../ui/MarkdownView';
 
 type ItemCardProps = {
   item: Item;
@@ -89,7 +90,11 @@ export default function ItemCard({
           {item.name}
         </h2>
         {item.description
-          ? <p className='line-clamp-2 text-xs text-slate-500'>{item.description}</p>
+          ? (
+            <p className='line-clamp-2 text-xs text-slate-500'>
+              {markdownToPlainText(item.description)}
+            </p>
+          )
           : null}
 
         <div className='flex gap-2 pt-3'>

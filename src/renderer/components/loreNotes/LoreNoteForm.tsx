@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { normalizeTokenImageSrc } from '../../lib/tokenImageSrc';
 import EditorActionBar from '../ui/EditorActionBar';
+import RichTextEditor from '../ui/RichTextEditor';
 import LoreNoteImageDropzone from './LoreNoteImageDropzone';
 import TagInput from './TagInput';
 
@@ -231,14 +232,14 @@ export default function LoreNoteForm({
         >
           Content
         </label>
-        <textarea
+        <RichTextEditor
           id='lore-note-content'
           value={content}
-          onChange={(event) => setContent(event.target.value)}
-          className='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none'
-          rows={6}
+          onChange={setContent}
+          variant='full'
           placeholder='Write this lore note...'
-          disabled={isSaving}
+          editable={!isSaving}
+          aria-label='Content'
         />
       </div>
 
