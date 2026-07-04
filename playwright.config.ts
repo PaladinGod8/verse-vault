@@ -49,6 +49,12 @@ export default defineConfig({
         'levels.test.ts',
         'statblocks-crud.test.ts',
         'statblocks.test.ts',
+        // Backend integration specs: pure window.db flows (no live canvas), so
+        // they belong with the lightweight, highly-parallel smoke group.
+        'cascade-integrity.test.ts',
+        'campaign-notes.test.ts',
+        'narrative-chain.test.ts',
+        'statblock-links.test.ts',
       ],
       use: { ...devices['Desktop Chrome'] },
       // Higher parallelization for fast tests
