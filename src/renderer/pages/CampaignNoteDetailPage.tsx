@@ -184,8 +184,8 @@ export default function CampaignNoteDetailPage() {
                 </button>
               </EditorActionBar>
 
-              <div className='grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]'>
-                <div className='space-y-4'>
+              <div data-testid='campaign-note-layout' className='space-y-4'>
+                <div className='grid gap-4 sm:grid-cols-2'>
                   <div>
                     <label
                       htmlFor='campaign-note-detail-name'
@@ -209,19 +209,21 @@ export default function CampaignNoteDetailPage() {
                   />
                 </div>
 
-                <Suspense
-                  fallback={
-                    <div className='h-full min-h-[70vh] rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600'>
-                      Loading canvas...
-                    </div>
-                  }
-                >
-                  <ExcalidrawCanvasEditor
-                    ref={editorRef}
-                    initialScene={note.canvas_scene}
-                    className='h-full min-h-[70vh] rounded-xl border border-slate-200 bg-white'
-                  />
-                </Suspense>
+                <div data-testid='campaign-note-canvas-region' className='h-[80vh] w-full'>
+                  <Suspense
+                    fallback={
+                      <div className='h-full w-full rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600'>
+                        Loading canvas...
+                      </div>
+                    }
+                  >
+                    <ExcalidrawCanvasEditor
+                      ref={editorRef}
+                      initialScene={note.canvas_scene}
+                      className='h-full w-full rounded-xl border border-slate-200 bg-white'
+                    />
+                  </Suspense>
+                </div>
               </div>
             </section>
           )

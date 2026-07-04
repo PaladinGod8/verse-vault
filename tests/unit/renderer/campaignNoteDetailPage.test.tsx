@@ -144,6 +144,43 @@ describe('CampaignNoteDetailPage', () => {
     });
   });
 
+  it('stacks the canvas full-width below the metadata inputs for more space', async () => {
+    const note = buildCampaignNote({
+      id: 7,
+      world_id: 1,
+      campaign_id: 2,
+      name: 'Boss Arena',
+      tags: ['Encounter'],
+    });
+    (mockDb.worlds.getById as ReturnType<typeof vi.fn>).mockResolvedValue(buildWorld({ id: 1 }));
+    (mockDb.campaigns.getById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      buildCampaign({ id: 2, world_id: 1, name: 'Trial by Fire' }),
+    );
+    (mockDb.campaignNotes.getById as ReturnType<typeof vi.fn>).mockResolvedValue(note);
+    (mockDb.campaignNotes.getAllTagsByCampaign as ReturnType<typeof vi.fn>).mockResolvedValue([
+      'Encounter',
+    ]);
+
+    renderPage();
+
+    const nameInput = await screen.findByDisplayValue('Boss Arena');
+    const canvasRegion = await screen.findByTestId('campaign-note-canvas-region');
+
+    // Full-width, tall canvas region with a *concrete* height so Excalidraw's
+    // `h-full` resolves (min-height alone collapses the editor to 0px).
+    expect(canvasRegion.className).toContain('w-full');
+    expect(canvasRegion.className).toContain('h-[80vh]');
+
+    // Metadata inputs render before (above) the canvas, not beside it.
+    expect(
+      nameInput.compareDocumentPosition(canvasRegion) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    // Layout is a vertical stack, not a side-by-side grid.
+    const layout = screen.getByTestId('campaign-note-layout');
+    expect(layout.className).not.toContain('grid-cols');
+  });
+
   it('returns to list when Back clicked', async () => {
     const note = buildCampaignNote({
       id: 7,
