@@ -4,7 +4,7 @@
  * @seam Main process entrypoint for preload and database adapters
  * @calls getDatabase, closeDatabase, and register*Handlers modules
  */
-import { app, BrowserWindow, dialog, net, protocol } from 'electron';
+import { app, BrowserWindow, dialog, net, protocol, shell } from 'electron';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
@@ -173,6 +173,42 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+const SAFE_EXTERNAL_LINK_PROTOCOLS = new Set(['https:', 'http:', 'mailto:']);
+
+function isSafeExternalUrl(url: string): boolean {
+  try {
+    return SAFE_EXTERNAL_LINK_PROTOCOLS.has(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Denies every window.open()/target="_blank" popup (routing safe http(s)/mailto
+ * links to the OS browser instead) and blocks top-level navigation away from
+ * `isAllowedNavigation`. Without this, an attacker-controlled link rendered in
+ * app content (e.g. a note or an imported world bundle) could navigate the
+ * trusted window to an arbitrary origin, where the window's preload script
+ * would re-run and re-expose its full IPC bridge to that origin.
+ */
+function hardenWindowNavigation(
+  window: BrowserWindow,
+  isAllowedNavigation: (url: string) => boolean,
+): void {
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (isSafeExternalUrl(url)) {
+      void shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
+  window.webContents.on('will-navigate', (event, url) => {
+    if (!isAllowedNavigation(url)) {
+      event.preventDefault();
+    }
+  });
+}
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -196,6 +232,18 @@ const createWindow = () => {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+  });
+
+  const devServerOrigin = MAIN_WINDOW_VITE_DEV_SERVER_URL
+    ? new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL).origin
+    : null;
+  hardenWindowNavigation(mainWindow, (url) => {
+    try {
+      const target = new URL(url);
+      return devServerOrigin ? target.origin === devServerOrigin : target.protocol === 'file:';
+    } catch {
+      return false;
+    }
   });
 
   // and load the index.html of the app.
@@ -231,6 +279,13 @@ function createWorldMapEditorWindow(hostPageUrl: string): BrowserWindow {
 
   editorWindow.once('ready-to-show', () => {
     editorWindow.show();
+  });
+  hardenWindowNavigation(editorWindow, (url) => {
+    try {
+      return new URL(url).protocol === `${WORLD_MAP_PROTOCOL}:`;
+    } catch {
+      return false;
+    }
   });
   editorWindow.loadURL(hostPageUrl);
   return editorWindow;

@@ -31,6 +31,8 @@ class BrowserWindowMock {
   loadFile = loadFileMock;
   webContents = {
     openDevTools: openDevToolsMock,
+    setWindowOpenHandler: vi.fn(),
+    on: vi.fn(),
   };
   once = vi.fn((_event: string, callback?: () => void) => {
     callback?.();
@@ -109,6 +111,9 @@ async function importMainWithMocks() {
     },
     net: {
       fetch: netFetchMock,
+    },
+    shell: {
+      openExternal: vi.fn(),
     },
   }));
   vi.doMock('node:crypto', () => ({
