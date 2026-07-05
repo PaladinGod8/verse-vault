@@ -182,6 +182,8 @@ export function buildSession(overrides: Partial<Session> = {}): Session {
 export function buildScene(overrides: Partial<Scene> = {}): Scene {
   return {
     id: getNextId(),
+    campaign_id: getNextId(),
+    act_id: getNextId(),
     session_id: getNextId(),
     name: 'Test Scene',
     notes: 'Test scene notes',

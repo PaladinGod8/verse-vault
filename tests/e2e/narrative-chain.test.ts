@@ -126,9 +126,9 @@ test.describe.serial('@critical Narrative chain roll-ups and moves', () => {
       { movedSessionId: sessionId, actId: actBId },
     );
     await page.evaluate(
-      async ({ movedSceneId, sessionTargetId }) =>
-        window.db.scenes.moveTo(movedSceneId, sessionTargetId),
-      { movedSceneId: sceneId, sessionTargetId: otherSessionId },
+      async ({ movedSceneId, actTargetId, sessionTargetId }) =>
+        window.db.scenes.moveTo(movedSceneId, actTargetId, sessionTargetId),
+      { movedSceneId: sceneId, actTargetId: actBId, sessionTargetId: otherSessionId },
     );
 
     const result = await page.evaluate(

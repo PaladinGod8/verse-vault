@@ -219,6 +219,23 @@ describe('ActsPage', () => {
       expect(screen.getByText('Act Two')).toBeInTheDocument();
     });
 
+    it('renders a Scenes link alongside Sessions for each act', async () => {
+      window.db.acts.getAllByArc = vi
+        .fn()
+        .mockResolvedValue([buildAct({ id: 1, name: 'Act One', sort_order: 0 })]);
+      renderPage();
+      await screen.findByText('Act One');
+
+      expect(screen.getByRole('link', { name: 'Sessions' })).toHaveAttribute(
+        'href',
+        '/world/1/campaign/1/arc/1/act/1/sessions',
+      );
+      expect(screen.getByRole('link', { name: 'Scenes' })).toHaveAttribute(
+        'href',
+        '/world/1/campaign/1/arc/1/act/1/scenes',
+      );
+    });
+
     it('shows arc name in heading', async () => {
       window.db.arcs.getById = vi
         .fn()

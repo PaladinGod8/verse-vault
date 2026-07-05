@@ -22,6 +22,8 @@ function getHandlers(): Record<string, IpcHandler> {
 function buildScene(overrides?: Record<string, unknown>) {
   return {
     id: 1,
+    campaign_id: 1,
+    act_id: 1,
     session_id: 3,
     name: 'Scene One',
     notes: null as null,
@@ -40,7 +42,8 @@ function buildSession(overrides?: Record<string, unknown>) {
 // null = not found; omit = use default; value = return it
 type PrepareOptions = {
   getById?: unknown;
-  getSceneSessionById?: unknown;
+  getSceneAnchorById?: unknown;
+  getActAnchor?: unknown;
   getNextSortOrder?: number;
   resequenceRows?: Array<{ id: number; }>;
 };
@@ -51,7 +54,7 @@ function createDbMock(opts: PrepareOptions = {}) {
   const runMock = vi.fn(() => ({ changes: 1, lastInsertRowid: 1 }));
 
   const prepareMock = vi.fn((sql: string) => {
-    if (sql.includes('COALESCE(MAX(sort_order)') && sql.includes('session_id')) {
+    if (sql.includes('COALESCE(MAX(sort_order)')) {
       return { get: vi.fn(() => ({ next_sort_order: opts.getNextSortOrder ?? 0 })) };
     }
     if (sql === 'SELECT * FROM scenes WHERE id = ?') {
@@ -63,10 +66,16 @@ function createDbMock(opts: PrepareOptions = {}) {
     if (sql === 'SELECT * FROM sessions WHERE id = ?') {
       return { get: vi.fn(() => defaultSession) };
     }
-    if (sql === 'SELECT session_id FROM scenes WHERE id = ?') {
-      const val = 'getSceneSessionById' in opts
-        ? (opts.getSceneSessionById === null ? undefined : opts.getSceneSessionById)
-        : { session_id: defaultScene.session_id };
+    if (sql.includes('arcs.campaign_id AS campaign_id')) {
+      const val = 'getActAnchor' in opts
+        ? (opts.getActAnchor === null ? undefined : opts.getActAnchor)
+        : { campaign_id: 1 };
+      return { get: vi.fn(() => val) };
+    }
+    if (sql === 'SELECT act_id, session_id FROM scenes WHERE id = ?') {
+      const val = 'getSceneAnchorById' in opts
+        ? (opts.getSceneAnchorById === null ? undefined : opts.getSceneAnchorById)
+        : { act_id: defaultScene.act_id, session_id: defaultScene.session_id };
       return { get: vi.fn(() => val) };
     }
     if (sql.startsWith('SELECT id FROM scenes')) {
@@ -100,6 +109,14 @@ describe('registerSceneHandlers', () => {
     });
   });
 
+  describe(IPC.SCENES_GET_ALL_BY_ACT, () => {
+    it('returns scenes for an act', () => {
+      const mockAll = vi.fn(() => [buildScene()]);
+      (dbMock.prepare as ReturnType<typeof vi.fn>).mockReturnValueOnce({ all: mockAll });
+      expect(handlers[IPC.SCENES_GET_ALL_BY_ACT]({}, 1)).toEqual([buildScene()]);
+    });
+  });
+
   describe(IPC.SCENES_GET_ALL_BY_SESSION, () => {
     it('returns scenes for a session', () => {
       const mockAll = vi.fn(() => [buildScene()]);
@@ -123,12 +140,21 @@ describe('registerSceneHandlers', () => {
   });
 
   describe(IPC.SCENES_ADD, () => {
-    it('creates scene with default payload when omitted', () => {
+    it('creates scene with default payload when session_id given (act_id derived from session)', () => {
       const db = createDbMock({ getById: buildScene() });
       vi.clearAllMocks();
       registerSceneHandlers(db);
       const h = getHandlers();
       const result = h[IPC.SCENES_ADD]({}, { session_id: 3, name: 'Scene' });
+      expect(result).toMatchObject({ name: 'Scene One' });
+    });
+
+    it('creates a stray scene with act_id only, no session', () => {
+      const db = createDbMock({ getById: buildScene({ session_id: null }) });
+      vi.clearAllMocks();
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      const result = h[IPC.SCENES_ADD]({}, { act_id: 1, name: 'Scene' });
       expect(result).toMatchObject({ name: 'Scene One' });
     });
 
@@ -180,6 +206,35 @@ describe('registerSceneHandlers', () => {
     it('throws when name is empty', () => {
       expect(() => handlers[IPC.SCENES_ADD]({}, { session_id: 3, name: '' }))
         .toThrowError('Scene name is required');
+    });
+
+    it('throws when neither act_id nor session_id is given', () => {
+      expect(() => handlers[IPC.SCENES_ADD]({}, { name: 'X' }))
+        .toThrowError('Scene requires an act_id or session_id');
+    });
+
+    it('throws when session_id is given but the session does not exist', () => {
+      const db = createDbMock({ getById: undefined });
+      (db.prepare as ReturnType<typeof vi.fn>).mockImplementation((sql: string) => {
+        if (sql === 'SELECT * FROM sessions WHERE id = ?') {
+          return { get: vi.fn(() => undefined) };
+        }
+        return { run: vi.fn(), get: vi.fn(), all: vi.fn(() => []) };
+      });
+      vi.clearAllMocks();
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      expect(() => h[IPC.SCENES_ADD]({}, { session_id: 999, name: 'X' }))
+        .toThrowError('Session not found');
+    });
+
+    it('throws when act_id is given but the act does not exist', () => {
+      const db = createDbMock({ getActAnchor: null });
+      vi.clearAllMocks();
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      expect(() => h[IPC.SCENES_ADD]({}, { act_id: 999, name: 'X' }))
+        .toThrowError('Act not found');
     });
 
     it('throws when payload is not a string', () => {
@@ -271,7 +326,18 @@ describe('registerSceneHandlers', () => {
   describe(IPC.SCENES_DELETE, () => {
     it('deletes scene and resequences', () => {
       const db = createDbMock({
-        getSceneSessionById: { session_id: 3 },
+        getSceneAnchorById: { act_id: 1, session_id: 3 },
+        resequenceRows: [{ id: 2 }],
+      });
+      vi.clearAllMocks();
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      expect(h[IPC.SCENES_DELETE]({}, 1)).toEqual({ id: 1 });
+    });
+
+    it('deletes a stray scene and resequences within the act', () => {
+      const db = createDbMock({
+        getSceneAnchorById: { act_id: 1, session_id: null },
         resequenceRows: [{ id: 2 }],
       });
       vi.clearAllMocks();
@@ -281,7 +347,7 @@ describe('registerSceneHandlers', () => {
     });
 
     it('returns id when scene not found', () => {
-      const db = createDbMock({ getSceneSessionById: null });
+      const db = createDbMock({ getSceneAnchorById: null });
       vi.clearAllMocks();
       registerSceneHandlers(db);
       const h = getHandlers();
@@ -289,134 +355,160 @@ describe('registerSceneHandlers', () => {
     });
   });
 
-  describe(IPC.SCENES_MOVE_TO_SESSION, () => {
-    it('moves scene to a different session', () => {
-      const sceneRow = buildScene({ session_id: 3 });
-      const newSessionRow = buildSession({ id: 4 });
-      const sceneGetMock = vi.fn()
-        .mockReturnValueOnce(sceneRow)
-        .mockReturnValueOnce({ ...sceneRow, session_id: 4 });
+  describe(IPC.SCENES_MOVE_TO_ACT, () => {
+    function createMoveDbMock(overrides: {
+      scene?: unknown;
+      sceneSequence?: unknown[];
+      targetActAnchor?: unknown;
+      targetSession?: unknown;
+      nextSortOrder?: number;
+      resequenceRows?: Array<{ id: number; }>;
+    } = {}) {
+      const sceneRow = overrides.scene ?? buildScene({ act_id: 1, session_id: 3 });
+      const sceneGetMock = overrides.sceneSequence
+        ? vi.fn((() => {
+          const sequence = overrides.sceneSequence ?? [];
+          let i = 0;
+          return () => sequence[i++];
+        })())
+        : vi.fn(() => sceneRow);
+
       const prepareMock = vi.fn((sql: string) => {
         if (sql === 'SELECT * FROM scenes WHERE id = ?') {
           return { get: sceneGetMock };
         }
+        if (sql.includes('arcs.campaign_id AS campaign_id')) {
+          const val = 'targetActAnchor' in overrides
+            ? overrides.targetActAnchor
+            : { campaign_id: 1 };
+          return { get: vi.fn(() => val) };
+        }
         if (sql === 'SELECT * FROM sessions WHERE id = ?') {
-          return { get: vi.fn(() => newSessionRow) };
+          const val = 'targetSession' in overrides ? overrides.targetSession : undefined;
+          return { get: vi.fn(() => val) };
         }
         if (sql.includes('COALESCE(MAX(sort_order)')) {
-          return { get: vi.fn(() => ({ nextSortOrder: 1 })) };
+          return { get: vi.fn(() => ({ next_sort_order: overrides.nextSortOrder ?? 1 })) };
         }
         if (sql.startsWith('SELECT id FROM scenes')) {
-          return { all: vi.fn(() => []) };
+          return { all: vi.fn(() => overrides.resequenceRows ?? []) };
         }
         return { run: vi.fn(), get: vi.fn(() => sceneRow), all: vi.fn(() => []) };
       });
-      const db = {
+
+      return {
         prepare: prepareMock,
         transaction: vi.fn((cb: (...args: unknown[]) => unknown) => cb),
       } as unknown as Database.Database;
-      vi.clearAllMocks();
+    }
+
+    it('moves a scene to a different act and ungroups it from its session', () => {
+      const oldScene = buildScene({ act_id: 1, session_id: 3 });
+      const movedScene = buildScene({ act_id: 2, session_id: null });
+      const db = createMoveDbMock({
+        scene: oldScene,
+        sceneSequence: [oldScene, movedScene],
+        targetActAnchor: { campaign_id: 1 },
+      });
       registerSceneHandlers(db);
       const h = getHandlers();
-      const result = h[IPC.SCENES_MOVE_TO_SESSION]({}, 1, 4);
-      expect(result).toMatchObject({ session_id: 4 });
+      const result = h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 2, null);
+      expect(result).toMatchObject({ act_id: 2, session_id: null });
     });
 
-    it('returns scene unchanged when moving to same session', () => {
-      const sceneRow = buildScene({ session_id: 3 });
-      const sessionRow = buildSession({ id: 3 });
-      const prepareMock = vi.fn((sql: string) => {
-        if (sql === 'SELECT * FROM scenes WHERE id = ?') {
-          return { get: vi.fn(() => sceneRow) };
-        }
-        if (sql === 'SELECT * FROM sessions WHERE id = ?') {
-          return { get: vi.fn(() => sessionRow) };
-        }
-        return { run: vi.fn(), get: vi.fn(), all: vi.fn(() => []) };
+    it('moves a scene to a different act into a target session of that act', () => {
+      const oldScene = buildScene({ act_id: 1, session_id: 3 });
+      const movedScene = buildScene({ act_id: 2, session_id: 4 });
+      const db = createMoveDbMock({
+        scene: oldScene,
+        sceneSequence: [oldScene, movedScene],
+        targetActAnchor: { campaign_id: 1 },
+        targetSession: buildSession({ id: 4, act_id: 2 }),
       });
-      const db = {
-        prepare: prepareMock,
-        transaction: vi.fn((cb: (...args: unknown[]) => unknown) => cb),
-      } as unknown as Database.Database;
-      vi.clearAllMocks();
       registerSceneHandlers(db);
       const h = getHandlers();
-      const result = h[IPC.SCENES_MOVE_TO_SESSION]({}, 1, 3);
-      expect(result).toMatchObject({ session_id: 3 });
+      const result = h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 2, 4);
+      expect(result).toMatchObject({ act_id: 2, session_id: 4 });
+    });
+
+    it('regroups a stray scene into a session within the same act', () => {
+      const oldScene = buildScene({ act_id: 1, session_id: null });
+      const movedScene = buildScene({ act_id: 1, session_id: 3 });
+      const db = createMoveDbMock({
+        scene: oldScene,
+        sceneSequence: [oldScene, movedScene],
+        targetActAnchor: { campaign_id: 1 },
+        targetSession: buildSession({ id: 3, act_id: 1 }),
+      });
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      const result = h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 1, 3);
+      expect(result).toMatchObject({ act_id: 1, session_id: 3 });
+    });
+
+    it('returns scene unchanged when act and session are unchanged', () => {
+      const scene = buildScene({ act_id: 1, session_id: 3 });
+      const db = createMoveDbMock({
+        scene,
+        targetActAnchor: { campaign_id: 1 },
+        targetSession: buildSession({ id: 3, act_id: 1 }),
+      });
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      const result = h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 1, 3);
+      expect(result).toMatchObject({ act_id: 1, session_id: 3 });
     });
 
     it('throws when scene not found', () => {
-      const prepareMock = vi.fn((sql: string) => {
-        if (sql === 'SELECT * FROM scenes WHERE id = ?') {
-          return { get: vi.fn(() => undefined) };
-        }
-        if (sql === 'SELECT * FROM sessions WHERE id = ?') {
-          return { get: vi.fn(() => buildSession()) };
-        }
-        return { run: vi.fn(), get: vi.fn(), all: vi.fn(() => []) };
-      });
-      const db = {
-        prepare: prepareMock,
-        transaction: vi.fn((cb: (...args: unknown[]) => unknown) => cb),
-      } as unknown as Database.Database;
-      vi.clearAllMocks();
+      const db = createMoveDbMock({ scene: undefined, sceneSequence: [undefined] });
       registerSceneHandlers(db);
       const h = getHandlers();
-      expect(() => h[IPC.SCENES_MOVE_TO_SESSION]({}, 999, 4)).toThrowError('Scene not found');
+      expect(() => h[IPC.SCENES_MOVE_TO_ACT]({}, 999, 2, null)).toThrowError('Scene not found');
+    });
+
+    it('throws when target act not found', () => {
+      const db = createMoveDbMock({ targetActAnchor: undefined });
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      expect(() => h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 999, null)).toThrowError(
+        'Target act not found',
+      );
     });
 
     it('throws when target session not found', () => {
-      const sceneRow = buildScene({ session_id: 3 });
-      const prepareMock = vi.fn((sql: string) => {
-        if (sql === 'SELECT * FROM scenes WHERE id = ?') {
-          return { get: vi.fn(() => sceneRow) };
-        }
-        if (sql === 'SELECT * FROM sessions WHERE id = ?') {
-          return { get: vi.fn(() => undefined) };
-        }
-        return { run: vi.fn(), get: vi.fn(), all: vi.fn(() => []) };
+      const db = createMoveDbMock({
+        targetActAnchor: { campaign_id: 1 },
+        targetSession: undefined,
       });
-      const db = {
-        prepare: prepareMock,
-        transaction: vi.fn((cb: (...args: unknown[]) => unknown) => cb),
-      } as unknown as Database.Database;
-      vi.clearAllMocks();
       registerSceneHandlers(db);
       const h = getHandlers();
-      expect(() => h[IPC.SCENES_MOVE_TO_SESSION]({}, 1, 999)).toThrowError(
+      expect(() => h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 2, 999)).toThrowError(
         'Target session not found',
       );
     });
 
-    it('throws when scene not found after update', () => {
-      const sceneRow = buildScene({ session_id: 3 });
-      const newSessionRow = buildSession({ id: 4 });
-      const sceneGetMock = vi.fn()
-        .mockReturnValueOnce(sceneRow)
-        .mockReturnValueOnce(undefined);
-      const prepareMock = vi.fn((sql: string) => {
-        if (sql === 'SELECT * FROM scenes WHERE id = ?') {
-          return { get: sceneGetMock };
-        }
-        if (sql === 'SELECT * FROM sessions WHERE id = ?') {
-          return { get: vi.fn(() => newSessionRow) };
-        }
-        if (sql.includes('COALESCE(MAX(sort_order)')) {
-          return { get: vi.fn(() => ({ nextSortOrder: 1 })) };
-        }
-        if (sql.startsWith('SELECT id FROM scenes')) {
-          return { all: vi.fn(() => []) };
-        }
-        return { run: vi.fn(), get: vi.fn(), all: vi.fn(() => []) };
+    it('throws when target session does not belong to the target act', () => {
+      const db = createMoveDbMock({
+        targetActAnchor: { campaign_id: 1 },
+        targetSession: buildSession({ id: 4, act_id: 5 }),
       });
-      const db = {
-        prepare: prepareMock,
-        transaction: vi.fn((cb: (...args: unknown[]) => unknown) => cb),
-      } as unknown as Database.Database;
-      vi.clearAllMocks();
       registerSceneHandlers(db);
       const h = getHandlers();
-      expect(() => h[IPC.SCENES_MOVE_TO_SESSION]({}, 1, 4)).toThrowError('Scene not found');
+      expect(() => h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 2, 4)).toThrowError(
+        'Target session does not belong to the target act',
+      );
+    });
+
+    it('throws when scene not found after update', () => {
+      const oldScene = buildScene({ act_id: 1, session_id: 3 });
+      const db = createMoveDbMock({
+        scene: oldScene,
+        sceneSequence: [oldScene, undefined],
+        targetActAnchor: { campaign_id: 1 },
+      });
+      registerSceneHandlers(db);
+      const h = getHandlers();
+      expect(() => h[IPC.SCENES_MOVE_TO_ACT]({}, 1, 2, null)).toThrowError('Scene not found');
     });
   });
 });

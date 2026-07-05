@@ -48,7 +48,16 @@ export const DB_API_METHODS = {
   arcs: ['getAllByCampaign', 'getById', 'add', 'update', 'delete'],
   acts: ['getAllByArc', 'getAllByCampaign', 'getById', 'add', 'update', 'delete', 'moveTo'],
   sessions: ['getAllByCampaign', 'getAllByAct', 'getById', 'add', 'update', 'delete', 'moveTo'],
-  scenes: ['getAllByCampaign', 'getAllBySession', 'getById', 'add', 'update', 'delete', 'moveTo'],
+  scenes: [
+    'getAllByCampaign',
+    'getAllByAct',
+    'getAllBySession',
+    'getById',
+    'add',
+    'update',
+    'delete',
+    'moveTo',
+  ],
   statblocks: [
     'getAllByWorld',
     'getAllByCampaign',

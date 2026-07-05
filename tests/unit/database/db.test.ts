@@ -143,11 +143,14 @@ describe('database', () => {
     expect(schemaSql).toContain('canvas_scene   TEXT');
     expect(schemaSql).toContain('canvas_preview_image TEXT');
     expect(schemaSql).toContain(
-      'session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE',
+      'act_id      INTEGER REFERENCES acts(id) ON DELETE CASCADE',
+    );
+    expect(schemaSql).toContain(
+      'session_id  INTEGER REFERENCES sessions(id) ON DELETE CASCADE',
     );
     expect(schemaSql).toContain("config     TEXT    NOT NULL DEFAULT '{}'");
     expect(schemaSql).toContain('sort_order  INTEGER NOT NULL DEFAULT 0');
-    expect(schemaSql).toContain("payload    TEXT    NOT NULL DEFAULT '{}'");
+    expect(schemaSql).toContain("payload     TEXT    NOT NULL DEFAULT '{}'");
     expect(schemaSql).toContain(
       'CREATE INDEX IF NOT EXISTS idx_tokens_world_id ON tokens(world_id)',
     );
@@ -219,6 +222,11 @@ describe('database', () => {
         if (sql === 'SELECT * FROM sessions') {
           return { all: legacySessionsSelectAllMock };
         }
+        if (sql === 'PRAGMA table_info(scenes)') {
+          return {
+            all: () => [{ name: 'campaign_id' }, { name: 'act_id' }, { name: 'session_id' }],
+          };
+        }
         if (/^SELECT id, \w+ AS image_src FROM \w+$/.test(sql)) {
           return { all: () => [] };
         }
@@ -261,6 +269,109 @@ describe('database', () => {
     expect(execSql).not.toContain(
       'ALTER TABLE sessions ADD COLUMN planned_at TEXT',
     );
+  });
+
+  it('migrates scenes to add campaign_id/act_id anchors, backfilling from their session', async () => {
+    const insertNewSceneRunMock = vi.fn();
+    const legacyScenesSelectAllMock = vi.fn(() => [
+      {
+        id: 7,
+        session_id: 3,
+        name: 'Legacy Scene',
+        notes: 'Legacy scene notes',
+        payload: '{}',
+        sort_order: 0,
+        created_at: '2026-01-01 00:00:00',
+        updated_at: '2026-01-02 00:00:00',
+      },
+    ]);
+    const sessionAnchorsSelectAllMock = vi.fn(() => [
+      { session_id: 3, act_id: 21, campaign_id: 1 },
+    ]);
+
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule({
+      prepareImplementation: (sql) => {
+        if (sql === 'PRAGMA table_info(sessions)') {
+          return { all: () => [{ name: 'act_id' }, { name: 'planned_at' }] };
+        }
+        if (sql === 'PRAGMA table_info(scenes)') {
+          return { all: () => [{ name: 'session_id' }] };
+        }
+        if (
+          sql.startsWith('SELECT sessions.id AS session_id, sessions.act_id AS act_id')
+        ) {
+          return { all: sessionAnchorsSelectAllMock };
+        }
+        if (sql === 'SELECT * FROM scenes') {
+          return { all: legacyScenesSelectAllMock };
+        }
+        if (
+          sql
+            === 'INSERT INTO scenes_new (id, campaign_id, act_id, session_id, name, notes, payload, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ) {
+          return { run: insertNewSceneRunMock };
+        }
+        if (/^SELECT id, \w+ AS image_src FROM \w+$/.test(sql)) {
+          return { all: () => [] };
+        }
+        if (/^UPDATE \w+ SET \w+ = \? WHERE id = \?$/.test(sql)) {
+          return { run: vi.fn() };
+        }
+
+        throw new Error(`Unexpected SQL in migration test: ${sql}`);
+      },
+    });
+
+    getDatabase();
+    closeDatabase();
+
+    expect(sessionAnchorsSelectAllMock).toHaveBeenCalledTimes(1);
+    expect(legacyScenesSelectAllMock).toHaveBeenCalledTimes(1);
+    expect(insertNewSceneRunMock).toHaveBeenCalledWith(
+      7,
+      1,
+      21,
+      3,
+      'Legacy Scene',
+      'Legacy scene notes',
+      '{}',
+      0,
+      '2026-01-01 00:00:00',
+      '2026-01-02 00:00:00',
+    );
+
+    const execSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    expect(execSql).toContain('CREATE TABLE scenes_new');
+    expect(execSql).toContain('ALTER TABLE scenes_new RENAME TO scenes');
+  });
+
+  it('skips scene anchor migration when scenes already have campaign_id', async () => {
+    const { getDatabase, closeDatabase, execMock } = await loadDbModule({
+      prepareImplementation: (sql) => {
+        if (sql === 'PRAGMA table_info(sessions)') {
+          return { all: () => [{ name: 'act_id' }, { name: 'planned_at' }] };
+        }
+        if (sql === 'PRAGMA table_info(scenes)') {
+          return {
+            all: () => [{ name: 'campaign_id' }, { name: 'act_id' }, { name: 'session_id' }],
+          };
+        }
+        if (/^SELECT id, \w+ AS image_src FROM \w+$/.test(sql)) {
+          return { all: () => [] };
+        }
+        if (/^UPDATE \w+ SET \w+ = \? WHERE id = \?$/.test(sql)) {
+          return { run: vi.fn() };
+        }
+
+        throw new Error(`Unexpected SQL in migration test: ${sql}`);
+      },
+    });
+
+    getDatabase();
+    closeDatabase();
+
+    const execSql = execMock.mock.calls.map(([sql]) => String(sql)).join('\n');
+    expect(execSql).not.toContain('CREATE TABLE scenes_new');
   });
 
   it('closes and resets the singleton', async () => {

@@ -78,6 +78,7 @@ export default defineConfig({
         'characterRelationships.test.ts',
         'factionRelationships.test.ts',
         'scenes.test.ts',
+        'act-scenes.test.ts',
         'sessions.test.ts',
         'tokenMove.test.ts',
         // Plain DOM/dialog CRUD — no live canvas dependency, safe to

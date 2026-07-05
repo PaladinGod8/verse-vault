@@ -12,7 +12,8 @@ type SceneFormInitialValues = {
 
 type SceneFormProps = {
   mode?: 'create' | 'edit';
-  sessionId: number;
+  actId: number;
+  sessionId?: number | null;
   initialValues?: Partial<SceneFormInitialValues>;
   onSubmit: (data: AddSceneInput) => Promise<void>;
   onCancel: () => void;
@@ -20,7 +21,8 @@ type SceneFormProps = {
 
 export default function SceneForm({
   mode = 'create',
-  sessionId,
+  actId,
+  sessionId = null,
   initialValues,
   onSubmit,
   onCancel,
@@ -56,6 +58,7 @@ export default function SceneForm({
 
     try {
       await onSubmit({
+        act_id: actId,
         session_id: sessionId,
         name: trimmedName,
         notes: notes.trim() || null,

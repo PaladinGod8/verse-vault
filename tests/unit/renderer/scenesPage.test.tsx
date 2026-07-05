@@ -142,7 +142,7 @@ function renderScenesPage(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
-          path='/world/:id/campaign/:campaignId/session/:sessionId/scenes'
+          path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes'
           element={<ScenesPage />}
         />
       </Routes>
@@ -198,7 +198,7 @@ describe('ScenesPage', () => {
   });
 
   it('shows error when world id is invalid', async () => {
-    renderScenesPage('/world/abc/campaign/1/session/1/scenes');
+    renderScenesPage('/world/abc/campaign/1/arc/1/act/1/session/1/scenes');
 
     expect(
       await screen.findByText('Invalid world, campaign, or session id.'),
@@ -207,7 +207,7 @@ describe('ScenesPage', () => {
   });
 
   it('shows error when session id is invalid', async () => {
-    renderScenesPage('/world/1/campaign/1/session/xyz/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/xyz/scenes');
 
     expect(
       await screen.findByText('Invalid world, campaign, or session id.'),
@@ -218,7 +218,7 @@ describe('ScenesPage', () => {
   it('shows error when session is not found', async () => {
     sessionsGetByIdMock.mockResolvedValue(null);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     expect(await screen.findByText('Session not found.')).toBeInTheDocument();
     expect(sessionsGetByIdMock).toHaveBeenCalledWith(1);
@@ -228,7 +228,7 @@ describe('ScenesPage', () => {
   it('shows load error when api throws', async () => {
     sessionsGetByIdMock.mockRejectedValue(new Error('db unavailable'));
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     expect(
       await screen.findByText('Unable to load scenes right now.'),
@@ -239,7 +239,7 @@ describe('ScenesPage', () => {
     sessionsGetByIdMock.mockResolvedValue(buildSession());
     scenesGetAllBySessionMock.mockResolvedValue([]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     expect(await screen.findByText('No scenes yet.')).toBeInTheDocument();
     expect(scenesGetAllBySessionMock).toHaveBeenCalledWith(1);
@@ -252,7 +252,7 @@ describe('ScenesPage', () => {
       buildScene({ id: 2, name: 'The Reveal', notes: null }),
     ]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     expect(await screen.findByText('The Opening')).toBeInTheDocument();
     expect(screen.getByText('Players arrive at tavern')).toBeInTheDocument();
@@ -267,7 +267,7 @@ describe('ScenesPage', () => {
       buildScene({ id: 2, name: 'The Reveal', sort_order: 1 }),
     ]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     expect(getRenderedSceneNames()).toEqual([
@@ -288,7 +288,7 @@ describe('ScenesPage', () => {
     ]);
     scenesUpdateMock.mockResolvedValue(buildScene());
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     setDragEndEvent(1, 2);
@@ -325,7 +325,7 @@ describe('ScenesPage', () => {
       new Error('Unable to reorder scenes right now.'),
     );
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     setDragEndEvent(1, 2);
@@ -346,7 +346,7 @@ describe('ScenesPage', () => {
     });
   });
 
-  it('opens move dialog and loads target session options', async () => {
+  it('opens move dialog and loads target act/session options', async () => {
     const user = userEvent.setup();
     sessionsGetByIdMock.mockResolvedValue(buildSession());
     scenesGetAllBySessionMock.mockResolvedValue([buildScene()]);
@@ -362,7 +362,7 @@ describe('ScenesPage', () => {
     ]);
     actsGetAllByCampaignMock.mockResolvedValue([
       {
-        id: 11,
+        id: 1,
         arc_id: 7,
         name: 'Act Prime',
         sort_order: 0,
@@ -375,18 +375,18 @@ describe('ScenesPage', () => {
       buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
     ]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Move' }));
 
-    expect(await screen.findByText(/Move .* to Session/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Move.*The Opening/i)).toBeInTheDocument();
     expect(
       await screen.findByRole('radio', { name: /Session Two/i }),
     ).toBeInTheDocument();
     expect(arcsGetAllByCampaignMock).toHaveBeenCalledWith(1);
     expect(actsGetAllByCampaignMock).toHaveBeenCalledWith(1);
-    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(11);
+    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(1);
   });
 
   it('keeps move confirm disabled until a target session is selected', async () => {
@@ -418,7 +418,7 @@ describe('ScenesPage', () => {
       buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
     ]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Move' }));
@@ -466,7 +466,7 @@ describe('ScenesPage', () => {
       buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
     ]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Move' }));
@@ -477,7 +477,7 @@ describe('ScenesPage', () => {
     await user.click(moveButtons[moveButtons.length - 1]);
 
     await waitFor(() => {
-      expect(scenesMoveToMock).toHaveBeenCalledWith(1, 2);
+      expect(scenesMoveToMock).toHaveBeenCalledWith(1, 1, 2);
     });
     await waitFor(() => {
       expect(screen.queryByText('The Opening')).not.toBeInTheDocument();
@@ -515,7 +515,7 @@ describe('ScenesPage', () => {
       buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
     ]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Move' }));
@@ -547,7 +547,7 @@ describe('ScenesPage', () => {
     scenesGetAllBySessionMock.mockResolvedValue([]);
     scenesAddMock.mockResolvedValue(newScene);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('No scenes yet.');
     await user.click(screen.getByRole('button', { name: 'New Scene' }));
@@ -563,6 +563,7 @@ describe('ScenesPage', () => {
     );
 
     expect(scenesAddMock).toHaveBeenCalledWith({
+      act_id: 1,
       session_id: 1,
       name: 'The Confrontation',
       notes: 'Boss fight',
@@ -579,7 +580,7 @@ describe('ScenesPage', () => {
     sessionsGetByIdMock.mockResolvedValue(buildSession());
     scenesGetAllBySessionMock.mockResolvedValue([]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('No scenes yet.');
     await user.click(screen.getByRole('button', { name: 'New Scene' }));
@@ -605,7 +606,7 @@ describe('ScenesPage', () => {
     scenesGetAllBySessionMock.mockResolvedValue([scene]);
     scenesUpdateMock.mockResolvedValue(updatedScene);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Edit' }));
@@ -642,7 +643,7 @@ describe('ScenesPage', () => {
     scenesGetAllBySessionMock.mockResolvedValue([scene]);
     scenesDeleteMock.mockResolvedValue({ id: 1 });
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
@@ -671,7 +672,7 @@ describe('ScenesPage', () => {
     sessionsGetByIdMock.mockResolvedValue(buildSession());
     scenesGetAllBySessionMock.mockResolvedValue([scene]);
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Delete' }));
@@ -696,7 +697,7 @@ describe('ScenesPage', () => {
     scenesGetAllBySessionMock.mockResolvedValue([scene]);
     scenesDeleteMock.mockRejectedValue(new Error('delete failed'));
 
-    renderScenesPage('/world/1/campaign/1/session/1/scenes');
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
 
     await screen.findByText('The Opening');
     await user.click(screen.getByRole('button', { name: 'Delete' }));

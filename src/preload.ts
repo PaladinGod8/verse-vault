@@ -112,13 +112,14 @@ const dbApi: DbApi = {
   scenes: {
     getAllByCampaign: (campaignId) =>
       ipcRenderer.invoke(IPC.SCENES_GET_ALL_BY_CAMPAIGN, campaignId),
+    getAllByAct: (actId) => ipcRenderer.invoke(IPC.SCENES_GET_ALL_BY_ACT, actId),
     getAllBySession: (sessionId) => ipcRenderer.invoke(IPC.SCENES_GET_ALL_BY_SESSION, sessionId),
     getById: (id) => ipcRenderer.invoke(IPC.SCENES_GET_BY_ID, id),
     add: (data) => ipcRenderer.invoke(IPC.SCENES_ADD, data),
     update: (id, data) => ipcRenderer.invoke(IPC.SCENES_UPDATE, id, data),
     delete: (id) => ipcRenderer.invoke(IPC.SCENES_DELETE, id),
-    moveTo: (sceneId, newSessionId) =>
-      ipcRenderer.invoke(IPC.SCENES_MOVE_TO_SESSION, sceneId, newSessionId),
+    moveTo: (sceneId, newActId, newSessionId) =>
+      ipcRenderer.invoke(IPC.SCENES_MOVE_TO_ACT, sceneId, newActId, newSessionId),
   },
   statblocks: {
     getAllByWorld: (worldId) => ipcRenderer.invoke(IPC.STATBLOCKS_GET_ALL_BY_WORLD, worldId),

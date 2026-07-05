@@ -164,21 +164,36 @@ export default function CampaignScenesPage() {
                     >
                       <td className='px-4 py-3 font-medium'>{scene.name}</td>
                       <td className='px-4 py-3 text-slate-500'>
-                        {scene.session_name}
+                        {scene.session_name ?? '-'}
                       </td>
                       <td className='px-4 py-3 text-slate-500'>
-                        {scene.act_name}
+                        {scene.act_name ?? '-'}
                       </td>
                       <td className='px-4 py-3 text-slate-500'>
-                        {scene.arc_name}
+                        {scene.arc_name ?? '-'}
                       </td>
                       <td className='px-4 py-3'>
-                        <Link
-                          to={`/world/${worldId}/campaign/${parsedCampaignId}/arc/${scene.arc_id}/act/${scene.act_id}/session/${scene.session_id}/scenes`}
-                          className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
-                        >
-                          Open Session Scenes
-                        </Link>
+                        {scene.arc_id !== null && scene.act_id !== null
+                          ? (
+                            scene.session_id !== null
+                              ? (
+                                <Link
+                                  to={`/world/${worldId}/campaign/${parsedCampaignId}/arc/${scene.arc_id}/act/${scene.act_id}/session/${scene.session_id}/scenes`}
+                                  className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
+                                >
+                                  Open Session Scenes
+                                </Link>
+                              )
+                              : (
+                                <Link
+                                  to={`/world/${worldId}/campaign/${parsedCampaignId}/arc/${scene.arc_id}/act/${scene.act_id}/scenes`}
+                                  className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
+                                >
+                                  Open Act Scenes
+                                </Link>
+                              )
+                          )
+                          : null}
                       </td>
                     </tr>
                   ))}

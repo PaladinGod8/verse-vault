@@ -13,7 +13,7 @@ describe('SceneForm', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
 
-    render(<SceneForm sessionId={1} onSubmit={onSubmit} onCancel={vi.fn()} />);
+    render(<SceneForm actId={1} onSubmit={onSubmit} onCancel={vi.fn()} />);
 
     await user.type(screen.getByLabelText('Name'), '   ');
     await user.click(screen.getByRole('button', { name: 'Create scene' }));
@@ -33,16 +33,36 @@ describe('SceneForm', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
 
-    render(<SceneForm sessionId={4} onSubmit={onSubmit} onCancel={vi.fn()} />);
+    render(<SceneForm actId={4} onSubmit={onSubmit} onCancel={vi.fn()} />);
     await user.type(screen.getByLabelText('Name'), '  The Reveal  ');
     await user.type(screen.getByLabelText('Notes (optional)'), '  dramatic  ');
     await user.click(screen.getByRole('button', { name: 'Create scene' }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
-        session_id: 4,
+        act_id: 4,
+        session_id: null,
         name: 'The Reveal',
         notes: 'dramatic',
+        payload: '{}',
+      });
+    });
+  });
+
+  it('submits with the given sessionId when grouping into a session', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(<SceneForm actId={4} sessionId={7} onSubmit={onSubmit} onCancel={vi.fn()} />);
+    await user.type(screen.getByLabelText('Name'), 'Grouped Scene');
+    await user.click(screen.getByRole('button', { name: 'Create scene' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        act_id: 4,
+        session_id: 7,
+        name: 'Grouped Scene',
+        notes: null,
         payload: '{}',
       });
     });
@@ -52,7 +72,7 @@ describe('SceneForm', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockRejectedValueOnce(new Error('save failed'));
     const { rerender } = render(
-      <SceneForm sessionId={1} onSubmit={onSubmit} onCancel={vi.fn()} />,
+      <SceneForm actId={1} onSubmit={onSubmit} onCancel={vi.fn()} />,
     );
 
     await user.type(screen.getByLabelText('Name'), 'Act opener');
@@ -63,7 +83,7 @@ describe('SceneForm', () => {
     rerender(
       <SceneForm
         mode='edit'
-        sessionId={1}
+        actId={1}
         initialValues={{ name: 'Act opener', notes: null, payload: '{}' }}
         onSubmit={onSubmitEdit}
         onCancel={vi.fn()}
@@ -77,7 +97,7 @@ describe('SceneForm', () => {
 
     const onSubmitCreate = vi.fn().mockRejectedValueOnce({ reason: 'unknown' });
     rerender(
-      <SceneForm sessionId={1} onSubmit={onSubmitCreate} onCancel={vi.fn()} />,
+      <SceneForm actId={1} onSubmit={onSubmitCreate} onCancel={vi.fn()} />,
     );
     await user.clear(screen.getByLabelText('Name'));
     await user.type(screen.getByLabelText('Name'), 'Act closer');
@@ -91,7 +111,7 @@ describe('SceneForm', () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
 
-    render(<SceneForm sessionId={1} onSubmit={vi.fn()} onCancel={onCancel} />);
+    render(<SceneForm actId={1} onSubmit={vi.fn()} onCancel={onCancel} />);
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);

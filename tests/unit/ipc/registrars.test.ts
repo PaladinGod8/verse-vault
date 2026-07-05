@@ -232,12 +232,13 @@ describe('IPC registrar channel wiring', () => {
         register: () => registerSceneHandlers(dbMock),
         expected: [
           IPC.SCENES_GET_ALL_BY_CAMPAIGN,
+          IPC.SCENES_GET_ALL_BY_ACT,
           IPC.SCENES_GET_ALL_BY_SESSION,
           IPC.SCENES_GET_BY_ID,
           IPC.SCENES_ADD,
           IPC.SCENES_UPDATE,
           IPC.SCENES_DELETE,
-          IPC.SCENES_MOVE_TO_SESSION,
+          IPC.SCENES_MOVE_TO_ACT,
         ],
       },
       {

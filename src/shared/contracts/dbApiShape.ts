@@ -277,10 +277,12 @@ export interface DbApi extends DbApiRelationships {
   };
   scenes: {
     getAllByCampaign(campaignId: number): Promise<CampaignSceneListItem[]>;
+    getAllByAct(actId: number): Promise<Scene[]>;
     getAllBySession(sessionId: number): Promise<Scene[]>;
     getById(id: number): Promise<Scene | null>;
     add(data: {
-      session_id: number;
+      act_id?: number;
+      session_id?: number | null;
       name: string;
       notes?: string | null;
       payload?: string;
@@ -296,7 +298,7 @@ export interface DbApi extends DbApiRelationships {
       },
     ): Promise<Scene>;
     delete(id: number): Promise<{ id: number; }>;
-    moveTo(sceneId: number, newSessionId: number): Promise<Scene>;
+    moveTo(sceneId: number, newActId: number, newSessionId: number | null): Promise<Scene>;
   };
   statblocks: {
     getAllByWorld(worldId: number): Promise<StatBlock[]>;

@@ -49,6 +49,8 @@ function buildSession(overrides: Partial<Session> = {}): Session {
 function buildScene(overrides: Partial<Scene> = {}): Scene {
   return {
     id: 9,
+    campaign_id: 1,
+    act_id: 1,
     session_id: 1,
     name: 'Scene Alpha',
     notes: null,
@@ -65,6 +67,7 @@ function renderDialog(
 ) {
   const defaults = {
     scene: buildScene(),
+    currentActId: 1,
     currentSessionId: 1,
     campaignId: 1,
     onConfirm: vi.fn(),
@@ -82,44 +85,6 @@ describe('MoveSceneDialog', () => {
     sessionsGetAllByActMock.mockResolvedValue([]);
 
     window.db = {
-      verses: {
-        getAll: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      levels: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      abilities: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        addChild: vi.fn(),
-        removeChild: vi.fn(),
-        getChildren: vi.fn(),
-      },
-      worlds: {
-        getAll: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        markViewed: vi.fn(),
-      },
-      campaigns: {
-        getAllByWorld: vi.fn(),
-        getById: vi.fn(),
-        add: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
       arcs: {
         getAllByCampaign: arcsGetAllByCampaignMock,
         getById: vi.fn(),
@@ -146,6 +111,8 @@ describe('MoveSceneDialog', () => {
         moveTo: vi.fn(),
       },
       scenes: {
+        getAllByCampaign: vi.fn(),
+        getAllByAct: vi.fn(),
         getAllBySession: vi.fn(),
         getById: vi.fn(),
         add: vi.fn(),
@@ -162,134 +129,102 @@ describe('MoveSceneDialog', () => {
     expect(await screen.findByText(/The Bridge/)).toBeInTheDocument();
   });
 
-  it('loads and renders session options excluding the current session', async () => {
+  it('loads and renders act options grouped by arc', async () => {
     arcsGetAllByCampaignMock.mockResolvedValue([
       buildArc({ id: 5, name: 'Arc A' }),
     ]);
     actsGetAllByCampaignMock.mockResolvedValue([
       buildAct({ id: 10, arc_id: 5, name: 'Act A', sort_order: 0 }),
-    ]);
-    sessionsGetAllByActMock.mockResolvedValue([
-      buildSession({ id: 1, name: 'Current Session', sort_order: 0 }),
-      buildSession({ id: 2, name: 'Session Two', sort_order: 1 }),
+      buildAct({ id: 1, arc_id: 5, name: 'Act One', sort_order: 1 }),
     ]);
 
-    renderDialog({ currentSessionId: 1 });
+    renderDialog();
 
-    expect(
-      await screen.findByRole('radio', { name: /Session Two/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('radio', { name: /Current Session/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText('Arc A / Act A')).toBeInTheDocument();
+    expect(await screen.findByRole('radio', { name: /Act A/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Act One/i })).toBeInTheDocument();
+    expect(screen.getByText('Arc A')).toBeInTheDocument();
     expect(arcsGetAllByCampaignMock).toHaveBeenCalledWith(1);
     expect(actsGetAllByCampaignMock).toHaveBeenCalledWith(1);
-    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(10);
   });
 
-  it('skips acts without matching arcs and sorts session options by campaign structure', async () => {
-    arcsGetAllByCampaignMock.mockResolvedValue([
-      buildArc({ id: 1, name: 'Arc Z', sort_order: 2 }),
-      buildArc({ id: 2, name: 'Arc A', sort_order: 1 }),
+  it('defaults to the current act, with Move disabled until a real change is made', async () => {
+    actsGetAllByCampaignMock.mockResolvedValue([buildAct({ id: 1, arc_id: 5 })]);
+    arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
+    sessionsGetAllByActMock.mockResolvedValue([
+      buildSession({ id: 1, name: 'Session One' }),
     ]);
-    actsGetAllByCampaignMock.mockResolvedValue([
-      buildAct({ id: 10, arc_id: 1, name: 'Act Z', sort_order: 0 }),
-      buildAct({ id: 11, arc_id: 999, name: 'Act Missing Arc', sort_order: 0 }),
-      buildAct({ id: 12, arc_id: 2, name: 'Act A', sort_order: 1 }),
-    ]);
-    sessionsGetAllByActMock.mockImplementation(async (actId: number) => {
-      if (actId === 10) {
-        return [
-          buildSession({
-            id: 7,
-            name: 'Session Z-2',
-            act_id: 10,
-            sort_order: 1,
-          }),
-          buildSession({
-            id: 6,
-            name: 'Session Z-1',
-            act_id: 10,
-            sort_order: 0,
-          }),
-        ];
-      }
-      if (actId === 11) {
-        return [buildSession({ id: 8, name: 'Should Not Render', act_id: 11 })];
-      }
-      if (actId === 12) {
-        return [
-          buildSession({
-            id: 5,
-            name: 'Session A-1',
-            act_id: 12,
-            sort_order: 0,
-          }),
-        ];
-      }
-      return [];
-    });
 
-    renderDialog({ currentSessionId: 1 });
+    renderDialog({ currentActId: 1, currentSessionId: 1 });
 
-    expect(
-      await screen.findByRole('radio', { name: /Session A-1/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('radio', { name: /Should Not Render/i }),
-    ).not.toBeInTheDocument();
-
-    const optionOrder = screen.getAllByRole('radio').map((radio) => {
-      const label = radio.closest('label');
-      return label ? (label.textContent ?? '') : '';
-    });
-    expect(optionOrder).toEqual([
-      expect.stringContaining('Session A-1'),
-      expect.stringContaining('Session Z-1'),
-      expect.stringContaining('Session Z-2'),
-    ]);
+    await screen.findByRole('radio', { name: /Act One|Act A/i });
+    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(1);
+    expect(screen.getByRole('button', { name: 'Move' })).toBeDisabled();
   });
 
-  it('keeps Move disabled until a target session is selected', async () => {
+  it('loads sessions for the selected act and offers a stray option', async () => {
     const user = userEvent.setup();
     arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
     actsGetAllByCampaignMock.mockResolvedValue([
-      buildAct({ id: 10, arc_id: 5 }),
+      buildAct({ id: 1, arc_id: 5, name: 'Act One' }),
+      buildAct({ id: 2, arc_id: 5, name: 'Act Two' }),
     ]);
-    sessionsGetAllByActMock.mockResolvedValue([
-      buildSession({ id: 2, name: 'Session Two' }),
-    ]);
+    sessionsGetAllByActMock.mockImplementation(async (actId: number) => {
+      if (actId === 2) {
+        return [buildSession({ id: 9, act_id: 2, name: 'Session Nine' })];
+      }
+      return [buildSession({ id: 1, act_id: 1, name: 'Session One' })];
+    });
 
-    renderDialog({ currentSessionId: 1 });
+    renderDialog({ currentActId: 1, currentSessionId: 1 });
 
-    const option = await screen.findByRole('radio', { name: /Session Two/i });
-    const moveButton = screen.getByRole('button', { name: 'Move' });
-    expect(moveButton).toBeDisabled();
+    await user.click(await screen.findByRole('radio', { name: 'Act Two' }));
 
-    await user.click(option);
-    expect(moveButton).toBeEnabled();
+    expect(await screen.findByRole('radio', { name: /Session Nine/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /No session \(stray\)/i })).toBeInTheDocument();
+    expect(sessionsGetAllByActMock).toHaveBeenCalledWith(2);
   });
 
-  it('calls onConfirm with selected session id', async () => {
+  it('calls onConfirm with the selected act id and session id', async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
     actsGetAllByCampaignMock.mockResolvedValue([
-      buildAct({ id: 10, arc_id: 5 }),
+      buildAct({ id: 1, arc_id: 5, name: 'Act One' }),
+      buildAct({ id: 2, arc_id: 5, name: 'Act Two' }),
     ]);
-    sessionsGetAllByActMock.mockResolvedValue([
-      buildSession({ id: 2, name: 'Session Two' }),
-    ]);
+    sessionsGetAllByActMock.mockImplementation(async (actId: number) => {
+      if (actId === 2) {
+        return [buildSession({ id: 9, act_id: 2, name: 'Session Nine' })];
+      }
+      return [];
+    });
 
-    renderDialog({ currentSessionId: 1, onConfirm });
+    renderDialog({ currentActId: 1, currentSessionId: null, onConfirm });
 
-    await user.click(
-      await screen.findByRole('radio', { name: /Session Two/i }),
-    );
+    await user.click(await screen.findByRole('radio', { name: 'Act Two' }));
+    await user.click(await screen.findByRole('radio', { name: /Session Nine/i }));
     await user.click(screen.getByRole('button', { name: 'Move' }));
 
-    expect(onConfirm).toHaveBeenCalledWith(2);
+    expect(onConfirm).toHaveBeenCalledWith(2, 9);
+  });
+
+  it('calls onConfirm with a null session id when moving to stray', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      buildAct({ id: 1, arc_id: 5, name: 'Act One' }),
+      buildAct({ id: 2, arc_id: 5, name: 'Act Two' }),
+    ]);
+    sessionsGetAllByActMock.mockResolvedValue([]);
+
+    renderDialog({ currentActId: 1, currentSessionId: 1, onConfirm });
+
+    await user.click(await screen.findByRole('radio', { name: 'Act Two' }));
+    await user.click(await screen.findByRole('radio', { name: /No session \(stray\)/i }));
+    await user.click(screen.getByRole('button', { name: 'Move' }));
+
+    expect(onConfirm).toHaveBeenCalledWith(2, null);
   });
 
   it('calls onCancel when Cancel is clicked', async () => {
@@ -297,36 +232,45 @@ describe('MoveSceneDialog', () => {
     const onCancel = vi.fn();
     renderDialog({ onCancel });
 
-    await screen.findByText(/No other Sessions available/i);
+    await screen.findByText(/No acts available/i);
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('shows empty state when there are no eligible target sessions', async () => {
-    arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
-    actsGetAllByCampaignMock.mockResolvedValue([
-      buildAct({ id: 10, arc_id: 5 }),
-    ]);
-    sessionsGetAllByActMock.mockResolvedValue([
-      buildSession({ id: 1, name: 'Only Session' }),
-    ]);
+  it('shows empty state when there are no acts', async () => {
+    renderDialog();
 
-    renderDialog({ currentSessionId: 1 });
-
-    expect(
-      await screen.findByText(/No other Sessions available in this Campaign/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/No acts available/i)).toBeInTheDocument();
   });
 
-  it('shows error when target sessions fail to load', async () => {
+  it('shows error when acts fail to load', async () => {
     arcsGetAllByCampaignMock.mockRejectedValue(new Error('network'));
     actsGetAllByCampaignMock.mockRejectedValue(new Error('network'));
 
     renderDialog();
 
-    expect(
-      await screen.findByText('Failed to load target sessions.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Failed to load acts.')).toBeInTheDocument();
+  });
+
+  it('shows error when sessions for the selected act fail to load', async () => {
+    const user = userEvent.setup();
+    arcsGetAllByCampaignMock.mockResolvedValue([buildArc({ id: 5 })]);
+    actsGetAllByCampaignMock.mockResolvedValue([
+      buildAct({ id: 1, arc_id: 5, name: 'Act One' }),
+      buildAct({ id: 2, arc_id: 5, name: 'Act Two' }),
+    ]);
+    sessionsGetAllByActMock.mockImplementation(async (actId: number) => {
+      if (actId === 2) {
+        throw new Error('network');
+      }
+      return [];
+    });
+
+    renderDialog({ currentActId: 1, currentSessionId: null });
+
+    await user.click(await screen.findByRole('radio', { name: 'Act Two' }));
+
+    expect(await screen.findByText('Failed to load sessions.')).toBeInTheDocument();
   });
 });

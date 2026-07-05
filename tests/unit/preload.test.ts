@@ -104,12 +104,13 @@ describe('preload', () => {
     await api.sessions.delete(41);
     await api.sessions.moveTo(41, 21);
     await api.scenes.getAllByCampaign(1);
+    await api.scenes.getAllByAct(20);
     await api.scenes.getAllBySession(40);
     await api.scenes.getById(51);
     await api.scenes.add({ session_id: 40, name: 'Scene' });
     await api.scenes.update(51, { payload: '{}' });
     await api.scenes.delete(51);
-    await api.scenes.moveTo(51, 42);
+    await api.scenes.moveTo(51, 20, 42);
     await api.tokens.getAllByCampaign(1);
     await api.tokens.getById(71);
     await api.tokens.add({
@@ -264,40 +265,46 @@ describe('preload', () => {
     );
     expect(invokeMock).toHaveBeenNthCalledWith(
       48,
+      IPC.SCENES_GET_ALL_BY_ACT,
+      20,
+    );
+    expect(invokeMock).toHaveBeenNthCalledWith(
+      49,
       IPC.SCENES_GET_ALL_BY_SESSION,
       40,
     );
-    expect(invokeMock).toHaveBeenNthCalledWith(49, IPC.SCENES_GET_BY_ID, 51);
-    expect(invokeMock).toHaveBeenNthCalledWith(50, IPC.SCENES_ADD, {
+    expect(invokeMock).toHaveBeenNthCalledWith(50, IPC.SCENES_GET_BY_ID, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(51, IPC.SCENES_ADD, {
       session_id: 40,
       name: 'Scene',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(51, IPC.SCENES_UPDATE, 51, {
+    expect(invokeMock).toHaveBeenNthCalledWith(52, IPC.SCENES_UPDATE, 51, {
       payload: '{}',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(52, IPC.SCENES_DELETE, 51);
+    expect(invokeMock).toHaveBeenNthCalledWith(53, IPC.SCENES_DELETE, 51);
     expect(invokeMock).toHaveBeenNthCalledWith(
-      53,
-      IPC.SCENES_MOVE_TO_SESSION,
+      54,
+      IPC.SCENES_MOVE_TO_ACT,
       51,
+      20,
       42,
     );
     expect(invokeMock).toHaveBeenNthCalledWith(
-      54,
+      55,
       IPC.TOKENS_GET_ALL_BY_CAMPAIGN,
       1,
     );
-    expect(invokeMock).toHaveBeenNthCalledWith(55, IPC.TOKENS_GET_BY_ID, 71);
-    expect(invokeMock).toHaveBeenNthCalledWith(56, IPC.TOKENS_ADD, {
+    expect(invokeMock).toHaveBeenNthCalledWith(56, IPC.TOKENS_GET_BY_ID, 71);
+    expect(invokeMock).toHaveBeenNthCalledWith(57, IPC.TOKENS_ADD, {
       world_id: 1,
       campaign_id: 1,
       name: 'Token',
       image_src: 'token.png',
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(57, IPC.TOKENS_UPDATE, 71, {
+    expect(invokeMock).toHaveBeenNthCalledWith(58, IPC.TOKENS_UPDATE, 71, {
       is_visible: 0,
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(58, IPC.TOKENS_DELETE, 71);
+    expect(invokeMock).toHaveBeenNthCalledWith(59, IPC.TOKENS_DELETE, 71);
   });
 
   it('forwards tokens.importImage to TOKENS_IMPORT_IMAGE', async () => {

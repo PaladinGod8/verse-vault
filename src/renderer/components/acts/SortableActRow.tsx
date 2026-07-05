@@ -75,6 +75,12 @@ export default function SortableActRow({
           >
             Sessions
           </Link>
+          <Link
+            to={`/world/${worldId}/campaign/${campaignId}/arc/${arcId}/act/${act.id}/scenes`}
+            className='text-sm font-medium text-slate-600 transition hover:text-slate-900'
+          >
+            Scenes
+          </Link>
           <button
             type='button'
             onClick={() => onEdit(act)}

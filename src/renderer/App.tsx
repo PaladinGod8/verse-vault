@@ -9,6 +9,7 @@ import { ToastProvider } from './components/ui/ToastProvider';
 import { AppSettingsProvider } from './hooks/useAppSettings';
 import { IpaToolProvider } from './hooks/useIpaTool';
 import AbilitiesPage from './pages/AbilitiesPage';
+import ActScenesPage from './pages/ActScenesPage';
 import ActsPage from './pages/ActsPage';
 import ArcsPage from './pages/ArcsPage';
 import BackgroundDetailPage from './pages/BackgroundDetailPage';
@@ -87,6 +88,10 @@ function AppRoutes() {
       <Route
         path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions'
         element={<SessionsPage />}
+      />
+      <Route
+        path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/scenes'
+        element={<ActScenesPage />}
       />
       <Route
         path='/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes'

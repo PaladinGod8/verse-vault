@@ -64,7 +64,7 @@ test('@critical @ux campaign and session scenes routes support listing, edit, mo
     const updatedRow = page.locator('tr').filter({ hasText: 'The Opening Prime' }).first();
     await updatedRow.getByRole('button', { name: 'Move' }).click();
 
-    const moveDialog = page.getByRole('dialog', { name: /Move .* to Session/i });
+    const moveDialog = page.getByRole('dialog', { name: /Move .*The Opening Prime.*/i });
     await expect(moveDialog).toBeVisible();
     await moveDialog.getByRole('radio', { name: secondSessionName }).click();
     await moveDialog.getByRole('button', { name: 'Move' }).click();

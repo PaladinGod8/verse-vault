@@ -3,11 +3,9 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import MoveSceneDialog from '../components/scenes/MoveSceneDialog';
-import SceneForm from '../components/scenes/SceneForm';
+import { CreateSceneModal, EditSceneModal, MoveSceneModal } from '../components/scenes/SceneModals';
 import ScenesListSection from '../components/scenes/ScenesListSection';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import ModalShell from '../components/ui/ModalShell';
 import { useToast } from '../components/ui/ToastProvider';
 import WorldSidebar from '../components/worlds/WorldSidebar';
 import { sortScenesByOrder, useSessionScenesData } from '../hooks/useSessionScenesData';
@@ -148,7 +146,7 @@ export default function ScenesPage() {
     }
   };
 
-  const handleMoveConfirm = async (newSessionId: number) => {
+  const handleMoveConfirm = async (newActId: number, newSessionId: number | null) => {
     if (!movingScene) {
       return;
     }
@@ -156,13 +154,13 @@ export default function ScenesPage() {
     const scene = movingScene;
 
     try {
-      await window.db.scenes.moveTo(scene.id, newSessionId);
+      await window.db.scenes.moveTo(scene.id, newActId, newSessionId);
       const movedSceneId = scene.id;
       setMovingScene(null);
       setScenes((prev) => prev.filter((scene) => scene.id !== movedSceneId));
       toast.success(
         'Scene moved.',
-        `"${scene.name}" was moved to another session.`,
+        `"${scene.name}" was moved.`,
       );
     } catch (moveError) {
       toast.error(
@@ -317,72 +315,30 @@ export default function ScenesPage() {
         />
       </main>
 
-      {isCreateOpen && parsedSessionId !== null
-        ? (
-          <ModalShell
-            isOpen={isCreateOpen}
-            onClose={() => setIsCreateOpen(false)}
-            labelledBy='create-scene-title'
-            boxClassName='max-w-xl'
-          >
-            <h2
-              id='create-scene-title'
-              className='mb-4 text-lg font-semibold text-slate-900'
-            >
-              New Scene
-            </h2>
-            <SceneForm
-              mode='create'
-              sessionId={parsedSessionId}
-              onSubmit={handleCreateScene}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </ModalShell>
-        )
-        : null}
+      <CreateSceneModal
+        isOpen={isCreateOpen}
+        actId={parsedActId}
+        sessionId={parsedSessionId}
+        onSubmit={handleCreateScene}
+        onCancel={() => setIsCreateOpen(false)}
+      />
 
-      {movingScene !== null
-          && parsedCampaignId !== null
-          && parsedSessionId !== null
-        ? (
-          <MoveSceneDialog
-            scene={movingScene}
-            currentSessionId={parsedSessionId}
-            campaignId={parsedCampaignId}
-            onConfirm={(newSessionId) => {
-              void handleMoveConfirm(newSessionId);
-            }}
-            onCancel={() => {
-              setMovingScene(null);
-            }}
-          />
-        )
-        : null}
+      <MoveSceneModal
+        scene={movingScene}
+        campaignId={parsedCampaignId}
+        currentActId={parsedActId}
+        onConfirm={(newActId, newSessionId) => {
+          void handleMoveConfirm(newActId, newSessionId);
+        }}
+        onCancel={() => setMovingScene(null)}
+      />
 
-      {editingScene !== null
-        ? (
-          <ModalShell
-            isOpen={editingScene !== null}
-            onClose={() => setEditingScene(null)}
-            labelledBy='edit-scene-title'
-            boxClassName='max-w-xl'
-          >
-            <h2
-              id='edit-scene-title'
-              className='mb-4 text-lg font-semibold text-slate-900'
-            >
-              Edit Scene
-            </h2>
-            <SceneForm
-              mode='edit'
-              sessionId={editingScene.session_id}
-              initialValues={editingScene}
-              onSubmit={handleUpdateScene}
-              onCancel={() => setEditingScene(null)}
-            />
-          </ModalShell>
-        )
-        : null}
+      <EditSceneModal
+        scene={editingScene}
+        actId={parsedActId}
+        onSubmit={handleUpdateScene}
+        onCancel={() => setEditingScene(null)}
+      />
 
       <ConfirmDialog
         isOpen={pendingDeleteScene !== null}

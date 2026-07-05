@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 export function runLegacyShapeMigrations(db: Database.Database): void {
   runArcActMigration(db);
   runSessionPlannedAtMigration(db);
+  runSceneAnchorMigration(db);
   runTokenWorldIdMigration(db);
   runTokenCampaignNullableMigration(db);
   runTokenGridTypeMigration(db);
@@ -82,6 +83,80 @@ function runArcActMigration(db: Database.Database): void {
     db.exec(`
       DROP TABLE sessions;
       ALTER TABLE sessions_new RENAME TO sessions;
+    `);
+  })();
+}
+
+function runSceneAnchorMigration(db: Database.Database): void {
+  const cols = db.prepare('PRAGMA table_info(scenes)').all() as Array<{
+    name: string;
+  }>;
+  if (cols.some((c) => c.name === 'campaign_id')) return;
+
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE scenes_new (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        act_id      INTEGER REFERENCES acts(id) ON DELETE CASCADE,
+        session_id  INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
+        name        TEXT    NOT NULL,
+        notes       TEXT,
+        payload     TEXT    NOT NULL DEFAULT '{}',
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    const sessionAnchors = db
+      .prepare(
+        `SELECT sessions.id AS session_id, sessions.act_id AS act_id, arcs.campaign_id AS campaign_id
+         FROM sessions
+         JOIN acts ON acts.id = sessions.act_id
+         JOIN arcs ON arcs.id = acts.arc_id`,
+      )
+      .all() as Array<{ session_id: number; act_id: number; campaign_id: number; }>;
+    const anchorBySessionId = new Map(
+      sessionAnchors.map((row) => [row.session_id, row]),
+    );
+
+    const scenes = db.prepare('SELECT * FROM scenes').all() as Array<{
+      id: number;
+      session_id: number;
+      name: string;
+      notes: string | null;
+      payload: string;
+      sort_order: number;
+      created_at: string;
+      updated_at: string;
+    }>;
+
+    const insertNewScene = db.prepare(
+      'INSERT INTO scenes_new (id, campaign_id, act_id, session_id, name, notes, payload, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+
+    for (const scene of scenes) {
+      const anchor = anchorBySessionId.get(scene.session_id);
+      if (!anchor) continue;
+
+      insertNewScene.run(
+        scene.id,
+        anchor.campaign_id,
+        anchor.act_id,
+        scene.session_id,
+        scene.name,
+        scene.notes ?? null,
+        scene.payload,
+        scene.sort_order,
+        scene.created_at,
+        scene.updated_at,
+      );
+    }
+
+    db.exec(`
+      DROP TABLE scenes;
+      ALTER TABLE scenes_new RENAME TO scenes;
     `);
   })();
 }

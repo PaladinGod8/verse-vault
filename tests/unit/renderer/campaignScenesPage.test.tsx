@@ -24,6 +24,8 @@ function buildCampaignScene(
 ): CampaignSceneListItem {
   return {
     id: 11,
+    campaign_id: 1,
+    act_id: 21,
     session_id: 31,
     name: 'Scene Alpha',
     notes: null,
@@ -32,7 +34,6 @@ function buildCampaignScene(
     created_at: '2026-02-26 00:00:00',
     updated_at: '2026-02-26 00:00:00',
     session_name: 'Session One',
-    act_id: 21,
     act_name: 'Act One',
     arc_id: 12,
     arc_name: 'Arc One',
@@ -207,6 +208,28 @@ describe('CampaignScenesPage', () => {
     expect(openLinks[0]).toHaveAttribute(
       'href',
       '/world/1/campaign/1/arc/12/act/21/session/31/scenes',
+    );
+  });
+
+  it('shows a stray scene with dashes and an Open Act Scenes link', async () => {
+    campaignsGetByIdMock.mockResolvedValue(buildCampaign());
+    scenesGetAllByCampaignMock.mockResolvedValue([
+      buildCampaignScene({
+        id: 40,
+        name: 'Stray Scene',
+        session_id: null,
+        session_name: null,
+      }),
+    ]);
+
+    renderCampaignScenesPage('/world/1/campaign/1/scenes');
+
+    await screen.findByText('Stray Scene');
+    expect(screen.getAllByText('-')).toHaveLength(1);
+    const link = screen.getByRole('link', { name: 'Open Act Scenes' });
+    expect(link).toHaveAttribute(
+      'href',
+      '/world/1/campaign/1/arc/12/act/21/scenes',
     );
   });
 });

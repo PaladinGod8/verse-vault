@@ -56,6 +56,7 @@ describe('playwright project worker grouping', () => {
       'factionRelationships.test.ts',
       'levels.test.ts',
       'scenes.test.ts',
+      'act-scenes.test.ts',
       'sessions.test.ts',
       'statblock-statistics.test.ts',
       'statblocks-crud.test.ts',

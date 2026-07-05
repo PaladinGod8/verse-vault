@@ -247,14 +247,16 @@ function createCampaignScopedTables(db: Database.Database): void {
     );
 
     CREATE TABLE IF NOT EXISTS scenes (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-      name       TEXT    NOT NULL,
-      notes      TEXT,
-      payload    TEXT    NOT NULL DEFAULT '{}',
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      act_id      INTEGER REFERENCES acts(id) ON DELETE CASCADE,
+      session_id  INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
+      name        TEXT    NOT NULL,
+      notes       TEXT,
+      payload     TEXT    NOT NULL DEFAULT '{}',
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
     );
   `);
 }

@@ -104,6 +104,7 @@ export function createMockDb(): DbApi {
     },
     scenes: {
       getAllByCampaign: vi.fn().mockResolvedValue([]),
+      getAllByAct: vi.fn().mockResolvedValue([]),
       getAllBySession: vi.fn().mockResolvedValue([]),
       getById: vi.fn().mockResolvedValue(undefined),
       add: vi.fn().mockResolvedValue({ id: 1 } as Scene),

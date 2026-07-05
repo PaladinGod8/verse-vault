@@ -222,6 +222,11 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
       'DbApi.scenes.getAllByCampaign',
     ],
     [
+      'SCENES_GET_ALL_BY_ACT',
+      'window.db.scenes.getAllByAct',
+      'DbApi.scenes.getAllByAct',
+    ],
+    [
       'SCENES_GET_ALL_BY_SESSION',
       'window.db.scenes.getAllBySession',
       'DbApi.scenes.getAllBySession',
@@ -230,7 +235,7 @@ export const IPC_CATALOG: IpcCatalogEntry[] = [
     ['SCENES_ADD', 'window.db.scenes.add', 'DbApi.scenes.add'],
     ['SCENES_UPDATE', 'window.db.scenes.update', 'DbApi.scenes.update'],
     ['SCENES_DELETE', 'window.db.scenes.delete', 'DbApi.scenes.delete'],
-    ['SCENES_MOVE_TO_SESSION', 'window.db.scenes.moveTo', 'DbApi.scenes.moveTo'],
+    ['SCENES_MOVE_TO_ACT', 'window.db.scenes.moveTo', 'DbApi.scenes.moveTo'],
   ]),
   ...entries('statblocks', HANDLERS.statblocks, [
     [

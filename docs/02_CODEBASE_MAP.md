@@ -28,7 +28,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerBattleMapHandlers.ts` | BattleMap IPC registrar   | BattleMap CRUD channel handlers and runtime config validation         | Main-process adapter for battlemap IPC requests                           | SQLite statements and shared JSON validation helpers                   |
 | `src/main/ipc/registerCampaignHandlers.ts`  | Campaign IPC registrar    | Campaign CRUD channel handlers                                        | Main-process adapter for campaign IPC requests                            | SQLite statements and partial-update helpers                           |
 | `src/main/ipc/registerLevelHandlers.ts`     | Level IPC registrar       | Level CRUD channel handlers                                           | Main-process adapter for level IPC requests                               | SQLite statements and trimmed-field validation                         |
-| `src/main/ipc/registerSceneHandlers.ts`     | Scene IPC registrar       | Scene CRUD, campaign index, and move channel handlers                 | Main-process adapter for scene IPC requests                               | SQLite statements, payload validation, and resequencing helpers        |
+| `src/main/ipc/registerSceneHandlers.ts`     | Scene IPC registrar       | Scene CRUD, campaign/act index, and move channel handlers             | Main-process adapter for scene IPC requests                               | SQLite statements, payload validation, and resequencing helpers        |
 | `src/main/ipc/registerSessionHandlers.ts`   | Session IPC registrar     | Session CRUD, campaign index, and move channel handlers               | Main-process adapter for session IPC requests                             | SQLite statements and resequencing helpers                             |
 | `src/main/ipc/registerStatBlockHandlers.ts` | StatBlock IPC registrar   | StatBlock CRUD, linkage, and assignment channel handlers              | Main-process adapter for statblock IPC requests                           | SQLite statements and statblock validation helpers                     |
 | `src/main/ipc/registerTokenHandlers.ts`     | Token IPC registrar       | Token CRUD, moves, and image import channel handlers                  | Main-process adapter for token IPC requests                               | SQLite statements, token db helpers, and filesystem persistence        |
@@ -71,6 +71,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/campaign/:campaignId/notes/:campaignNoteId`                           | `CampaignNoteDetailPage`    | `src/renderer/pages/CampaignNoteDetailPage.tsx`    |
 | `/world/:id/campaign/:campaignId/arc/:arcId/acts`                                 | `ActsPage`                  | `src/renderer/pages/ActsPage.tsx`                  |
 | `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/sessions`                  | `SessionsPage`              | `src/renderer/pages/SessionsPage.tsx`              |
+| `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/scenes`                    | `ActScenesPage`             | `src/renderer/pages/ActScenesPage.tsx`             |
 | `/world/:id/campaign/:campaignId/arc/:arcId/act/:actId/session/:sessionId/scenes` | `ScenesPage`                | `src/renderer/pages/ScenesPage.tsx`                |
 
 <!-- END GENERATED ROUTES -->
@@ -94,7 +95,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `src/main/ipc/registerArcHandlers.ts`                   | arcs                   | 5        |
 | `src/main/ipc/registerActHandlers.ts`                   | acts                   | 7        |
 | `src/main/ipc/registerSessionHandlers.ts`               | sessions               | 7        |
-| `src/main/ipc/registerSceneHandlers.ts`                 | scenes                 | 7        |
+| `src/main/ipc/registerSceneHandlers.ts`                 | scenes                 | 8        |
 | `src/main/ipc/registerStatBlockHandlers.ts`             | statblocks             | 13       |
 | `src/main/ipc/registerCharacterHandlers.ts`             | characters             | 8        |
 | `src/main/ipc/registerBackgroundHandlers.ts`            | backgrounds            | 7        |

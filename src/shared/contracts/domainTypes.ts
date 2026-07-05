@@ -274,7 +274,9 @@ export interface Session {
 
 export interface Scene {
   id: number;
-  session_id: number;
+  campaign_id: number;
+  act_id: number | null;
+  session_id: number | null;
   name: string;
   notes: string | null;
   payload: string;
@@ -284,11 +286,10 @@ export interface Scene {
 }
 
 export interface CampaignSceneListItem extends Scene {
-  session_name: string;
-  act_id: number;
-  act_name: string;
-  arc_id: number;
-  arc_name: string;
+  session_name: string | null;
+  act_name: string | null;
+  arc_id: number | null;
+  arc_name: string | null;
 }
 
 export interface StatBlockTokenLink {
