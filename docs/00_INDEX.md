@@ -47,6 +47,8 @@ not generated.
 | `alphabetical-list-ordering.md`       | Shared alphabetical ordering for card grids and name tables      |
 | `world-maps.md`                       | Generated world map (Azgaar FMG) snapshot per world              |
 | `worlds.md`                           | World records with thumbnail image uploads                       |
+| `world-import-export.md`              | Single-world zip export/import with FK-safe re-keying            |
+| `image-cropping.md`                   | Shared non-destructive crop editing for world/wiki card images   |
 | `statistics.md`                       | World/statblock-level TTRPG statistics framework                 |
 | `tokens.md`                           | Composable visual battlemap tokens, world/campaign scoped        |
 | `ipc-domain-split.md`                 | IPC handlers split into per-domain registrar modules             |
