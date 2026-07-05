@@ -145,4 +145,19 @@ describe('runOfflineMediaImageMigration', () => {
     expect(() => runOfflineMediaImageMigration(dbMock)).not.toThrow();
     expect(runMock).not.toHaveBeenCalled();
   });
+
+  it('rethrows errors that are not caused by a missing table', () => {
+    const prepareMock = vi.fn((sql: string) => {
+      if (sql.includes('FROM worlds')) {
+        throw new Error('disk I/O error');
+      }
+      throw new Error(`Unexpected SQL: ${sql}`);
+    });
+
+    const dbMock = {
+      prepare: prepareMock,
+    } as unknown as Database.Database;
+
+    expect(() => runOfflineMediaImageMigration(dbMock)).toThrow('disk I/O error');
+  });
 });

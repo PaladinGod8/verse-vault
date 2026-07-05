@@ -57,4 +57,15 @@ describe('fsMedia world-transfer adapter', () => {
     expect(readFileSync(path.join(dir, 'world-images', mediaFileName)).toString()).toBe('media');
     expect(readFileSync(path.join(dir, 'world-maps', snapshotKey)).toString()).toBe('snapshot');
   });
+
+  it('falls back to a .bin extension when the original file name is unsafe or extensionless', () => {
+    const dir = makeTempDir();
+    const writer = createFsWorldMediaWriter(dir);
+
+    const mediaUrl = writer.writeMedia('world-images', '../sneaky/name', Buffer.from('media'));
+
+    expect(mediaUrl).toMatch(/\.bin$/);
+    const mediaFileName = decodeURIComponent(new URL(mediaUrl).pathname.replace(/^\/+/, ''));
+    expect(readFileSync(path.join(dir, 'world-images', mediaFileName)).toString()).toBe('media');
+  });
 });

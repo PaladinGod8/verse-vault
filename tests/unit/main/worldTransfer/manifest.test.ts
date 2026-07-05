@@ -62,6 +62,12 @@ describe('validateManifest', () => {
     expect(() => validateManifest('{ not json')).toThrow(WorldImportError);
   });
 
+  it('refuses a manifest that is not an object', () => {
+    expect(() => validateManifest('42')).toThrow(WorldImportError);
+    expect(() => validateManifest('42')).toThrow(/not a valid object/i);
+    expect(() => validateManifest('"just a string"')).toThrow(WorldImportError);
+  });
+
   it('refuses a manifest with a missing or non-numeric formatVersion', () => {
     expect(() => validateManifest(JSON.stringify({ worldName: 'x' }))).toThrow(
       WorldImportError,

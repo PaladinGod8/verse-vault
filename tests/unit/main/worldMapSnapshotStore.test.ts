@@ -68,4 +68,9 @@ describe('createWorldMapSnapshotStore', () => {
       'Invalid world map storage key',
     );
   });
+
+  it('rejects a storage key that resolves outside the base directory even without a separator', () => {
+    const store = createWorldMapSnapshotStore({ baseDir });
+    expect(() => store.resolveSnapshotPath('..')).toThrow('Invalid world map storage key');
+  });
 });

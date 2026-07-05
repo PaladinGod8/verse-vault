@@ -26,6 +26,11 @@ describe('parseMediaFileName', () => {
     expect(parseMediaFileName('', 'token-images')).toBeNull();
     expect(parseMediaFileName('https://example.com/x.png', 'token-images')).toBeNull();
   });
+
+  it('returns null when the decoded path has nested segments', () => {
+    expect(parseMediaFileName('vv-media://token-images/sub/nested.png', 'token-images'))
+      .toBeNull();
+  });
 });
 
 describe('zip path helpers', () => {

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { closeApp, launchApp } from './helpers/launchApp';
+import { cleanupElectronApp, launchElectronApp } from './helpers';
 
 const ONE_PIXEL_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9s6mR3sAAAAASUVORK5CYII=',
@@ -7,10 +7,15 @@ const ONE_PIXEL_PNG = Buffer.from(
 );
 
 test('@critical @offline airplane-mode smoke keeps core local flows working', async () => {
-  const { app, userDataDir } = await launchApp();
+  // Uses launchElectronApp (not the raw launchApp helper) because it resizes,
+  // centers, and focuses the window. Without a real composited frame, the
+  // image cropper's shadow-DOM <img> (used by the "Create world" thumbnail
+  // crop step below) never fires its load event, so the crop dialog never
+  // closes and every click after it hangs until the test times out.
+  const context = await launchElectronApp();
+  const { page } = context;
 
   try {
-    const page = await app.firstWindow();
     const networkRequests: string[] = [];
 
     await page.context().route('http://**/*', async (route) => {
@@ -23,8 +28,6 @@ test('@critical @offline airplane-mode smoke keeps core local flows working', as
     });
     await page.context().setOffline(true);
 
-    await page.bringToFront();
-    await page.waitForLoadState('domcontentloaded');
     await expect(
       page.getByRole('heading', { name: 'Worlds', exact: true, level: 1 }),
     ).toBeVisible();
@@ -62,6 +65,6 @@ test('@critical @offline airplane-mode smoke keeps core local flows working', as
 
     expect(networkRequests).toEqual([]);
   } finally {
-    await closeApp(app, userDataDir);
+    await cleanupElectronApp(context);
   }
 });
