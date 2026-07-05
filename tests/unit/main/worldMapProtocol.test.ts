@@ -53,13 +53,38 @@ describe('createWorldMapProtocolHandler', () => {
     expect(body).toContain('Regenerate');
     expect(body).toContain('Export Copy');
     expect(body).toContain('Close');
-    expect(body).toContain('window.worldMapHost');
     expect(body).toContain('Verse Vault <strong>Save</strong> is canonical');
+    expect(body).toContain('data-vendor-version="v1.99"');
+    expect(body).toContain('<link rel="stylesheet" href="style.css" />');
+    expect(body).toContain('<script src="script.js"></script>');
+    expect(body).not.toContain('unsafe-inline');
+  });
+
+  it('serves the host script as an external, non-inline file', async () => {
+    const protocol = createWorldMapProtocolHandler({ manifestPath, snapshotDir });
+
+    const response = await protocol.handle(`${WORLD_MAP_PROTOCOL}://app/script.js`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/javascript');
+    const body = await response.text();
+    expect(body).toContain('window.worldMapHost');
     expect(body).toContain('#loadButton');
     expect(body).toContain('autosaveIntervalInput');
     expect(body).toContain('onloadBehavior');
     expect(body).toContain('win.onbeforeunload = null;');
     expect(body).toContain('Use Save or Export Copy from host toolbar');
+    expect(body).toContain('document.body.dataset.vendorVersion');
+  });
+
+  it('serves the host stylesheet as an external, non-inline file', async () => {
+    const protocol = createWorldMapProtocolHandler({ manifestPath, snapshotDir });
+
+    const response = await protocol.handle(`${WORLD_MAP_PROTOCOL}://app/style.css`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/css');
+    expect(await response.text()).toContain('.toolbar');
   });
 
   it('builds map file URLs only for basename storage keys', () => {

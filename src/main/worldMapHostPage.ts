@@ -1,6 +1,3 @@
-import { WORLD_MAP_HOST_PAGE_SCRIPT } from './worldMapHostPageScript';
-import { WORLD_MAP_HOST_PAGE_STYLE } from './worldMapHostPageStyle';
-
 /**
  * @role World-map editor host page builder
  * @owns Inline wrapper HTML that adds Verse Vault controls around the vendored FMG app
@@ -18,10 +15,6 @@ function escapeHtml(value: string): string {
 
 export function buildWorldMapHostPageHtml(vendorVersion: string): string {
   const safeVendorVersion = escapeHtml(vendorVersion);
-  const script = WORLD_MAP_HOST_PAGE_SCRIPT.replace(
-    '__VV_VENDOR_VERSION__',
-    JSON.stringify(vendorVersion),
-  );
 
   return `<!doctype html>
 <html lang="en">
@@ -29,12 +22,12 @@ export function buildWorldMapHostPageHtml(vendorVersion: string): string {
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self' 'unsafe-inline' data: blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' data: blob:"
+      content="default-src 'self' data: blob:; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'self' data: blob:; object-src 'none'; base-uri 'none'"
     />
     <title>World Map</title>
-    <style>${WORLD_MAP_HOST_PAGE_STYLE}</style>
+    <link rel="stylesheet" href="style.css" />
   </head>
-  <body>
+  <body data-vendor-version="${safeVendorVersion}">
     <header class="toolbar">
       <div class="identity">
         <p class="eyebrow">Verse Vault World Map</p>
@@ -60,7 +53,7 @@ export function buildWorldMapHostPageHtml(vendorVersion: string): string {
       Preparing Azgaar Fantasy Map Generator ${safeVendorVersion}...
     </footer>
 
-    <script>${script}</script>
+    <script src="script.js"></script>
   </body>
 </html>`;
 }

@@ -8,6 +8,8 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { buildWorldMapHostPageHtml } from './worldMapHostPage';
+import { WORLD_MAP_HOST_PAGE_SCRIPT } from './worldMapHostPageScript';
+import { WORLD_MAP_HOST_PAGE_STYLE } from './worldMapHostPageStyle';
 
 export const WORLD_MAP_PROTOCOL = 'vv-fmg';
 export const WORLD_MAP_PROTOCOL_HOST = 'app';
@@ -63,6 +65,20 @@ function okText(body: string): Response {
   });
 }
 
+function okScript(body: string): Response {
+  return new Response(body, {
+    status: 200,
+    headers: { 'content-type': 'text/javascript; charset=utf-8' },
+  });
+}
+
+function okStyle(body: string): Response {
+  return new Response(body, {
+    status: 200,
+    headers: { 'content-type': 'text/css; charset=utf-8' },
+  });
+}
+
 function errorResponse(message: string, status: number): Response {
   return new Response(message, { status });
 }
@@ -95,6 +111,48 @@ function resolveVendorAsset(vendorDir: string, requestPath: string): string {
 
 function loadManifest(manifestPath: string): WorldMapVendorManifest {
   return JSON.parse(readFileSync(manifestPath, 'utf8')) as WorldMapVendorManifest;
+}
+
+async function routeHostRequest(
+  requestPath: string,
+  context: { manifest: WorldMapVendorManifest; vendorDir: string; snapshotDir: string; },
+): Promise<Response> {
+  const { manifest, vendorDir, snapshotDir } = context;
+
+  if (requestPath === '' || requestPath === 'index.html') {
+    return okText(buildWorldMapHostPageHtml(manifest.pinnedVersion));
+  }
+  if (requestPath === 'script.js') {
+    return okScript(WORLD_MAP_HOST_PAGE_SCRIPT);
+  }
+  if (requestPath === 'style.css') {
+    return okStyle(WORLD_MAP_HOST_PAGE_STYLE);
+  }
+
+  if (requestPath.startsWith('vendor/')) {
+    try {
+      return await fileResponse(resolveVendorAsset(vendorDir, requestPath));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'FMG asset not found';
+      return errorResponse(message, message.includes('Invalid') ? 400 : 404);
+    }
+  }
+
+  if (requestPath.startsWith('maps/')) {
+    try {
+      const storageKey = requireBasenameOnly(requestPath.replace(/^maps\//, ''));
+      const filePath = path.resolve(path.join(snapshotDir, storageKey));
+      if (path.dirname(filePath) !== snapshotDir) {
+        return errorResponse('Invalid world map storage key', 400);
+      }
+      return await fileResponse(filePath);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'World map snapshot not found';
+      return errorResponse(message, message.includes('Invalid') ? 400 : 404);
+    }
+  }
+
+  return errorResponse('World map resource not found', 404);
 }
 
 export function createWorldMapProtocolHandler(options: {
@@ -135,34 +193,7 @@ export function createWorldMapProtocolHandler(options: {
       }
 
       const requestPath = decodeURIComponent(url.pathname).replace(/^\/+/, '');
-      if (requestPath === '' || requestPath === 'index.html') {
-        return okText(buildWorldMapHostPageHtml(manifest.pinnedVersion));
-      }
-
-      if (requestPath.startsWith('vendor/')) {
-        try {
-          return await fileResponse(resolveVendorAsset(vendorDir, requestPath));
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'FMG asset not found';
-          return errorResponse(message, message.includes('Invalid') ? 400 : 404);
-        }
-      }
-
-      if (requestPath.startsWith('maps/')) {
-        try {
-          const storageKey = requireBasenameOnly(requestPath.replace(/^maps\//, ''));
-          const filePath = path.resolve(path.join(snapshotDir, storageKey));
-          if (path.dirname(filePath) !== snapshotDir) {
-            return errorResponse('Invalid world map storage key', 400);
-          }
-          return await fileResponse(filePath);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'World map snapshot not found';
-          return errorResponse(message, message.includes('Invalid') ? 400 : 404);
-        }
-      }
-
-      return errorResponse('World map resource not found', 404);
+      return routeHostRequest(requestPath, { manifest, vendorDir, snapshotDir });
     },
   };
 }

@@ -1,6 +1,6 @@
 export const WORLD_MAP_HOST_PAGE_SCRIPT = String.raw`
       (() => {
-        const vendorVersion = __VV_VENDOR_VERSION__;
+        const vendorVersion = document.body.dataset.vendorVersion || '';
         const host = window.worldMapHost;
         const frame = document.getElementById('fmg-frame');
         const title = document.getElementById('world-title');
