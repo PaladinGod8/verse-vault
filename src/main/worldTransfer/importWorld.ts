@@ -36,13 +36,73 @@ export interface WorldImportResult {
   worldName: string;
 }
 
+/** Per-entry uncompressed-size cap: generous for a single media file or snapshot. */
+const MAX_ENTRY_BYTES = 200 * 1024 * 1024;
+/** Total uncompressed-size cap across the whole bundle. */
+const MAX_TOTAL_BYTES = 1024 * 1024 * 1024;
+/**
+ * Above this ratio a "small" compressed entry is almost certainly a zip bomb
+ * rather than legitimate media/JSON, which rarely compress past ~20:1.
+ */
+const MAX_COMPRESSION_RATIO = 500;
+
+/**
+ * Rejects oversized or suspiciously-compressed entries *before* fflate inflates
+ * them, so a malicious bundle can't exhaust memory/CPU decompressing a handful
+ * of small files that balloon into gigabytes.
+ */
+function unzipWithSizeGuards(zipBytes: Uint8Array): Record<string, Uint8Array> {
+  let totalOriginalSize = 0;
+  return unzipSync(zipBytes, {
+    filter(file) {
+      if (file.originalSize > MAX_ENTRY_BYTES) {
+        throw new WorldImportError(
+          `The world bundle contains an oversized file (${file.name}).`,
+        );
+      }
+      if (file.size > 0 && file.originalSize / file.size > MAX_COMPRESSION_RATIO) {
+        throw new WorldImportError(
+          'The world bundle failed a compression-safety check (possible zip bomb).',
+        );
+      }
+      totalOriginalSize += file.originalSize;
+      if (totalOriginalSize > MAX_TOTAL_BYTES) {
+        throw new WorldImportError(
+          'The world bundle exceeds the maximum allowed uncompressed size.',
+        );
+      }
+      return true;
+    },
+  });
+}
+
+/** Matches a plain SQL identifier: exactly what every real column name is. */
+const SAFE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/**
+ * Row keys ultimately come from untrusted, attacker-controllable JSON inside an
+ * imported `.zip` bundle and are spliced directly into a dynamic `INSERT`
+ * column list (see {@link insertRow}). better-sqlite3 parameterizes values but
+ * not identifiers, so an unvalidated key like `"id) VALUES (1); --"` would be
+ * SQL injected. Reject anything that isn't a plain identifier.
+ */
+function assertSafeColumnNames(row: Row, table: string): void {
+  for (const column of Object.keys(row)) {
+    if (!SAFE_IDENTIFIER.test(column)) {
+      throw new WorldImportError(
+        `The world bundle contains an invalid column name for table "${table}".`,
+      );
+    }
+  }
+}
+
 export function importWorld(
   db: Database.Database,
   zipBytes: Uint8Array,
   media: WorldMediaWriter,
   isNameTaken: (name: string) => boolean,
 ): WorldImportResult {
-  const unzipped = unzipSync(zipBytes);
+  const unzipped = unzipWithSizeGuards(zipBytes);
 
   validateManifest(decodeEntry(unzipped['manifest.json']));
 
@@ -189,6 +249,7 @@ function applyDeferredForeignKeys(
 }
 
 function insertRow(db: Database.Database, table: string, row: Row): number {
+  assertSafeColumnNames(row, table);
   const columns = Object.keys(row).filter((column) => column !== 'id');
   const placeholders = columns.map(() => '?').join(', ');
   const values = columns.map((column) => bindable(row[column]));

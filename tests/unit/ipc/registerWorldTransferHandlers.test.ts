@@ -11,6 +11,7 @@ const {
   showOpenDialogMock,
   readFileMock,
   writeFileMock,
+  statMock,
   exportWorldMock,
   importWorldMock,
   createFsWorldMediaReaderMock,
@@ -21,6 +22,7 @@ const {
   showOpenDialogMock: vi.fn(),
   readFileMock: vi.fn(),
   writeFileMock: vi.fn(),
+  statMock: vi.fn(),
   exportWorldMock: vi.fn(),
   importWorldMock: vi.fn(),
   createFsWorldMediaReaderMock: vi.fn(),
@@ -41,9 +43,11 @@ vi.mock('node:fs/promises', () => ({
   default: {
     readFile: readFileMock,
     writeFile: writeFileMock,
+    stat: statMock,
   },
   readFile: readFileMock,
   writeFile: writeFileMock,
+  stat: statMock,
 }));
 
 vi.mock('../../../src/main/worldTransfer/exportWorld', () => ({
@@ -101,6 +105,7 @@ describe('registerWorldTransferHandlers', () => {
       worldId: 9,
       worldName: 'Alpha (imported)',
     });
+    statMock.mockResolvedValue({ size: 1024 });
 
     registerWorldTransferHandlers(dbMock, {
       userDataPath: 'C:\\mock-user-data',
@@ -183,6 +188,20 @@ describe('registerWorldTransferHandlers', () => {
       worldId: 9,
       worldName: 'Alpha (imported)',
     });
+  });
+
+  it('rejects oversized bundles before reading them into memory', async () => {
+    showOpenDialogMock.mockResolvedValue({
+      canceled: false,
+      filePaths: ['C:\\Imports\\huge.zip'],
+    });
+    statMock.mockResolvedValue({ size: 300 * 1024 * 1024 });
+
+    await expect(handlers[IPC.WORLDS_IMPORT]({})).rejects.toThrowError(
+      /too large to import/,
+    );
+    expect(readFileMock).not.toHaveBeenCalled();
+    expect(importWorldMock).not.toHaveBeenCalled();
   });
 
   it('returns canceled import when dialog is dismissed', async () => {

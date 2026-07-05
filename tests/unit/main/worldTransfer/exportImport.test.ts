@@ -787,4 +787,46 @@ describe('worldTransfer export/import', () => {
     expect(() => importWorld(db, multiWorldZip, writer, () => false))
       .toThrowError('The world bundle does not contain exactly one world.');
   });
+
+  it('rejects unsafe column names in imported rows (SQL-injection guard)', () => {
+    const maliciousZip = zipSync({
+      'manifest.json': new TextEncoder().encode(JSON.stringify({ formatVersion: 1 })),
+      'data.json': new TextEncoder().encode(JSON.stringify({
+        tables: {
+          worlds: [{ id: 1, name: 'Alpha', 'name); DROP TABLE worlds; --': 'evil' }],
+        },
+      })),
+    });
+
+    const db = createWorldTransferDb();
+    const writer = {
+      writeMedia: () => 'vv-media://world-images/x.png',
+      writeSnapshot: () => 'world-map-1.map.gz',
+    };
+
+    expect(() => importWorld(db, maliciousZip, writer, () => false)).toThrowError(
+      'The world bundle contains an invalid column name for table "worlds".',
+    );
+  });
+
+  it('rejects bundles with a suspiciously compressed entry (possible zip bomb)', () => {
+    const zeros = Buffer.alloc(5 * 1024 * 1024, 0);
+    const bombZip = zipSync({
+      'manifest.json': new TextEncoder().encode(JSON.stringify({ formatVersion: 1 })),
+      'data.json': new TextEncoder().encode(JSON.stringify({
+        tables: { worlds: [{ id: 1, name: 'Alpha' }] },
+      })),
+      'media/world-images/bomb.bin': zeros,
+    }, { level: 9 });
+
+    const db = createWorldTransferDb();
+    const writer = {
+      writeMedia: () => 'vv-media://world-images/x.png',
+      writeSnapshot: () => 'world-map-1.map.gz',
+    };
+
+    expect(() => importWorld(db, bombZip, writer, () => false)).toThrowError(
+      /compression-safety check/,
+    );
+  });
 });
