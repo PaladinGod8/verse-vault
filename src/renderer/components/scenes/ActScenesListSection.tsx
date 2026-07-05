@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { sortScenesByOrder } from '../../hooks/useActScenesData';
 import { markdownToPlainText } from '../ui/MarkdownView';
 
@@ -7,6 +8,7 @@ type ActScenesListSectionProps = {
   scenes: Scene[];
   sessions: Session[];
   deletingId: number | null;
+  worldId: number | null;
   onEdit: (scene: Scene) => void;
   onMove: (scene: Scene) => void;
   onDelete: (scene: Scene) => void;
@@ -15,12 +17,14 @@ type ActScenesListSectionProps = {
 function SceneRow({
   scene,
   deletingId,
+  worldId,
   onEdit,
   onMove,
   onDelete,
 }: {
   scene: Scene;
   deletingId: number | null;
+  worldId: number | null;
   onEdit: (scene: Scene) => void;
   onMove: (scene: Scene) => void;
   onDelete: (scene: Scene) => void;
@@ -29,7 +33,14 @@ function SceneRow({
 
   return (
     <tr className='border-b border-slate-100 last:border-0'>
-      <td className='px-4 py-3 font-medium'>{scene.name}</td>
+      <td className='px-4 py-3 font-medium'>
+        <Link
+          to={`/world/${worldId}/scene/${scene.id}`}
+          className='transition hover:text-slate-600 hover:underline'
+        >
+          {scene.name}
+        </Link>
+      </td>
       <td className='px-4 py-3 text-slate-500'>{markdownToPlainText(scene.notes) || '-'}</td>
       <td className='px-4 py-3'>
         <div className='flex gap-3'>
@@ -67,6 +78,7 @@ function SceneGroup({
   title,
   scenes,
   deletingId,
+  worldId,
   onEdit,
   onMove,
   onDelete,
@@ -74,6 +86,7 @@ function SceneGroup({
   title: string;
   scenes: Scene[];
   deletingId: number | null;
+  worldId: number | null;
   onEdit: (scene: Scene) => void;
   onMove: (scene: Scene) => void;
   onDelete: (scene: Scene) => void;
@@ -97,6 +110,7 @@ function SceneGroup({
               key={scene.id}
               scene={scene}
               deletingId={deletingId}
+              worldId={worldId}
               onEdit={onEdit}
               onMove={onMove}
               onDelete={onDelete}
@@ -114,6 +128,7 @@ export default function ActScenesListSection({
   scenes,
   sessions,
   deletingId,
+  worldId,
   onEdit,
   onMove,
   onDelete,
@@ -164,6 +179,7 @@ export default function ActScenesListSection({
             title='Stray Scenes'
             scenes={strayScenes}
             deletingId={deletingId}
+            worldId={worldId}
             onEdit={onEdit}
             onMove={onMove}
             onDelete={onDelete}
@@ -184,6 +200,7 @@ export default function ActScenesListSection({
             title={`Session: ${session.name}`}
             scenes={groupScenes}
             deletingId={deletingId}
+            worldId={worldId}
             onEdit={onEdit}
             onMove={onMove}
             onDelete={onDelete}

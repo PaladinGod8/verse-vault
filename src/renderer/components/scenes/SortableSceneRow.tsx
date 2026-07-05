@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Link } from 'react-router-dom';
 import { markdownToPlainText } from '../ui/MarkdownView';
 
 type SortableSceneRowProps = {
@@ -7,6 +8,7 @@ type SortableSceneRowProps = {
   sequence: number;
   deletingId: number | null;
   isPersistingOrder: boolean;
+  worldId: number | null;
   onEdit: (scene: Scene) => void;
   onMove: (scene: Scene) => void;
   onDelete: (scene: Scene) => void;
@@ -17,6 +19,7 @@ export default function SortableSceneRow({
   sequence,
   deletingId,
   isPersistingOrder,
+  worldId,
   onEdit,
   onMove,
   onDelete,
@@ -60,7 +63,14 @@ export default function SortableSceneRow({
           <span className='tabular-nums'>{sequence}</span>
         </div>
       </td>
-      <td className='px-4 py-3 font-medium'>{scene.name}</td>
+      <td className='px-4 py-3 font-medium'>
+        <Link
+          to={`/world/${worldId}/scene/${scene.id}`}
+          className='transition hover:text-slate-600 hover:underline'
+        >
+          {scene.name}
+        </Link>
+      </td>
       <td className='px-4 py-3 text-slate-500'>{markdownToPlainText(scene.notes) || '-'}</td>
       <td className='px-4 py-3'>
         <div className='flex gap-3'>

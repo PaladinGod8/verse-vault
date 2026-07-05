@@ -124,6 +124,19 @@ describe('ActScenesPage', () => {
     expect(screen.getByText('Grouped Scene')).toBeInTheDocument();
   });
 
+  it('links scene name to the Scene Detail Page', async () => {
+    (mockDb.scenes.getAllByAct as ReturnType<typeof vi.fn>).mockResolvedValue([
+      buildScene({ id: 1, name: 'Wandering Scene', session_id: null }),
+    ]);
+
+    renderActScenesPage('/world/1/campaign/1/arc/1/act/1/scenes');
+
+    expect(await screen.findByRole('link', { name: 'Wandering Scene' })).toHaveAttribute(
+      'href',
+      '/world/1/scene/1',
+    );
+  });
+
   it('shows an empty state when the act has no scenes', async () => {
     renderActScenesPage('/world/1/campaign/1/arc/1/act/1/scenes');
 

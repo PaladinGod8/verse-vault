@@ -49,6 +49,7 @@ This document is a current-state map for agents and maintainers. The tables belo
 | `/world/:id/levels`                                                               | `LevelsPage`                | `src/renderer/pages/LevelsPage.tsx`                |
 | `/world/:id/abilities`                                                            | `AbilitiesPage`             | `src/renderer/pages/AbilitiesPage.tsx`             |
 | `/world/:id/campaigns`                                                            | `CampaignsPage`             | `src/renderer/pages/CampaignsPage.tsx`             |
+| `/world/:id/scene/:sceneId`                                                       | `SceneDetailPage`           | `src/renderer/pages/SceneDetailPage.tsx`           |
 | `/world/:id/battlemaps`                                                           | `BattleMapsPage`            | `src/renderer/pages/BattleMapsPage.tsx`            |
 | `/world/:id/tokens`                                                               | `TokensPage`                | `src/renderer/pages/TokensPage.tsx`                |
 | `/world/:id/statblocks`                                                           | `StatBlocksPage`            | `src/renderer/pages/StatBlocksPage.tsx`            |

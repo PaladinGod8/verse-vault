@@ -303,6 +303,7 @@ export default function ScenesPage() {
           sensors={sensors}
           deletingId={deletingId}
           isPersistingOrder={isPersistingOrder}
+          worldId={worldId}
           onDragEnd={(event) => {
             void handleReorderScenes(event);
           }}

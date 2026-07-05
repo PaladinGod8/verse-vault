@@ -11,6 +11,7 @@ type ScenesListSectionProps = {
   sensors: SensorDescriptor<unknown>[];
   deletingId: number | null;
   isPersistingOrder: boolean;
+  worldId: number | null;
   onDragEnd: (event: DragEndEvent) => void;
   onEdit: (scene: Scene) => void;
   onMove: (scene: Scene) => void;
@@ -26,6 +27,7 @@ export default function ScenesListSection({
   sensors,
   deletingId,
   isPersistingOrder,
+  worldId,
   onDragEnd,
   onEdit,
   onMove,
@@ -87,6 +89,7 @@ export default function ScenesListSection({
                         sequence={index + 1}
                         deletingId={deletingId}
                         isPersistingOrder={isPersistingOrder}
+                        worldId={worldId}
                         onEdit={onEdit}
                         onMove={onMove}
                         onDelete={onDelete}

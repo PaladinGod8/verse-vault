@@ -162,7 +162,14 @@ export default function CampaignScenesPage() {
                       key={scene.id}
                       className='border-b border-slate-100 last:border-0'
                     >
-                      <td className='px-4 py-3 font-medium'>{scene.name}</td>
+                      <td className='px-4 py-3 font-medium'>
+                        <Link
+                          to={`/world/${worldId}/scene/${scene.id}`}
+                          className='transition hover:text-slate-600 hover:underline'
+                        >
+                          {scene.name}
+                        </Link>
+                      </td>
                       <td className='px-4 py-3 text-slate-500'>
                         {scene.session_name ?? '-'}
                       </td>

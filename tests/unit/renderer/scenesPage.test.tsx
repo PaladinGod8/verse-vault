@@ -259,6 +259,18 @@ describe('ScenesPage', () => {
     expect(screen.getByText('The Reveal')).toBeInTheDocument();
   });
 
+  it('links scene name to the Scene Detail Page', async () => {
+    sessionsGetByIdMock.mockResolvedValue(buildSession());
+    scenesGetAllBySessionMock.mockResolvedValue([buildScene()]);
+
+    renderScenesPage('/world/1/campaign/1/arc/1/act/1/session/1/scenes');
+
+    expect(await screen.findByRole('link', { name: 'The Opening' })).toHaveAttribute(
+      'href',
+      '/world/1/scene/1',
+    );
+  });
+
   it('renders scenes in sort_order order with contiguous numbering', async () => {
     sessionsGetByIdMock.mockResolvedValue(buildSession());
     scenesGetAllBySessionMock.mockResolvedValue([

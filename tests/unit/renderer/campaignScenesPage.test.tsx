@@ -209,6 +209,10 @@ describe('CampaignScenesPage', () => {
       'href',
       '/world/1/campaign/1/arc/12/act/21/session/31/scenes',
     );
+    expect(screen.getByRole('link', { name: 'Scene Alpha' })).toHaveAttribute(
+      'href',
+      '/world/1/scene/11',
+    );
   });
 
   it('shows a stray scene with dashes and an Open Act Scenes link', async () => {

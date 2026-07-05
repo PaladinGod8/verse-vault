@@ -179,6 +179,7 @@ export default function ActScenesPage() {
           scenes={scenes}
           sessions={sessions}
           deletingId={deletingId}
+          worldId={worldId}
           onEdit={(selectedScene) => {
             setIsCreateOpen(false);
             setEditingScene(selectedScene);

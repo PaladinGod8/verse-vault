@@ -30,6 +30,7 @@ import LevelsPage from './pages/LevelsPage';
 import LoreNoteCanvasPage from './pages/LoreNoteCanvasPage';
 import LoreNoteDetailPage from './pages/LoreNoteDetailPage';
 import LoreNotesPage from './pages/LoreNotesPage';
+import SceneDetailPage from './pages/SceneDetailPage';
 import ScenesPage from './pages/ScenesPage';
 import SessionsPage from './pages/SessionsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -49,6 +50,7 @@ function AppRoutes() {
       <Route path='/world/:id/levels' element={<LevelsPage />} />
       <Route path='/world/:id/abilities' element={<AbilitiesPage />} />
       <Route path='/world/:id/campaigns' element={<CampaignsPage />} />
+      <Route path='/world/:id/scene/:sceneId' element={<SceneDetailPage />} />
       <Route path='/world/:id/battlemaps' element={<BattleMapsPage />} />
       <Route path='/world/:id/tokens' element={<TokensPage />} />
       <Route path='/world/:id/statblocks' element={<StatBlocksPage />} />
