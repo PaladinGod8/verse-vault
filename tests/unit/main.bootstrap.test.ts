@@ -318,6 +318,19 @@ describe('main bootstrap orchestration', () => {
     expect(protocolHandleMock).toHaveBeenCalledWith('vv-media', expect.any(Function));
     expect(protocolRegisterSchemesAsPrivilegedMock).toHaveBeenCalled();
     expect(protocolHandleMock).toHaveBeenCalledWith('vv-fmg', expect.any(Function));
+
+    const privilegedSchemes = protocolRegisterSchemesAsPrivilegedMock.mock.calls.flat(2);
+    const vvMediaScheme = privilegedSchemes.find(
+      (entry): entry is { scheme: string; privileges: Record<string, boolean>; } =>
+        Boolean(entry) && typeof entry === 'object'
+        && (entry as { scheme?: string; }).scheme === 'vv-media',
+    );
+    expect(vvMediaScheme?.privileges).toMatchObject({
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    });
     const protocolHandler = registeredProtocols['vv-media'];
     expect(protocolHandler).toBeDefined();
 

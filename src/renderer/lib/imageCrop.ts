@@ -8,9 +8,7 @@ const IMAGE_ALLOWED_MIME_TYPES = new Set([
   'image/gif',
 ]);
 const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
-const CROP_PREVIEW_CARD_WIDTH = 320;
-const CROP_PREVIEW_CARD_HEIGHT = 160;
-const CROP_PREVIEW_SQUARE_SIZE = 320;
+const CROP_OUTPUT_MAX_DIMENSION = 2000;
 
 export type ImageUploadPayload = {
   fileName: string;
@@ -121,21 +119,33 @@ export function presetIdToAspectRatio(
   return IMAGE_CROP_ASPECT_PRESETS.find((preset) => preset.id === presetId)?.aspectRatio ?? null;
 }
 
+/**
+ * Recovers the display-to-natural pixel scale from a cropper image's transform matrix
+ * (`[a, b, c, d, e, f]`). The crop preview renders the source image scaled down to fit a
+ * small viewport, so on-screen selection coordinates must be divided by this scale to
+ * recover the equivalent size in the source image's actual (natural) pixels.
+ */
+export function computeImageTransformScale(matrix: readonly number[]): number {
+  const [a, b] = matrix;
+  const magnitude = Math.hypot(a, b);
+  return magnitude > 0 ? magnitude : 1;
+}
+
 export function buildCropOutputSize(
-  presetId: ImageCropAspectPresetId,
-  selectionWidth: number,
-  selectionHeight: number,
+  naturalSelectionWidth: number,
+  naturalSelectionHeight: number,
 ): { width: number; height: number; } {
-  if (presetId === 'card') {
-    return { width: CROP_PREVIEW_CARD_WIDTH, height: CROP_PREVIEW_CARD_HEIGHT };
-  }
-  if (presetId === 'square') {
-    return { width: CROP_PREVIEW_SQUARE_SIZE, height: CROP_PREVIEW_SQUARE_SIZE };
+  const width = Math.max(1, Math.round(naturalSelectionWidth));
+  const height = Math.max(1, Math.round(naturalSelectionHeight));
+  const longestEdge = Math.max(width, height);
+  if (longestEdge <= CROP_OUTPUT_MAX_DIMENSION) {
+    return { width, height };
   }
 
+  const clampScale = CROP_OUTPUT_MAX_DIMENSION / longestEdge;
   return {
-    width: Math.max(1, Math.round(selectionWidth)),
-    height: Math.max(1, Math.round(selectionHeight)),
+    width: Math.max(1, Math.round(width * clampScale)),
+    height: Math.max(1, Math.round(height * clampScale)),
   };
 }
 

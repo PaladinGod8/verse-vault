@@ -80,6 +80,21 @@ interface StoredImageCrop {
   normalize to `NULL`.
 - Clear-on-save nulls display image, original image, and crop metadata together.
 
+## Export Resolution and Protocol Requirements
+
+- `ImageCropModal` exports the crop via Cropper.js's `CropperSelection.$toCanvas`, which
+  renders at the pixel size it's given — it does not know the source image's natural
+  resolution on its own. `computeImageTransformScale` (in `src/renderer/lib/imageCrop.ts`)
+  recovers the display-to-natural scale from the cropper image's transform matrix so
+  `buildCropOutputSize` can request an output size in natural image pixels, not the small
+  on-screen preview viewport size.
+- The `vv-media` protocol (existing/persisted images) must be registered in
+  `protocol.registerSchemesAsPrivileged` (`src/main.ts`) with
+  `{ standard: true, secure: true, supportFetchAPI: true, corsEnabled: true }`, matching
+  `vv-fmg`. Without this, re-cropping an existing (already-persisted) image taints the
+  crop `<canvas>` and `toBlob()` throws `Tainted canvases may not be exported.`. Freshly
+  selected files are unaffected because they use same-origin `blob:` URLs until saved.
+
 ## Tests
 
 - DB migration coverage lives in world/character/background/item/lore-note/faction DB
@@ -87,6 +102,9 @@ interface StoredImageCrop {
 - IPC coverage lives in the corresponding `tests/unit/ipc/register*.test.ts` files.
 - Renderer coverage lives in affected form tests, CRUD hook tests, and
   `tests/unit/renderer/worldsHomePage.test.tsx`.
+- `buildCropOutputSize` / `computeImageTransformScale` unit coverage lives in
+  `tests/unit/renderer/lib/imageCrop.test.ts`.
+- The `vv-media` privileged-scheme registration is covered in `tests/unit/main.bootstrap.test.ts`.
 
 ## Known Limits and Non-Goals
 

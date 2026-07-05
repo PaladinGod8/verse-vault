@@ -4,6 +4,7 @@ import type { StoredImageCrop } from '../../../shared/contracts/imageCropTypes';
 import {
   aspectRatioToPresetId,
   buildCropOutputSize,
+  computeImageTransformScale,
   IMAGE_CROP_ASPECT_PRESETS,
   type ImageCropApplyResult,
   type ImageCropAspectPresetId,
@@ -199,10 +200,10 @@ export default function ImageCropModal({
 
     try {
       const outputMimeType = resolveCropOutputMimeType(sourceMimeType);
+      const displayScale = computeImageTransformScale(cropperImage.$getTransform());
       const outputSize = buildCropOutputSize(
-        activePresetId,
-        selection.width,
-        selection.height,
+        selection.width / displayScale,
+        selection.height / displayScale,
       );
       const canvas = await selection.$toCanvas(outputSize);
       const croppedBlob = await canvasToBlob(canvas, outputMimeType);

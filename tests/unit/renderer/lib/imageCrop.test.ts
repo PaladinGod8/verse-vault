@@ -4,6 +4,7 @@ import {
   blobToImageUploadPayload,
   buildCropOutputSize,
   buildImageEditDraft,
+  computeImageTransformScale,
   fileToImageUploadPayload,
   guessFileNameFromImageSrc,
   parseStoredImageCrop,
@@ -66,7 +67,7 @@ describe('imageCrop helpers', () => {
     expect(parseStoredImageCrop(cropJson)).toEqual(SAMPLE_CROP);
   });
 
-  it('maps aspect presets and output sizes', () => {
+  it('maps aspect presets to ratios', () => {
     expect(aspectRatioToPresetId(2)).toBe('card');
     expect(aspectRatioToPresetId(1)).toBe('square');
     expect(aspectRatioToPresetId(1.5)).toBe('free');
@@ -75,10 +76,26 @@ describe('imageCrop helpers', () => {
     expect(presetIdToAspectRatio('card')).toBe(2);
     expect(presetIdToAspectRatio('square')).toBe(1);
     expect(presetIdToAspectRatio('free')).toBeNull();
+  });
 
-    expect(buildCropOutputSize('card', 111, 222)).toEqual({ width: 320, height: 160 });
-    expect(buildCropOutputSize('square', 111, 222)).toEqual({ width: 320, height: 320 });
-    expect(buildCropOutputSize('free', 12.3, 0.2)).toEqual({ width: 12, height: 1 });
+  it('derives the cropper display-to-natural scale from the image transform matrix', () => {
+    // A source image shown at 25% size to fit the crop preview viewport.
+    expect(computeImageTransformScale([0.25, 0, 0, 0.25, 0, 0])).toBeCloseTo(0.25);
+    // Rotation changes a/b/c/d but preserves the scale magnitude.
+    expect(computeImageTransformScale([0, 0.5, -0.5, 0, 0, 0])).toBeCloseTo(0.5);
+    // Guards against divide-by-zero for a degenerate/untransformed matrix.
+    expect(computeImageTransformScale([0, 0, 0, 0, 0, 0])).toBe(1);
+  });
+
+  it('builds crop output sizes from natural image resolution, not the small preview viewport', () => {
+    // Small selections pass through unchanged (previously this was hardcoded to 320x160/320x320
+    // regardless of the source image's actual resolution, which produced blurry, low-res crops).
+    expect(buildCropOutputSize(320, 160)).toEqual({ width: 320, height: 160 });
+    expect(buildCropOutputSize(12.3, 0.2)).toEqual({ width: 12, height: 1 });
+    // A selection scaled up to the source image's natural resolution is preserved at full detail.
+    expect(buildCropOutputSize(1800, 900)).toEqual({ width: 1800, height: 900 });
+    // Only clamped once it exceeds the max export dimension, preserving aspect ratio.
+    expect(buildCropOutputSize(4000, 2000)).toEqual({ width: 2000, height: 1000 });
   });
 
   it('normalizes output mime types and file extensions', () => {
