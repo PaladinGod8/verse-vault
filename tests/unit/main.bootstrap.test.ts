@@ -36,6 +36,9 @@ const browserWindowOnceMock = vi.fn((_event: string, handler: () => void) => {
 const browserWindowShowMock = vi.fn();
 const getAllWindowsMock = vi.fn(() => []);
 const browserWindowCtorMock = vi.fn();
+const setWindowOpenHandlerMock = vi.fn();
+const webContentsOnMock = vi.fn();
+const shellOpenExternalMock = vi.fn();
 
 class BrowserWindowMock {
   loadURL = loadURLMock;
@@ -44,6 +47,8 @@ class BrowserWindowMock {
   show = browserWindowShowMock;
   webContents = {
     openDevTools: openDevToolsMock,
+    setWindowOpenHandler: setWindowOpenHandlerMock,
+    on: webContentsOnMock,
   };
 
   constructor(options: Record<string, unknown>) {
@@ -126,6 +131,9 @@ vi.mock('electron', () => ({
   },
   ipcMain: {
     handle: vi.fn(),
+  },
+  shell: {
+    openExternal: shellOpenExternalMock,
   },
 }));
 vi.mock('../../src/database/db', () => ({
@@ -421,5 +429,36 @@ describe('main bootstrap orchestration', () => {
     });
     registeredEvents['window-all-closed']();
     expect(appQuitMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('denies popups (routing safe links externally) and blocks cross-origin navigation', async () => {
+    setForgeGlobals(undefined);
+    await importMainWithMocks();
+    await registeredEvents.ready();
+
+    const openHandler = setWindowOpenHandlerMock.mock.calls[0]?.[0] as (
+      details: { url: string; },
+    ) => { action: string; };
+    expect(openHandler).toBeDefined();
+
+    expect(openHandler({ url: 'https://example.com' })).toEqual({ action: 'deny' });
+    expect(shellOpenExternalMock).toHaveBeenCalledWith('https://example.com');
+
+    shellOpenExternalMock.mockClear();
+    expect(openHandler({ url: 'javascript:alert(1)' })).toEqual({ action: 'deny' });
+    expect(shellOpenExternalMock).not.toHaveBeenCalled();
+
+    const navigateHandler = webContentsOnMock.mock.calls.find(
+      ([event]) => event === 'will-navigate',
+    )?.[1] as (event: { preventDefault: () => void; }, url: string) => void;
+    expect(navigateHandler).toBeDefined();
+
+    const allowedEvent = { preventDefault: vi.fn() };
+    navigateHandler(allowedEvent, 'file:///C:/app/renderer/index.html');
+    expect(allowedEvent.preventDefault).not.toHaveBeenCalled();
+
+    const blockedEvent = { preventDefault: vi.fn() };
+    navigateHandler(blockedEvent, 'https://attacker.example.com');
+    expect(blockedEvent.preventDefault).toHaveBeenCalled();
   });
 });

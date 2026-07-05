@@ -47,7 +47,8 @@ upgrades stay out of the blocking gate.
 
 ## Follow-Ups
 
-- Install Trivy on self-hosted CI runners if the CI workflow should mirror the
-  local `security:deps` gate exactly.
+- CI runs `yarn security:deps` as the `deps` lane of the `fast-checks` matrix
+  (`.github/workflows/ci.yml`); Trivy must be preinstalled on self-hosted
+  runners (see `docs/features/github-actions-setup.md`).
 - Consider Dependabot or Renovate only if automated update PRs are wanted; that
   flow stays separate from the blocking local gate.

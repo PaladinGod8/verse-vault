@@ -16,7 +16,7 @@ Independent quality gates run concurrently, while required sequencing (`package`
 | Job                    | Purpose                                                              | Parallel/Sequence                               |
 | ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
 | `bootstrap`            | Shared setup baseline (Node, cache restore, install, native rebuild) | First                                           |
-| `fast-checks` (matrix) | `format`, `typecheck`, `lint`, `unit`                                | Parallel (`fail-fast: false`)                   |
+| `fast-checks` (matrix) | `format`, `typecheck`, `lint`, `unit`, `secrets`, `deps`             | Parallel (`fail-fast: false`)                   |
 | `package`              | `yarn package`                                                       | Parallel with `fast-checks` (after `bootstrap`) |
 | `e2e`                  | Downloads packaged artifact and runs `yarn test:e2e:ci`              | Sequential after `package`                      |
 | `ci-summary`           | Final workflow status gate                                           | Runs last (`if: always()`)                      |
@@ -78,6 +78,8 @@ Install these on the runner machine before registering the runner:
 3. **Git** - git-scm.com
 4. **Visual Studio Build Tools** - required for node-gyp (`better-sqlite3`), with workload **Desktop development with C++**
 5. **Python 3** - required by node-gyp
+6. **gitleaks** - required by the `secrets` fast-check (`yarn security:secrets`)
+7. **Trivy** - required by the `deps` fast-check (`yarn security:deps`); install via `winget install AquaSecurity.Trivy` or `scoop install trivy`
 
 ### Register the Runner
 

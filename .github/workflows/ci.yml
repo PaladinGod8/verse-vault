@@ -127,6 +127,12 @@ jobs:
           - id: unit
             label: Unit tests with coverage
             command: yarn test:unit:coverage
+          - id: secrets
+            label: Secret scan
+            command: yarn security:secrets
+          - id: deps
+            label: Dependency vulnerability scan
+            command: yarn security:deps
 
     steps:
       - name: Checkout
@@ -204,6 +210,18 @@ jobs:
         run: |
           where vale
           vale --version
+
+      - name: Confirm gitleaks is available
+        if: matrix.id == 'secrets'
+        run: |
+          where gitleaks
+          gitleaks version
+
+      - name: Confirm Trivy is available
+        if: matrix.id == 'deps'
+        run: |
+          where trivy
+          trivy --version
 
       - name: Run lint (changed files only on PR)
         if: matrix.id == 'lint' && github.event_name == 'pull_request'
